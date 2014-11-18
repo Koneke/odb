@@ -142,6 +142,9 @@ namespace ODB
 
         Actor player;
 
+        Console logConsole;
+        List<string> log;
+
         protected override void Initialize()
         {
             #region engineshit
@@ -176,6 +179,12 @@ namespace ODB
 
             actors = new List<Actor>();
             items = new List<Item>();
+
+            log = new List<string>();
+            log.Add("Something something dungeon");
+
+            logConsole = new Console(80, 5);
+            SadConsole.Engine.ConsoleRenderStack.Add(logConsole);
 
             #region dev dungeon
             rooms = new List<Room>();
@@ -357,6 +366,10 @@ namespace ODB
             if (KeyPressed(Keys.NumPad7)) offset.Nudge(-1,-1);
 
             player.xy.Nudge(offset.x, offset.y);
+
+            if (offset.x != 0 || offset.y != 0) {
+                log.Add(player.xy.x + ", " + player.xy.y);
+            }
             #endregion
 
             #region vision
@@ -463,6 +476,20 @@ namespace ODB
                 dfc.CellData.SetForeground(i % 80, (i - i % 80) / 80,
                     rn.NextDouble() > 0.5 ? Color.Red : Color.Blue);
             }*/
+            #endregion
+
+            #region render ui
+            logConsole.CellData.Clear();
+            for (
+                int i = log.Count, n = 0;
+                i > 0 && n < logConsole.ViewArea.Height;
+                i--, n++
+            ) {
+                logConsole.CellData.Print(
+                    0, logConsole.ViewArea.Height-(n+1),
+                    log[i-1]
+                );
+            }
             #endregion
 
             oks = ks;
