@@ -151,6 +151,7 @@ namespace ODB
         #endregion
 
         KeyboardState ks, oks;
+        bool shift;
 
         Tile[,] map;
         bool[,] seen;
@@ -225,6 +226,7 @@ namespace ODB
 
             inputRow = new Console(80, 1);
             inputRow.Position = new Microsoft.Xna.Framework.Point(0, 3);
+            inputRow.VirtualCursor.IsVisible = true;
             SadConsole.Engine.ConsoleRenderStack.Add(inputRow);
 
             #region dev dungeon
@@ -388,6 +390,16 @@ namespace ODB
             );
         }
 
+        string article(string name)
+        {
+            //not ENTIRELY correct, whatwith exceptions,
+            //but close enough.
+            return
+                new List<char>() { 'a', 'e', 'i', 'o', 'u' }
+                    .Contains(name.ToLower()[0]) ?
+                "an" : "a";
+        }
+
         protected override void Update(GameTime gameTime)
         {
             #region engineshit
@@ -396,7 +408,11 @@ namespace ODB
             dfc.CellData.Clear();
             #endregion
 
-            if (KeyPressed(Keys.Q) || KeyPressed(Keys.Escape)) this.Exit();
+            shift =
+                (ks.IsKeyDown(Keys.LeftShift) ||
+                ks.IsKeyDown(Keys.RightShift));
+
+            if (KeyPressed(Keys.Q)/* || KeyPressed(Keys.Escape)*/) this.Exit();
 
             #region camera
             //todo: edge scrolling
@@ -414,23 +430,29 @@ namespace ODB
             #region player movement
             Point offset = new Point(0, 0);
 
+            //only do player movement if we're not currently asking something
             if (!question)
             {
-                if (KeyPressed(Keys.NumPad8)) offset.Nudge(0, -1);
-                if (KeyPressed(Keys.NumPad9)) offset.Nudge(1, -1);
-                if (KeyPressed(Keys.NumPad6)) offset.Nudge(1, 0);
-                if (KeyPressed(Keys.NumPad3)) offset.Nudge(1, 1);
-                if (KeyPressed(Keys.NumPad2)) offset.Nudge(0, 1);
+                if (KeyPressed(Keys.NumPad8)) offset.Nudge( 0,-1);
+                if (KeyPressed(Keys.NumPad9)) offset.Nudge( 1,-1);
+                if (KeyPressed(Keys.NumPad6)) offset.Nudge( 1, 0);
+                if (KeyPressed(Keys.NumPad3)) offset.Nudge( 1, 1);
+                if (KeyPressed(Keys.NumPad2)) offset.Nudge( 0, 1);
                 if (KeyPressed(Keys.NumPad1)) offset.Nudge(-1, 1);
                 if (KeyPressed(Keys.NumPad4)) offset.Nudge(-1, 0);
-                if (KeyPressed(Keys.NumPad7)) offset.Nudge(-1, -1);
+                if (KeyPressed(Keys.NumPad7)) offset.Nudge(-1,-1);
 
-                if (KeyPressed(Keys.D))
+                if (KeyPressed(Keys.D) && !shift)
                 {
+                    inputRow.CellData.Clear();
                     inputRow.CellData.Print(0, 0, "Drop what? ");
                     inputRow.VirtualCursor.Position =
                         new xnaPoint("Drop what?".Length + 1, 0);
                     question = true;
+                    //do acceptedInput stuff here?
+                    //so we set what kind of stuff we want on question
+                    // making instead?
+                    //also, maybe something with input length, I guess
                     questionReaction = DropItem;
                 }
             }
@@ -438,16 +460,23 @@ namespace ODB
             {
                 Keys[] pk = ks.GetPressedKeys();
                 Keys[] opk = oks.GetPressedKeys();
-
-                bool shift =
-                    !(ks.IsKeyDown(Keys.LeftShift) ||
-                    ks.IsKeyDown(Keys.RightShift));
+                List<int> acceptedInput = new List<int>();
 
                 for (int i = 65; i <= 90; i++)
                 {
+                    acceptedInput.Add(i);
+                }
+                acceptedInput.Add(32);
+
+                //for (int i = 65; i <= 90; i++)
+                foreach (int i in acceptedInput)
+                {
                     if (pk.Contains((Keys)i) && !opk.Contains((Keys)i))
                     {
-                        char c = (char)(i+(shift?32:0));
+                        //char c = (char)(i + (shift ? 0 : 32));
+                        char c = (char)i;
+                        if(i >= 65 && i <= 90)
+                            c += (char)(shift ? 0 : 32);
                         answer += c;
                         
                         inputRow.CellData.Print(
@@ -457,10 +486,27 @@ namespace ODB
                         inputRow.VirtualCursor.Left(-1);
                     }
                 }
+                if (KeyPressed(Keys.Back))
+                {
+                    if (answer.Length > 0)
+                    {
+                        answer = answer.Substring(0, answer.Length - 1);
+                        inputRow.VirtualCursor.Left(1);
+                        inputRow.CellData.Print(
+                            inputRow.VirtualCursor.Position.X,
+                            inputRow.VirtualCursor.Position.Y,
+                            " ");
+                    }
+                }
                 if (KeyPressed(Keys.Enter))
                 {
                     question = false;
                     questionReaction(answer);
+                }
+                if (KeyPressed(Keys.Escape))
+                {
+                    answer = "";
+                    question = false;
                 }
             }
 
@@ -476,7 +522,10 @@ namespace ODB
                     case 1:
                         log.Add(
                             //TODO: a/an
-                            "There is a(n) " + itemsOnSquare[0].name + " here."
+                            "There is " +
+                            article(itemsOnSquare[0].name) + " " +
+                            itemsOnSquare[0].name +
+                            " here."
                         );
                         break;
                     default:
