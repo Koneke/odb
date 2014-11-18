@@ -170,7 +170,16 @@ namespace ODB
         List<string> log;
 
         Console inputRow;
-        bool awaitingMenuInput;
+
+        bool question;
+        string answer;
+        Action<string> questionReaction;
+
+        public void DropItem(string item) //player
+        {
+            //char c = item[0]; //input should only be one char anyways
+            log.Add("Would drop " + item + ", if that was implemented ;)");
+        }
 
         protected override void Initialize()
         {
@@ -180,6 +189,7 @@ namespace ODB
 
             SadConsole.Engine.Initialize(GraphicsDevice);
             SadConsole.Engine.UseMouse = false;
+            SadConsole.Engine.UseKeyboard = true;
 
             using (var stream = System.IO.File.OpenRead("Fonts/IBM.font"))
                 SadConsole.Engine.DefaultFont =
@@ -389,10 +399,11 @@ namespace ODB
             if (KeyPressed(Keys.Q) || KeyPressed(Keys.Escape)) this.Exit();
 
             #region camera
-            if (KeyPressed(Keys.A))
+            //todo: edge scrolling
+            /*if (KeyPressed(Keys.A))
                 camX+=10;
             if(KeyPressed(Keys.F))
-                camX-=10;
+                camX-=10;*/
 
             camX = Math.Max(0, camX);
             camX = Math.Min(lvlW - scrW, camX);
@@ -403,22 +414,55 @@ namespace ODB
             #region player movement
             Point offset = new Point(0, 0);
 
-            if (KeyPressed(Keys.NumPad8)) offset.Nudge( 0,-1);
-            if (KeyPressed(Keys.NumPad9)) offset.Nudge( 1,-1);
-            if (KeyPressed(Keys.NumPad6)) offset.Nudge( 1, 0);
-            if (KeyPressed(Keys.NumPad3)) offset.Nudge( 1, 1);
-            if (KeyPressed(Keys.NumPad2)) offset.Nudge( 0, 1);
-            if (KeyPressed(Keys.NumPad1)) offset.Nudge(-1, 1);
-            if (KeyPressed(Keys.NumPad4)) offset.Nudge(-1, 0);
-            if (KeyPressed(Keys.NumPad7)) offset.Nudge(-1,-1);
-
-            /*if (KeyPressed(Keys.G))
+            if (!question)
             {
-                inputRow.CellData.Print(0, 0, "Get what? ");
-                inputRow.VirtualCursor.Position =
-                    new xnaPoint("Get what?".Length+1, 0);
-                awaitingMenuInput = true;
-            }*/
+                if (KeyPressed(Keys.NumPad8)) offset.Nudge(0, -1);
+                if (KeyPressed(Keys.NumPad9)) offset.Nudge(1, -1);
+                if (KeyPressed(Keys.NumPad6)) offset.Nudge(1, 0);
+                if (KeyPressed(Keys.NumPad3)) offset.Nudge(1, 1);
+                if (KeyPressed(Keys.NumPad2)) offset.Nudge(0, 1);
+                if (KeyPressed(Keys.NumPad1)) offset.Nudge(-1, 1);
+                if (KeyPressed(Keys.NumPad4)) offset.Nudge(-1, 0);
+                if (KeyPressed(Keys.NumPad7)) offset.Nudge(-1, -1);
+
+                if (KeyPressed(Keys.D))
+                {
+                    inputRow.CellData.Print(0, 0, "Drop what? ");
+                    inputRow.VirtualCursor.Position =
+                        new xnaPoint("Drop what?".Length + 1, 0);
+                    question = true;
+                    questionReaction = DropItem;
+                }
+            }
+            else
+            {
+                Keys[] pk = ks.GetPressedKeys();
+                Keys[] opk = oks.GetPressedKeys();
+
+                bool shift =
+                    !(ks.IsKeyDown(Keys.LeftShift) ||
+                    ks.IsKeyDown(Keys.RightShift));
+
+                for (int i = 65; i <= 90; i++)
+                {
+                    if (pk.Contains((Keys)i) && !opk.Contains((Keys)i))
+                    {
+                        char c = (char)(i+(shift?32:0));
+                        answer += c;
+                        
+                        inputRow.CellData.Print(
+                            inputRow.VirtualCursor.Position.X,
+                            inputRow.VirtualCursor.Position.Y,
+                            c+"");
+                        inputRow.VirtualCursor.Left(-1);
+                    }
+                }
+                if (KeyPressed(Keys.Enter))
+                {
+                    question = false;
+                    questionReaction(answer);
+                }
+            }
 
             player.xy.Nudge(offset.x, offset.y);
 
@@ -563,7 +607,8 @@ namespace ODB
                 );
             }
 
-            inputRow.VirtualCursor.IsVisible = awaitingMenuInput;
+            inputRow.IsVisible = question;
+            //inputRow.VirtualCursor.IsVisible = question;
             #endregion
 
             oks = ks;
