@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Graphics;
 using Console = SadConsole.Consoles.Console;
+using xnaPoint = Microsoft.Xna.Framework.Point;
 
 namespace ODB
 {
@@ -37,6 +38,16 @@ namespace ODB
         {
             this.x += x;
             this.y += y;
+        }
+
+        public static bool operator ==(Point a, Point b)
+        {
+            return a.x == b.x && a.y == b.y;
+        }
+
+        public static bool operator !=(Point a, Point b)
+        {
+            return !(a == b);
         }
     }
 
@@ -85,29 +96,42 @@ namespace ODB
         public Color? bg;
         public Color fg;
         public string tile;
+        public string name;
 
-        public gObject(Point xy, Color? bg, Color fg, string tile)
-        {
+        public gObject(
+            Point xy, Color? bg, Color fg, string tile, string name
+        ) {
             this.xy = xy;
             this.bg = bg;
             this.fg = fg;
             this.tile = tile;
+            this.name = name;
         }
     }
 
     class Actor : gObject
     {
-        public Actor(Point xy, Color? bg, Color fg, string tile) :
-            base(xy, bg, fg, tile)
+        public List<Item> inventory;
+
+        public Actor(
+            Point xy, Color? bg, Color fg, string tile, string name
+        ) :
+            base(xy, bg, fg, tile, name)
         {
+            inventory = new List<Item>();
         }
     }
 
     class Item : gObject
     {
-        public Item(Point xy, Color? bg, Color fg, string tile) :
-            base(xy, bg, fg, tile)
+        int count;
+
+        public Item(
+            Point xy, Color? bg, Color fg, string tile, string name
+        ) :
+            base(xy, bg, fg, tile, name)
         {
+            count = 1;
         }
     }
     #endregion
@@ -144,6 +168,9 @@ namespace ODB
 
         Console logConsole;
         List<string> log;
+
+        Console inputRow;
+        bool awaitingMenuInput;
 
         protected override void Initialize()
         {
@@ -183,8 +210,12 @@ namespace ODB
             log = new List<string>();
             log.Add("Something something dungeon");
 
-            logConsole = new Console(80, 5);
+            logConsole = new Console(80, 3);
             SadConsole.Engine.ConsoleRenderStack.Add(logConsole);
+
+            inputRow = new Console(80, 1);
+            inputRow.Position = new Microsoft.Xna.Framework.Point(0, 3);
+            SadConsole.Engine.ConsoleRenderStack.Add(inputRow);
 
             #region dev dungeon
             rooms = new List<Room>();
@@ -206,24 +237,34 @@ namespace ODB
             #region dev actors
             actors.Add(
                 player = new Actor(
-                    new Point(12, 15), null, Color.Cyan, (char)1+""//"@"
+                    new Point(12, 15), null, Color.Cyan, (char)1+"", "Moribund"
                 )
             );
 
             actors.Add(
                 new Actor(
-                    new Point(12, 13), null, Color.Red, "&"
+                    new Point(12, 13), null, Color.Red, "&", "Demigorgon"
                 )
             );
             #endregion
 
             #region dev items
             items.Add(
-                new Item(new Point(13, 13), null, Color.Green, ")")
+                new Item(
+                    new Point(13, 13), null, Color.Green, ")", "Longsword"
+                )
             );
 
             items.Add(
-                new Item(new Point(13, 13), null, Color.Green, ")")
+                new Item(
+                    new Point(13, 13), null, Color.Green, ")", "Snickersnee"
+                )
+            );
+
+            items.Add(
+                new Item(
+                    new Point(13, 12), null, Color.Green, ")", "Vorpal Blade"
+                )
             );
             #endregion
 
@@ -301,6 +342,11 @@ namespace ODB
             return roomList;
         }
 
+        List<Item> ItemsOnTile(Point xy)
+        {
+            return items.FindAll(x => x.xy == xy);
+        }
+
         bool KeyPressed(Keys k)
         {
             return ks.IsKeyDown(k) && !oks.IsKeyDown(k);
@@ -356,6 +402,7 @@ namespace ODB
 
             #region player movement
             Point offset = new Point(0, 0);
+
             if (KeyPressed(Keys.NumPad8)) offset.Nudge( 0,-1);
             if (KeyPressed(Keys.NumPad9)) offset.Nudge( 1,-1);
             if (KeyPressed(Keys.NumPad6)) offset.Nudge( 1, 0);
@@ -365,10 +412,35 @@ namespace ODB
             if (KeyPressed(Keys.NumPad4)) offset.Nudge(-1, 0);
             if (KeyPressed(Keys.NumPad7)) offset.Nudge(-1,-1);
 
+            /*if (KeyPressed(Keys.G))
+            {
+                inputRow.CellData.Print(0, 0, "Get what? ");
+                inputRow.VirtualCursor.Position =
+                    new xnaPoint("Get what?".Length+1, 0);
+                awaitingMenuInput = true;
+            }*/
+
             player.xy.Nudge(offset.x, offset.y);
 
             if (offset.x != 0 || offset.y != 0) {
-                log.Add(player.xy.x + ", " + player.xy.y);
+                //log.Add(player.xy.x + ", " + player.xy.y);
+                List<Item> itemsOnSquare = ItemsOnTile(player.xy);
+                switch (itemsOnSquare.Count)
+                {
+                    case 0:
+                        break;
+                    case 1:
+                        log.Add(
+                            //TODO: a/an
+                            "There is a(n) " + itemsOnSquare[0].name + " here."
+                        );
+                        break;
+                    default:
+                        log.Add(
+                            "There are " + itemsOnSquare.Count + " items here."
+                        );
+                        break;
+                }
             }
             #endregion
 
@@ -490,6 +562,8 @@ namespace ODB
                     log[i-1]
                 );
             }
+
+            inputRow.VirtualCursor.IsVisible = awaitingMenuInput;
             #endregion
 
             oks = ks;
