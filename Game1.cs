@@ -208,9 +208,15 @@ namespace ODB
             );
             #endregion
 
+            #region dev items
             items.Add(
                 new Item(new Point(13, 13), null, Color.Green, ")")
             );
+
+            items.Add(
+                new Item(new Point(13, 13), null, Color.Green, ")")
+            );
+            #endregion
 
             #region render rooms to map
             int[,] overlapCount = new int[lvlW, lvlH];
@@ -401,6 +407,29 @@ namespace ODB
 
             Rect screen = new Rect(new Point(camX, camY), new Point(80, 25));
 
+            #region render items to screen
+            int[,] itemCount = new int[lvlW, lvlH];
+            foreach (Item i in items)
+            {
+                itemCount[i.xy.x, i.xy.y]++;
+            }
+            foreach (Item i in items)
+            {
+                if (!vision[i.xy.x, i.xy.y]) continue;
+                if (screen.ContainsPoint(i.xy))
+                {
+                    if (itemCount[i.xy.x, i.xy.y] == 1)
+                    {
+                        DrawToScreen(i.xy, i.bg, i.fg, i.tile);
+                    }
+                    else //draw a "pile"
+                    {
+                        DrawToScreen(i.xy, null, Color.White, "+");
+                    }
+                }
+            }
+            #endregion
+
             #region render actors to screen
             int[,] actorCount = new int[lvlW, lvlH];
             foreach (Actor a in actors)
@@ -409,74 +438,30 @@ namespace ODB
             }
             foreach (Actor a in actors)
             {
+                if (!vision[a.xy.x, a.xy.y]) continue;
                 if (screen.ContainsPoint(a.xy))
                 {
                     if (actorCount[a.xy.x, a.xy.y] == 1)
                     {
                         DrawToScreen(a.xy, a.bg, a.fg, a.tile);
-                        /*if (a.bg != null)
-                        {
-                            dfc.CellData.SetBackground(
-                                a.xy.x, a.xy.y, a.bg.Value
-                            );
-                        }
-                        else
-                        {
-                            Tile bgtile = map[a.xy.x, a.xy.y];
-                            dfc.CellData.SetBackground(
-                                a.xy.x - camX, a.xy.y - camY,
-                                bgtile.bg
-                            );
-                        }*/
-
-                        /*dfc.CellData.SetForeground(
-                            a.xy.x - camX, a.xy.y - camY,
-                            a.fg
-                        );
-
-                        dfc.CellData.Print(
-                            a.xy.x - camX, a.xy.y - camY,
-                            a.tile
-                        );*/
                     }
                     else //draw a "pile"
                     {
-                        /*dfc.CellData.SetBackground(
-                            a.xy.x - camX, a.xy.y - camY,
-                            map[a.xy.x, a.xy.y].bg
-                        );
-                        dfc.CellData.SetForeground(
-                            a.xy.x - camX, a.xy.y - camY,
-                            Color.White
-                        );
-                        dfc.CellData.Print(
-                            a.xy.x - camX, a.xy.y - camY,
-                            "*"
-                        );*/
-
                         DrawToScreen(a.xy, null, Color.White, "*");
                     }
                 }
             }
             #endregion
 
-            int[,] itemCount = new int[lvlW, lvlH];
-            foreach (Item i in items)
-            {
-                itemCount[i.xy.x, i.xy.y]++;
-            }
-            foreach (Item i in items)
-            {
-            }
-
             #region shittydevhumour<3
             //CHRISTMAS!
-            /*Random r = new Random();
+            /*Random rn = new Random();
             for (int i = 0; i < 80*25; i++)
             {
-                dfc.CellData.Print(i % 80, (i - i % 80) / 80, ((char)(i%255)) + "");
+                dfc.CellData.Print(i % 80, (i - i % 80) / 80,
+                    * ((char)(i%255)) + "");
                 dfc.CellData.SetForeground(i % 80, (i - i % 80) / 80,
-                    r.NextDouble() > 0.5 ? Color.Red : Color.Blue);
+                    rn.NextDouble() > 0.5 ? Color.Red : Color.Blue);
             }*/
             #endregion
 
