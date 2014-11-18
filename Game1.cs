@@ -159,7 +159,7 @@ namespace ODB
         List<Room> rooms;
 
         List<Actor> actors;
-        List<Item> items;
+        List<Item> items; //in world
 
         int camX, camY;
         int lvlW, lvlH;
@@ -172,8 +172,9 @@ namespace ODB
 
         Console inputRow;
 
-        bool question;
-        string answer;
+        bool questionPromptOpen;
+        string questionPromptAnswer;
+        List<int> acceptedInput;
         Action<string> questionReaction;
 
         public void DropItem(string item) //player
@@ -227,6 +228,7 @@ namespace ODB
             inputRow = new Console(80, 1);
             inputRow.Position = new Microsoft.Xna.Framework.Point(0, 3);
             inputRow.VirtualCursor.IsVisible = true;
+            acceptedInput = new List<int>();
             SadConsole.Engine.ConsoleRenderStack.Add(inputRow);
 
             #region dev dungeon
@@ -400,6 +402,15 @@ namespace ODB
                 "an" : "a";
         }
 
+        void setupQuestionPrompt(string q)
+        {
+            q = q + " ";
+            inputRow.CellData.Clear();
+            inputRow.CellData.Print(0, 0, q);
+            inputRow.VirtualCursor.Position =
+                new xnaPoint(q.Length, 0);
+        }
+
         protected override void Update(GameTime gameTime)
         {
             #region engineshit
@@ -431,7 +442,7 @@ namespace ODB
             Point offset = new Point(0, 0);
 
             //only do player movement if we're not currently asking something
-            if (!question)
+            if (!questionPromptOpen)
             {
                 if (KeyPressed(Keys.NumPad8)) offset.Nudge( 0,-1);
                 if (KeyPressed(Keys.NumPad9)) offset.Nudge( 1,-1);
@@ -444,15 +455,66 @@ namespace ODB
 
                 if (KeyPressed(Keys.D) && !shift)
                 {
-                    inputRow.CellData.Clear();
-                    inputRow.CellData.Print(0, 0, "Drop what? ");
-                    inputRow.VirtualCursor.Position =
-                        new xnaPoint("Drop what?".Length + 1, 0);
-                    question = true;
-                    //do acceptedInput stuff here?
-                    //so we set what kind of stuff we want on question
-                    // making instead?
-                    //also, maybe something with input length, I guess
+                    setupQuestionPrompt("Drop what?");
+                    questionPromptOpen = true;
+                    //maybe something with input length, I guess?
+
+                    acceptedInput.Clear();
+                    //letters+space
+                    for (int i = 65; i <= 90; i++) acceptedInput.Add(i);
+                    acceptedInput.Add(32);
+
+                    questionReaction = DropItem;
+                }
+
+                if (KeyPressed(Keys.G) && !shift)
+                {
+                    List<Item> onFloor = ItemsOnTile(player.xy);
+                    //int count = items.FindAll(x => x.xy == player.xy).Count;
+                    if (onFloor.Count > 0)
+                    {
+                        if (onFloor.Count > 1)
+                        {
+                            string _q = "Pick up what? [";
+                            for (int i = 0; i < onFloor.Count; i++)
+                                _q += (char)(97 + i);
+                            _q += "]";
+                            //setupQuestionPrompt("Pick up what?");
+                            setupQuestionPrompt(_q);
+                            questionPromptOpen = true;
+                            acceptedInput.Clear();
+                            for (int i = 65; i <= 90; i++) acceptedInput.Add(i);
+
+                            questionReaction = delegate(string s)
+                            {
+                                s = s.ToUpper();
+                                int i = (int)s[0];
+                                i -= 65;
+                                List<Item> onTile = ItemsOnTile(player.xy);
+                                Item it = onTile[Math.Min(onTile.Count, i)];
+                                player.inventory.Add(it);
+                                items.Remove(it);
+                                log.Add("Picked up " + it.name + ".");
+                            };
+                        }
+                        else
+                        {
+                            player.inventory.Add(onFloor[0]);
+                            items.Remove(onFloor[0]);
+                            log.Add("Picked up " + onFloor[0].name + ".");
+                        }
+                    }
+                }
+
+                //just general test thing
+                if (KeyPressed(Keys.F1))
+                {
+                    setupQuestionPrompt("How many?");
+                    questionPromptOpen = true;
+
+                    acceptedInput.Clear();
+                    for (int i = 48; i <= 57; i++) acceptedInput.Add(i);
+
                     questionReaction = DropItem;
                 }
             }
@@ -460,25 +522,18 @@ namespace ODB
             {
                 Keys[] pk = ks.GetPressedKeys();
                 Keys[] opk = oks.GetPressedKeys();
-                List<int> acceptedInput = new List<int>();
 
-                for (int i = 65; i <= 90; i++)
-                {
-                    acceptedInput.Add(i);
-                }
-                acceptedInput.Add(32);
-
-                //for (int i = 65; i <= 90; i++)
                 foreach (int i in acceptedInput)
                 {
                     if (pk.Contains((Keys)i) && !opk.Contains((Keys)i))
                     {
-                        //char c = (char)(i + (shift ? 0 : 32));
                         char c = (char)i;
+                        //if our char is a letter, affect it by shift
                         if(i >= 65 && i <= 90)
                             c += (char)(shift ? 0 : 32);
-                        answer += c;
+                        questionPromptAnswer += c;
                         
+                        //type it out
                         inputRow.CellData.Print(
                             inputRow.VirtualCursor.Position.X,
                             inputRow.VirtualCursor.Position.Y,
@@ -488,9 +543,9 @@ namespace ODB
                 }
                 if (KeyPressed(Keys.Back))
                 {
-                    if (answer.Length > 0)
+                    if (questionPromptAnswer.Length > 0)
                     {
-                        answer = answer.Substring(0, answer.Length - 1);
+                        questionPromptAnswer = questionPromptAnswer.Substring(0, questionPromptAnswer.Length - 1);
                         inputRow.VirtualCursor.Left(1);
                         inputRow.CellData.Print(
                             inputRow.VirtualCursor.Position.X,
@@ -500,13 +555,13 @@ namespace ODB
                 }
                 if (KeyPressed(Keys.Enter))
                 {
-                    question = false;
-                    questionReaction(answer);
+                    questionPromptOpen = false;
+                    questionReaction(questionPromptAnswer);
                 }
                 if (KeyPressed(Keys.Escape))
                 {
-                    answer = "";
-                    question = false;
+                    questionPromptAnswer = "";
+                    questionPromptOpen = false;
                 }
             }
 
@@ -656,7 +711,7 @@ namespace ODB
                 );
             }
 
-            inputRow.IsVisible = question;
+            inputRow.IsVisible = questionPromptOpen;
             //inputRow.VirtualCursor.IsVisible = question;
             #endregion
 
