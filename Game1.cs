@@ -109,9 +109,26 @@ namespace ODB
         }
     }
 
+    enum dollSlot
+    {
+        Head,
+        Eyes,
+        Face,
+        Neck,
+        Torso,
+        Hand,
+        Offhand,
+        Legs,
+        Feet
+    }
+
     class Actor : gObject
     {
         public List<Item> inventory;
+
+        public int strength, dexterity, intelligence;
+
+        public Dictionary<dollSlot, Item> paperDoll;
 
         public Actor(
             Point xy, Color? bg, Color fg, string tile, string name
@@ -119,12 +136,26 @@ namespace ODB
             base(xy, bg, fg, tile, name)
         {
             inventory = new List<Item>();
+            paperDoll = new Dictionary<dollSlot, Item>();
+        }
+    }
+
+    class Pair<T, S>
+    {
+        T first;
+        S second;
+
+        public Pair(T a, S b)
+        {
+            first = a;
+            second = b;
         }
     }
 
     class Item : gObject
     {
         int count;
+        public List<dollSlot> equipSlots;
 
         public Item(
             Point xy, Color? bg, Color fg, string tile, string name
@@ -132,6 +163,7 @@ namespace ODB
             base(xy, bg, fg, tile, name)
         {
             count = 1;
+            equipSlots = new List<dollSlot>();
         }
     }
     #endregion
@@ -182,6 +214,10 @@ namespace ODB
         int space;
 
         Console inventoryConsole;
+
+        List<dollSlot> standardHuman;
+
+        Console statRowConsole;
 
         protected override void Initialize()
         {
@@ -234,6 +270,15 @@ namespace ODB
             inventoryConsole.IsVisible = false;
             SadConsole.Engine.ConsoleRenderStack.Add(inventoryConsole);
 
+            standardHuman = new List<dollSlot>();
+            //todo: lazy non-just-loop-through-the-enum definition of human
+            foreach(dollSlot ds in Enum.GetValues(typeof(dollSlot)))
+                standardHuman.Add(ds);
+
+            statRowConsole = new Console(80, 2);
+            statRowConsole.Position = new xnaPoint(0, 23);
+            SadConsole.Engine.ConsoleRenderStack.Add(statRowConsole);
+
             acceptedInput = new List<int>();
 
             letters = new List<int>();
@@ -266,6 +311,10 @@ namespace ODB
                 )
             );
 
+            standardHuman.ForEach(x =>
+                player.paperDoll.Add(x, null)
+            );
+
             actors.Add(
                 new Actor(
                     new Point(12, 13), null, Color.Red, "&", "Demigorgon"
@@ -274,20 +323,26 @@ namespace ODB
             #endregion
 
             #region dev items
+            Item it;
+
             items.Add(
-                new Item(
+                it = new Item(
                     new Point(13, 13), null, Color.Green, ")", "Longsword"
                 )
             );
 
+            it.equipSlots = new List<dollSlot>{ dollSlot.Hand };
+
             items.Add(
-                new Item(
+                it = new Item(
                     new Point(13, 13), null, Color.Green, ")", "Snickersnee"
                 )
             );
 
+            it.equipSlots = new List<dollSlot>{ dollSlot.Hand };
+
             items.Add(
-                new Item(
+                it = new Item(
                     new Point(13, 12), null, Color.Green, ")", "Vorpal Blade"
                 )
             );
@@ -517,6 +572,7 @@ namespace ODB
                     questionReaction = delegate(string s)
                     {
                         //same thing goes as with the pick-up reaction.
+                        if (s.Length <= 0) return;
                         s = s.ToUpper();
                         int i = ((int)s[0])-65;
                         if (i < player.inventory.Count)
@@ -530,6 +586,86 @@ namespace ODB
                     };
                 }
                 #endregion
+
+                if (KeyPressed(Keys.W) && !shift)
+                {
+                    List<Item> equipables = new List<Item>();
+
+                    foreach (Item it in player.inventory)
+                        //is it equipable?
+                        if (it.equipSlots.Count > 0)
+                            equipables.Add(it);
+
+                    if (equipables.Count > 0)
+                    {
+                        if (equipables.Count > 1)
+                        {
+                            string _q = "Wield what? [";
+                            for (int i = 0; i < equipables.Count; i++)
+                                _q += (char)(97 + i);
+                            _q += "]";
+                            setupQuestionPrompt(_q);
+                            questionPromptOpen = true;
+
+                            acceptedInput.Clear();
+                            acceptedInput.AddRange(letters);
+
+                            questionReaction = delegate(string s)
+                            {
+                                if (s.Length <= 0) return;
+                                s = s.ToUpper();
+                                int i = ((int)s[0])-65;
+
+                                //okay this might be a good reason not to
+                                //inline, I guess all sorts of wonky shit
+                                //could happen here since ~equipables is in
+                                //scope here~!
+                                equipables.Clear();
+                                foreach (Item it in player.inventory)
+                                    //is it equipable?
+                                    if (it.equipSlots.Count > 0)
+                                        equipables.Add(it);
+
+                                Item selected = equipables[i];
+                                bool canequip = true;
+                                foreach (dollSlot ds in selected.equipSlots)
+                                {
+                                    //something in the slot? => no equip
+                                    if (player.paperDoll[ds] != null)
+                                        canequip = false;
+                                }
+                                if (canequip)
+                                {
+                                    log.Add("Equipped "+ selected.name);
+                                    foreach (dollSlot ds in selected.equipSlots)
+                                    {
+                                        player.paperDoll[ds] = selected;
+                                    }
+                                }
+                            };
+                        }
+                        else
+                        {
+                            Item it = equipables[0];
+
+                            bool canequip = true;
+                            foreach (dollSlot ds in it.equipSlots)
+                            {
+                                //something in the slot? => no equip
+                                if (player.paperDoll[ds] != null)
+                                    canequip = false;
+                            }
+                            if (canequip)
+                            {
+                                log.Add("Equipped "+ it.name);
+                                foreach (dollSlot ds in it.equipSlots)
+                                {
+                                    player.paperDoll[ds] = it;
+                                }
+                            }
+                        }
+                    }
+                }
 
                 #region get
                 if (KeyPressed(Keys.G) && !shift)
@@ -551,6 +687,7 @@ namespace ODB
 
                             questionReaction = delegate(string s)
                             {
+                                if (s.Length <= 0) return;
                                 //currently makes no difference between a and A.
                                 //easy to implement when it starts feeling
                                 //necessary though.
@@ -809,10 +946,27 @@ namespace ODB
 
             for (int i = 0; i < player.inventory.Count; i++)
             {
+                bool equipped =
+                    player.paperDoll.Values.Contains(player.inventory[i]);
+
+                string name = "" + ((char)(97 + i));
+                name += " - " + player.inventory[i].name;
+                if (equipped) name += " (equipped)";
+
                 inventoryConsole.CellData.Print(
-                    2, i+1, ((char)(97+i))+" - "+player.inventory[i].name);
+                    //2, i+1, ((char)(97+i))+" - "+player.inventory[i].name);
+                    2, i+1, name);
             }
             #endregion
+
+            statRowConsole.CellData.Clear();
+            string namerow = player.name + " - Delver";
+            statRowConsole.CellData.Print(0, 0, namerow);
+            string statrow = "";
+            statrow += "STR - " + player.strength + " ; ";
+            statrow += "DEX - " + player.dexterity + " ; ";
+            statrow += "INT - " + player.intelligence;
+            statRowConsole.CellData.Print(0, 1, statrow);
 
             #endregion
 
