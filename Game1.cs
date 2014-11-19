@@ -9,6 +9,9 @@ using Microsoft.Xna.Framework.Graphics;
 using Console = SadConsole.Consoles.Console;
 using xnaPoint = Microsoft.Xna.Framework.Point;
 
+//general todo idea:
+// question prompt ~stack~, instead of just one, like it is atm?
+
 namespace ODB
 {
     #region structure
@@ -25,7 +28,7 @@ namespace ODB
         }
     }
 
-    struct Point
+    public struct Point
     {
         public int x, y;
         
@@ -51,7 +54,7 @@ namespace ODB
         }
     }
 
-    struct Rect
+    public struct Rect
     {
         public Point xy, wh;
 
@@ -90,7 +93,7 @@ namespace ODB
         }
     }
 
-    class gObject
+    public class gObject
     {
         public Point xy;
         public Color? bg;
@@ -109,7 +112,7 @@ namespace ODB
         }
     }
 
-    enum dollSlot
+    public enum dollSlot
     {
         Head,
         Eyes,
@@ -122,7 +125,7 @@ namespace ODB
         Feet
     }
 
-    class Actor : gObject
+    public class Actor : gObject
     {
         public List<Item> inventory;
 
@@ -152,7 +155,7 @@ namespace ODB
         }
     }
 
-    class Item : gObject
+    public class Item : gObject
     {
         int count;
         public List<dollSlot> equipSlots;
@@ -171,6 +174,7 @@ namespace ODB
     public class Game1 : Microsoft.Xna.Framework.Game
     {
         #region engineshit
+
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
         Console dfc;
@@ -190,17 +194,17 @@ namespace ODB
         bool[,] vision;
         List<Room> rooms;
 
-        List<Actor> actors;
-        List<Item> items; //in world
+        public List<Actor> actors;
+        public List<Item> items; //in world
 
-        Actor player;
+        public Actor player;
 
         int camX, camY;
         int lvlW, lvlH;
         int scrW, scrH;
 
         Console logConsole;
-        List<string> log;
+        public List<string> log;
 
         Console inputRowConsole;
 
@@ -236,6 +240,8 @@ namespace ODB
             SadConsole.Engine.DefaultFont.ResizeGraphicsDeviceManager(
                 graphics, 80, 25, 0, 0);
             #endregion
+
+            Player.Game = this;
 
             dfc = new Console(80, 25);
             SadConsole.Engine.ConsoleRenderStack.Add(dfc);
@@ -422,7 +428,7 @@ namespace ODB
             return roomList;
         }
 
-        List<Item> ItemsOnTile(Point xy)
+        public List<Item> ItemsOnTile(Point xy)
         {
             return items.FindAll(x => x.xy == xy);
         }
@@ -555,38 +561,23 @@ namespace ODB
                 if (KeyPressed(Keys.D) && !shift)
                 {
                     string _q = "Drop what? [";
+                    acceptedInput.Clear();
                     for (int i = 0; i < player.inventory.Count; i++)
-                        _q += (char)(97 + i);
+                    {
+                        char index = (char)(97 + i);
+                        //_q += (char)(97 + i);
+                        _q += index;
+                        acceptedInput.Add((int)(index+"").ToUpper()[0]);
+                    }
                     _q += "]";
                     setupQuestionPrompt(_q);
                     questionPromptOpen = true;
 
-                    acceptedInput.Clear();
-                    acceptedInput.AddRange(letters);
-
-                    //it is probably better to not inline these,
-                    //but I guess it is easier for now.
-                    //should only be used by the player either way, so not
-                    //entirely illogical to keep around here.
-                    //both ways work either way.
-                    questionReaction = delegate(string s)
-                    {
-                        //same thing goes as with the pick-up reaction.
-                        if (s.Length <= 0) return;
-                        s = s.ToUpper();
-                        int i = ((int)s[0])-65;
-                        if (i < player.inventory.Count)
-                        {
-                            Item it = player.inventory[i];
-                            player.inventory.Remove(it);
-                            it.xy = player.xy;
-                            items.Add(it);
-                            log.Add("Dropped " + it.name + ".");
-                        }
-                    };
+                    questionReaction = Player.Drop;
                 }
                 #endregion
 
+                #region wield
                 if (KeyPressed(Keys.W) && !shift)
                 {
                     List<Item> equipables = new List<Item>();
@@ -601,48 +592,21 @@ namespace ODB
                         if (equipables.Count > 1)
                         {
                             string _q = "Wield what? [";
-                            for (int i = 0; i < equipables.Count; i++)
-                                _q += (char)(97 + i);
+                            acceptedInput.Clear();
+                            foreach (Item it in equipables)
+                            {
+                                //show the character corresponding with the one
+                                //shown in the inventory.
+                                char index =
+                                    (char)(97 + player.inventory.IndexOf(it));
+                                _q += index;
+                                acceptedInput.Add((int)(index + "").ToUpper()[0]);
+                            }
                             _q += "]";
                             setupQuestionPrompt(_q);
                             questionPromptOpen = true;
 
-                            acceptedInput.Clear();
-                            acceptedInput.AddRange(letters);
-
-                            questionReaction = delegate(string s)
-                            {
-                                if (s.Length <= 0) return;
-                                s = s.ToUpper();
-                                int i = ((int)s[0])-65;
-
-                                //okay this might be a good reason not to
-                                //inline, I guess all sorts of wonky shit
-                                //could happen here since ~equipables is in
-                                //scope here~!
-                                equipables.Clear();
-                                foreach (Item it in player.inventory)
-                                    //is it equipable?
-                                    if (it.equipSlots.Count > 0)
-                                        equipables.Add(it);
-
-                                Item selected = equipables[i];
-                                bool canequip = true;
-                                foreach (dollSlot ds in selected.equipSlots)
-                                {
-                                    //something in the slot? => no equip
-                                    if (player.paperDoll[ds] != null)
-                                        canequip = false;
-                                }
-                                if (canequip)
-                                {
-                                    log.Add("Equipped "+ selected.name);
-                                    foreach (dollSlot ds in selected.equipSlots)
-                                    {
-                                        player.paperDoll[ds] = selected;
-                                    }
-                                }
-                            };
+                            questionReaction = Player.Wield;
                         }
                         else
                         {
@@ -657,7 +621,7 @@ namespace ODB
                             }
                             if (canequip)
                             {
-                                log.Add("Equipped "+ it.name);
+                                log.Add("Equipped " + it.name + ".");
                                 foreach (dollSlot ds in it.equipSlots)
                                 {
                                     player.paperDoll[ds] = it;
@@ -665,7 +629,12 @@ namespace ODB
                             }
                         }
                     }
+                    else
+                    {
+                        log.Add("Nothing to wield.");
+                    }
                 }
+                #endregion
 
                 #region get
                 if (KeyPressed(Keys.G) && !shift)
@@ -676,8 +645,13 @@ namespace ODB
                         if (onFloor.Count > 1)
                         {
                             string _q = "Pick up what? [";
+                            acceptedInput.Clear();
                             for (int i = 0; i < onFloor.Count; i++)
-                                _q += (char)(97 + i);
+                            {
+                                char index = (char)(97 + i);
+                                _q += index;
+                                acceptedInput.Add((int)(index+"").ToUpper()[0]);
+                            }
                             _q += "]";
                             setupQuestionPrompt(_q);
                             questionPromptOpen = true;
@@ -685,24 +659,7 @@ namespace ODB
                             acceptedInput.Clear();
                             acceptedInput.AddRange(letters);
 
-                            questionReaction = delegate(string s)
-                            {
-                                if (s.Length <= 0) return;
-                                //currently makes no difference between a and A.
-                                //easy to implement when it starts feeling
-                                //necessary though.
-                                s = s.ToUpper();
-                                int i = ((int)s[0])-65;
-                                List<Item> onTile = ItemsOnTile(player.xy);
-
-                                if (i < onTile.Count)
-                                {
-                                    Item it = onTile[i];
-                                    player.inventory.Add(it);
-                                    items.Remove(it);
-                                    log.Add("Picked up " + it.name + ".");
-                                }
-                            };
+                            questionReaction = Player.Get;
                         }
                         else
                         {
@@ -929,6 +886,8 @@ namespace ODB
             int inventoryW = inventoryConsole.ViewArea.Width;
             int inventoryH = inventoryConsole.ViewArea.Height;
 
+            inventoryConsole.CellData.Clear();
+
             DrawBorder(
                 inventoryConsole,
                 new Rect(
@@ -954,8 +913,8 @@ namespace ODB
                 if (equipped) name += " (equipped)";
 
                 inventoryConsole.CellData.Print(
-                    //2, i+1, ((char)(97+i))+" - "+player.inventory[i].name);
-                    2, i+1, name);
+                    2, i+1, name
+                );
             }
             #endregion
 
