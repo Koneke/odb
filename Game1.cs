@@ -14,162 +14,6 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 
 namespace ODB
 {
-    #region structure
-    class Tile
-    {
-        public Color bg, fg;
-        public string tile;
-
-        public Tile(Color bg, Color fg, string tile)
-        {
-            this.bg = bg;
-            this.fg = fg;
-            this.tile = tile;
-        }
-    }
-
-    public struct Point
-    {
-        public int x, y;
-        
-        public Point(int x, int y) {
-            this.x = x;
-            this.y = y;
-        }
-
-        public void Nudge(int x, int y)
-        {
-            this.x += x;
-            this.y += y;
-        }
-
-        public static bool operator ==(Point a, Point b)
-        {
-            return a.x == b.x && a.y == b.y;
-        }
-
-        public static bool operator !=(Point a, Point b)
-        {
-            return !(a == b);
-        }
-    }
-
-    public struct Rect
-    {
-        public Point xy, wh;
-
-        public Rect(Point xy, Point wh)
-        {
-            this.xy = xy;
-            this.wh = wh;
-        }
-
-        public bool ContainsPoint(Point p)
-        {
-            return
-                p.x >= xy.x &&
-                p.y >= xy.y &&
-                p.x < xy.x + wh.x &&
-                p.y < xy.y + wh.y;
-        }
-    }
-
-    class Room
-    {
-        public List<Rect> rects;
-
-        public Room()
-        {
-            rects = new List<Rect>();
-        }
-
-        public bool ContainsPoint(Point p)
-        {
-            foreach (Rect r in rects)
-            {
-                if (r.ContainsPoint(p)) return true;
-            }
-            return false;
-        }
-    }
-
-    public class gObject
-    {
-        public Point xy;
-        public Color? bg;
-        public Color fg;
-        public string tile;
-        public string name;
-
-        public gObject(
-            Point xy, Color? bg, Color fg, string tile, string name
-        ) {
-            this.xy = xy;
-            this.bg = bg;
-            this.fg = fg;
-            this.tile = tile;
-            this.name = name;
-        }
-    }
-
-    public enum dollSlot
-    {
-        Head,
-        Eyes,
-        Face,
-        Neck,
-        Torso,
-        Hand,
-        Offhand,
-        Legs,
-        Feet
-    }
-
-    public class Actor : gObject
-    {
-        public List<Item> inventory;
-
-        public int strength, dexterity, intelligence;
-
-        public Dictionary<dollSlot, Item> paperDoll;
-
-        public Actor(
-            Point xy, Color? bg, Color fg, string tile, string name
-        ) :
-            base(xy, bg, fg, tile, name)
-        {
-            inventory = new List<Item>();
-            paperDoll = new Dictionary<dollSlot, Item>();
-        }
-    }
-
-    class Pair<T, S>
-    {
-        T first;
-        S second;
-
-        public Pair(T a, S b)
-        {
-            first = a;
-            second = b;
-        }
-    }
-
-    public class Item : gObject
-    {
-        int count;
-        public List<dollSlot> equipSlots;
-
-        public Item(
-            Point xy, Color? bg, Color fg, string tile, string name
-        ) :
-            base(xy, bg, fg, tile, name)
-        {
-            count = 1;
-            equipSlots = new List<dollSlot>();
-        }
-    }
-    #endregion
 
     public class Game1 : Microsoft.Xna.Framework.Game
     {
@@ -223,6 +67,30 @@ namespace ODB
 
         Console statRowConsole;
 
+        public void SetupConsoles()
+        {
+            dfc = new Console(80, 25);
+            SadConsole.Engine.ConsoleRenderStack.Add(dfc);
+            SadConsole.Engine.ActiveConsole = dfc;
+
+            logConsole = new Console(80, 3);
+            SadConsole.Engine.ConsoleRenderStack.Add(logConsole);
+
+            inputRowConsole = new Console(80, 1);
+            inputRowConsole.Position = new xnaPoint(0, 3);
+            inputRowConsole.VirtualCursor.IsVisible = true;
+            SadConsole.Engine.ConsoleRenderStack.Add(inputRowConsole);
+
+            inventoryConsole = new Console(30, 25);
+            inventoryConsole.Position = new xnaPoint(50, 0);
+            inventoryConsole.IsVisible = false;
+            SadConsole.Engine.ConsoleRenderStack.Add(inventoryConsole);
+
+            statRowConsole = new Console(80, 2);
+            statRowConsole.Position = new xnaPoint(0, 23);
+            SadConsole.Engine.ConsoleRenderStack.Add(statRowConsole);
+        }
+
         protected override void Initialize()
         {
             #region engineshit
@@ -238,14 +106,13 @@ namespace ODB
                     SadConsole.Serializer.Deserialize<Font>(stream);
 
             SadConsole.Engine.DefaultFont.ResizeGraphicsDeviceManager(
-                graphics, 80, 25, 0, 0);
+                graphics, 80, 25, 0, 0
+            );
             #endregion
 
-            Player.Game = this;
+            SetupConsoles();
 
-            dfc = new Console(80, 25);
-            SadConsole.Engine.ConsoleRenderStack.Add(dfc);
-            SadConsole.Engine.ActiveConsole = dfc;
+            Player.Game = this;
 
             camX = camY = 0;
             scrW = 80;
@@ -263,27 +130,10 @@ namespace ODB
             log = new List<string>();
             log.Add("Something something dungeon");
 
-            logConsole = new Console(80, 3);
-            SadConsole.Engine.ConsoleRenderStack.Add(logConsole);
-
-            inputRowConsole = new Console(80, 1);
-            inputRowConsole.Position = new xnaPoint(0, 3);
-            inputRowConsole.VirtualCursor.IsVisible = true;
-            SadConsole.Engine.ConsoleRenderStack.Add(inputRowConsole);
-
-            inventoryConsole = new Console(30, 25);
-            inventoryConsole.Position = new xnaPoint(50, 0);
-            inventoryConsole.IsVisible = false;
-            SadConsole.Engine.ConsoleRenderStack.Add(inventoryConsole);
-
             standardHuman = new List<dollSlot>();
             //todo: lazy non-just-loop-through-the-enum definition of human
             foreach(dollSlot ds in Enum.GetValues(typeof(dollSlot)))
                 standardHuman.Add(ds);
-
-            statRowConsole = new Console(80, 2);
-            statRowConsole.Position = new xnaPoint(0, 23);
-            SadConsole.Engine.ConsoleRenderStack.Add(statRowConsole);
 
             acceptedInput = new List<int>();
 
@@ -526,14 +376,22 @@ namespace ODB
                 (ks.IsKeyDown(Keys.LeftShift) ||
                 ks.IsKeyDown(Keys.RightShift));
 
-            if (KeyPressed(Keys.Q)/* || KeyPressed(Keys.Escape)*/) this.Exit();
+            if (
+                KeyPressed(Keys.Q) ||
+                (KeyPressed(Keys.Escape) && !questionPromptOpen)
+            ) this.Exit();
 
             #region camera
             //todo: edge scrolling
-            /*if (KeyPressed(Keys.A))
-                camX+=10;
-            if(KeyPressed(Keys.F))
-                camX-=10;*/
+            int scrollSpeed = 3; ;
+            if (KeyPressed(Keys.Right))
+                camX+=scrollSpeed;
+            if(KeyPressed(Keys.Left))
+                camX-=scrollSpeed;
+            if (KeyPressed(Keys.Up))
+                camY+=scrollSpeed;
+            if(KeyPressed(Keys.Down))
+                camY-=scrollSpeed;
 
             camX = Math.Max(0, camX);
             camX = Math.Min(lvlW - scrW, camX);
@@ -587,47 +445,29 @@ namespace ODB
                         if (it.equipSlots.Count > 0)
                             equipables.Add(it);
 
+                    foreach (Item it in player.paperDoll.Values)
+                        if (it != null)
+                            //no double equipping :p
+                            equipables.Remove(it);
+
                     if (equipables.Count > 0)
                     {
-                        if (equipables.Count > 1)
+                        string _q = "Wield what? [";
+                        acceptedInput.Clear();
+                        foreach (Item it in equipables)
                         {
-                            string _q = "Wield what? [";
-                            acceptedInput.Clear();
-                            foreach (Item it in equipables)
-                            {
-                                //show the character corresponding with the one
-                                //shown in the inventory.
-                                char index =
-                                    (char)(97 + player.inventory.IndexOf(it));
-                                _q += index;
-                                acceptedInput.Add((int)(index + "").ToUpper()[0]);
-                            }
-                            _q += "]";
-                            setupQuestionPrompt(_q);
-                            questionPromptOpen = true;
-
-                            questionReaction = Player.Wield;
+                            //show the character corresponding with the one
+                            //shown in the inventory.
+                            char index =
+                                (char)(97 + player.inventory.IndexOf(it));
+                            _q += index;
+                            acceptedInput.Add((int)(index + "").ToUpper()[0]);
                         }
-                        else
-                        {
-                            Item it = equipables[0];
+                        _q += "]";
+                        setupQuestionPrompt(_q);
+                        questionPromptOpen = true;
 
-                            bool canequip = true;
-                            foreach (dollSlot ds in it.equipSlots)
-                            {
-                                //something in the slot? => no equip
-                                if (player.paperDoll[ds] != null)
-                                    canequip = false;
-                            }
-                            if (canequip)
-                            {
-                                log.Add("Equipped " + it.name + ".");
-                                foreach (dollSlot ds in it.equipSlots)
-                                {
-                                    player.paperDoll[ds] = it;
-                                }
-                            }
-                        }
+                        questionReaction = Player.Wield;
                     }
                     else
                     {

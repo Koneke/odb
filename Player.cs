@@ -23,14 +23,7 @@ namespace ODB
         {
             if (answer.Length <= 0) return;
 
-            int i;
-            /*if (answer[0] >= 97 && answer[0] <= 122) //lower case
-                i = (int)answer[0] - 97;
-            else //upper case
-                i = (int)answer[0] - 39;*/
-            i = letterAnswerToIndex(answer[0]);
-            //no need to check for anything else since we have defined our
-            //accepted input already
+            int i = letterAnswerToIndex(answer[0]);
 
             if (i >= Game.player.inventory.Count)
             {
@@ -41,9 +34,16 @@ namespace ODB
             if (i < Game.player.inventory.Count)
             {
                 Item it = Game.player.inventory[i];
+
                 Game.player.inventory.Remove(it);
-                it.xy = Game.player.xy;
                 Game.items.Add(it);
+                it.xy = Game.player.xy;
+
+                //actually make sure to unwield/unwear as well
+                foreach (dollSlot ds in it.equipSlots)
+                    if(Game.player.paperDoll[ds] == it)
+                        Game.player.paperDoll[ds] = null;
+
                 Game.log.Add("Dropped " + it.name + ".");
             }
         }
@@ -61,7 +61,6 @@ namespace ODB
                 if (it.equipSlots.Count > 0)
                     equipables.Add(it);
 
-            //if (i >= equipables.Count)
             if (i >= Game.player.inventory.Count)
             {
                 Game.log.Add("Invalid selection ("+answer[0]+").");
@@ -74,19 +73,18 @@ namespace ODB
                 return;
             }
 
-            //Item selected = equipables[i];
             Item selected = Game.player.inventory[i];
-            bool canequip = true;
+            bool canEquip = true;
             foreach (dollSlot ds in selected.equipSlots)
             {
                 //something in the slot? => no equip
                 if (Game.player.paperDoll[ds] != null)
                 {
-                    canequip = false;
+                    canEquip = false;
                     Game.log.Add("Already using that slot.");
                 }
             }
-            if (canequip)
+            if (canEquip)
             {
                 Game.log.Add("Equipped "+ selected.name + ".");
                 foreach (dollSlot ds in selected.equipSlots)
