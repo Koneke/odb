@@ -161,16 +161,16 @@ namespace ODB
         List<Actor> actors;
         List<Item> items; //in world
 
+        Actor player;
+
         int camX, camY;
         int lvlW, lvlH;
         int scrW, scrH;
 
-        Actor player;
-
         Console logConsole;
         List<string> log;
 
-        Console inputRow;
+        Console inputRowConsole;
 
         bool questionPromptOpen;
         string questionPromptAnswer;
@@ -181,11 +181,7 @@ namespace ODB
         List<int> numbers;
         int space;
 
-        public void DropItem(string item) //player
-        {
-            //char c = item[0]; //input should only be one char anyways
-            log.Add("Would drop " + item + ", if that was implemented ;)");
-        }
+        Console inventoryConsole;
 
         protected override void Initialize()
         {
@@ -203,12 +199,11 @@ namespace ODB
 
             SadConsole.Engine.DefaultFont.ResizeGraphicsDeviceManager(
                 graphics, 80, 25, 0, 0);
+            #endregion
 
             dfc = new Console(80, 25);
-
             SadConsole.Engine.ConsoleRenderStack.Add(dfc);
             SadConsole.Engine.ActiveConsole = dfc;
-            #endregion
 
             camX = camY = 0;
             scrW = 80;
@@ -229,11 +224,17 @@ namespace ODB
             logConsole = new Console(80, 3);
             SadConsole.Engine.ConsoleRenderStack.Add(logConsole);
 
-            inputRow = new Console(80, 1);
-            inputRow.Position = new Microsoft.Xna.Framework.Point(0, 3);
-            inputRow.VirtualCursor.IsVisible = true;
+            inputRowConsole = new Console(80, 1);
+            inputRowConsole.Position = new xnaPoint(0, 3);
+            inputRowConsole.VirtualCursor.IsVisible = true;
+            SadConsole.Engine.ConsoleRenderStack.Add(inputRowConsole);
+
+            inventoryConsole = new Console(30, 25);
+            inventoryConsole.Position = new xnaPoint(50, 0);
+            inventoryConsole.IsVisible = false;
+            SadConsole.Engine.ConsoleRenderStack.Add(inventoryConsole);
+
             acceptedInput = new List<int>();
-            SadConsole.Engine.ConsoleRenderStack.Add(inputRow);
 
             letters = new List<int>();
             numbers = new List<int>();
@@ -402,6 +403,36 @@ namespace ODB
             );
         }
 
+        void DrawBorder(Console c, Rect r, Color bg, Color fg)
+        {
+            for (int x = 0; x < r.wh.x; x++)
+            {
+                inventoryConsole.CellData.Print(
+                    x, 0, (char)205+"", Color.DarkGray);
+                inventoryConsole.CellData.Print(
+                    x, r.wh.y-1, (char)205+"", Color.DarkGray);
+            }
+            for (int y = 0; y < r.wh.y; y++)
+            {
+                inventoryConsole.CellData.Print(
+                    0, y, (char)186+"", Color.DarkGray);
+                inventoryConsole.CellData.Print(
+                    r.wh.x-1, y, (char)186+"", Color.DarkGray);
+            }
+            inventoryConsole.CellData.Print(
+                0, 0, (char)201 + ""
+            );
+            inventoryConsole.CellData.Print(
+                r.wh.x-1, 0, (char)187 + ""
+            );
+            inventoryConsole.CellData.Print(
+                0, r.wh.y-1, (char)200 + ""
+            );
+            inventoryConsole.CellData.Print(
+                r.wh.x-1, r.wh.y-1, (char)188 + ""
+            );
+        }
+
         string article(string name)
         {
             //not ENTIRELY correct, whatwith exceptions,
@@ -416,9 +447,9 @@ namespace ODB
         {
             q = q + " ";
             questionPromptAnswer = "";
-            inputRow.CellData.Clear();
-            inputRow.CellData.Print(0, 0, q);
-            inputRow.VirtualCursor.Position =
+            inputRowConsole.CellData.Clear();
+            inputRowConsole.CellData.Print(0, 0, q);
+            inputRowConsole.VirtualCursor.Position =
                 new xnaPoint(q.Length, 0);
         }
 
@@ -546,6 +577,9 @@ namespace ODB
                 }
                 #endregion
 
+                if (KeyPressed(Keys.I))
+                    inventoryConsole.IsVisible = !inventoryConsole.IsVisible;
+
                 //just general test thing
                 if (KeyPressed(Keys.F1))
                 {
@@ -555,7 +589,7 @@ namespace ODB
                     acceptedInput.Clear();
                     acceptedInput.AddRange(numbers);
 
-                    questionReaction = DropItem;
+                    //questionReaction = DropItem;
                 }
             }
             else
@@ -575,11 +609,11 @@ namespace ODB
                         questionPromptAnswer += c;
                         
                         //type it out
-                        inputRow.CellData.Print(
-                            inputRow.VirtualCursor.Position.X,
-                            inputRow.VirtualCursor.Position.Y,
+                        inputRowConsole.CellData.Print(
+                            inputRowConsole.VirtualCursor.Position.X,
+                            inputRowConsole.VirtualCursor.Position.Y,
                             c+"");
-                        inputRow.VirtualCursor.Left(-1);
+                        inputRowConsole.VirtualCursor.Left(-1);
                     }
                 }
                 if (KeyPressed(Keys.Back))
@@ -587,10 +621,10 @@ namespace ODB
                     if (questionPromptAnswer.Length > 0)
                     {
                         questionPromptAnswer = questionPromptAnswer.Substring(0, questionPromptAnswer.Length - 1);
-                        inputRow.VirtualCursor.Left(1);
-                        inputRow.CellData.Print(
-                            inputRow.VirtualCursor.Position.X,
-                            inputRow.VirtualCursor.Position.Y,
+                        inputRowConsole.VirtualCursor.Left(1);
+                        inputRowConsole.CellData.Print(
+                            inputRowConsole.VirtualCursor.Position.X,
+                            inputRowConsole.VirtualCursor.Position.Y,
                             " ");
                     }
                 }
@@ -752,7 +786,34 @@ namespace ODB
                 );
             }
 
-            inputRow.IsVisible = questionPromptOpen;
+            inputRowConsole.IsVisible = questionPromptOpen;
+
+            #region inventory
+            int inventoryW = inventoryConsole.ViewArea.Width;
+            int inventoryH = inventoryConsole.ViewArea.Height;
+
+            DrawBorder(
+                inventoryConsole,
+                new Rect(
+                    new Point(0, 0),
+                    new Point(inventoryW, inventoryH)),
+                Color.Black,
+                Color.DarkGray
+            );
+
+            for (int i = 0; i < player.name.Length; i++)
+            {
+                inventoryConsole.CellData.Print(
+                    2, 0, player.name, Color.White);
+            }
+
+            for (int i = 0; i < player.inventory.Count; i++)
+            {
+                inventoryConsole.CellData.Print(
+                    2, i+1, ((char)(97+i))+" - "+player.inventory[i].name);
+            }
+            #endregion
+
             #endregion
 
             oks = ks;
