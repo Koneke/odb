@@ -177,6 +177,10 @@ namespace ODB
         List<int> acceptedInput;
         Action<string> questionReaction;
 
+        List<int> letters;
+        List<int> numbers;
+        int space;
+
         public void DropItem(string item) //player
         {
             //char c = item[0]; //input should only be one char anyways
@@ -230,6 +234,12 @@ namespace ODB
             inputRow.VirtualCursor.IsVisible = true;
             acceptedInput = new List<int>();
             SadConsole.Engine.ConsoleRenderStack.Add(inputRow);
+
+            letters = new List<int>();
+            numbers = new List<int>();
+            for (int i = 65; i <= 90; i++) letters.Add(i);
+            for (int i = 48; i <= 57; i++) numbers.Add(i);
+            space = 32;
 
             #region dev dungeon
             rooms = new List<Room>();
@@ -405,6 +415,7 @@ namespace ODB
         void setupQuestionPrompt(string q)
         {
             q = q + " ";
+            questionPromptAnswer = "";
             inputRow.CellData.Clear();
             inputRow.CellData.Print(0, 0, q);
             inputRow.VirtualCursor.Position =
@@ -438,12 +449,12 @@ namespace ODB
             camY = Math.Min(lvlH - scrH, camY);
             #endregion camera
 
-            #region player movement
             Point offset = new Point(0, 0);
 
             //only do player movement if we're not currently asking something
             if (!questionPromptOpen)
             {
+                #region movement
                 if (KeyPressed(Keys.NumPad8)) offset.Nudge( 0,-1);
                 if (KeyPressed(Keys.NumPad9)) offset.Nudge( 1,-1);
                 if (KeyPressed(Keys.NumPad6)) offset.Nudge( 1, 0);
@@ -452,25 +463,47 @@ namespace ODB
                 if (KeyPressed(Keys.NumPad1)) offset.Nudge(-1, 1);
                 if (KeyPressed(Keys.NumPad4)) offset.Nudge(-1, 0);
                 if (KeyPressed(Keys.NumPad7)) offset.Nudge(-1,-1);
+                #endregion
 
+                #region drop
                 if (KeyPressed(Keys.D) && !shift)
                 {
-                    setupQuestionPrompt("Drop what?");
+                    string _q = "Drop what? [";
+                    for (int i = 0; i < player.inventory.Count; i++)
+                        _q += (char)(97 + i);
+                    _q += "]";
+                    setupQuestionPrompt(_q);
                     questionPromptOpen = true;
-                    //maybe something with input length, I guess?
 
                     acceptedInput.Clear();
-                    //letters+space
-                    for (int i = 65; i <= 90; i++) acceptedInput.Add(i);
-                    acceptedInput.Add(32);
+                    acceptedInput.AddRange(letters);
 
-                    questionReaction = DropItem;
+                    //it is probably better to not inline these,
+                    //but I guess it is easier for now.
+                    //should only be used by the player either way, so not
+                    //entirely illogical to keep around here.
+                    //both ways work either way.
+                    questionReaction = delegate(string s)
+                    {
+                        //same thing goes as with the pick-up reaction.
+                        s = s.ToUpper();
+                        int i = ((int)s[0])-65;
+                        if (i < player.inventory.Count)
+                        {
+                            Item it = player.inventory[i];
+                            player.inventory.Remove(it);
+                            it.xy = player.xy;
+                            items.Add(it);
+                            log.Add("Dropped " + it.name + ".");
+                        }
+                    };
                 }
+                #endregion
 
+                #region get
                 if (KeyPressed(Keys.G) && !shift)
                 {
                     List<Item> onFloor = ItemsOnTile(player.xy);
-                    //int count = items.FindAll(x => x.xy == player.xy).Count;
                     if (onFloor.Count > 0)
                     {
                         if (onFloor.Count > 1)
@@ -479,22 +512,28 @@ namespace ODB
                             for (int i = 0; i < onFloor.Count; i++)
                                 _q += (char)(97 + i);
                             _q += "]";
-                            //setupQuestionPrompt("Pick up what?");
                             setupQuestionPrompt(_q);
                             questionPromptOpen = true;
+
                             acceptedInput.Clear();
-                            for (int i = 65; i <= 90; i++) acceptedInput.Add(i);
+                            acceptedInput.AddRange(letters);
 
                             questionReaction = delegate(string s)
                             {
+                                //currently makes no difference between a and A.
+                                //easy to implement when it starts feeling
+                                //necessary though.
                                 s = s.ToUpper();
-                                int i = (int)s[0];
-                                i -= 65;
+                                int i = ((int)s[0])-65;
                                 List<Item> onTile = ItemsOnTile(player.xy);
-                                Item it = onTile[Math.Min(onTile.Count, i)];
-                                player.inventory.Add(it);
-                                items.Remove(it);
-                                log.Add("Picked up " + it.name + ".");
+
+                                if (i < onTile.Count)
+                                {
+                                    Item it = onTile[i];
+                                    player.inventory.Add(it);
+                                    items.Remove(it);
+                                    log.Add("Picked up " + it.name + ".");
+                                }
                             };
                         }
                         else
@@ -505,6 +544,7 @@ namespace ODB
                         }
                     }
                 }
+                #endregion
 
                 //just general test thing
                 if (KeyPressed(Keys.F1))
@@ -513,13 +553,14 @@ namespace ODB
                     questionPromptOpen = true;
 
                     acceptedInput.Clear();
-                    for (int i = 48; i <= 57; i++) acceptedInput.Add(i);
+                    acceptedInput.AddRange(numbers);
 
                     questionReaction = DropItem;
                 }
             }
             else
             {
+                #region qp input
                 Keys[] pk = ks.GetPressedKeys();
                 Keys[] opk = oks.GetPressedKeys();
 
@@ -563,20 +604,21 @@ namespace ODB
                     questionPromptAnswer = "";
                     questionPromptOpen = false;
                 }
+                #endregion
             }
 
             player.xy.Nudge(offset.x, offset.y);
 
+            //if we have moved, do fun stuff.
             if (offset.x != 0 || offset.y != 0) {
-                //log.Add(player.xy.x + ", " + player.xy.y);
                 List<Item> itemsOnSquare = ItemsOnTile(player.xy);
+
                 switch (itemsOnSquare.Count)
                 {
                     case 0:
                         break;
                     case 1:
                         log.Add(
-                            //TODO: a/an
                             "There is " +
                             article(itemsOnSquare[0].name) + " " +
                             itemsOnSquare[0].name +
@@ -590,7 +632,6 @@ namespace ODB
                         break;
                 }
             }
-            #endregion
 
             #region vision
             for (int x = 0; x < lvlW; x++)
@@ -712,7 +753,6 @@ namespace ODB
             }
 
             inputRow.IsVisible = questionPromptOpen;
-            //inputRow.VirtualCursor.IsVisible = question;
             #endregion
 
             oks = ks;
