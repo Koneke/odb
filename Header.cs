@@ -161,6 +161,8 @@ namespace ODB
 
     public class gObject
     {
+        public static Game1 Game;
+
         public Point xy;
         public Color? bg;
         public Color fg;
@@ -196,6 +198,7 @@ namespace ODB
         public List<Item> inventory;
 
         public int strength, dexterity, intelligence;
+        public int hpMax, hpCurrent;
 
         public Dictionary<dollSlot, Item> paperDoll;
 
@@ -206,6 +209,38 @@ namespace ODB
         {
             inventory = new List<Item>();
             paperDoll = new Dictionary<dollSlot, Item>();
+        }
+
+        public void Attack(Actor target)
+        {
+            int hitRoll = Util.Roll("1d6") + dexterity;
+            int dodgeRoll = Util.Roll("1d6") + dexterity;
+            if (hitRoll >= dodgeRoll) {
+                //1d4, hardcoded current bare-hands damage
+                int damageRoll = Util.Roll("1d4") + strength;
+                target.hpCurrent -= damageRoll;
+
+                Game.log.Add(name + " strikes " + target.name +
+                    " (" + hitRoll + " vs " + dodgeRoll + ")" +
+                    " (-" + damageRoll + "hp)"
+                );
+
+                if (target.hpCurrent <= 0)
+                {
+                    Item corpse = new Item(
+                        target.xy, null, target.fg, "%",
+                        target.name + " corpse"
+                    );
+                    Game.items.Add(corpse);
+                    Game.actors.Remove(target);
+                }
+            }
+            else
+            {
+                Game.log.Add(name + " swings in the air." +
+                    " (" + hitRoll + " vs " + dodgeRoll + ")"
+                );
+            }
         }
     }
 

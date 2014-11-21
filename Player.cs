@@ -109,7 +109,7 @@ namespace ODB
 
             int i = letterAnswerToIndex(answer[0]);
             
-            List<Item> onTile = Game.ItemsOnTile(
+            List<Item> onTile = Util.ItemsOnTile(
                 Game.player.xy
             );
 
@@ -163,7 +163,7 @@ namespace ODB
             if (t.doorState == Door.Open)
             {
                 //first check if something's in the way
-                if (Game.ItemsOnTile(t).Count <= 0)
+                if (Util.ItemsOnTile(t).Count <= 0)
                 {
                     t.doorState = Door.Closed;
                     Game.log.Add("You closed the door.");

@@ -32,6 +32,8 @@ namespace ODB
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
         }
+
+        Game1 Game;
         #endregion
 
         KeyboardState ks, oks;
@@ -48,8 +50,8 @@ namespace ODB
         public Actor player;
 
         int camX, camY;
-        int lvlW, lvlH;
         int scrW, scrH;
+        public int lvlW, lvlH;
 
         public bool logPlayerActions;
         int logSize;
@@ -186,6 +188,8 @@ namespace ODB
         protected override void Initialize()
         {
             #region engineshit
+            gObject.Game = Player.Game = Util.Game = Game = this;
+
             IsMouseVisible = true;
             IsFixedTimeStep = false;
 
@@ -203,8 +207,6 @@ namespace ODB
             #endregion
 
             SetupConsoles();
-
-            Player.Game = this;
 
             camX = camY = 0;
             scrW = 80;
@@ -265,16 +267,26 @@ namespace ODB
                     new Point(12, 15), null, Color.Cyan, (char)1+"", "Moribund"
                 )
             );
+            player.strength = 5;
+            player.dexterity = 5;
+            player.intelligence = 5;
+            player.hpCurrent = player.hpMax = 10;
 
             standardHuman.ForEach(x =>
                 player.paperDoll.Add(x, null)
             );
 
+            Actor a;
             actors.Add(
-                new Actor(
+                a = new Actor(
                     new Point(12, 13), null, Color.Red, "&", "Demigorgon"
                 )
             );
+            a.strength = 3;
+            a.dexterity = 3;
+            a.intelligence = 3;
+            a.hpCurrent = a.hpMax = 10;
+
             #endregion
 
             #region dev items
@@ -387,20 +399,6 @@ namespace ODB
             return roomList;
         }
 
-        public List<Item> ItemsOnTile(Point xy)
-        {
-            return items.FindAll(x => x.xy == xy);
-        }
-
-        public List<Item> ItemsOnTile(Tile t)
-        {
-            for(int x = 0; x < lvlW; x++)
-                for(int y = 0; y < lvlH; y++)
-                    if(map[x, y] == t)
-                        return items.FindAll(z => z.xy == new Point(x, y));
-            return null;
-        }
-
         bool KeyPressed(Keys k)
         {
             return ks.IsKeyDown(k) && !oks.IsKeyDown(k);
@@ -477,7 +475,7 @@ namespace ODB
             q = q + " ";
             questionPromptAnswer = "";
             inputRowConsole.CellData.Clear();
-            inputRowConsole.CellData.Fill(Color.Black, Color.WhiteSmoke, ' ', null);
+            inputRowConsole.CellData.Fill(Color.Black, Color.White, ' ', null);
             inputRowConsole.CellData.Print(0, 0, q);
             inputRowConsole.VirtualCursor.Position =
                 new xnaPoint(q.Length, 0);
@@ -538,9 +536,9 @@ namespace ODB
             ) this.Exit();
 
             #region log
-            if (KeyPressed((Keys)0x6B))
+            if (KeyPressed((Keys)0x6B)) //np+
                 logSize = Math.Min(logConsole.ViewArea.Height, ++logSize);
-            if (KeyPressed((Keys)0x6D))
+            if (KeyPressed((Keys)0x6D)) //np-
                 logSize = Math.Max(0, --logSize);
             logConsole.Position = new xnaPoint(
                 0, -logConsole.ViewArea.Height + logSize
@@ -586,19 +584,44 @@ namespace ODB
                 if (offset.x != 0 || offset.y != 0)
                 {
                     bool legalMove = true;
-                    if (target == null) legalMove = false;
+                    if (target == null)
+                        legalMove = false;
                     else if (
                         target.doorState == Door.Closed || target.solid
-                    ) legalMove = false;
+                    )
+                        legalMove = false;
 
-                    if (!legalMove) offset = new Point(0, 0);
+                    if (!legalMove)
+                    {
+                        offset = new Point(0, 0);
+                        Game.log.Add("Bump!");
+                    }
+                    else
+                    {
+                        //}
+
+                        if (Util.ActorsOnTile(target).Count <= 0)
+                        {
+                            player.xy.Nudge(offset.x, offset.y);
+                        }
+                        else
+                        {
+                            //fighty time!
+                            offset = new Point(0, 0);
+
+                            //in reality, there should only be max 1.
+                            //but yknow, in case of...
+                            foreach (Actor a in Util.ActorsOnTile(target))
+                            {
+                                player.Attack(a);
+                            }
+                        }
+                    }
                 }
-
-                player.xy.Nudge(offset.x, offset.y);
 
                 //if we have moved, do fun stuff.
                 if (offset.x != 0 || offset.y != 0) {
-                    List<Item> itemsOnSquare = ItemsOnTile(player.xy);
+                    List<Item> itemsOnSquare = Util.ItemsOnTile(player.xy);
 
                     switch (itemsOnSquare.Count)
                     {
@@ -706,7 +729,7 @@ namespace ODB
                 #region get
                 if (KeyPressed(Keys.G) && !shift)
                 {
-                    List<Item> onFloor = ItemsOnTile(player.xy);
+                    List<Item> onFloor = Util.ItemsOnTile(player.xy);
                     if (onFloor.Count > 0)
                     {
                         if (onFloor.Count > 1)
