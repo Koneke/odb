@@ -21,6 +21,9 @@ namespace ODB
 
         public static void Drop(string answer)
         {
+            if(Game.logPlayerActions)
+                Game.log.Add(" > Drop item");
+
             if (answer.Length <= 0) return;
 
             int i = letterAnswerToIndex(answer[0]);
@@ -50,6 +53,9 @@ namespace ODB
 
         public static void Wield(string answer)
         {
+            if(Game.logPlayerActions)
+                Game.log.Add(" > Wield item");
+
             if (answer.Length <= 0) return;
 
             int i = letterAnswerToIndex(answer[0]);
@@ -96,6 +102,9 @@ namespace ODB
 
         public static void Get(string answer)
         {
+            if(Game.logPlayerActions)
+                Game.log.Add(" > Pick up item");
+
             if (answer.Length <= 0) return;
 
             int i = letterAnswerToIndex(answer[0]);
@@ -115,6 +124,58 @@ namespace ODB
             {
                 Game.log.Add("Invalid selection ("+answer[0]+").");
                 return;
+            }
+        }
+
+        public static void Open(string answer)
+        {
+            if(Game.logPlayerActions)
+                Game.log.Add(" > Open door");
+
+            Point offset = Game.NumpadToDirection(answer[0]);
+            Tile t = 
+                Game.map[
+                    Game.player.xy.x + offset.x,
+                    Game.player.xy.y + offset.y
+                ];
+            if (t.doorState == Door.Closed)
+            {
+                t.doorState = Door.Open;
+                Game.log.Add("You opened the door.");
+            }
+            else
+            {
+                Game.log.Add("There's no closed door there.");
+            }
+        }
+
+        public static void Close(string answer)
+        {
+            if(Game.logPlayerActions)
+                Game.log.Add(" > Close door");
+
+            Point offset = Game.NumpadToDirection(answer[0]);
+            Tile t = 
+                Game.map[
+                    Game.player.xy.x + offset.x,
+                    Game.player.xy.y + offset.y
+                ];
+            if (t.doorState == Door.Open)
+            {
+                //first check if something's in the way
+                if (Game.ItemsOnTile(t).Count <= 0)
+                {
+                    t.doorState = Door.Closed;
+                    Game.log.Add("You closed the door.");
+                }
+                else
+                {
+                    Game.log.Add("There's something in the way.");
+                }
+            }
+            else
+            {
+                Game.log.Add("There's no open door there.");
             }
         }
     }

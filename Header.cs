@@ -7,17 +7,86 @@ using System.Text;*/
 namespace ODB
 {
     #region structure
-    class Tile
+    public class Tile
     {
         public Color bg, fg;
         public string tile;
 
-        public Tile(Color bg, Color fg, string tile)
-        {
+        public bool solid;
+        public Door doorState;
+
+        public Tile(
+            Color bg,
+            Color fg,
+            string tile,
+            bool solid = false,
+            Door doorState = Door.None
+        ) {
             this.bg = bg;
             this.fg = fg;
             this.tile = tile;
+            this.solid = solid;
+            this.doorState = doorState;
         }
+
+        public string writeTile()
+        {
+            string s = "";
+            s += String.Format("{0:X2}", bg.R);
+            s += String.Format("{0:X2}", bg.G);
+            s += String.Format("{0:X2}", bg.B);
+            s += String.Format("{0:X2}", fg.R);
+            s += String.Format("{0:X2}", fg.G);
+            s += String.Format("{0:X2}", fg.B);
+            s += tile;
+            s += solid ? "1" : "0";
+            s += doorState == Door.None ?
+                "0" : (doorState == Door.Open ?
+                    "1" : "2"
+            );
+            return s;
+        }
+
+        public void readTile(string s)
+        {
+            bg = new Color(
+                Int32.Parse(s.Substring(0, 2),
+                    System.Globalization.NumberStyles.HexNumber),
+                Int32.Parse(s.Substring(2, 2),
+                    System.Globalization.NumberStyles.HexNumber),
+                Int32.Parse(s.Substring(4, 2),
+                    System.Globalization.NumberStyles.HexNumber)
+            );
+            fg = new Color(
+                Int32.Parse(s.Substring(6, 2),
+                    System.Globalization.NumberStyles.HexNumber),
+                Int32.Parse(s.Substring(8, 2),
+                    System.Globalization.NumberStyles.HexNumber),
+                Int32.Parse(s.Substring(10, 2),
+                    System.Globalization.NumberStyles.HexNumber)
+            );
+            tile = s.Substring(12, 1);
+            solid = s.Substring(13, 1) == "1";
+            switch (s.Substring(14, 1))
+            {
+                case "0":
+                    doorState = Door.None; break;
+                case "1":
+                    doorState = Door.Open; break;
+                case "2":
+                    doorState = Door.Closed; break;
+                default:
+                    throw new Exception("Badly formatted tile.");
+            }
+            return;
+        }
+    }
+
+    public enum Door
+    {
+        None,
+        Open,
+        Closed
     }
 
     public struct Point

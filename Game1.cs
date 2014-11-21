@@ -1,12 +1,16 @@
 using System;
-using SadConsole;
+using System.IO;
 using System.Linq;
-using SadConsole.Consoles;
-using Microsoft.Xna.Framework;
+using System.Text;
 using System.Collections.Generic;
+
+using SadConsole;
+using SadConsole.Consoles;
+using Console = SadConsole.Consoles.Console;
+
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Graphics;
-using Console = SadConsole.Consoles.Console;
 using xnaPoint = Microsoft.Xna.Framework.Point;
 
 //general todo idea:
@@ -33,7 +37,7 @@ namespace ODB
         KeyboardState ks, oks;
         bool shift;
 
-        Tile[,] map;
+        public Tile[,] map;
         bool[,] seen;
         bool[,] vision;
         List<Room> rooms;
@@ -47,6 +51,8 @@ namespace ODB
         int lvlW, lvlH;
         int scrW, scrH;
 
+        public bool logPlayerActions;
+        int logSize;
         Console logConsole;
         public List<string> log;
 
@@ -59,6 +65,7 @@ namespace ODB
 
         List<int> letters;
         List<int> numbers;
+        List<int> directions;
         int space;
 
         Console inventoryConsole;
@@ -67,28 +74,68 @@ namespace ODB
 
         Console statRowConsole;
 
+        void saveToFile(string path)
+        {
+            string cwd = Directory.GetCurrentDirectory();
+            path = "Save/test.lvl";
+
+            string file = "";
+            file += lvlW + "x" + lvlH + ";";
+
+            //NOTE, ONE /ROW/ AT A TIME
+            //AGAIN, Y FIRST, THEN X
+            for (int y = 0; y < lvlH; y++)
+            {
+                for (int x = 0; x < lvlW; x++)
+                {
+                    if (map[x, y] != null) file += map[x, y].writeTile();
+                    file += ";";
+                }
+            }
+
+            try
+            {
+                if(File.Exists(cwd + "/" + path)) {
+                    File.Delete(cwd + "/" + path);
+                }
+                using (FileStream fs = File.Create(cwd + "/" + path))
+                {
+                    Byte[] info = new UTF8Encoding(true).GetBytes(file);
+                    fs.Write(info, 0, info.Length);
+                }
+            } catch (Exception ex) {
+                //something went to hell
+            }
+            return;
+        }
+
         public void SetupConsoles()
         {
             dfc = new Console(80, 25);
-            SadConsole.Engine.ConsoleRenderStack.Add(dfc);
             SadConsole.Engine.ActiveConsole = dfc;
 
-            logConsole = new Console(80, 3);
-            SadConsole.Engine.ConsoleRenderStack.Add(logConsole);
+            //22 instead of 25 so inputRow and statRows fit.
+            logConsole = new Console(80, 22);
+            //part of the console is offscreen, so we can resize it downwards
+            logConsole.Position = new xnaPoint(0, -19);
 
             inputRowConsole = new Console(80, 1);
             inputRowConsole.Position = new xnaPoint(0, 3);
             inputRowConsole.VirtualCursor.IsVisible = true;
-            SadConsole.Engine.ConsoleRenderStack.Add(inputRowConsole);
 
             inventoryConsole = new Console(30, 25);
             inventoryConsole.Position = new xnaPoint(50, 0);
             inventoryConsole.IsVisible = false;
-            SadConsole.Engine.ConsoleRenderStack.Add(inventoryConsole);
 
             statRowConsole = new Console(80, 2);
             statRowConsole.Position = new xnaPoint(0, 23);
+
+            //draw order
+            SadConsole.Engine.ConsoleRenderStack.Add(dfc);
+            SadConsole.Engine.ConsoleRenderStack.Add(logConsole);
+            SadConsole.Engine.ConsoleRenderStack.Add(inputRowConsole);
             SadConsole.Engine.ConsoleRenderStack.Add(statRowConsole);
+            SadConsole.Engine.ConsoleRenderStack.Add(inventoryConsole);
         }
 
         protected override void Initialize()
@@ -127,6 +174,8 @@ namespace ODB
             actors = new List<Actor>();
             items = new List<Item>();
 
+            logPlayerActions = !true;
+            logSize = 3;
             log = new List<string>();
             log.Add("Something something dungeon");
 
@@ -141,6 +190,11 @@ namespace ODB
             numbers = new List<int>();
             for (int i = 65; i <= 90; i++) letters.Add(i);
             for (int i = 48; i <= 57; i++) numbers.Add(i);
+            directions = new List<int>{
+                (int)Keys.NumPad7, (int)Keys.NumPad8, (int)Keys.NumPad9,
+                (int)Keys.NumPad4,                    (int)Keys.NumPad6,
+                (int)Keys.NumPad1, (int)Keys.NumPad2, (int)Keys.NumPad3,
+            };
             space = 32;
 
             #region dev dungeon
@@ -215,7 +269,7 @@ namespace ODB
                         for (int y = 0; y < qq.wh.y; y++)
                         {
                             map[qq.xy.x + x, qq.xy.y + y] = new Tile(
-                                Color.Blue, Color.Red, "."
+                                Color.Black, Color.LightGray, "."
                             );
                             overlapCount[qq.xy.x + x, qq.xy.y + y]++;
                         }
@@ -257,20 +311,30 @@ namespace ODB
                             }
                             if (wall)
                             {
-                                if(overlapCount[qq.xy.x+x, qq.xy.y+y] <= 1)
+                                if (overlapCount[qq.xy.x + x, qq.xy.y + y] <= 1)
+                                {
                                     map[qq.xy.x + x, qq.xy.y + y] =
-                                        new Tile(Color.Gray, Color.Gray, " ");
+                                        new Tile(
+                                            Color.Gray, Color.Gray, " ", true
+                                        );
+                                }
                             }
                         }
                     }
                 }
             }
-#endregion
+            #endregion
+
+            //testdoor
+            map[14, 13].doorState = Door.Closed;
+            map[14, 13].fg = Color.SandyBrown;
+
+            saveToFile("");
 
             base.Initialize();
         }
 
-        List<Room> GetRoom(gObject go)
+        List<Room> GetRooms(gObject go)
         {
             List<Room> roomList = new List<Room>();
             foreach (Room r in rooms)
@@ -281,6 +345,15 @@ namespace ODB
         public List<Item> ItemsOnTile(Point xy)
         {
             return items.FindAll(x => x.xy == xy);
+        }
+
+        public List<Item> ItemsOnTile(Tile t)
+        {
+            for(int x = 0; x < lvlW; x++)
+                for(int y = 0; y < lvlH; y++)
+                    if(map[x, y] == t)
+                        return items.FindAll(z => z.xy == new Point(x, y));
+            return null;
         }
 
         bool KeyPressed(Keys k)
@@ -359,9 +432,47 @@ namespace ODB
             q = q + " ";
             questionPromptAnswer = "";
             inputRowConsole.CellData.Clear();
+            inputRowConsole.CellData.Fill(Color.Black, Color.WhiteSmoke, ' ', null);
             inputRowConsole.CellData.Print(0, 0, q);
             inputRowConsole.VirtualCursor.Position =
                 new xnaPoint(q.Length, 0);
+        }
+
+        public Point NumpadToDirection(char c)
+        {
+            Point p;
+            switch (c)
+            {
+                case (char)Keys.NumPad7:
+                    p = new Point(-1, -1);
+                    break;
+                case (char)Keys.NumPad8:
+                    p = new Point(0, -1);
+                    break;
+                case (char)Keys.NumPad9:
+                    p = new Point(1, -1);
+                    break;
+                case (char)Keys.NumPad4:
+                    p = new Point(-1, 0);
+                    break;
+                case (char)Keys.NumPad6:
+                    p = new Point(1, 0);
+                    break;
+                case (char)Keys.NumPad1:
+                    p = new Point(-1, 1);
+                    break;
+                case (char)Keys.NumPad2:
+                    p = new Point(0, 1);
+                    break;
+                case (char)Keys.NumPad3:
+                    p = new Point(1, 1);
+                    break;
+                default:
+                    throw new Exception(
+                        "Bad input (expected numpad keycode," +
+                        " got something weird instead).");
+            }
+            return p;
         }
 
         protected override void Update(GameTime gameTime)
@@ -380,6 +491,16 @@ namespace ODB
                 KeyPressed(Keys.Q) ||
                 (KeyPressed(Keys.Escape) && !questionPromptOpen)
             ) this.Exit();
+
+            #region log
+            if (KeyPressed((Keys)0x6B))
+                logSize = Math.Min(logConsole.ViewArea.Height, ++logSize);
+            if (KeyPressed((Keys)0x6D))
+                logSize = Math.Max(0, --logSize);
+            logConsole.Position = new xnaPoint(
+                0, -logConsole.ViewArea.Height + logSize
+            );
+            #endregion
 
             #region camera
             //todo: edge scrolling
@@ -413,6 +534,46 @@ namespace ODB
                 if (KeyPressed(Keys.NumPad1)) offset.Nudge(-1, 1);
                 if (KeyPressed(Keys.NumPad4)) offset.Nudge(-1, 0);
                 if (KeyPressed(Keys.NumPad7)) offset.Nudge(-1,-1);
+
+                Tile target =
+                    map[player.xy.x + offset.x, player.xy.y + offset.y];
+
+                if (offset.x != 0 || offset.y != 0)
+                {
+                    bool legalMove = true;
+                    if (target == null) legalMove = false;
+                    else if (
+                        target.doorState == Door.Closed || target.solid
+                    ) legalMove = false;
+
+                    if (!legalMove) offset = new Point(0, 0);
+                }
+
+                player.xy.Nudge(offset.x, offset.y);
+
+                //if we have moved, do fun stuff.
+                if (offset.x != 0 || offset.y != 0) {
+                    List<Item> itemsOnSquare = ItemsOnTile(player.xy);
+
+                    switch (itemsOnSquare.Count)
+                    {
+                        case 0:
+                            break;
+                        case 1:
+                            log.Add(
+                                "There is " +
+                                article(itemsOnSquare[0].name) + " " +
+                                itemsOnSquare[0].name +
+                                " here."
+                            );
+                            break;
+                        default:
+                            log.Add(
+                                "There are " + itemsOnSquare.Count + " items here."
+                            );
+                            break;
+                    }
+                }
                 #endregion
 
                 #region drop
@@ -423,7 +584,6 @@ namespace ODB
                     for (int i = 0; i < player.inventory.Count; i++)
                     {
                         char index = (char)(97 + i);
-                        //_q += (char)(97 + i);
                         _q += index;
                         acceptedInput.Add((int)(index+"").ToUpper()[0]);
                     }
@@ -432,6 +592,28 @@ namespace ODB
                     questionPromptOpen = true;
 
                     questionReaction = Player.Drop;
+                }
+                #endregion
+
+                #region open
+                if (KeyPressed(Keys.O) && !shift)
+                {
+                    acceptedInput.Clear();
+                    acceptedInput.AddRange(directions);
+                    setupQuestionPrompt("Open where?");
+                    questionPromptOpen = true;
+                    questionReaction = Player.Open;
+                }
+                #endregion
+
+                #region open
+                if (KeyPressed(Keys.C) && !shift)
+                {
+                    acceptedInput.Clear();
+                    acceptedInput.AddRange(directions);
+                    setupQuestionPrompt("Close where?");
+                    questionPromptOpen = true;
+                    questionReaction = Player.Close;
                 }
                 #endregion
 
@@ -522,8 +704,6 @@ namespace ODB
 
                     acceptedInput.Clear();
                     acceptedInput.AddRange(numbers);
-
-                    //questionReaction = DropItem;
                 }
             }
             else
@@ -548,13 +728,22 @@ namespace ODB
                             inputRowConsole.VirtualCursor.Position.Y,
                             c+"");
                         inputRowConsole.VirtualCursor.Left(-1);
+
+                        //todo: choose whether to accept multichar input
+                        //or just one press. at the moment, forcing to one char.
+
+                        questionPromptOpen = false;
+                        questionReaction(questionPromptAnswer);
                     }
                 }
                 if (KeyPressed(Keys.Back))
                 {
                     if (questionPromptAnswer.Length > 0)
                     {
-                        questionPromptAnswer = questionPromptAnswer.Substring(0, questionPromptAnswer.Length - 1);
+                        questionPromptAnswer =
+                            questionPromptAnswer.Substring(
+                            0, questionPromptAnswer.Length - 1
+                        );
                         inputRowConsole.VirtualCursor.Left(1);
                         inputRowConsole.CellData.Print(
                             inputRowConsole.VirtualCursor.Position.X,
@@ -575,31 +764,6 @@ namespace ODB
                 #endregion
             }
 
-            player.xy.Nudge(offset.x, offset.y);
-
-            //if we have moved, do fun stuff.
-            if (offset.x != 0 || offset.y != 0) {
-                List<Item> itemsOnSquare = ItemsOnTile(player.xy);
-
-                switch (itemsOnSquare.Count)
-                {
-                    case 0:
-                        break;
-                    case 1:
-                        log.Add(
-                            "There is " +
-                            article(itemsOnSquare[0].name) + " " +
-                            itemsOnSquare[0].name +
-                            " here."
-                        );
-                        break;
-                    default:
-                        log.Add(
-                            "There are " + itemsOnSquare.Count + " items here."
-                        );
-                        break;
-                }
-            }
 
             #region vision
             for (int x = 0; x < lvlW; x++)
@@ -612,7 +776,7 @@ namespace ODB
             }
 
             //see room
-            foreach (Room R in GetRoom(player))
+            foreach (Room R in GetRooms(player))
             {
                 foreach (Rect r in R.rects)
                 {
@@ -634,15 +798,34 @@ namespace ODB
             {
                 for (int y = 0; y < 25; y++)
                 {
+                    //tile we're working on, (screen)X/Y and cam offsets
                     Tile t = map[x + camX, y + camY];
+
+                    //if the coordinate is void, skip
                     if (t == null) continue;
+
+                    //if the coordinate has no been seen, skip
                     if (!seen[x + camX, y + camY]) continue;
+
+                    //whether or not the player currently sees the tile
+                    bool inVision = vision[x + camX, y + camY];
 
                     dfc.CellData.SetBackground(x, y, t.bg * 1f);
                     dfc.CellData.SetForeground(
-                        x, y, t.fg * (vision[x+camX,y+camY] ? 1f : 0.3f)
+                        //x, y, t.fg * (vision[x+camX,y+camY] ? 1f : 0.3f)
+                        x, y, t.fg * (inVision ? 1f : 0.6f)
                     );
-                    dfc.CellData.Print(x, y, t.tile);
+
+                    string tileToDraw = t.tile;
+                    //doors override the normal tile
+                    //which shouldn't be a problem
+                    //if it is a problem, it's not, it's something else
+                    if (t.doorState == Door.Closed)
+                        tileToDraw = "+";
+                    if (t.doorState == Door.Open)
+                        tileToDraw = "/";
+
+                    dfc.CellData.Print(x, y, tileToDraw);
                 }
             }
             #endregion
@@ -709,6 +892,7 @@ namespace ODB
 
             #region render ui
             logConsole.CellData.Clear();
+            logConsole.CellData.Fill(Color.White, Color.Black, ' ', null);
             for (
                 int i = log.Count, n = 0;
                 i > 0 && n < logConsole.ViewArea.Height;
@@ -721,12 +905,14 @@ namespace ODB
             }
 
             inputRowConsole.IsVisible = questionPromptOpen;
+            inputRowConsole.Position = new xnaPoint(0, logSize);
 
             #region inventory
             int inventoryW = inventoryConsole.ViewArea.Width;
             int inventoryH = inventoryConsole.ViewArea.Height;
 
             inventoryConsole.CellData.Clear();
+            inventoryConsole.CellData.Fill(Color.White, Color.Black, ' ', null);
 
             DrawBorder(
                 inventoryConsole,
@@ -759,6 +945,7 @@ namespace ODB
             #endregion
 
             statRowConsole.CellData.Clear();
+            statRowConsole.CellData.Fill(Color.White, Color.Black, ' ', null);
             string namerow = player.name + " - Delver";
             statRowConsole.CellData.Print(0, 0, namerow);
             string statrow = "";
