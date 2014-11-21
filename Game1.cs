@@ -74,7 +74,7 @@ namespace ODB
 
         Console statRowConsole;
 
-        void saveToFile(string path)
+        string saveToFile(string path)
         {
             string cwd = Directory.GetCurrentDirectory();
             path = "Save/test.lvl";
@@ -106,7 +106,52 @@ namespace ODB
             } catch (Exception ex) {
                 //something went to hell
             }
-            return;
+            return file;
+        }
+
+        string loadFromFile(string path)
+        {
+            string cwd = Directory.GetCurrentDirectory();
+            path = "Save/test.lvl";
+            string file = "";
+
+            if(!File.Exists(cwd + "/" + path))
+                throw new Exception("Trying to load non-existing file.");
+
+            using(StreamReader reader =
+                new StreamReader(cwd + "/" + path, Encoding.UTF8))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                    file += line;
+            }
+
+            //start handling the read data
+            List<string> fileData = file.Split(';').ToList();
+
+            //this thing is currently dumb, make sure to actually update it
+            //whenever we change the header size
+            int headerLength = 1;
+
+            lvlW = int.Parse(fileData[0].Split('x')[0]);
+            lvlH = int.Parse(fileData[0].Split('x')[1]);
+
+            map = new Tile[lvlW, lvlH];
+            seen = new bool[lvlW, lvlH];
+            vision = new bool[lvlW, lvlH];
+
+            for (int i = 1; i < lvlW * lvlH; i++)
+            {
+                int j = i - headerLength;
+                int x = j % lvlW;
+                int y = (j - (j % lvlW))/lvlW;
+                if (fileData[i] == "")
+                    map[x, y] = null;
+                else
+                    map[x, y] = new Tile(fileData[i]);
+            }
+
+            return file;
         }
 
         public void SetupConsoles()
@@ -329,7 +374,7 @@ namespace ODB
             map[14, 13].doorState = Door.Closed;
             map[14, 13].fg = Color.SandyBrown;
 
-            saveToFile("");
+            loadFromFile("");
 
             base.Initialize();
         }

@@ -29,6 +29,11 @@ namespace ODB
             this.doorState = doorState;
         }
 
+        public Tile(string s)
+        {
+            readTile(s);
+        }
+
         public string writeTile()
         {
             string s = "";
