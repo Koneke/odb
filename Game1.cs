@@ -186,174 +186,14 @@ namespace ODB
             };
             space = 32;
 
-            //IO.ReadActorDefinitionsFromFile("Save/actors.def");
-            //IO.ReadItemDefinitionsFromFile("Save/items.def");
             rooms = new List<Room>();
-            #region dev dungeon
-            /*
-            Room r;
 
-            r = new Room();
-            r.rects.Add(new Rect(new Point(10, 10), new Point(5, 7)));
-            rooms.Add(r);
-
-            r = new Room();
-            r.rects.Add(new Rect(new Point(20, 10), new Point(5, 7)));
-            rooms.Add(r);
-
-            r = new Room();
-            r.rects.Add(new Rect(new Point(14, 13), new Point(7, 1)));
-            rooms.Add(r);
-            #endregion
-
-            #region dev actors
-            ActorDefinition PlayerDefinition = new ActorDefinition(
-                null, Color.Cyan, (char)1+"", "Moribund", 5, 5, 5, 50,
-                new List<DollSlot>(standardHuman));
-            worldActors.Add(player = new Actor(
-                    new Point(12, 15), PlayerDefinition
-                    //new Point(12, 15), ActorDefinition.ActorDefinitions[0]
-                )
-            );
-
-            Actor a;
-            ActorDefinition DemigorgonDefinition =
-                new ActorDefinition(null, Color.Red, "&", "Demigorgon",
-                    3, 3, 3, 10, new List<DollSlot>(standardHuman));
-            worldActors.Add(a = new Actor(
-                    new Point(21, 11), DemigorgonDefinition
-                    //new Point(21, 11), ActorDefinition.ActorDefinitions[2] 
-                )
-            );
-
-            Brains.Add(new Brain(a));
-            #endregion
-
-            #region dev items
-            ItemDefinition Longsword = new ItemDefinition(
-                null, Color.Green, ")", "Longsword", "2d6-3",
-                0, false, new List<DollSlot>() { DollSlot.Hand });
-            worldItems.Add(new Item(new Point(13, 13), Longsword));
-
-            ItemDefinition Snickersnee = new ItemDefinition(
-                null, Color.Red, ")", "Snickersnee", "2d6",
-                0, false, new List<DollSlot>() { DollSlot.Hand } );
-            worldItems.Add(new Item(new Point(13, 13), Snickersnee));
-
-            ItemDefinition Vorpalblade = new ItemDefinition(
-                null, Color.Blue, ")", "Vorpalblade", "2d6",
-                0, false, new List<DollSlot>() { DollSlot.Hand } );
-            worldItems.Add(new Item(new Point(13, 12), Vorpalblade));
-
-            ItemDefinition SexyApron = new ItemDefinition(
-                null, Color.Pink, "]", "sexy apron", "",
-                2, true, new List<DollSlot>() { DollSlot.Torso });
-            worldItems.Add(new Item(new Point(22, 13), SexyApron));
-            worldItems.Add(new Item(new Point(23, 14), SexyApron));
-
-            allItems.AddRange(worldItems);
-            #endregion
-
-            #region render rooms to map
-            int[,] overlapCount = new int[lvlW, lvlH];
-            foreach (Room q in rooms)
-            {
-                foreach (Rect qq in q.rects)
-                {
-                    for (int x = 0; x < qq.wh.x; x++)
-                    {
-                        for (int y = 0; y < qq.wh.y; y++)
-                        {
-                            map[qq.xy.x + x, qq.xy.y + y] = new Tile(
-                                Color.Black, Color.LightGray, "."
-                            );
-                            overlapCount[qq.xy.x + x, qq.xy.y + y]++;
-                        }
-                    }
-                }
-            }
-
-            //generate walls
-            foreach (Room q in rooms)
-            {
-                foreach (Rect qq in q.rects)
-                {
-                    //dont generate walls for corridors, it'll get annoying
-                    if (!(qq.wh.x >= 3 && qq.wh.y >= 3)) continue;
-
-                    for (int x = 0; x < qq.wh.x; x++)
-                    {
-                        for (int y = 0; y < qq.wh.y; y++)
-                        {
-                            bool wall = false;
-                            for (int xx = -1; xx <= 1; xx++)
-                            {
-                                for (int yy = -1; yy <= 1; yy++)
-                                {
-                                    if (
-                                        x < 0 || y < 0 ||
-                                        x > lvlW || y > lvlH)
-                                    {
-                                        wall = true;
-                                    }
-                                    else
-                                    {
-                                        if (map[
-                                            qq.xy.x + x + xx,
-                                            qq.xy.y + y + yy
-                                        ] == null) wall = true;
-                                    }
-                                }
-                            }
-                            if (wall)
-                            {
-                                if (overlapCount[qq.xy.x + x, qq.xy.y + y] <= 1)
-                                {
-                                    map[qq.xy.x + x, qq.xy.y + y] =
-                                        new Tile(
-                                            Color.Gray, Color.Gray, " ", true
-                                        );
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            */
-            #endregion
-            //testdoor
-            /*map[14, 13].doorState = Door.Closed;
-            map[14, 13].fg = Color.SandyBrown;*/
-
-            //IO.ReadLevelFromFile("Save/level.sv");
-
-            /*string s = IO.WriteRoomsToFile("Save/rooms.sv");
-            IO.ReadRoomsFromFile("Save/rooms.sv");
-
-            IO.ReadItemDefinitionsFromFile("Save/items.def");
-            IO.ReadAllItemsFromFile("Save/items.sv");
-            IO.ReadActorDefinitionsFromFile("Save/actors.def");
-            IO.ReadAllActorsFromFile("Save/actors.sv");
-
-            //this should do right about absolutely nothing.
-            /*IO.WriteLevelToFile("Save/level.sv");
-            IO.ReadLevelFromFile("Save/level.sv");
-            IO.WriteItemDefinitionsToFile("Save/items.def");
-            IO.ReadItemDefinitionsFromFile("Save/items.def");
-            IO.WriteAllItemsToFile("Save/items.sv");
-            IO.ReadAllItemsFromFile("Save/items.sv");
-            IO.WriteActorDefinitionsToFile("Save/actors.def");
-            IO.ReadActorDefinitionsFromFile("Save/actors.def");
-            IO.WriteAllActorsToFile("Save/actors.sv");
-            IO.ReadAllActorsFromFile("Save/actors.sv");*/
-
-            //player = Util.GetActorByID(0);
+            IO.ReadActorDefinitionsFromFile("Data/actors.def");
+            IO.ReadItemDefinitionsFromFile("Data/items.def");
 
             IO.ReadLevelFromFile("Save/level.sv");
             IO.ReadRoomsFromFile("Save/rooms.sv");
-            IO.ReadItemDefinitionsFromFile("Save/items.def");
             IO.ReadAllItemsFromFile("Save/items.sv");
-            IO.ReadActorDefinitionsFromFile("Save/actors.def");
             IO.ReadAllActorsFromFile("Save/actors.sv");
             IO.ReadSeenFromFile("Save/seen.sv");
             player = Util.GetActorByID(0);
@@ -536,9 +376,9 @@ namespace ODB
             {
                 IO.WriteLevelToFile("Save/level.sv");
                 IO.WriteRoomsToFile("Save/rooms.sv");
-                IO.WriteItemDefinitionsToFile("Save/items.def");
+                //IO.WriteItemDefinitionsToFile("Save/items.def");
                 IO.WriteAllItemsToFile("Save/items.sv");
-                IO.WriteActorDefinitionsToFile("Save/actors.def");
+                //IO.WriteActorDefinitionsToFile("Save/actors.def");
                 IO.WriteAllActorsToFile("Save/actors.sv");
                 IO.WriteSeenToFile("Save/seen.sv");
             }
@@ -547,9 +387,9 @@ namespace ODB
             {
                 IO.ReadLevelFromFile("Save/level.sv");
                 IO.ReadRoomsFromFile("Save/rooms.sv");
-                IO.ReadItemDefinitionsFromFile("Save/items.def");
+                //IO.ReadItemDefinitionsFromFile("Save/items.def");
                 IO.ReadAllItemsFromFile("Save/items.sv");
-                IO.ReadActorDefinitionsFromFile("Save/actors.def");
+                //IO.ReadActorDefinitionsFromFile("Save/actors.def");
                 IO.ReadAllActorsFromFile("Save/actors.sv");
                 IO.ReadSeenFromFile("Save/seen.sv");
                 player = Util.GetActorByID(0);
