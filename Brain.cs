@@ -68,7 +68,9 @@ namespace ODB
                 {
                     Game.map[moveTo.x, moveTo.y].doorState = Door.Open;
                     if (Game.vision[moveTo.x, moveTo.y])
-                        Game.log.Add(MeatPuppet.name + " opens a door.");
+                        Game.log.Add(MeatPuppet.Definition.name +
+                            " opens a door."
+                        );
                 }
                 else
                 {

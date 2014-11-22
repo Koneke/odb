@@ -42,14 +42,14 @@ namespace ODB
             foreach (BodyPart bp in Game.player.PaperDoll)
                 if (bp.Item == it) bp.Item = null;
 
-            Game.log.Add("Dropped " + it.name + ".");
+            Game.log.Add("Dropped " + it.Definition.name + ".");
             Game.player.Cooldown = 10;
         }
 
         static void drop(int index, int count)
         {
             Item it = Game.player.inventory[index];
-            if (it.stacking && it.count > 1)
+            if (it.Definition.stacking && it.count > 1)
             {
                 if (count > it.count)
                 {
@@ -100,7 +100,7 @@ namespace ODB
             {
                 Item it = Game.player.inventory[i];
 
-                if (it.stacking && it.count > 1)
+                if (it.Definition.stacking && it.count > 1)
                 {
                     Game.setupQuestionPrompt("How many?", false);
                     Game.acceptedInput = Game.numbers;
@@ -141,7 +141,7 @@ namespace ODB
                 foreach (BodyPart bp in Game.player.PaperDoll.FindAll(
                     x => x.Type == DollSlot.Hand))
                     if (bp.Item == it) bp.Item = null;
-                Game.log.Add("Sheathed " + it.name + ".");
+                Game.log.Add("Sheathed " + it.Definition.name + ".");
                 Game.player.Cooldown = 10;
             }
         }
@@ -160,7 +160,7 @@ namespace ODB
 
             foreach (Item it in Game.player.inventory)
                 //is it equipable?
-                if (it.equipSlots.Count > 0)
+                if (it.Definition.equipSlots.Count > 0)
                     equipables.Add(it);
 
             if (i >= Game.player.inventory.Count)
@@ -177,7 +177,7 @@ namespace ODB
 
             Item selected = Game.player.inventory[i];
             bool canEquip = true;
-            foreach (DollSlot ds in selected.equipSlots)
+            foreach (DollSlot ds in selected.Definition.equipSlots)
             {
                 if (!Game.player.HasFree(ds))
                 {
@@ -187,7 +187,7 @@ namespace ODB
             }
             if (canEquip)
             {
-                Game.log.Add("Equipped "+ selected.name + ".");
+                Game.log.Add("Equipped "+ selected.Definition.name + ".");
                 Game.player.Cooldown = 10;
                 Game.player.Equip(selected);
             }
@@ -212,11 +212,11 @@ namespace ODB
                 Item it = onTile[i];
                 Game.worldItems.Remove(it);
 
-                if (it.stacking)
+                if (it.Definition.stacking)
                 {
                     bool alreadyHolding = false;
                     foreach (Item item in Game.player.inventory)
-                        if (item.type == it.type)
+                        if (item.Definition.type == it.Definition.type)
                         {
                             alreadyHolding = true;
                             item.count++;
@@ -230,7 +230,7 @@ namespace ODB
                 {
                     Game.player.inventory.Add(it);
                 }
-                Game.log.Add("Picked up " + it.name + ".");
+                Game.log.Add("Picked up " + it.Definition.name + ".");
 
                 Game.player.Cooldown = 10;
             }

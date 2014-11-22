@@ -28,7 +28,6 @@ namespace ODB
             {
             }
         }
-
         public static string ReadFromFile(string path)
         {
             string cwd = Directory.GetCurrentDirectory();
@@ -57,7 +56,6 @@ namespace ODB
             WriteToFile(path, output);
             return output;
         }
-
         public static void ReadAllItemsFromFile(string path)
         {
             Game.allItems = new List<Item>();
@@ -71,21 +69,6 @@ namespace ODB
             foreach (string s in itemStrings)
                 Game.allItems.Add(new Item(s));
             Item.IDCounter = Math.Max(itemStrings.Count - 1, 0);
-
-            Item.TypeCounter = 0;
-            foreach (Item it in Game.allItems)
-                if (it.type > Item.TypeCounter)
-                    //we don't want to leave any gaps in the type list
-                    //this might actually still be problematic
-                    //since this is currently PER LEVEL
-                    //and there might be items on other levels with higher
-                    //type ids.
-                    //we should not only save level, actors, items, but also
-                    //a file for like current game state, which would hold
-                    //the current typecounter, and such stuff, not actually
-                    //bound to a certain item, level, or character.
-                    //since we only have one level right now though, this works
-                    Item.TypeCounter = it.type + 1;
 
             //when we spawn in actors, they are responsible for making sure
             //that the items in their inventories are not left in the worldItems
@@ -102,7 +85,6 @@ namespace ODB
             WriteToFile(path, output);
             return output;
         }
-
         public static void ReadAllActorsFromFile(string path)
         {
             Game.worldActors = new List<Actor>();
@@ -123,7 +105,7 @@ namespace ODB
 
                 Game.worldActors.Add(a);
             }
-            Actor.IDCounter = Math.Max(actorStrings.Count - 1, 0);
+            //Actor.IDCounter = Math.Max(actorStrings.Count - 1, 0);
         }
 
         public static string WriteLevelToFile(string path)
@@ -142,7 +124,6 @@ namespace ODB
             WriteToFile(path, output);
             return output;
         }
-
         public static void ReadLevelFromFile(string path)
         {
             string content = ReadFromFile(path);
@@ -170,6 +151,69 @@ namespace ODB
                     Game.map[x, y] = null;
                 else
                     Game.map[x, y] = new Tile(body[i]);
+            }
+        }
+
+        public static string WriteItemDefinitionsToFile(string path)
+        {
+            string output = "";
+            for (int i = 0; i < ItemDefinition.TypeCounter; i++)
+            {
+                if (ItemDefinition.ItemDefinitions[i] != null)
+                {
+                    output +=
+                        ItemDefinition.ItemDefinitions[i].WriteItemDefinition();
+                    output += "##";
+                }
+            }
+            WriteToFile(path, output);
+            return output;
+        }
+        public static void ReadItemDefinitionsFromFile(string path)
+        {
+            ItemDefinition.ItemDefinitions = new ItemDefinition[0xFFFF];
+
+            string content = ReadFromFile(path);
+            List<string> itemStrings = content.Split(
+                new string[]{ "##" },
+                StringSplitOptions.RemoveEmptyEntries
+            ).ToList();
+
+            foreach (string definition in itemStrings)
+            {
+                ItemDefinition idef = new ItemDefinition(definition);
+            }
+        }
+
+        public static string WriteActorDefinitionsToFile(string path)
+        {
+            string output = "";
+            for (int i = 0; i < ActorDefinition.TypeCounter; i++)
+            {
+                if (ActorDefinition.ActorDefinitions[i] != null)
+                {
+                    output +=
+                        ActorDefinition.ActorDefinitions[i].
+                        WriteActorDefinition();
+                    output += "##";
+                }
+            }
+            WriteToFile(path, output);
+            return output;
+        }
+        public static void ReadActorDefinitionsFromFile(string path)
+        {
+            ActorDefinition.ActorDefinitions = new ActorDefinition[0xFFFF];
+
+            string content = ReadFromFile(path);
+            List<string> itemStrings = content.Split(
+                new string[]{ "##" },
+                StringSplitOptions.RemoveEmptyEntries
+            ).ToList();
+
+            foreach (string definition in itemStrings)
+            {
+                ActorDefinition idef = new ActorDefinition(definition);
             }
         }
 
@@ -208,7 +252,7 @@ namespace ODB
             return String.Format("{0:X"+len+"}", i);
         }
 
-        public static string WriteBool(bool b)
+        public static string Write(bool b)
         {
             return b ? "1" : "0";
         }

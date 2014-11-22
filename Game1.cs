@@ -204,84 +204,49 @@ namespace ODB
             #endregion
 
             #region dev actors
-            worldActors.Add(
-                player = new Actor(
-                    new Point(12, 15), null, Color.Cyan, (char)1+"", "Moribund"
+            ActorDefinition PlayerDefinition = new ActorDefinition(
+                null, Color.Cyan, (char)1+"", "Moribund", 5, 5, 5, 50,
+                new List<DollSlot>(standardHuman));
+            worldActors.Add(player = new Actor(
+                    new Point(12, 15), PlayerDefinition
                 )
-            );
-            player.strength = 5;
-            player.dexterity = 5;
-            player.intelligence = 5;
-            player.hpCurrent = player.hpMax = 50;
-
-            standardHuman.ForEach(x =>
-                player.PaperDoll.Add(new BodyPart(x))
             );
 
             Actor a;
-            worldActors.Add(
-                a = new Actor(
-                    new Point(21, 11), null, Color.Red, "&", "Demigorgon"
+            ActorDefinition DemigorgonDefinition =
+                new ActorDefinition(null, Color.Red, "&", "Demigorgon",
+                    3, 3, 3, 10, new List<DollSlot>(standardHuman));
+            worldActors.Add(a = new Actor(
+                    new Point(21, 11), DemigorgonDefinition
                 )
             );
-            a.strength = 3;
-            a.dexterity = 3;
-            a.intelligence = 3;
-            a.hpCurrent = a.hpMax = 10;
 
             Brains.Add(new Brain(a));
-
             #endregion
 
             #region dev items
-            Item it;
+            ItemDefinition Longsword = new ItemDefinition(
+                null, Color.Green, ")", "Longsword", "2d6-3",
+                0, false, new List<DollSlot>() { DollSlot.Hand });
+            worldItems.Add(new Item(new Point(13, 13), Longsword));
 
-            worldItems.Add(
-                it = new Item(
-                    new Point(13, 13), null, Color.Green, ")", "Longsword",
-                    "2d6-3"
-                )
-            );
-            it.equipSlots = new List<DollSlot>{ DollSlot.Hand };
-            it.type = Item.TypeCounter++;
+            ItemDefinition Snickersnee = new ItemDefinition(
+                null, Color.Red, ")", "Snickersnee", "2d6",
+                0, false, new List<DollSlot>() { DollSlot.Hand } );
+            worldItems.Add(new Item(new Point(13, 13), Snickersnee));
 
-            worldItems.Add(
-                it = new Item(
-                    new Point(13, 13), null, Color.Green, ")", "Snickersnee",
-                    "2d6"
-                )
-            );
-            it.equipSlots = new List<DollSlot>{ DollSlot.Hand };
-            it.type = Item.TypeCounter++;
+            ItemDefinition Vorpalblade = new ItemDefinition(
+                null, Color.Blue, ")", "Vorpalblade", "2d6",
+                0, false, new List<DollSlot>() { DollSlot.Hand } );
+            worldItems.Add(new Item(new Point(13, 12), Vorpalblade));
 
-            worldItems.Add(
-                it = new Item(
-                    new Point(13, 12), null, Color.Green, ")", "Vorpal Blade"
-                )
-            );
-            it.equipSlots = new List<DollSlot>{ DollSlot.Hand };
-            it.type = Item.TypeCounter++;
-
-            worldItems.Add(
-                it = new Item(
-                    new Point(22, 13), null, Color.Pink, "]", "Sexy apron",
-                    "", 2, true
-                )
-            );
-            it.equipSlots = new List<DollSlot> { DollSlot.Torso };
-            it.type = Item.TypeCounter;
-
-            worldItems.Add(
-                it = new Item(
-                    new Point(23, 14), null, Color.Pink, "]", "Sexy apron",
-                    "", 2, true //testing stacking
-                )
-            );
-            it.equipSlots = new List<DollSlot> { DollSlot.Torso };
-            it.type = Item.TypeCounter++;
+            ItemDefinition SexyApron = new ItemDefinition(
+                null, Color.Pink, "]", "sexy apron", "",
+                2, true, new List<DollSlot>() { DollSlot.Torso });
+            worldItems.Add(new Item(new Point(22, 13), SexyApron));
+            worldItems.Add(new Item(new Point(23, 14), SexyApron));
 
             allItems.AddRange(worldItems);
-
             #endregion
 
             #region render rooms to map
@@ -358,8 +323,12 @@ namespace ODB
             //this should do right about absolutely nothing.
             IO.WriteLevelToFile("Save/level.sv");
             IO.ReadLevelFromFile("Save/level.sv");
+            IO.WriteItemDefinitionsToFile("Save/items.def");
+            IO.ReadItemDefinitionsFromFile("Save/items.def");
             IO.WriteAllItemsToFile("Save/items.sv");
             IO.ReadAllItemsFromFile("Save/items.sv");
+            IO.WriteActorDefinitionsToFile("Save/actors.def");
+            IO.ReadActorDefinitionsFromFile("Save/actors.def");
             IO.WriteAllActorsToFile("Save/actors.sv");
             IO.ReadAllActorsFromFile("Save/actors.sv");
 
@@ -539,12 +508,25 @@ namespace ODB
             camY = Math.Min(lvlH - scrH, camY);
             #endregion camera
 
+            if (KeyPressed(Keys.F1))
+            {
+                IO.WriteLevelToFile("Save/level.sv");
+                IO.ReadLevelFromFile("Save/level.sv");
+                IO.WriteItemDefinitionsToFile("Save/items.def");
+                IO.ReadItemDefinitionsFromFile("Save/items.def");
+                IO.WriteAllItemsToFile("Save/items.sv");
+                IO.ReadAllItemsFromFile("Save/items.sv");
+                IO.WriteActorDefinitionsToFile("Save/actors.def");
+                IO.ReadActorDefinitionsFromFile("Save/actors.def");
+                IO.WriteAllActorsToFile("Save/actors.sv");
+                IO.ReadAllActorsFromFile("Save/actors.sv");
+            }
+
             //only do player movement if we're not currently asking something
             if (!questionPromptOpen)
             {
                 //pretty much every possible player interaction (that uses
                 //ingame time) should be in this if-clause.
-                //if (playerCooldown == 0)
                 if(player.Cooldown == 0)
                 {
                     #region movement
@@ -615,8 +597,9 @@ namespace ODB
                             case 1:
                                 log.Add(
                                     "There is " +
-                                    article(itemsOnSquare[0].name) + " " +
-                                    itemsOnSquare[0].name +
+                                    article(
+                                        itemsOnSquare[0].Definition.name
+                                    ) + " " + itemsOnSquare[0].Definition.name +
                                     " here."
                                 );
                                 break;
@@ -681,12 +664,12 @@ namespace ODB
                         foreach (Item it in player.inventory)
                             //is it wieldable?
                             if (
-                                it.equipSlots.Contains(DollSlot.Hand) &&
-                                !shift
+                                it.Definition.equipSlots.Contains(DollSlot.Hand)
+                                && !shift
                             )
                                 equipables.Add(it);
                             else if (
-                                it.equipSlots.FindAll(
+                                it.Definition.equipSlots.FindAll(
                                     x => x != DollSlot.Hand
                                 ).Count > 0 && shift
                             )
@@ -961,7 +944,12 @@ namespace ODB
                 {
                     if (itemCount[i.xy.x, i.xy.y] == 1)
                     {
-                        DrawToScreen(i.xy, i.bg, i.fg, i.tile);
+                        DrawToScreen(
+                            i.xy,
+                            i.Definition.bg,
+                            i.Definition.fg,
+                            i.Definition.tile
+                        );
                     }
                     else //draw a "pile"
                     {
@@ -984,7 +972,10 @@ namespace ODB
                 {
                     if (actorCount[a.xy.x, a.xy.y] == 1)
                     {
-                        DrawToScreen(a.xy, a.bg, a.fg, a.tile);
+                        DrawToScreen(
+                            a.xy, a.Definition.bg,
+                            a.Definition.fg, a.Definition.tile
+                        );
                     }
                     else //draw a "pile"
                     {
@@ -1027,10 +1018,10 @@ namespace ODB
                 Color.DarkGray
             );
 
-            for (int i = 0; i < player.name.Length; i++)
+            for (int i = 0; i < player.Definition.name.Length; i++)
             {
                 inventoryConsole.CellData.Print(
-                    2, 0, player.name, Color.White);
+                    2, 0, player.Definition.name, Color.White);
             }
 
             for (int i = 0; i < player.inventory.Count; i++)
@@ -1040,9 +1031,9 @@ namespace ODB
 
                 string name = "" + ((char)(97 + i));
                 name += " - ";
-                if (player.inventory[i].stacking)
+                if (player.inventory[i].Definition.stacking)
                     name += player.inventory[i].count + "x ";
-                name += player.inventory[i].name;
+                name += player.inventory[i].Definition.name;
                 if (equipped) name += " (equipped)";
 
                 inventoryConsole.CellData.Print(
@@ -1053,20 +1044,21 @@ namespace ODB
 
             statRowConsole.CellData.Clear();
             statRowConsole.CellData.Fill(Color.White, Color.Black, ' ', null);
-            string namerow = player.name + " - Delver";
+            string namerow = player.Definition.name + " - Delver";
             namerow += "  ";
-            namerow += "STR " + player.strength + "  ";
-            namerow += "DEX " + player.dexterity + "  ";
-            namerow += "INT " + player.intelligence + "  ";
+            namerow += "STR " + player.Definition.strength + "  ";
+            namerow += "DEX " + player.Definition.dexterity + "  ";
+            namerow += "INT " + player.Definition.intelligence + "  ";
             namerow += "AC " + player.GetAC();
             string statrow = "";
             statrow += "[";
             statrow += player.hpCurrent.ToString().PadLeft(3, ' ');
             statrow += "/";
-            statrow += player.hpMax.ToString().PadLeft(3, ' ');
+            statrow += player.Definition.hpMax.ToString().PadLeft(3, ' ');
             statrow += "]";
 
-            float playerHealthPcnt = (player.hpCurrent / (float)player.hpMax);
+            float playerHealthPcnt = (player.hpCurrent /
+                (float)player.Definition.hpMax);
             float colourStrength = 0.6f + 0.4f - (0.4f * playerHealthPcnt);
 
             for (int x = 0; x < 9; x++)
