@@ -19,12 +19,74 @@ namespace ODB
             return i; 
         }
 
+        public static void DropCount(string answer)
+        {
+            string count = Game.qpAnswerStack.Pop();
+            string index = Game.qpAnswerStack.Pop();
+            int i = letterAnswerToIndex(index[0]);
+            int c = int.Parse(count);
+            drop(i, c);
+        }
+
+        //drop single nonstacking/all stacking
+        static void drop(int index)
+        {
+            Item it = Game.player.inventory[index];
+
+            Game.player.inventory.Remove(it);
+            Game.worldItems.Add(it);
+
+            it.xy = Game.player.xy;
+
+            //actually make sure to unwield/unwear as well
+            foreach (BodyPart bp in Game.player.PaperDoll)
+                if (bp.Item == it) bp.Item = null;
+
+            Game.log.Add("Dropped " + it.name + ".");
+            Game.player.Cooldown = 10;
+        }
+
+        static void drop(int index, int count)
+        {
+            Item it = Game.player.inventory[index];
+            if (it.stacking && it.count > 1)
+            {
+                if (count > it.count)
+                {
+                    Game.log.Add("You don't have that many.");
+                    return;
+                }
+                else if (count == it.count)
+                {
+                    //falling through to the normal itemdropping
+                    drop(index);
+                }
+                else
+                {
+                    //copy the item
+                    Item droppedStack = new Item(it.WriteItem());
+                    //change id
+                    droppedStack.id = Item.IDCounter++;
+                    droppedStack.count = count;
+                    it.count -= count;
+                    Game.worldItems.Add(droppedStack);
+                    Game.allItems.Add(droppedStack);
+                }
+            }
+        }
+
         public static void Drop(string answer)
         {
+            //NOTE, PEEK.
+            //BECAUSE WE NEED TO REUSE THE ANSWER LATER?
+            //not actually using the stack here yet, but we want
+            //to drop the string answer bit in the sign later...
+            //I think.
+            Game.qpAnswerStack.Peek();
+            if (answer.Length <= 0) return;
+
             if(Game.logPlayerActions)
                 Game.log.Add(" > Drop item");
-
-            if (answer.Length <= 0) return;
 
             int i = letterAnswerToIndex(answer[0]);
 
@@ -38,21 +100,23 @@ namespace ODB
             {
                 Item it = Game.player.inventory[i];
 
-                Game.player.inventory.Remove(it);
-                Game.worldItems.Add(it);
-                it.xy = Game.player.xy;
-
-                //actually make sure to unwield/unwear as well
-                foreach (BodyPart bp in Game.player.PaperDoll)
-                    if (bp.Item == it) bp.Item = null;
-
-                Game.log.Add("Dropped " + it.name + ".");
-                Game.player.Cooldown = 10;
+                if (it.stacking && it.count > 1)
+                {
+                    Game.setupQuestionPrompt("How many?", false);
+                    Game.acceptedInput = Game.numbers;
+                    Game.questionReaction = Player.DropCount;
+                    Game.questionPromptOpen = true;
+                }
+                else
+                {
+                    drop(i);
+                }
             }
         }
 
         public static void Sheath(string answer)
         {
+            Game.qpAnswerStack.Pop();
             if (answer.Length <= 0) return;
 
             int i = letterAnswerToIndex(answer[0]);
@@ -84,10 +148,11 @@ namespace ODB
 
         public static void Wield(string answer)
         {
+            Game.qpAnswerStack.Pop();
+            if (answer.Length <= 0) return;
+
             if(Game.logPlayerActions)
                 Game.log.Add(" > Wield item");
-
-            if (answer.Length <= 0) return;
 
             int i = letterAnswerToIndex(answer[0]);
 
@@ -130,10 +195,11 @@ namespace ODB
 
         public static void Get(string answer)
         {
+            Game.qpAnswerStack.Pop();
+            if (answer.Length <= 0) return;
+
             if(Game.logPlayerActions)
                 Game.log.Add(" > Pick up item");
-
-            if (answer.Length <= 0) return;
 
             int i = letterAnswerToIndex(answer[0]);
             
@@ -144,9 +210,28 @@ namespace ODB
             if (i < onTile.Count)
             {
                 Item it = onTile[i];
-                Game.player.inventory.Add(it);
                 Game.worldItems.Remove(it);
+
+                if (it.stacking)
+                {
+                    bool alreadyHolding = false;
+                    foreach (Item item in Game.player.inventory)
+                        if (item.type == it.type)
+                        {
+                            alreadyHolding = true;
+                            item.count++;
+                            //merging into the already held item
+                            Game.allItems.Remove(it);
+                        }
+                    if (!alreadyHolding)
+                        Game.player.inventory.Add(it);
+                }
+                else
+                {
+                    Game.player.inventory.Add(it);
+                }
                 Game.log.Add("Picked up " + it.name + ".");
+
                 Game.player.Cooldown = 10;
             }
             else
@@ -158,6 +243,9 @@ namespace ODB
 
         public static void Open(string answer)
         {
+            Game.qpAnswerStack.Pop();
+            if (answer.Length <= 0) return;
+
             if(Game.logPlayerActions)
                 Game.log.Add(" > Open door");
 
@@ -180,6 +268,9 @@ namespace ODB
 
         public static void Close(string answer)
         {
+            Game.qpAnswerStack.Pop();
+            if (answer.Length <= 0) return;
+
             if(Game.logPlayerActions)
                 Game.log.Add(" > Close door");
 

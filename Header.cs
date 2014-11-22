@@ -452,23 +452,34 @@ namespace ODB
     public class Item : gObject
     {
         public static int IDCounter = 0;
+        //instance id
         public int id;
+        //type id (for stacking purposes and similar)
+        //each item with the same stats (except for pos and such obv)
+        //should have the same "type"
+        public static int TypeCounter = 0;
+        public int type;
 
-        //int count;
         public int AC;
         public string Damage;
+        public int count;
+        public bool stacking;
         public List<DollSlot> equipSlots;
 
         public Item(
             Point xy, Color? bg, Color fg, string tile, string name,
-            string Damage = "", int AC = 0
+            string Damage = "", int AC = 0,
+            bool stacking = false, int count = 1
         ) :
             base(xy, bg, fg, tile, name)
         {
+            //in the future, just look for a free id instead
+            //since we MIGHT, THEORETICALLY, hit 65536 (0xFFFF) this way
             id = IDCounter++;
-            //count = 1;
             this.AC = AC;
             this.Damage = Damage;
+            this.stacking = stacking;
+            this.count = count;
             equipSlots = new List<DollSlot>();
         }
 
@@ -481,8 +492,11 @@ namespace ODB
         {
             string s = base.WriteGOBject();
             s += IO.WriteHex(id, 4);
+            s += IO.WriteHex(type, 4);
             s += IO.WriteHex(AC, 2);
             s += IO.Write(Damage);
+            s += IO.WriteBool(stacking);
+            s += IO.WriteHex(count, 2);
             foreach (DollSlot ds in equipSlots)
                 s += (int)ds + ",";
             s += ";";
@@ -494,8 +508,11 @@ namespace ODB
         {
             int read = base.ReadGOBject(s);
             id = IO.ReadHex(s, 4, ref read, read);
+            type = IO.ReadHex(s, 4, ref read, read);
             AC = IO.ReadHex(s, 2, ref read, read);
             Damage = IO.ReadString(s, ref read, read);
+            stacking = IO.ReadBool(s, ref read, read);
+            count = IO.ReadHex(s, 2, ref read, read);
 
             string slots = IO.ReadString(s, ref read, read);
             equipSlots = new List<DollSlot>();

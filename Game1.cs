@@ -66,14 +66,18 @@ namespace ODB
 
         Console inputRowConsole;
 
-        bool questionPromptOpen;
-        string questionPromptAnswer;
-        List<int> acceptedInput;
-        Action<string> questionReaction;
+        public bool questionPromptOpen;
 
-        List<int> letters;
-        List<int> numbers;
-        List<int> directions;
+        //var to hold input before it being sent
+        string questionPromptAnswer;
+        //we're starting to need two questions for one thing now
+        public Stack<string> qpAnswerStack;
+
+        bool questionPrompOneKey;
+        public List<int> acceptedInput;
+        public Action<string> questionReaction;
+
+        public List<int> letters, numbers, directions;
         int space;
 
         Console inventoryConsole;
@@ -169,6 +173,7 @@ namespace ODB
             standardHuman.Add(DollSlot.Feet);
 
             acceptedInput = new List<int>();
+            qpAnswerStack = new Stack<string>();
 
             letters = new List<int>();
             numbers = new List<int>();
@@ -238,6 +243,7 @@ namespace ODB
                 )
             );
             it.equipSlots = new List<DollSlot>{ DollSlot.Hand };
+            it.type = Item.TypeCounter++;
 
             worldItems.Add(
                 it = new Item(
@@ -246,6 +252,7 @@ namespace ODB
                 )
             );
             it.equipSlots = new List<DollSlot>{ DollSlot.Hand };
+            it.type = Item.TypeCounter++;
 
             worldItems.Add(
                 it = new Item(
@@ -253,14 +260,25 @@ namespace ODB
                 )
             );
             it.equipSlots = new List<DollSlot>{ DollSlot.Hand };
+            it.type = Item.TypeCounter++;
 
             worldItems.Add(
                 it = new Item(
                     new Point(22, 13), null, Color.Pink, "]", "Sexy apron",
-                    "", 2
+                    "", 2, true
                 )
             );
             it.equipSlots = new List<DollSlot> { DollSlot.Torso };
+            it.type = Item.TypeCounter;
+
+            worldItems.Add(
+                it = new Item(
+                    new Point(23, 14), null, Color.Pink, "]", "Sexy apron",
+                    "", 2, true //testing stacking
+                )
+            );
+            it.equipSlots = new List<DollSlot> { DollSlot.Torso };
+            it.type = Item.TypeCounter++;
 
             allItems.AddRange(worldItems);
 
@@ -421,10 +439,11 @@ namespace ODB
                 "an" : "a";
         }
 
-        void setupQuestionPrompt(string q)
+        public void setupQuestionPrompt(string q, bool onekey = true)
         {
             q = q + " ";
             questionPromptAnswer = "";
+            questionPrompOneKey = onekey;
             inputRowConsole.CellData.Clear();
             inputRowConsole.CellData.Fill(Color.Black, Color.White, ' ', null);
             inputRowConsole.CellData.Print(0, 0, q);
@@ -773,11 +792,10 @@ namespace ODB
 
                                 questionReaction = Player.Get;
                             }
-                            else
+                            else //remove me? just show the option for just "a"
                             {
-                                player.inventory.Add(onFloor[0]);
-                                worldItems.Remove(onFloor[0]);
-                                log.Add("Picked up " + onFloor[0].name + ".");
+                                qpAnswerStack.Push("a");
+                                Player.Get("a");
                             }
                         }
                     }
@@ -824,11 +842,12 @@ namespace ODB
                             c+"");
                         inputRowConsole.VirtualCursor.Left(-1);
 
-                        //todo: choose whether to accept multichar input
-                        //or just one press. at the moment, forcing to one char.
-
-                        questionPromptOpen = false;
-                        questionReaction(questionPromptAnswer);
+                        if (questionPrompOneKey)
+                        {
+                            questionPromptOpen = false;
+                            qpAnswerStack.Push(questionPromptAnswer);
+                            questionReaction(questionPromptAnswer);
+                        }
                     }
                 }
                 if (KeyPressed(Keys.Back))
@@ -849,6 +868,7 @@ namespace ODB
                 if (KeyPressed(Keys.Enter))
                 {
                     questionPromptOpen = false;
+                    qpAnswerStack.Push(questionPromptAnswer);
                     questionReaction(questionPromptAnswer);
                 }
                 if (KeyPressed(Keys.Escape))
@@ -1019,7 +1039,10 @@ namespace ODB
                     //player.paperDoll.Values.Contains(player.inventory[i]);
 
                 string name = "" + ((char)(97 + i));
-                name += " - " + player.inventory[i].name;
+                name += " - ";
+                if (player.inventory[i].stacking)
+                    name += player.inventory[i].count + "x ";
+                name += player.inventory[i].name;
                 if (equipped) name += " (equipped)";
 
                 inventoryConsole.CellData.Print(

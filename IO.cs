@@ -72,6 +72,21 @@ namespace ODB
                 Game.allItems.Add(new Item(s));
             Item.IDCounter = Math.Max(itemStrings.Count - 1, 0);
 
+            Item.TypeCounter = 0;
+            foreach (Item it in Game.allItems)
+                if (it.type > Item.TypeCounter)
+                    //we don't want to leave any gaps in the type list
+                    //this might actually still be problematic
+                    //since this is currently PER LEVEL
+                    //and there might be items on other levels with higher
+                    //type ids.
+                    //we should not only save level, actors, items, but also
+                    //a file for like current game state, which would hold
+                    //the current typecounter, and such stuff, not actually
+                    //bound to a certain item, level, or character.
+                    //since we only have one level right now though, this works
+                    Item.TypeCounter = it.type + 1;
+
             //when we spawn in actors, they are responsible for making sure
             //that the items in their inventories are not left in the worldItems
             //list.
@@ -193,6 +208,11 @@ namespace ODB
             return String.Format("{0:X"+len+"}", i);
         }
 
+        public static string WriteBool(bool b)
+        {
+            return b ? "1" : "0";
+        }
+
         public static Point ReadPoint(
             string s, ref int read, int start = 0
         ) {
@@ -267,8 +287,13 @@ namespace ODB
             string ss = s.Substring(start, s.Length - start);
             ss = ss.Substring(0, len);
             read += len;
-            //return Int32.Parse(ss, System.Globalization.NumberStyles.HexNumber);
             return ReadHex(ss);
+        }
+
+        public static bool ReadBool(string s, ref int read, int start = 0)
+        {
+            read += 1;
+            return s.Substring(start, 1) == "1";
         }
     }
 }
