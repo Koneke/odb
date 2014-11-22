@@ -111,6 +111,53 @@ namespace ODB
             Actor.IDCounter = Math.Max(actorStrings.Count - 1, 0);
         }
 
+        public static string WriteLevelToFile(string path)
+        {
+            string output = "";
+            output += Game.lvlW + "x" + Game.lvlH + ";";
+            output += "##"; //end of header
+
+            for (int y = 0; y < Game.lvlH ; y++)
+                for (int x = 0; x < Game.lvlW; x++)
+                {
+                    if (Game.map[x, y] != null)
+                        output += Game.map[x, y].writeTile();
+                    output += ";";
+                }
+            WriteToFile(path, output);
+            return output;
+        }
+
+        public static void ReadLevelFromFile(string path)
+        {
+            string content = ReadFromFile(path);
+            List<string> header = content.Split(
+                new string[]{"##"}, StringSplitOptions.RemoveEmptyEntries
+            )[0].Split(';').ToList();
+
+            Game.lvlW = int.Parse(header[0].Split('x')[0]);
+            Game.lvlH = int.Parse(header[0].Split('x')[1]);
+
+            Game.map = new Tile[Game.lvlW, Game.lvlH];
+            Game.seen = new bool[Game.lvlW, Game.lvlH];
+            Game.vision = new bool[Game.lvlW, Game.lvlH];
+
+            List<string> body = content.Split(
+                //do NOT remove empty entries, they are null tiles!
+                new string[]{"##"}, StringSplitOptions.None
+            )[1].Split(';').ToList();
+
+            for (int i = 1; i < Game.lvlW * Game.lvlH; i++)
+            {
+                int x = i % Game.lvlW;
+                int y = (i - (i % Game.lvlW))/Game.lvlW;
+                if (body[i] == "")
+                    Game.map[x, y] = null;
+                else
+                    Game.map[x, y] = new Tile(body[i]);
+            }
+        }
+
         public static string Write(Color c)
         {
             string s = "";
