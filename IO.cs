@@ -52,7 +52,7 @@ namespace ODB
         public static string WriteAllItemsToFile(string path)
         {
             string output = "";
-            foreach (Item item in Game.items)
+            foreach (Item item in Game.allItems)
                 output += item.WriteItem() + "##";
             WriteToFile(path, output);
             return output;
@@ -60,16 +60,55 @@ namespace ODB
 
         public static void ReadAllItemsFromFile(string path)
         {
+            Game.allItems = new List<Item>();
+
             string content = ReadFromFile(path);
             List<string> itemStrings = content.Split(
                 new string[]{ "##" },
                 StringSplitOptions.RemoveEmptyEntries
             ).ToList();
-            Game.items = new List<Item>();
+
             foreach (string s in itemStrings)
-                Game.items.Add(new Item(s));
-            Item.IDCounter = Math.Max(itemStrings.Count-1, 0);
-            var a = 0;
+                Game.allItems.Add(new Item(s));
+            Item.IDCounter = Math.Max(itemStrings.Count - 1, 0);
+
+            //when we spawn in actors, they are responsible for making sure
+            //that the items in their inventories are not left in the worldItems
+            //list.
+            Game.worldItems = new List<Item>();
+            Game.worldItems.AddRange(Game.allItems);
+        }
+
+        public static string WriteAllActorsToFile(string path)
+        {
+            string output = "";
+            foreach (Actor actor in Game.worldActors)
+                output += actor.WriteActor() + "##";
+            WriteToFile(path, output);
+            return output;
+        }
+
+        public static void ReadAllActorsFromFile(string path)
+        {
+            Game.worldActors = new List<Actor>();
+            Game.Brains = new List<Brain>();
+
+            string content = ReadFromFile(path);
+            List<string> actorStrings = content.Split(
+                new string[] { "##" },
+                StringSplitOptions.RemoveEmptyEntries
+            ).ToList();
+
+            foreach (string s in actorStrings)
+            {
+                Actor a = new Actor(s);
+
+                if (a.id == 0) Game.player = a;
+                else Game.Brains.Add(new Brain(a));
+
+                Game.worldActors.Add(a);
+            }
+            Actor.IDCounter = Math.Max(actorStrings.Count - 1, 0);
         }
 
         public static string Write(Color c)
@@ -169,13 +208,20 @@ namespace ODB
         }
 
         public static int ReadHex(
+            string s
+        ) {
+            return Int32.Parse(s, System.Globalization.NumberStyles.HexNumber);
+        }
+
+        public static int ReadHex(
             string s, int len, ref int read, int start = 0
         ) {
             int i = start;
             string ss = s.Substring(start, s.Length - start);
             ss = ss.Substring(0, len);
             read += len;
-            return Int32.Parse(ss, System.Globalization.NumberStyles.HexNumber);
+            //return Int32.Parse(ss, System.Globalization.NumberStyles.HexNumber);
+            return ReadHex(ss);
         }
     }
 }

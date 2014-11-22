@@ -239,12 +239,13 @@ namespace ODB
         public static int IDCounter = 0;
         public int id;
 
-        public List<Item> inventory;
-
         public int strength, dexterity, intelligence;
         public int hpMax, hpCurrent;
 
+        public int Cooldown;
+
         public List<BodyPart> PaperDoll;
+        public List<Item> inventory;
 
         public Actor(
             Point xy, Color? bg, Color fg, string tile, string name
@@ -254,6 +255,13 @@ namespace ODB
             id = IDCounter++;
             inventory = new List<Item>();
             PaperDoll = new List<BodyPart>();
+            Cooldown = 0;
+        }
+
+        public Actor(string s)
+            : base(s)
+        {
+            ReadActor(s);
         }
 
         public bool HasFree(DollSlot slot)
@@ -338,8 +346,8 @@ namespace ODB
                         target.xy, null, target.fg, "%",
                         target.name + " corpse"
                     );
-                    Game.items.Add(corpse);
-                    Game.actors.Remove(target);
+                    Game.worldItems.Add(corpse);
+                    Game.worldActors.Remove(target);
                 }
             }
             else
@@ -348,6 +356,84 @@ namespace ODB
                     " (" + hitRoll + " vs " + dodgeRoll + ")"
                 );
             }
+        }
+
+        public string WriteActor()
+        {
+            string output = base.WriteGOBject();
+            output += IO.WriteHex(id, 4);
+            //noone will have more than 255 str... right..?
+            output += IO.WriteHex(strength, 2);
+            output += IO.WriteHex(dexterity, 2);
+            output += IO.WriteHex(intelligence, 2);
+            output += IO.WriteHex(hpCurrent, 2);
+            output += IO.WriteHex(hpMax, 2);
+            output += IO.WriteHex(Cooldown, 2);
+
+            foreach (BodyPart bp in PaperDoll)
+            {
+                output += IO.WriteHex((int)bp.Type, 2) + ":";
+
+                if (bp.Item == null) output += "XXXX";
+                else output += IO.WriteHex(bp.Item.id, 4);
+
+                output += ",";
+            }
+            output += ";";
+
+            foreach (Item it in inventory)
+                output += IO.WriteHex(it.id, 4) + ",";
+            output += ";";
+
+            return output;
+        }
+
+        public int ReadActor(string s)
+        {
+            int read = base.ReadGOBject(s);
+            id = IO.ReadHex(s, 4, ref read, read);
+            strength = IO.ReadHex(s, 2, ref read, read);
+            dexterity = IO.ReadHex(s, 2, ref read, read);
+            intelligence = IO.ReadHex(s, 2, ref read, read);
+            hpCurrent = IO.ReadHex(s, 2, ref read, read);
+            hpMax = IO.ReadHex(s, 2, ref read, read);
+            Cooldown = IO.ReadHex(s, 2, ref read, read);
+
+            PaperDoll = new List<BodyPart>();
+            foreach (string ss in
+                IO.ReadString(s, ref read, read).Split(
+                    new string[] { "," },
+                    StringSplitOptions.RemoveEmptyEntries
+                ).ToList()
+            ) {
+                DollSlot type =
+                        (DollSlot)IO.ReadHex(ss.Split(':')[0]);
+                Item item = 
+                        ss.Split(':')[1].Contains("X") ?
+                            null :
+                            Util.GetItemByID(IO.ReadHex(ss.Split(':')[1]));
+                PaperDoll.Add(new BodyPart(
+                        (DollSlot)IO.ReadHex(ss.Split(':')[0]),
+                        ss.Split(':')[1].Contains("X") ?
+                            null :
+                            Util.GetItemByID(IO.ReadHex(ss.Split(':')[1]))
+                    )
+                );
+            }
+
+            inventory = new List<Item>();
+            foreach (string ss in
+                IO.ReadString(s, ref read, read).Split(
+                    new string[] { "," },
+                    StringSplitOptions.RemoveEmptyEntries
+                ).ToList()
+            ) {
+                Item it = Util.GetItemByID(IO.ReadHex(ss));
+                inventory.Add(it);
+                Game.worldItems.Remove(it);
+            }
+
+            return read;
         }
     }
 

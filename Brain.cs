@@ -3,27 +3,22 @@ using System.Collections.Generic;
 
 namespace ODB
 {
-    class Brain
+    public class Brain
     {
-        public static int IDCounter = 0;
-        public int id;
-
         //maybe I should stop littering these Game1s about
         //but they are comf... conv(enient)-y..?
         //coinin' it. convy.
         public static Game1 Game;
         public Actor MeatPuppet;
-        public int Cooldown;
 
         public Brain(Actor meatPuppet)
         {
-            id = IDCounter++;
             this.MeatPuppet = meatPuppet;
         }
 
         public void Tick()
         {
-            if (!Game.actors.Contains(MeatPuppet))
+            if (!Game.worldActors.Contains(MeatPuppet))
                 return;
 
             List<Room> route = 
@@ -51,7 +46,7 @@ namespace ODB
             if (Util.ActorsOnTile(target).Contains(Game.player))
             {
                 MeatPuppet.Attack(Game.player);
-                Cooldown = 10; //combat cost
+                MeatPuppet.Cooldown = 10; //combat cost
             }
             else
             {
@@ -80,7 +75,7 @@ namespace ODB
                     MeatPuppet.xy = moveTo;
                 }
 
-                Cooldown = 10; //movement cost
+                MeatPuppet.Cooldown = 10; //movement cost
             }
         }
     }

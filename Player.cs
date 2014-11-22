@@ -39,18 +39,15 @@ namespace ODB
                 Item it = Game.player.inventory[i];
 
                 Game.player.inventory.Remove(it);
-                Game.items.Add(it);
+                Game.worldItems.Add(it);
                 it.xy = Game.player.xy;
 
                 //actually make sure to unwield/unwear as well
                 foreach (BodyPart bp in Game.player.PaperDoll)
                     if (bp.Item == it) bp.Item = null;
 
-                /*foreach (DollSlot ds in it.equipSlots)
-                    if(Game.player.paperDoll[ds] == it)
-                        Game.player.paperDoll[ds] = null;*/
-
                 Game.log.Add("Dropped " + it.name + ".");
+                Game.player.Cooldown = 10;
             }
         }
 
@@ -81,6 +78,7 @@ namespace ODB
                     x => x.Type == DollSlot.Hand))
                     if (bp.Item == it) bp.Item = null;
                 Game.log.Add("Sheathed " + it.name + ".");
+                Game.player.Cooldown = 10;
             }
         }
 
@@ -125,6 +123,7 @@ namespace ODB
             if (canEquip)
             {
                 Game.log.Add("Equipped "+ selected.name + ".");
+                Game.player.Cooldown = 10;
                 Game.player.Equip(selected);
             }
         }
@@ -146,8 +145,9 @@ namespace ODB
             {
                 Item it = onTile[i];
                 Game.player.inventory.Add(it);
-                Game.items.Remove(it);
+                Game.worldItems.Remove(it);
                 Game.log.Add("Picked up " + it.name + ".");
+                Game.player.Cooldown = 10;
             }
             else
             {

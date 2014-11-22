@@ -48,14 +48,12 @@ namespace ODB
         public bool[,] vision;
         public List<Room> rooms;
 
-        public List<Actor> actors;
-        public List<Item> items; //in world
-        List<Brain> brains;
+        public List<Actor> worldActors;
+        public List<Item> worldItems; //in world
+        public List<Item> allItems;
+        public List<Brain> Brains;
 
         public Actor player;
-        //cooldown might be a bad name,
-        //but it's time in units til next player action
-        int playerCooldown;
 
         int camX, camY;
         int scrW, scrH;
@@ -232,9 +230,10 @@ namespace ODB
             seen = new bool[lvlW, lvlH];
             vision = new bool[lvlW, lvlH]; //playervision
 
-            actors = new List<Actor>();
-            items = new List<Item>();
-            brains = new List<Brain>();
+            worldActors = new List<Actor>();
+            worldItems = new List<Item>();
+            allItems = new List<Item>();
+            Brains = new List<Brain>();
 
             logPlayerActions = !true;
             logSize = 3;
@@ -280,7 +279,7 @@ namespace ODB
             #endregion
 
             #region dev actors
-            actors.Add(
+            worldActors.Add(
                 player = new Actor(
                     new Point(12, 15), null, Color.Cyan, (char)1+"", "Moribund"
                 )
@@ -295,7 +294,7 @@ namespace ODB
             );
 
             Actor a;
-            actors.Add(
+            worldActors.Add(
                 a = new Actor(
                     new Point(21, 11), null, Color.Red, "&", "Demigorgon"
                 )
@@ -305,14 +304,14 @@ namespace ODB
             a.intelligence = 3;
             a.hpCurrent = a.hpMax = 10;
 
-            brains.Add(new Brain(a));
+            Brains.Add(new Brain(a));
 
             #endregion
 
             #region dev items
             Item it;
 
-            items.Add(
+            worldItems.Add(
                 it = new Item(
                     new Point(13, 13), null, Color.Green, ")", "Longsword",
                     "2d6-3"
@@ -320,7 +319,7 @@ namespace ODB
             );
             it.equipSlots = new List<DollSlot>{ DollSlot.Hand };
 
-            items.Add(
+            worldItems.Add(
                 it = new Item(
                     new Point(13, 13), null, Color.Green, ")", "Snickersnee",
                     "2d6"
@@ -328,20 +327,22 @@ namespace ODB
             );
             it.equipSlots = new List<DollSlot>{ DollSlot.Hand };
 
-            items.Add(
+            worldItems.Add(
                 it = new Item(
                     new Point(13, 12), null, Color.Green, ")", "Vorpal Blade"
                 )
             );
             it.equipSlots = new List<DollSlot>{ DollSlot.Hand };
 
-            items.Add(
+            worldItems.Add(
                 it = new Item(
                     new Point(22, 13), null, Color.Pink, "]", "Sexy apron",
                     "", 2
                 )
             );
             it.equipSlots = new List<DollSlot> { DollSlot.Torso };
+
+            allItems.AddRange(worldItems);
 
             #endregion
 
@@ -416,8 +417,13 @@ namespace ODB
             map[14, 13].doorState = Door.Closed;
             map[14, 13].fg = Color.SandyBrown;
 
+            //this should do right about absolutely nothing.
             IO.WriteAllItemsToFile("Save/items.sv");
             IO.ReadAllItemsFromFile("Save/items.sv");
+            IO.WriteAllActorsToFile("Save/actors.sv");
+            IO.ReadAllActorsFromFile("Save/actors.sv");
+
+            player = Util.GetActorByID(0);
 
             base.Initialize();
         }
@@ -597,7 +603,8 @@ namespace ODB
             {
                 //pretty much every possible player interaction (that uses
                 //ingame time) should be in this if-clause.
-                if (playerCooldown == 0)
+                //if (playerCooldown == 0)
+                if(player.Cooldown == 0)
                 {
                     #region movement
                     Point offset = new Point(0, 0);
@@ -649,7 +656,7 @@ namespace ODB
                                 }
                             }
                             //spent 10 units on walking/fighting
-                            playerCooldown = 10;
+                            Game.player.Cooldown = 10;
                         }
                     }
                     #endregion
@@ -847,7 +854,7 @@ namespace ODB
                             else
                             {
                                 player.inventory.Add(onFloor[0]);
-                                items.Remove(onFloor[0]);
+                                worldItems.Remove(onFloor[0]);
                                 log.Add("Picked up " + onFloor[0].name + ".");
                             }
                         }
@@ -857,17 +864,17 @@ namespace ODB
                 else
                 {
                     #region tick brains
-                    while (playerCooldown > 0)
+                    while (Game.player.Cooldown > 0)
                     {
-                        foreach (Brain b in brains)
+                        foreach (Brain b in Brains)
                             if (
-                                Game.actors.Contains(b.MeatPuppet) &&
-                                b.Cooldown == 0
+                                Game.worldActors.Contains(b.MeatPuppet) &&
+                                b.MeatPuppet.Cooldown == 0
                             )
                                 b.Tick();
 
-                        foreach (Brain b in brains) b.Cooldown--;
-                        playerCooldown--;
+                        foreach (Brain b in Brains) b.MeatPuppet.Cooldown--;
+                        Game.player.Cooldown--;
                     }
                     #endregion
                 }
@@ -1001,11 +1008,11 @@ namespace ODB
 
             #region render items to screen
             int[,] itemCount = new int[lvlW, lvlH];
-            foreach (Item i in items)
+            foreach (Item i in worldItems)
             {
                 itemCount[i.xy.x, i.xy.y]++;
             }
-            foreach (Item i in items)
+            foreach (Item i in worldItems)
             {
                 if (!vision[i.xy.x, i.xy.y]) continue;
                 if (screen.ContainsPoint(i.xy))
@@ -1024,11 +1031,11 @@ namespace ODB
 
             #region render actors to screen
             int[,] actorCount = new int[lvlW, lvlH];
-            foreach (Actor a in actors)
+            foreach (Actor a in worldActors)
             {
                 actorCount[a.xy.x, a.xy.y]++;
             }
-            foreach (Actor a in actors)
+            foreach (Actor a in worldActors)
             {
                 if (!vision[a.xy.x, a.xy.y]) continue;
                 if (screen.ContainsPoint(a.xy))

@@ -17,6 +17,16 @@ namespace ODB
         public static Game1 Game;
         public static Random Random = new Random();
 
+        public static Item GetItemByID(int id)
+        {
+            return Game.allItems.Find(x => x.id == id);
+        }
+
+        public static Actor GetActorByID(int id)
+        {
+            return Game.worldActors.Find(x => x.id == id);
+        }
+
         public static List<Room> GetRooms(Point xy)
         {
             List<Room> roomList = new List<Room>();
@@ -32,7 +42,7 @@ namespace ODB
 
         public static List<Actor> ActorsOnTile(Point xy)
         {
-            return Game.actors.FindAll(x => x.xy == xy);
+            return Game.worldActors.FindAll(x => x.xy == xy);
         }
 
         public static List<Actor> ActorsOnTile(Tile t)
@@ -40,14 +50,14 @@ namespace ODB
             for (int x = 0; x < Game.lvlW; x++)
                 for (int y = 0; y < Game.lvlH; y++)
                     if (Game.map[x, y] == t)
-                        return Game.actors.
+                        return Game.worldActors.
                             FindAll(z => z.xy == new Point(x, y));
             return null;
         }
 
         public static List<Item> ItemsOnTile(Point xy)
         {
-            return Game.items.FindAll(x => x.xy == xy);
+            return Game.worldItems.FindAll(x => x.xy == xy);
         }
 
         public static List<Item> ItemsOnTile(Tile t)
@@ -55,7 +65,7 @@ namespace ODB
             for (int x = 0; x < Game.lvlW; x++)
                 for (int y = 0; y < Game.lvlH; y++)
                     if (Game.map[x, y] == t)
-                        return Game.items.
+                        return Game.worldItems.
                             FindAll(z => z.xy == new Point(x, y));
             return null;
         }
