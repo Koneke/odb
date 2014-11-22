@@ -18,7 +18,6 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 
 //~~~ QUEST TRACKER for 22 nov ~~~
 // * Migrate vision to actor class
-// * Make weapons/armour do something
 
 namespace ODB
 {
@@ -539,18 +538,24 @@ namespace ODB
         {
             #region engineshit
             SadConsole.Engine.Update(gameTime, this.IsActive);
-            ks = Keyboard.GetState();
             dfc.CellData.Clear();
-            #endregion
 
+            ks = Keyboard.GetState();
             shift =
                 (ks.IsKeyDown(Keys.LeftShift) ||
                 ks.IsKeyDown(Keys.RightShift));
+            #endregion
 
+            #region ui interaction
             if (
                 KeyPressed(Keys.Q) ||
                 (KeyPressed(Keys.Escape) && !questionPromptOpen)
             ) this.Exit();
+
+            if (KeyPressed(Keys.I))
+                inventoryConsole.IsVisible =
+                    !inventoryConsole.IsVisible;
+            #endregion
 
             #region log
             if (KeyPressed((Keys)0x6B)) //np+
@@ -580,16 +585,16 @@ namespace ODB
             camY = Math.Min(lvlH - scrH, camY);
             #endregion camera
 
-            Point offset = new Point(0, 0);
-
             //only do player movement if we're not currently asking something
             if (!questionPromptOpen)
             {
-                //pretty much every possible player interaction should be in
-                //this if-clause.
+                //pretty much every possible player interaction (that uses
+                //ingame time) should be in this if-clause.
                 if (playerCooldown == 0)
                 {
                     #region movement
+                    Point offset = new Point(0, 0);
+
                     if (KeyPressed(Keys.NumPad8)) offset.Nudge(0, -1);
                     if (KeyPressed(Keys.NumPad9)) offset.Nudge(1, -1);
                     if (KeyPressed(Keys.NumPad6)) offset.Nudge(1, 0);
@@ -602,6 +607,7 @@ namespace ODB
                     Tile target =
                         map[player.xy.x + offset.x, player.xy.y + offset.y];
 
+                    #region actual moving/attacking
                     if (offset.x != 0 || offset.y != 0)
                     {
                         bool legalMove = true;
@@ -639,7 +645,9 @@ namespace ODB
                             playerCooldown = 10;
                         }
                     }
+                    #endregion
 
+                    #region looking at our new tile
                     //if we have moved, do fun stuff.
                     if (offset.x != 0 || offset.y != 0)
                     {
@@ -659,11 +667,14 @@ namespace ODB
                                 break;
                             default:
                                 log.Add(
-                                    "There are " + itemsOnSquare.Count + " items here."
+                                    "There are " + itemsOnSquare.Count +
+                                    " items here."
                                 );
                                 break;
                         }
                     }
+                    #endregion
+
                     #endregion
 
                     #region drop
@@ -696,7 +707,7 @@ namespace ODB
                     }
                     #endregion
 
-                    #region open
+                    #region close
                     if (KeyPressed(Keys.C) && !shift)
                     {
                         acceptedInput.Clear();
@@ -730,10 +741,10 @@ namespace ODB
                         //list of potential items to equip
                         foreach (BodyPart bp in player.PaperDoll)
                             equipables.Remove(bp.Item);
-                        
+
                         if (equipables.Count > 0)
                         {
-                            string _q = (shift ? "Wear" : "Wield") +" what? [";
+                            string _q = (shift ? "Wear" : "Wield") + " what? [";
                             acceptedInput.Clear();
                             foreach (Item it in equipables)
                             {
@@ -756,6 +767,47 @@ namespace ODB
                         {
                             log.Add("Nothing to " +
                                 (shift ? "wear" : "wield") + ".");
+                        }
+                    }
+                    #endregion
+
+                    #region sheath
+                    if (KeyPressed(Keys.S) && shift)
+                    {
+                        List<Item> equipped = new List<Item>();
+                        foreach (
+                            BodyPart bp in Game.player.PaperDoll.FindAll(
+                                x => x.Type == DollSlot.Hand
+                            )
+                        )
+                        {
+                            if (bp.Item != null)
+                                equipped.Add(bp.Item);
+                        }
+
+                        if (equipped.Count > 0)
+                        {
+                            string _q = "Sheath what? [";
+                            foreach (Item it in equipped)
+                            {
+                                char index =
+                                    (char)(97 +
+                                        Game.player.inventory.IndexOf(it)
+                                    );
+                                _q += index;
+                                acceptedInput.Add((int)(index + "")
+                                    .ToUpper()[0]
+                                );
+                            }
+                            _q += "]";
+                            setupQuestionPrompt(_q);
+                            questionPromptOpen = true;
+
+                            questionReaction = Player.Sheath;
+                        }
+                        else
+                        {
+                            Game.log.Add("Nothing to sheath.");
                         }
                     }
                     #endregion
@@ -794,32 +846,23 @@ namespace ODB
                         }
                     }
                     #endregion
-
-                    if (KeyPressed(Keys.I))
-                        inventoryConsole.IsVisible =
-                            !inventoryConsole.IsVisible;
-
-                    //just general test thing
-                    if (KeyPressed(Keys.F1))
-                    {
-                        setupQuestionPrompt("How many?");
-                        questionPromptOpen = true;
-
-                        acceptedInput.Clear();
-                        acceptedInput.AddRange(numbers);
-                    }
                 }
                 else
                 {
-                    foreach (Brain b in brains)
-                        if (
-                            Game.actors.Contains(b.MeatPuppet) &&
-                            b.Cooldown == 0
-                        )
-                            b.Tick();
+                    #region tick brains
+                    while (playerCooldown > 0)
+                    {
+                        foreach (Brain b in brains)
+                            if (
+                                Game.actors.Contains(b.MeatPuppet) &&
+                                b.Cooldown == 0
+                            )
+                                b.Tick();
 
-                    foreach (Brain b in brains) b.Cooldown--;
-                    playerCooldown--;
+                        foreach (Brain b in brains) b.Cooldown--;
+                        playerCooldown--;
+                    }
+                    #endregion
                 }
             }
             else
@@ -995,18 +1038,6 @@ namespace ODB
             }
             #endregion
 
-            #region shittydevhumour<3
-            //CHRISTMAS!
-            /*Random rn = new Random();
-            for (int i = 0; i < 80*25; i++)
-            {
-                dfc.CellData.Print(i % 80, (i - i % 80) / 80,
-                    * ((char)(i%255)) + "");
-                dfc.CellData.SetForeground(i % 80, (i - i % 80) / 80,
-                    rn.NextDouble() > 0.5 ? Color.Red : Color.Blue);
-            }*/
-            #endregion
-
             #region render ui
             logConsole.CellData.Clear();
             logConsole.CellData.Fill(Color.White, Color.Black, ' ', null);
@@ -1093,9 +1124,11 @@ namespace ODB
 
             #endregion
 
+            #region engineshit
             oks = ks;
 
             base.Update(gameTime);
+            #endregion
         }
 
         #region engineshit

@@ -192,6 +192,7 @@ namespace ODB
         //Face,
         //Neck,
         Torso,
+        //Gloves, //maybe?
         Hand,
         Legs,
         Feet

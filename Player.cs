@@ -54,6 +54,36 @@ namespace ODB
             }
         }
 
+        public static void Sheath(string answer)
+        {
+            if (answer.Length <= 0) return;
+
+            int i = letterAnswerToIndex(answer[0]);
+            if (i >= Game.player.inventory.Count)
+            {
+                Game.log.Add("Invalid selection (" + answer[0] + ").");
+                return;
+            }
+
+            bool itemWielded = false;
+            Item it = null;
+
+            foreach (BodyPart bp in Game.player.PaperDoll.FindAll(
+                x => x.Type == DollSlot.Hand))
+                if (bp.Item == Game.player.inventory[i]) {
+                    itemWielded = true;
+                    it = bp.Item;
+                }
+
+            if (itemWielded)
+            {
+                foreach (BodyPart bp in Game.player.PaperDoll.FindAll(
+                    x => x.Type == DollSlot.Hand))
+                    if (bp.Item == it) bp.Item = null;
+                Game.log.Add("Sheathed " + it.name + ".");
+            }
+        }
+
         public static void Wield(string answer)
         {
             if(Game.logPlayerActions)
