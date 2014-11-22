@@ -15,6 +15,19 @@ namespace ODB
         public static Game1 Game;
         public static Random Random = new Random();
 
+        public static List<Room> GetRooms(Point xy)
+        {
+            List<Room> roomList = new List<Room>();
+            foreach (Room r in Game.rooms)
+                if (r.ContainsPoint(xy)) roomList.Add(r);
+            return roomList;
+        }
+
+        public static List<Room> GetRooms(gObject go)
+        {
+            return GetRooms(go.xy);
+        }
+
         public static List<Actor> ActorsOnTile(Point xy)
         {
             return Game.actors.FindAll(x => x.xy == xy);
@@ -71,6 +84,127 @@ namespace ODB
             for (int i = 0; i < number; i++)
                 sum += Random.Next(1, sides + 1);
             return sum + mod;
+        }
+
+        class node
+        {
+            public node parent;
+            public List<node> children;
+            public node(node parent)
+            {
+                this.parent = parent;
+                children = new List<node>();
+            }
+        }
+
+        public static Point NextGoalOnRoute(Point xy, List<Room> Route)
+        {
+            if (Route == null) //honey, I'm home!
+                return xy;
+            int n = 0;
+            while (true)
+            {
+                foreach (Room r in GetRooms(xy))
+                {
+                    foreach (Rect rr in r.rects)
+                    {
+                        for (int x = 0; x < rr.wh.x; x++)
+                        {
+                            for (int y = 0; y < rr.wh.y; y++)
+                            {
+                                Point np = new Point(
+                                    rr.xy.x + x,
+                                    rr.xy.y + y
+                                );
+                                if (Route[n].ContainsPoint(np))
+                                {
+                                    //if we're actually going anywhere...
+                                    if (np != xy) return np;
+                                    else { n++; break; };
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            //if this every happens, you've been given a bad map son
+            throw new Exception("Bad route, dying.");
+        }
+
+        public static List<Room> FindRouteToPoint(
+            Point source,
+            Point destination
+        ) {
+            List<Room> route = new List<Room>();
+            List<Room> closed = new List<Room>();
+            List<Room> open = new List<Room>();
+
+            //only adding the first, because we don't really need to
+            //find a path through the tile we're already standing on lol
+            open.Add(GetRooms(source)[0]);
+
+            foreach (Room r in GetRooms(source))
+                if (GetRooms(destination).Contains(r))
+                    //already in the right room
+                    //obviously not all we need to do,
+                    //but enough for now
+                    return null;
+
+            Dictionary<node, Room> path = new Dictionary<node, Room>();
+            Dictionary<Room, node> htap = new Dictionary<Room, node>();
+
+            node head = new node(null);
+            node current = head;
+            htap[open[0]] = head;
+            path[head] = open[0];
+
+            List<Room> sharingTiles = new List<Room>();
+            bool foundTarget = false;
+            while (open.Count > 0 && !foundTarget)
+            {
+                Room r = open[0];
+                current = htap[r];
+
+                if (GetRooms(destination).Contains(r))
+                    foundTarget = true;
+                else
+                {
+                    foreach (Rect rr in r.rects)
+                        for (int x = 0; x < rr.wh.x; x++)
+                            for (int y = 0; y < rr.wh.y; y++)
+                            {
+                                //what rooms this tile is included in
+                                List<Room> rooms = GetRooms(
+                                    new Point(rr.xy.x + x, rr.xy.y + y)
+                                );
+                                rooms.RemoveAll(z =>
+                                    open.Contains(z) || closed.Contains(z)
+                                );
+                                foreach (Room c in rooms)
+                                {
+                                    node n = new node(current);
+                                    path[n] = c;
+                                    htap[c] = n;
+                                }
+                                sharingTiles.AddRange(rooms);
+                            }
+                    closed.Add(r);
+                }
+
+                open.AddRange(sharingTiles);
+                open.RemoveAll(x => closed.Contains(x));
+                //in the future, sort the open list so we actually find
+                //the fastest path, not just /any/ path ;)
+            }
+
+            while (current.parent != null)
+            {
+                route.Add(path[current]);
+                current = current.parent;
+            }
+            route.Reverse();
+
+            return route;
         }
     }
 }

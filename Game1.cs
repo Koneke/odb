@@ -41,13 +41,18 @@ namespace ODB
 
         public Tile[,] map;
         bool[,] seen;
-        bool[,] vision;
-        List<Room> rooms;
+        //consider moving vision into actor class
+        public bool[,] vision;
+        public List<Room> rooms;
 
         public List<Actor> actors;
         public List<Item> items; //in world
+        List<Brain> brains;
 
         public Actor player;
+        //cooldown might be a bad name,
+        //but it's time in units til next player action
+        int playerCooldown;
 
         int camX, camY;
         int scrW, scrH;
@@ -188,7 +193,8 @@ namespace ODB
         protected override void Initialize()
         {
             #region engineshit
-            gObject.Game = Player.Game = Util.Game = Game = this;
+            //this is starting to look dumb
+            Brain.Game = gObject.Game = Player.Game = Util.Game = Game = this;
 
             IsMouseVisible = true;
             IsFixedTimeStep = false;
@@ -220,6 +226,7 @@ namespace ODB
 
             actors = new List<Actor>();
             items = new List<Item>();
+            brains = new List<Brain>();
 
             logPlayerActions = !true;
             logSize = 3;
@@ -270,7 +277,7 @@ namespace ODB
             player.strength = 5;
             player.dexterity = 5;
             player.intelligence = 5;
-            player.hpCurrent = player.hpMax = 10;
+            player.hpCurrent = player.hpMax = 100;
 
             standardHuman.ForEach(x =>
                 player.paperDoll.Add(x, null)
@@ -279,13 +286,15 @@ namespace ODB
             Actor a;
             actors.Add(
                 a = new Actor(
-                    new Point(12, 13), null, Color.Red, "&", "Demigorgon"
+                    new Point(21, 11), null, Color.Red, "&", "Demigorgon"
                 )
             );
             a.strength = 3;
             a.dexterity = 3;
             a.intelligence = 3;
             a.hpCurrent = a.hpMax = 10;
+
+            brains.Add(new Brain(a));
 
             #endregion
 
@@ -389,14 +398,6 @@ namespace ODB
             loadFromFile("");
 
             base.Initialize();
-        }
-
-        List<Room> GetRooms(gObject go)
-        {
-            List<Room> roomList = new List<Room>();
-            foreach (Room r in rooms)
-                if (r.ContainsPoint(go.xy)) roomList.Add(r);
-            return roomList;
         }
 
         bool KeyPressed(Keys k)
@@ -568,148 +569,95 @@ namespace ODB
             //only do player movement if we're not currently asking something
             if (!questionPromptOpen)
             {
-                #region movement
-                if (KeyPressed(Keys.NumPad8)) offset.Nudge( 0,-1);
-                if (KeyPressed(Keys.NumPad9)) offset.Nudge( 1,-1);
-                if (KeyPressed(Keys.NumPad6)) offset.Nudge( 1, 0);
-                if (KeyPressed(Keys.NumPad3)) offset.Nudge( 1, 1);
-                if (KeyPressed(Keys.NumPad2)) offset.Nudge( 0, 1);
-                if (KeyPressed(Keys.NumPad1)) offset.Nudge(-1, 1);
-                if (KeyPressed(Keys.NumPad4)) offset.Nudge(-1, 0);
-                if (KeyPressed(Keys.NumPad7)) offset.Nudge(-1,-1);
-
-                Tile target =
-                    map[player.xy.x + offset.x, player.xy.y + offset.y];
-
-                if (offset.x != 0 || offset.y != 0)
+                //pretty much every possible player interaction should be in
+                //this if-clause.
+                if (playerCooldown == 0)
                 {
-                    bool legalMove = true;
-                    if (target == null)
-                        legalMove = false;
-                    else if (
-                        target.doorState == Door.Closed || target.solid
-                    )
-                        legalMove = false;
+                    #region movement
+                    if (KeyPressed(Keys.NumPad8)) offset.Nudge(0, -1);
+                    if (KeyPressed(Keys.NumPad9)) offset.Nudge(1, -1);
+                    if (KeyPressed(Keys.NumPad6)) offset.Nudge(1, 0);
+                    if (KeyPressed(Keys.NumPad3)) offset.Nudge(1, 1);
+                    if (KeyPressed(Keys.NumPad2)) offset.Nudge(0, 1);
+                    if (KeyPressed(Keys.NumPad1)) offset.Nudge(-1, 1);
+                    if (KeyPressed(Keys.NumPad4)) offset.Nudge(-1, 0);
+                    if (KeyPressed(Keys.NumPad7)) offset.Nudge(-1, -1);
 
-                    if (!legalMove)
-                    {
-                        offset = new Point(0, 0);
-                        Game.log.Add("Bump!");
-                    }
-                    else
-                    {
-                        //}
+                    Tile target =
+                        map[player.xy.x + offset.x, player.xy.y + offset.y];
 
-                        if (Util.ActorsOnTile(target).Count <= 0)
+                    if (offset.x != 0 || offset.y != 0)
+                    {
+                        bool legalMove = true;
+                        if (target == null)
+                            legalMove = false;
+                        else if (
+                            target.doorState == Door.Closed || target.solid
+                        )
+                            legalMove = false;
+
+                        if (!legalMove)
                         {
-                            player.xy.Nudge(offset.x, offset.y);
+                            offset = new Point(0, 0);
+                            Game.log.Add("Bump!");
                         }
                         else
                         {
-                            //fighty time!
-                            offset = new Point(0, 0);
-
-                            //in reality, there should only be max 1.
-                            //but yknow, in case of...
-                            foreach (Actor a in Util.ActorsOnTile(target))
+                            if (Util.ActorsOnTile(target).Count <= 0)
                             {
-                                player.Attack(a);
+                                player.xy.Nudge(offset.x, offset.y);
                             }
+                            else
+                            {
+                                //fighty time!
+                                offset = new Point(0, 0);
+
+                                //in reality, there should only be max 1.
+                                //but yknow, in case of...
+                                foreach (Actor a in Util.ActorsOnTile(target))
+                                {
+                                    player.Attack(a);
+                                }
+                            }
+                            //spent 10 units on walking/fighting
+                            playerCooldown = 10;
                         }
                     }
-                }
 
-                //if we have moved, do fun stuff.
-                if (offset.x != 0 || offset.y != 0) {
-                    List<Item> itemsOnSquare = Util.ItemsOnTile(player.xy);
-
-                    switch (itemsOnSquare.Count)
+                    //if we have moved, do fun stuff.
+                    if (offset.x != 0 || offset.y != 0)
                     {
-                        case 0:
-                            break;
-                        case 1:
-                            log.Add(
-                                "There is " +
-                                article(itemsOnSquare[0].name) + " " +
-                                itemsOnSquare[0].name +
-                                " here."
-                            );
-                            break;
-                        default:
-                            log.Add(
-                                "There are " + itemsOnSquare.Count + " items here."
-                            );
-                            break;
-                    }
-                }
-                #endregion
+                        List<Item> itemsOnSquare = Util.ItemsOnTile(player.xy);
 
-                #region drop
-                if (KeyPressed(Keys.D) && !shift)
-                {
-                    string _q = "Drop what? [";
-                    acceptedInput.Clear();
-                    for (int i = 0; i < player.inventory.Count; i++)
-                    {
-                        char index = (char)(97 + i);
-                        _q += index;
-                        acceptedInput.Add((int)(index+"").ToUpper()[0]);
-                    }
-                    _q += "]";
-                    setupQuestionPrompt(_q);
-                    questionPromptOpen = true;
-
-                    questionReaction = Player.Drop;
-                }
-                #endregion
-
-                #region open
-                if (KeyPressed(Keys.O) && !shift)
-                {
-                    acceptedInput.Clear();
-                    acceptedInput.AddRange(directions);
-                    setupQuestionPrompt("Open where?");
-                    questionPromptOpen = true;
-                    questionReaction = Player.Open;
-                }
-                #endregion
-
-                #region open
-                if (KeyPressed(Keys.C) && !shift)
-                {
-                    acceptedInput.Clear();
-                    acceptedInput.AddRange(directions);
-                    setupQuestionPrompt("Close where?");
-                    questionPromptOpen = true;
-                    questionReaction = Player.Close;
-                }
-                #endregion
-
-                #region wield
-                if (KeyPressed(Keys.W) && !shift)
-                {
-                    List<Item> equipables = new List<Item>();
-
-                    foreach (Item it in player.inventory)
-                        //is it equipable?
-                        if (it.equipSlots.Count > 0)
-                            equipables.Add(it);
-
-                    foreach (Item it in player.paperDoll.Values)
-                        if (it != null)
-                            //no double equipping :p
-                            equipables.Remove(it);
-
-                    if (equipables.Count > 0)
-                    {
-                        string _q = "Wield what? [";
-                        acceptedInput.Clear();
-                        foreach (Item it in equipables)
+                        switch (itemsOnSquare.Count)
                         {
-                            //show the character corresponding with the one
-                            //shown in the inventory.
-                            char index =
-                                (char)(97 + player.inventory.IndexOf(it));
+                            case 0:
+                                break;
+                            case 1:
+                                log.Add(
+                                    "There is " +
+                                    article(itemsOnSquare[0].name) + " " +
+                                    itemsOnSquare[0].name +
+                                    " here."
+                                );
+                                break;
+                            default:
+                                log.Add(
+                                    "There are " + itemsOnSquare.Count + " items here."
+                                );
+                                break;
+                        }
+                    }
+                    #endregion
+
+                    #region drop
+                    if (KeyPressed(Keys.D) && !shift)
+                    {
+                        string _q = "Drop what? [";
+                        acceptedInput.Clear();
+                        for (int i = 0; i < player.inventory.Count; i++)
+                        {
+                            char index = (char)(97 + i);
                             _q += index;
                             acceptedInput.Add((int)(index + "").ToUpper()[0]);
                         }
@@ -717,61 +665,134 @@ namespace ODB
                         setupQuestionPrompt(_q);
                         questionPromptOpen = true;
 
-                        questionReaction = Player.Wield;
+                        questionReaction = Player.Drop;
                     }
-                    else
-                    {
-                        log.Add("Nothing to wield.");
-                    }
-                }
-                #endregion
+                    #endregion
 
-                #region get
-                if (KeyPressed(Keys.G) && !shift)
-                {
-                    List<Item> onFloor = Util.ItemsOnTile(player.xy);
-                    if (onFloor.Count > 0)
+                    #region open
+                    if (KeyPressed(Keys.O) && !shift)
                     {
-                        if (onFloor.Count > 1)
+                        acceptedInput.Clear();
+                        acceptedInput.AddRange(directions);
+                        setupQuestionPrompt("Open where?");
+                        questionPromptOpen = true;
+                        questionReaction = Player.Open;
+                    }
+                    #endregion
+
+                    #region open
+                    if (KeyPressed(Keys.C) && !shift)
+                    {
+                        acceptedInput.Clear();
+                        acceptedInput.AddRange(directions);
+                        setupQuestionPrompt("Close where?");
+                        questionPromptOpen = true;
+                        questionReaction = Player.Close;
+                    }
+                    #endregion
+
+                    #region wield
+                    if (KeyPressed(Keys.W) && !shift)
+                    {
+                        List<Item> equipables = new List<Item>();
+
+                        foreach (Item it in player.inventory)
+                            //is it equipable?
+                            if (it.equipSlots.Count > 0)
+                                equipables.Add(it);
+
+                        foreach (Item it in player.paperDoll.Values)
+                            if (it != null)
+                                //no double equipping :p
+                                equipables.Remove(it);
+
+                        if (equipables.Count > 0)
                         {
-                            string _q = "Pick up what? [";
+                            string _q = "Wield what? [";
                             acceptedInput.Clear();
-                            for (int i = 0; i < onFloor.Count; i++)
+                            foreach (Item it in equipables)
                             {
-                                char index = (char)(97 + i);
+                                //show the character corresponding with the one
+                                //shown in the inventory.
+                                char index =
+                                    (char)(97 + player.inventory.IndexOf(it));
                                 _q += index;
-                                acceptedInput.Add((int)(index+"").ToUpper()[0]);
+                                acceptedInput.Add((int)(index + "").ToUpper()[0]);
                             }
                             _q += "]";
                             setupQuestionPrompt(_q);
                             questionPromptOpen = true;
 
-                            acceptedInput.Clear();
-                            acceptedInput.AddRange(letters);
-
-                            questionReaction = Player.Get;
+                            questionReaction = Player.Wield;
                         }
                         else
                         {
-                            player.inventory.Add(onFloor[0]);
-                            items.Remove(onFloor[0]);
-                            log.Add("Picked up " + onFloor[0].name + ".");
+                            log.Add("Nothing to wield.");
                         }
                     }
+                    #endregion
+
+                    #region get
+                    if (KeyPressed(Keys.G) && !shift)
+                    {
+                        List<Item> onFloor = Util.ItemsOnTile(player.xy);
+                        if (onFloor.Count > 0)
+                        {
+                            if (onFloor.Count > 1)
+                            {
+                                string _q = "Pick up what? [";
+                                acceptedInput.Clear();
+                                for (int i = 0; i < onFloor.Count; i++)
+                                {
+                                    char index = (char)(97 + i);
+                                    _q += index;
+                                    acceptedInput.Add((int)(index + "").ToUpper()[0]);
+                                }
+                                _q += "]";
+                                setupQuestionPrompt(_q);
+                                questionPromptOpen = true;
+
+                                acceptedInput.Clear();
+                                acceptedInput.AddRange(letters);
+
+                                questionReaction = Player.Get;
+                            }
+                            else
+                            {
+                                player.inventory.Add(onFloor[0]);
+                                items.Remove(onFloor[0]);
+                                log.Add("Picked up " + onFloor[0].name + ".");
+                            }
+                        }
+                    }
+                    #endregion
+
+                    if (KeyPressed(Keys.I))
+                        inventoryConsole.IsVisible = !inventoryConsole.IsVisible;
+
+                    //just general test thing
+                    if (KeyPressed(Keys.F1))
+                    {
+                        setupQuestionPrompt("How many?");
+                        questionPromptOpen = true;
+
+                        acceptedInput.Clear();
+                        acceptedInput.AddRange(numbers);
+                    }
                 }
-                #endregion
-
-                if (KeyPressed(Keys.I))
-                    inventoryConsole.IsVisible = !inventoryConsole.IsVisible;
-
-                //just general test thing
-                if (KeyPressed(Keys.F1))
+                else
                 {
-                    setupQuestionPrompt("How many?");
-                    questionPromptOpen = true;
+                    List<Brain> readyBrains = brains.FindAll(
+                        x => x.Cooldown == 0
+                    );
 
-                    acceptedInput.Clear();
-                    acceptedInput.AddRange(numbers);
+                    if (readyBrains.Count > 0)
+                        readyBrains.ForEach(x => x.Tick());
+                    else
+                    {
+                        brains.ForEach(x => x.Cooldown--);
+                        playerCooldown--;
+                    }
                 }
             }
             else
@@ -832,7 +853,6 @@ namespace ODB
                 #endregion
             }
 
-
             #region vision
             for (int x = 0; x < lvlW; x++)
             {
@@ -840,11 +860,14 @@ namespace ODB
                 {
                     //reset vision
                     vision[x, y] = false;
+                     //wizion
+                    vision[x, y] = true;
+                    seen[x, y] = true;
                 }
             }
 
             //see room
-            foreach (Room R in GetRooms(player))
+            foreach (Room R in Util.GetRooms(player))
             {
                 foreach (Rect r in R.rects)
                 {
@@ -880,7 +903,6 @@ namespace ODB
 
                     dfc.CellData.SetBackground(x, y, t.bg * 1f);
                     dfc.CellData.SetForeground(
-                        //x, y, t.fg * (vision[x+camX,y+camY] ? 1f : 0.3f)
                         x, y, t.fg * (inVision ? 1f : 0.6f)
                     );
 

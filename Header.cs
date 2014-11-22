@@ -118,6 +118,11 @@ namespace ODB
         {
             return !(a == b);
         }
+
+        public static Point operator +(Point a, Point b)
+        {
+            return new Point(a.x + b.x, a.y + b.y);
+        }
     }
 
     public struct Rect
@@ -140,7 +145,7 @@ namespace ODB
         }
     }
 
-    class Room
+    public class Room
     {
         public List<Rect> rects;
 
