@@ -37,12 +37,8 @@ namespace ODB
         public string writeTile()
         {
             string s = "";
-            s += String.Format("{0:X2}", bg.R);
-            s += String.Format("{0:X2}", bg.G);
-            s += String.Format("{0:X2}", bg.B);
-            s += String.Format("{0:X2}", fg.R);
-            s += String.Format("{0:X2}", fg.G);
-            s += String.Format("{0:X2}", fg.B);
+            s += IO.Write(bg);
+            s += IO.Write(fg);
             s += tile;
             s += solid ? "1" : "0";
             s += doorState == Door.None ?
@@ -183,6 +179,35 @@ namespace ODB
             this.tile = tile;
             this.name = name;
         }
+
+        public gObject(string s)
+        {
+            ReadGOBject(s);
+        }
+
+        public string WriteGOBject()
+        {
+            string s = "";
+            s += IO.Write(xy);
+            s += IO.Write(bg);
+            s += IO.Write(fg);
+            s += tile;
+            s += name + ";";
+            return s;
+        }
+
+        //return how many characters we read
+        //so subclasses know where to start
+        public int ReadGOBject(string s)
+        {
+            int read = 0;
+            this.xy = IO.ReadPoint(s, ref read, 0);
+            this.bg = IO.ReadNullableColor(s, ref read, read);
+            this.fg = IO.ReadColor(s, ref read, read);
+            this.tile = s.Substring(read++, 1);
+            this.name = IO.ReadString(s, ref read, read);
+            return read;
+        }
     }
 
     public enum DollSlot
@@ -211,6 +236,9 @@ namespace ODB
 
     public class Actor : gObject
     {
+        public static int IDCounter = 0;
+        public int id;
+
         public List<Item> inventory;
 
         public int strength, dexterity, intelligence;
@@ -223,6 +251,7 @@ namespace ODB
         ) :
             base(xy, bg, fg, tile, name)
         {
+            id = IDCounter++;
             inventory = new List<Item>();
             PaperDoll = new List<BodyPart>();
         }
@@ -336,10 +365,13 @@ namespace ODB
 
     public class Item : gObject
     {
-        int count;
-        public List<DollSlot> equipSlots;
+        public static int IDCounter = 0;
+        public int id;
+
+        //int count;
         public int AC;
         public string Damage;
+        public List<DollSlot> equipSlots;
 
         public Item(
             Point xy, Color? bg, Color fg, string tile, string name,
@@ -347,10 +379,45 @@ namespace ODB
         ) :
             base(xy, bg, fg, tile, name)
         {
-            count = 1;
-            equipSlots = new List<DollSlot>();
-            this.Damage = Damage;
+            id = IDCounter++;
+            //count = 1;
             this.AC = AC;
+            this.Damage = Damage;
+            equipSlots = new List<DollSlot>();
+        }
+
+        public Item(string s) : base(s)
+        {
+            ReadItem(s);
+        }
+
+        public string WriteItem()
+        {
+            string s = base.WriteGOBject();
+            s += IO.WriteHex(id, 4);
+            s += IO.WriteHex(AC, 2);
+            s += IO.Write(Damage);
+            foreach (DollSlot ds in equipSlots)
+                s += (int)ds + ",";
+            s += ";";
+
+            return s;
+        }
+
+        public int ReadItem(string s)
+        {
+            int read = base.ReadGOBject(s);
+            id = IO.ReadHex(s, 4, ref read, read);
+            AC = IO.ReadHex(s, 2, ref read, read);
+            Damage = IO.ReadString(s, ref read, read);
+
+            string slots = IO.ReadString(s, ref read, read);
+            equipSlots = new List<DollSlot>();
+            foreach (string ss in slots.Split(','))
+                if(ss != "")
+                    equipSlots.Add((DollSlot)int.Parse(ss));
+
+            return read;
         }
     }
     #endregion

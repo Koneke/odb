@@ -197,7 +197,12 @@ namespace ODB
         {
             #region engineshit
             //this is starting to look dumb
-            Brain.Game = gObject.Game = Player.Game = Util.Game = Game = this;
+            gObject.Game =
+            Player.Game =
+            Brain.Game =
+            Util.Game =
+            IO.Game =
+            Game = this;
 
             IsMouseVisible = true;
             IsFixedTimeStep = false;
@@ -337,6 +342,7 @@ namespace ODB
                 )
             );
             it.equipSlots = new List<DollSlot> { DollSlot.Torso };
+
             #endregion
 
             #region render rooms to map
@@ -410,7 +416,8 @@ namespace ODB
             map[14, 13].doorState = Door.Closed;
             map[14, 13].fg = Color.SandyBrown;
 
-            loadFromFile("");
+            IO.WriteAllItemsToFile("Save/items.sv");
+            IO.ReadAllItemsFromFile("Save/items.sv");
 
             base.Initialize();
         }

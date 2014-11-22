@@ -5,6 +5,9 @@ namespace ODB
 {
     class Brain
     {
+        public static int IDCounter = 0;
+        public int id;
+
         //maybe I should stop littering these Game1s about
         //but they are comf... conv(enient)-y..?
         //coinin' it. convy.
@@ -14,6 +17,7 @@ namespace ODB
 
         public Brain(Actor meatPuppet)
         {
+            id = IDCounter++;
             this.MeatPuppet = meatPuppet;
         }
 
