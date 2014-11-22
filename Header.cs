@@ -1,8 +1,8 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
 using System.Collections.Generic;
-/*using System.Linq;
-using System.Text;*/
+using System.Linq;
+//using System.Text;
 
 namespace ODB
 {
@@ -185,17 +185,27 @@ namespace ODB
         }
     }
 
-    public enum dollSlot
+    public enum DollSlot
     {
         Head,
-        Eyes,
-        Face,
-        Neck,
+        //Eyes,
+        //Face,
+        //Neck,
         Torso,
         Hand,
-        Offhand,
         Legs,
         Feet
+    }
+
+    public class BodyPart
+    {
+        public DollSlot Type;
+        public Item Item;
+        public BodyPart(DollSlot Type, Item Item = null)
+        {
+            this.Type = Type;
+            this.Item = Item;
+        }
     }
 
     public class Actor : gObject
@@ -205,7 +215,7 @@ namespace ODB
         public int strength, dexterity, intelligence;
         public int hpMax, hpCurrent;
 
-        public Dictionary<dollSlot, Item> paperDoll;
+        public List<BodyPart> PaperDoll;
 
         public Actor(
             Point xy, Color? bg, Color fg, string tile, string name
@@ -213,25 +223,87 @@ namespace ODB
             base(xy, bg, fg, tile, name)
         {
             inventory = new List<Item>();
-            paperDoll = new Dictionary<dollSlot, Item>();
+            PaperDoll = new List<BodyPart>();
+        }
+
+        public bool HasFree(DollSlot slot)
+        {
+            return PaperDoll.Any(
+                x => x.Type == slot &&
+                x.Item == null
+            );
+        }
+
+        public void Equip(Item it)
+        {
+            foreach (DollSlot ds in it.equipSlots)
+            {
+                foreach(BodyPart bp in PaperDoll)
+                    if (bp.Type == ds && bp.Item == null)
+                    {
+                        bp.Item = it;
+                        break;
+                    }
+            }
+        }
+
+        public bool IsEquipped(Item it)
+        {
+            return PaperDoll.Any(x => x.Item == it);
+        }
+
+        public int GetAC()
+        {
+            int ac = 8;
+            List<Item> equipped = new List<Item>();
+            foreach (
+                BodyPart bp in PaperDoll.FindAll(
+                    x =>
+                        //might seem dumb, but ds.Hand is currently for
+                        //eh, like, the grip, more than the hand itself
+                        //glove-hands currently do not exist..?
+                        //idk, we'll get to it
+                        x.Type != DollSlot.Hand &&
+                        x.Item != null
+                    )
+                )
+                if(!equipped.Contains(bp.Item))
+                    equipped.Add(bp.Item);
+
+            foreach(Item it in equipped)
+                ac += it.AC;
+
+            return ac;
         }
 
         public void Attack(Actor target)
         {
             int hitRoll = Util.Roll("1d6") + dexterity;
-            int dodgeRoll = Util.Roll("1d6") + dexterity;
+            int dodgeRoll = target.GetAC();
+
             if (hitRoll >= dodgeRoll) {
-                //1d4, hardcoded current bare-hands damage
-                int damageRoll = Util.Roll("1d4") + strength;
+                int damageRoll = strength;
+
+                foreach (
+                    BodyPart bp in PaperDoll.FindAll(
+                        x => x.Type == DollSlot.Hand && x.Item != null)
+                    )
+                    if (bp.Item.Damage != "")
+                        damageRoll += Util.Roll(bp.Item.Damage);
+                    else
+                        //barehanded/bash damage
+                        damageRoll += Util.Roll("1d4");
+
                 target.hpCurrent -= damageRoll;
 
                 Game.log.Add(name + " strikes " + target.name +
-                    " (" + hitRoll + " vs " + dodgeRoll + ")" +
+                    " (" + hitRoll + " vs AC" + dodgeRoll + ")" +
                     " (-" + damageRoll + "hp)"
                 );
 
                 if (target.hpCurrent <= 0)
                 {
+                    Game.log.Add(target.name + " dies!");
                     Item corpse = new Item(
                         target.xy, null, target.fg, "%",
                         target.name + " corpse"
@@ -264,15 +336,20 @@ namespace ODB
     public class Item : gObject
     {
         int count;
-        public List<dollSlot> equipSlots;
+        public List<DollSlot> equipSlots;
+        public int AC;
+        public string Damage;
 
         public Item(
-            Point xy, Color? bg, Color fg, string tile, string name
+            Point xy, Color? bg, Color fg, string tile, string name,
+            string Damage = "", int AC = 0
         ) :
             base(xy, bg, fg, tile, name)
         {
             count = 1;
-            equipSlots = new List<dollSlot>();
+            equipSlots = new List<DollSlot>();
+            this.Damage = Damage;
+            this.AC = AC;
         }
     }
     #endregion

@@ -16,6 +16,10 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 //general todo idea:
 // question prompt ~stack~, instead of just one, like it is atm?
 
+//~~~ QUEST TRACKER for 22 nov ~~~
+// * Migrate vision to actor class
+// * Make weapons/armour do something
+
 namespace ODB
 {
 
@@ -77,7 +81,7 @@ namespace ODB
 
         Console inventoryConsole;
 
-        List<dollSlot> standardHuman;
+        List<DollSlot> standardHuman;
 
         Console statRowConsole;
 
@@ -233,10 +237,13 @@ namespace ODB
             log = new List<string>();
             log.Add("Something something dungeon");
 
-            standardHuman = new List<dollSlot>();
-            //todo: lazy non-just-loop-through-the-enum definition of human
-            foreach(dollSlot ds in Enum.GetValues(typeof(dollSlot)))
-                standardHuman.Add(ds);
+            standardHuman = new List<DollSlot>();
+            standardHuman.Add(DollSlot.Head);
+            standardHuman.Add(DollSlot.Torso);
+            standardHuman.Add(DollSlot.Hand);
+            standardHuman.Add(DollSlot.Hand);
+            standardHuman.Add(DollSlot.Legs);
+            standardHuman.Add(DollSlot.Feet);
 
             acceptedInput = new List<int>();
 
@@ -277,10 +284,10 @@ namespace ODB
             player.strength = 5;
             player.dexterity = 5;
             player.intelligence = 5;
-            player.hpCurrent = player.hpMax = 100;
+            player.hpCurrent = player.hpMax = 50;
 
             standardHuman.ForEach(x =>
-                player.paperDoll.Add(x, null)
+                player.PaperDoll.Add(new BodyPart(x))
             );
 
             Actor a;
@@ -303,25 +310,34 @@ namespace ODB
 
             items.Add(
                 it = new Item(
-                    new Point(13, 13), null, Color.Green, ")", "Longsword"
+                    new Point(13, 13), null, Color.Green, ")", "Longsword",
+                    "2d6-3"
                 )
             );
-
-            it.equipSlots = new List<dollSlot>{ dollSlot.Hand };
+            it.equipSlots = new List<DollSlot>{ DollSlot.Hand };
 
             items.Add(
                 it = new Item(
-                    new Point(13, 13), null, Color.Green, ")", "Snickersnee"
+                    new Point(13, 13), null, Color.Green, ")", "Snickersnee",
+                    "2d6"
                 )
             );
-
-            it.equipSlots = new List<dollSlot>{ dollSlot.Hand };
+            it.equipSlots = new List<DollSlot>{ DollSlot.Hand };
 
             items.Add(
                 it = new Item(
                     new Point(13, 12), null, Color.Green, ")", "Vorpal Blade"
                 )
             );
+            it.equipSlots = new List<DollSlot>{ DollSlot.Hand };
+
+            items.Add(
+                it = new Item(
+                    new Point(22, 13), null, Color.Pink, "]", "Sexy apron",
+                    "", 2
+                )
+            );
+            it.equipSlots = new List<DollSlot> { DollSlot.Torso };
             #endregion
 
             #region render rooms to map
@@ -691,24 +707,33 @@ namespace ODB
                     }
                     #endregion
 
-                    #region wield
-                    if (KeyPressed(Keys.W) && !shift)
+                    #region wield/wear //AHAHAHA IM A GENIUS
+                    if (KeyPressed(Keys.W))
                     {
                         List<Item> equipables = new List<Item>();
 
                         foreach (Item it in player.inventory)
-                            //is it equipable?
-                            if (it.equipSlots.Count > 0)
+                            //is it wieldable?
+                            if (
+                                it.equipSlots.Contains(DollSlot.Hand) &&
+                                !shift
+                            )
+                                equipables.Add(it);
+                            else if (
+                                it.equipSlots.FindAll(
+                                    x => x != DollSlot.Hand
+                                ).Count > 0 && shift
+                            )
                                 equipables.Add(it);
 
-                        foreach (Item it in player.paperDoll.Values)
-                            if (it != null)
-                                //no double equipping :p
-                                equipables.Remove(it);
-
+                        //remove items we've already equipped from the
+                        //list of potential items to equip
+                        foreach (BodyPart bp in player.PaperDoll)
+                            equipables.Remove(bp.Item);
+                        
                         if (equipables.Count > 0)
                         {
-                            string _q = "Wield what? [";
+                            string _q = (shift ? "Wear" : "Wield") +" what? [";
                             acceptedInput.Clear();
                             foreach (Item it in equipables)
                             {
@@ -717,7 +742,9 @@ namespace ODB
                                 char index =
                                     (char)(97 + player.inventory.IndexOf(it));
                                 _q += index;
-                                acceptedInput.Add((int)(index + "").ToUpper()[0]);
+                                acceptedInput.Add((int)(index + "")
+                                    .ToUpper()[0]
+                                );
                             }
                             _q += "]";
                             setupQuestionPrompt(_q);
@@ -727,7 +754,8 @@ namespace ODB
                         }
                         else
                         {
-                            log.Add("Nothing to wield.");
+                            log.Add("Nothing to " +
+                                (shift ? "wear" : "wield") + ".");
                         }
                     }
                     #endregion
@@ -768,7 +796,8 @@ namespace ODB
                     #endregion
 
                     if (KeyPressed(Keys.I))
-                        inventoryConsole.IsVisible = !inventoryConsole.IsVisible;
+                        inventoryConsole.IsVisible =
+                            !inventoryConsole.IsVisible;
 
                     //just general test thing
                     if (KeyPressed(Keys.F1))
@@ -782,17 +811,15 @@ namespace ODB
                 }
                 else
                 {
-                    List<Brain> readyBrains = brains.FindAll(
-                        x => x.Cooldown == 0
-                    );
+                    foreach (Brain b in brains)
+                        if (
+                            Game.actors.Contains(b.MeatPuppet) &&
+                            b.Cooldown == 0
+                        )
+                            b.Tick();
 
-                    if (readyBrains.Count > 0)
-                        readyBrains.ForEach(x => x.Tick());
-                    else
-                    {
-                        brains.ForEach(x => x.Cooldown--);
-                        playerCooldown--;
-                    }
+                    foreach (Brain b in brains) b.Cooldown--;
+                    playerCooldown--;
                 }
             }
             else
@@ -861,8 +888,8 @@ namespace ODB
                     //reset vision
                     vision[x, y] = false;
                      //wizion
-                    vision[x, y] = true;
-                    seen[x, y] = true;
+                    /*vision[x, y] = true;
+                    seen[x, y] = true;*/
                 }
             }
 
@@ -1021,8 +1048,8 @@ namespace ODB
 
             for (int i = 0; i < player.inventory.Count; i++)
             {
-                bool equipped =
-                    player.paperDoll.Values.Contains(player.inventory[i]);
+                bool equipped = Game.player.IsEquipped(player.inventory[i]);
+                    //player.paperDoll.Values.Contains(player.inventory[i]);
 
                 string name = "" + ((char)(97 + i));
                 name += " - " + player.inventory[i].name;
@@ -1037,11 +1064,31 @@ namespace ODB
             statRowConsole.CellData.Clear();
             statRowConsole.CellData.Fill(Color.White, Color.Black, ' ', null);
             string namerow = player.name + " - Delver";
-            statRowConsole.CellData.Print(0, 0, namerow);
+            namerow += "  ";
+            namerow += "STR " + player.strength + "  ";
+            namerow += "DEX " + player.dexterity + "  ";
+            namerow += "INT " + player.intelligence + "  ";
+            namerow += "AC " + player.GetAC();
             string statrow = "";
-            statrow += "STR - " + player.strength + " ; ";
-            statrow += "DEX - " + player.dexterity + " ; ";
-            statrow += "INT - " + player.intelligence;
+            statrow += "[";
+            statrow += player.hpCurrent.ToString().PadLeft(3, ' ');
+            statrow += "/";
+            statrow += player.hpMax.ToString().PadLeft(3, ' ');
+            statrow += "]";
+
+            float playerHealthPcnt = (player.hpCurrent / (float)player.hpMax);
+            float colourStrength = 0.6f + 0.4f - (0.4f * playerHealthPcnt);
+
+            for (int x = 0; x < 9; x++)
+                statRowConsole.CellData.SetBackground(
+                    x, 1, new Color(
+                        colourStrength - colourStrength * playerHealthPcnt,
+                        colourStrength * playerHealthPcnt,
+                        0
+                    )
+                );
+
+            statRowConsole.CellData.Print(0, 0, namerow);
             statRowConsole.CellData.Print(0, 1, statrow);
 
             #endregion

@@ -43,9 +43,12 @@ namespace ODB
                 it.xy = Game.player.xy;
 
                 //actually make sure to unwield/unwear as well
-                foreach (dollSlot ds in it.equipSlots)
+                foreach (BodyPart bp in Game.player.PaperDoll)
+                    if (bp.Item == it) bp.Item = null;
+
+                /*foreach (DollSlot ds in it.equipSlots)
                     if(Game.player.paperDoll[ds] == it)
-                        Game.player.paperDoll[ds] = null;
+                        Game.player.paperDoll[ds] = null;*/
 
                 Game.log.Add("Dropped " + it.name + ".");
             }
@@ -81,22 +84,18 @@ namespace ODB
 
             Item selected = Game.player.inventory[i];
             bool canEquip = true;
-            foreach (dollSlot ds in selected.equipSlots)
+            foreach (DollSlot ds in selected.equipSlots)
             {
-                //something in the slot? => no equip
-                if (Game.player.paperDoll[ds] != null)
+                if (!Game.player.HasFree(ds))
                 {
                     canEquip = false;
-                    Game.log.Add("Already using that slot.");
+                    Game.log.Add("You need to remove something first.");
                 }
             }
             if (canEquip)
             {
                 Game.log.Add("Equipped "+ selected.name + ".");
-                foreach (dollSlot ds in selected.equipSlots)
-                {
-                    Game.player.paperDoll[ds] = selected;
-                }
+                Game.player.Equip(selected);
             }
         }
 
