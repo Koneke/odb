@@ -157,7 +157,8 @@ namespace ODB
         public static string WriteItemDefinitionsToFile(string path)
         {
             string output = "";
-            for (int i = 0; i < ItemDefinition.TypeCounter; i++)
+            //for (int i = 0; i < ItemDefinition.TypeCounter; i++)
+            for (int i = 0; i < 0xFFFF; i++)
             {
                 if (ItemDefinition.ItemDefinitions[i] != null)
                 {
@@ -188,7 +189,8 @@ namespace ODB
         public static string WriteActorDefinitionsToFile(string path)
         {
             string output = "";
-            for (int i = 0; i < ActorDefinition.TypeCounter; i++)
+            //for (int i = 0; i < ActorDefinition.TypeCounter; i++)
+            for (int i = 0; i < 0xFFFF; i++)
             {
                 if (ActorDefinition.ActorDefinitions[i] != null)
                 {
@@ -215,6 +217,48 @@ namespace ODB
             {
                 ActorDefinition idef = new ActorDefinition(definition);
             }
+        }
+
+        public static string WriteRoomsToFile(string path)
+        {
+            string output = "";
+            foreach (Room r in Game.rooms)
+                output += r.WriteRoom() + "##";
+            WriteToFile(path, output);
+            return output;
+        }
+        public static void ReadRoomsFromFile(string path)
+        {
+            string content = ReadFromFile(path);
+            Game.rooms = new List<Room>();
+            foreach (
+                String s in content.Split(
+                    new string[]{ "##" },
+                    StringSplitOptions.RemoveEmptyEntries
+            ).ToList()) {
+                Room r = new Room(s);
+                Game.rooms.Add(r);
+            }
+        }
+
+        public static string WriteSeenToFile(string path)
+        {
+            string output = "";
+            for (int i = 0; i < Game.lvlW * Game.lvlH; i++)
+                output += IO.Write(Game.seen[
+                    i % Game.lvlW,
+                    (i - (i % Game.lvlW)) / Game.lvlW]
+                );
+            IO.WriteToFile(path, output);
+            return output;
+        }
+        public static void ReadSeenFromFile(string path)
+        {
+            string content = IO.ReadFromFile(path);
+            int n = 0;
+            for (int i = 0; i < Game.lvlW * Game.lvlH; i++)
+                Game.seen[i % Game.lvlW, (i - (i % Game.lvlW)) / Game.lvlW] =
+                    IO.ReadBool(content, ref n, i);
         }
 
         public static string Write(Color c)

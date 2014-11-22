@@ -150,6 +150,11 @@ namespace ODB
             rects = new List<Rect>();
         }
 
+        public Room(string s)
+        {
+            ReadRoom(s);
+        }
+
         public bool ContainsPoint(Point p)
         {
             foreach (Rect r in rects)
@@ -157,6 +162,34 @@ namespace ODB
                 if (r.ContainsPoint(p)) return true;
             }
             return false;
+        }
+
+        public string WriteRoom()
+        {
+            string output = "";
+            output += IO.WriteHex(rects.Count, 2);
+            foreach (Rect r in rects)
+            {
+                output += IO.Write(r.xy);
+                output += IO.Write(r.wh);
+            }
+            return output;
+        }
+
+        public int ReadRoom(string s)
+        {
+            int read = 0;
+            int numRects = IO.ReadHex(s, 2, ref read, read);
+            rects = new List<Rect>();
+            for (int i = 0; i < numRects; i++)
+            {
+                rects.Add(new Rect(
+                    IO.ReadPoint(s, ref read, read),
+                    IO.ReadPoint(s, ref read, read)
+                    )
+                );
+            }
+            return read;
         }
     }
 
@@ -325,6 +358,8 @@ namespace ODB
         public ActorDefinition(string s) : base(s)
         {
             ReadActorDefinition(s);
+            /*ItemDefinition Corpse = new ItemDefinition(
+                null, Color.Red, "%", name + " corpse");*/
         }
 
         public string WriteActorDefinition()

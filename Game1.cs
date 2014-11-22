@@ -186,8 +186,11 @@ namespace ODB
             };
             space = 32;
 
-            #region dev dungeon
+            //IO.ReadActorDefinitionsFromFile("Save/actors.def");
+            //IO.ReadItemDefinitionsFromFile("Save/items.def");
             rooms = new List<Room>();
+            #region dev dungeon
+            /*
             Room r;
 
             r = new Room();
@@ -209,6 +212,7 @@ namespace ODB
                 new List<DollSlot>(standardHuman));
             worldActors.Add(player = new Actor(
                     new Point(12, 15), PlayerDefinition
+                    //new Point(12, 15), ActorDefinition.ActorDefinitions[0]
                 )
             );
 
@@ -218,6 +222,7 @@ namespace ODB
                     3, 3, 3, 10, new List<DollSlot>(standardHuman));
             worldActors.Add(a = new Actor(
                     new Point(21, 11), DemigorgonDefinition
+                    //new Point(21, 11), ActorDefinition.ActorDefinitions[2] 
                 )
             );
 
@@ -314,14 +319,24 @@ namespace ODB
                     }
                 }
             }
+            */
             #endregion
-
             //testdoor
-            map[14, 13].doorState = Door.Closed;
-            map[14, 13].fg = Color.SandyBrown;
+            /*map[14, 13].doorState = Door.Closed;
+            map[14, 13].fg = Color.SandyBrown;*/
+
+            //IO.ReadLevelFromFile("Save/level.sv");
+
+            /*string s = IO.WriteRoomsToFile("Save/rooms.sv");
+            IO.ReadRoomsFromFile("Save/rooms.sv");
+
+            IO.ReadItemDefinitionsFromFile("Save/items.def");
+            IO.ReadAllItemsFromFile("Save/items.sv");
+            IO.ReadActorDefinitionsFromFile("Save/actors.def");
+            IO.ReadAllActorsFromFile("Save/actors.sv");
 
             //this should do right about absolutely nothing.
-            IO.WriteLevelToFile("Save/level.sv");
+            /*IO.WriteLevelToFile("Save/level.sv");
             IO.ReadLevelFromFile("Save/level.sv");
             IO.WriteItemDefinitionsToFile("Save/items.def");
             IO.ReadItemDefinitionsFromFile("Save/items.def");
@@ -330,8 +345,17 @@ namespace ODB
             IO.WriteActorDefinitionsToFile("Save/actors.def");
             IO.ReadActorDefinitionsFromFile("Save/actors.def");
             IO.WriteAllActorsToFile("Save/actors.sv");
-            IO.ReadAllActorsFromFile("Save/actors.sv");
+            IO.ReadAllActorsFromFile("Save/actors.sv");*/
 
+            //player = Util.GetActorByID(0);
+
+            IO.ReadLevelFromFile("Save/level.sv");
+            IO.ReadRoomsFromFile("Save/rooms.sv");
+            IO.ReadItemDefinitionsFromFile("Save/items.def");
+            IO.ReadAllItemsFromFile("Save/items.sv");
+            IO.ReadActorDefinitionsFromFile("Save/actors.def");
+            IO.ReadAllActorsFromFile("Save/actors.sv");
+            IO.ReadSeenFromFile("Save/seen.sv");
             player = Util.GetActorByID(0);
 
             base.Initialize();
@@ -511,15 +535,24 @@ namespace ODB
             if (KeyPressed(Keys.F1))
             {
                 IO.WriteLevelToFile("Save/level.sv");
-                IO.ReadLevelFromFile("Save/level.sv");
+                IO.WriteRoomsToFile("Save/rooms.sv");
                 IO.WriteItemDefinitionsToFile("Save/items.def");
-                IO.ReadItemDefinitionsFromFile("Save/items.def");
                 IO.WriteAllItemsToFile("Save/items.sv");
-                IO.ReadAllItemsFromFile("Save/items.sv");
                 IO.WriteActorDefinitionsToFile("Save/actors.def");
-                IO.ReadActorDefinitionsFromFile("Save/actors.def");
                 IO.WriteAllActorsToFile("Save/actors.sv");
+                IO.WriteSeenToFile("Save/seen.sv");
+            }
+
+            if (KeyPressed(Keys.F2))
+            {
+                IO.ReadLevelFromFile("Save/level.sv");
+                IO.ReadRoomsFromFile("Save/rooms.sv");
+                IO.ReadItemDefinitionsFromFile("Save/items.def");
+                IO.ReadAllItemsFromFile("Save/items.sv");
+                IO.ReadActorDefinitionsFromFile("Save/actors.def");
                 IO.ReadAllActorsFromFile("Save/actors.sv");
+                IO.ReadSeenFromFile("Save/seen.sv");
+                player = Util.GetActorByID(0);
             }
 
             //only do player movement if we're not currently asking something
