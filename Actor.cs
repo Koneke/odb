@@ -12,6 +12,7 @@ namespace ODB
             new ActorDefinition[0xFFFF];
 
         public int strength, dexterity, intelligence, hpMax;
+        public int speed, quickness;
         public List<DollSlot> BodyParts;
         public int CorpseType;
 
@@ -45,6 +46,8 @@ namespace ODB
             output += IO.WriteHex(dexterity, 2);
             output += IO.WriteHex(intelligence, 2);
             output += IO.WriteHex(hpMax, 2);
+            output += IO.WriteHex(speed, 2);
+            output += IO.WriteHex(quickness, 2);
             foreach (DollSlot ds in BodyParts)
                 output += (int)ds + ",";
             output += ";";
@@ -59,6 +62,8 @@ namespace ODB
             dexterity = IO.ReadHex(s, 2, ref read, read);
             intelligence = IO.ReadHex(s, 2, ref read, read);
             hpMax = IO.ReadHex(s, 2, ref read, read);
+            speed = IO.ReadHex(s, 2, ref read, read);
+            quickness = IO.ReadHex(s, 2, ref read, read);
 
             BodyParts = new List<DollSlot>();
             foreach (string ss in IO.ReadString(s, ref read, read).Split(','))
@@ -157,32 +162,24 @@ namespace ODB
             return ac;
         }
 
+        //we can probably condense these a bit by doing something cool with
+        //the stats. so you'd do like player.Get(Stat.Strength) or something
+        //instead, but that's a later thing, it works atm.
+
         public int GetStrength(bool modded = true)
         {
             return Definition.strength +
                 (modded ? GetStrengthMod() : 0); 
         }
-
         public int GetStrengthMod()
         {
             int modifier = 0;
 
-            List<Item> equipped = new List<Item>();
-            foreach (BodyPart bp in PaperDoll)
-                if(bp.Item != null)
-                    if (!equipped.Contains(bp.Item))
-                        equipped.Add(bp.Item);
-
-            foreach (Item it in equipped)
-            {
-                foreach (Mod m in it.Mods)
-                {
-                    if (m.Type == ModType.AddStr)
-                        modifier += m.Value;
-                    if (m.Type == ModType.DecStr)
-                        modifier -= m.Value;
-                }
-            }
+            List<Item> worn = Util.GetWornItems(this);
+            foreach (Mod m in Util.GetModsOfType(ModType.AddStr, worn))
+                modifier += m.Value;
+            foreach (Mod m in Util.GetModsOfType(ModType.DecStr, worn))
+                modifier -= m.Value;
 
             return modifier;
         }
@@ -192,27 +189,15 @@ namespace ODB
             return Definition.dexterity +
                 (modded ? GetDexterityMod() : 0); 
         }
-
         public int GetDexterityMod()
         {
             int modifier = 0;
 
-            List<Item> equipped = new List<Item>();
-            foreach (BodyPart bp in PaperDoll)
-                if(bp.Item != null)
-                    if (!equipped.Contains(bp.Item))
-                        equipped.Add(bp.Item);
-
-            foreach (Item it in equipped)
-            {
-                foreach (Mod m in it.Mods)
-                {
-                    if (m.Type == ModType.AddDex)
-                        modifier += m.Value;
-                    if (m.Type == ModType.DecDex)
-                        modifier -= m.Value;
-                }
-            }
+            List<Item> worn = Util.GetWornItems(this);
+            foreach (Mod m in Util.GetModsOfType(ModType.AddDex, worn))
+                modifier += m.Value;
+            foreach (Mod m in Util.GetModsOfType(ModType.DecDex, worn))
+                modifier -= m.Value;
 
             return modifier;
         }
@@ -222,27 +207,51 @@ namespace ODB
             return Definition.intelligence +
                 (modded ? GetIntelligenceMod() : 0); 
         }
-
         public int GetIntelligenceMod()
         {
             int modifier = 0;
 
-            List<Item> equipped = new List<Item>();
-            foreach (BodyPart bp in PaperDoll)
-                if(bp.Item != null)
-                    if (!equipped.Contains(bp.Item))
-                        equipped.Add(bp.Item);
+            List<Item> worn = Util.GetWornItems(this);
+            foreach (Mod m in Util.GetModsOfType(ModType.AddInt, worn))
+                modifier += m.Value;
+            foreach (Mod m in Util.GetModsOfType(ModType.DecInt, worn))
+                modifier -= m.Value;
 
-            foreach (Item it in equipped)
-            {
-                foreach (Mod m in it.Mods)
-                {
-                    if (m.Type == ModType.AddInt)
-                        modifier += m.Value;
-                    if (m.Type == ModType.DecInt)
-                        modifier -= m.Value;
-                }
-            }
+            return modifier;
+        }
+
+        public int GetQuickness(bool modded = true)
+        {
+            return Definition.quickness +
+                (modded ? GetQuicknessMod() : 0);
+        }
+        public int GetQuicknessMod()
+        {
+            int modifier = 0;
+
+            List<Item> worn = Util.GetWornItems(this);
+            foreach (Mod m in Util.GetModsOfType(ModType.AddQck, worn))
+                modifier += m.Value;
+            foreach (Mod m in Util.GetModsOfType(ModType.DecQck, worn))
+                modifier -= m.Value;
+
+            return modifier;
+        }
+
+        public int GetSpeed(bool modded = true)
+        {
+            return Definition.speed +
+                (modded ? GetSpeedMod() : 0);
+        }
+        public int GetSpeedMod()
+        {
+            int modifier = 0;
+
+            List<Item> worn = Util.GetWornItems(this);
+            foreach (Mod m in Util.GetModsOfType(ModType.AddSpd, worn))
+                modifier += m.Value;
+            foreach (Mod m in Util.GetModsOfType(ModType.DecSpd, worn))
+                modifier -= m.Value;
 
             return modifier;
         }
@@ -294,6 +303,14 @@ namespace ODB
             }
         }
 
+        //movement/standard action
+        //standard is e.g. attacking, manipulating inventory, etc.
+        public void Pass(bool movement = false)
+        {
+            Cooldown = Game.standardActionLength -
+                (movement ? GetSpeed() : GetQuickness());
+        }
+
         public string WriteActor()
         {
             string output = base.WriteGOBject();
@@ -319,7 +336,6 @@ namespace ODB
 
             return output;
         }
-
         public int ReadActor(string s)
         {
             int read = base.ReadGOBject(s);

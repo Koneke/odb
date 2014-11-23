@@ -218,5 +218,25 @@ namespace ODB
 
             return route;
         }
+
+        public static List<Item> GetWornItems(Actor a)
+        {
+            List<Item> list = new List<Item>();
+            foreach(BodyPart bp in a.PaperDoll)
+                if (bp.Item != null)
+                    if (!list.Contains(bp.Item))
+                        list.Add(bp.Item);
+            return list;
+        }
+
+        public static List<Mod> GetModsOfType(ModType mt, List<Item> items)
+        {
+            List<Mod> list = new List<Mod>();
+            foreach (Item it in items)
+                foreach (Mod m in it.Mods)
+                    if (m.Type == mt)
+                        list.Add(m);
+            return list;
+        }
     }
 }

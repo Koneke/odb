@@ -13,13 +13,10 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Graphics;
 using xnaPoint = Microsoft.Xna.Framework.Point;
 
-//general todo idea:
-// question prompt ~stack~, instead of just one, like it is atm?
-
-//~~~ QUEST TRACKER for 22 nov ~~~
-// * Migrate vision to actor class
-//   + Actually, that's dumb, we can just calculate it on the spot whenever
+//~~~ QUEST TRACKER for 23 nov ~~~
 // * Inventory textwrapping
+// * Basic magic?
+// * Item value and paid-for status
 
 namespace ODB
 {
@@ -87,6 +84,8 @@ namespace ODB
         List<DollSlot> standardHuman;
 
         Console statRowConsole;
+
+        public int standardActionLength = 10;
 
         public void SetupConsoles()
         {
@@ -424,6 +423,8 @@ namespace ODB
                     if (KeyPressed(Keys.NumPad4)) offset.Nudge(-1, 0);
                     if (KeyPressed(Keys.NumPad7)) offset.Nudge(-1, -1);
 
+                    if (KeyPressed(Keys.NumPad5)) Game.player.Pass(true);
+
                     Tile target =
                         map[player.xy.x + offset.x, player.xy.y + offset.y];
 
@@ -448,6 +449,8 @@ namespace ODB
                             if (Util.ActorsOnTile(target).Count <= 0)
                             {
                                 player.xy.Nudge(offset.x, offset.y);
+
+                                Game.player.Pass(true);
                             }
                             else
                             {
@@ -456,13 +459,13 @@ namespace ODB
 
                                 //in reality, there should only be max 1.
                                 //but yknow, in case of...
+                                //this really shouldn't be a foreach.
                                 foreach (Actor a in Util.ActorsOnTile(target))
                                 {
                                     player.Attack(a);
                                 }
+                                Game.player.Pass();
                             }
-                            //spent 10 units on walking/fighting
-                            Game.player.Cooldown = 10;
                         }
                     }
                     #endregion

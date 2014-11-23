@@ -43,7 +43,8 @@ namespace ODB
                 if (bp.Item == it) bp.Item = null;
 
             Game.log.Add("Dropped " + it.Definition.name + ".");
-            Game.player.Cooldown = 10;
+
+            Game.player.Pass();
         }
 
         static void drop(int index, int count)
@@ -71,6 +72,12 @@ namespace ODB
                     it.count -= count;
                     Game.worldItems.Add(droppedStack);
                     Game.allItems.Add(droppedStack);
+
+                    Game.log.Add("Dropped " + count + " " +
+                        it.Definition.name + "."
+                    );
+
+                    Game.player.Pass();
                 }
             }
         }
@@ -142,7 +149,8 @@ namespace ODB
                     x => x.Type == DollSlot.Hand))
                     if (bp.Item == it) bp.Item = null;
                 Game.log.Add("Sheathed " + it.Definition.name + ".");
-                Game.player.Cooldown = 10;
+
+                Game.player.Pass();
             }
         }
 
@@ -185,11 +193,13 @@ namespace ODB
                     Game.log.Add("You need to remove something first.");
                 }
             }
+
             if (canEquip)
             {
                 Game.log.Add("Equipped "+ selected.Definition.name + ".");
-                Game.player.Cooldown = 10;
                 Game.player.Equip(selected);
+
+                Game.player.Pass();
             }
         }
 
@@ -232,7 +242,7 @@ namespace ODB
                 }
                 Game.log.Add("Picked up " + it.Definition.name + ".");
 
-                Game.player.Cooldown = 10;
+                Game.player.Pass();
             }
             else
             {
@@ -259,6 +269,10 @@ namespace ODB
             {
                 t.doorState = Door.Open;
                 Game.log.Add("You opened the door.");
+
+                //counted as a movement action at the moment, based
+                //on the dnd rules.
+                Game.player.Pass(true);
             }
             else
             {
@@ -287,6 +301,10 @@ namespace ODB
                 {
                     t.doorState = Door.Closed;
                     Game.log.Add("You closed the door.");
+
+                    //counted as a movement action at the moment, based
+                    //on the dnd rules.
+                    Game.player.Pass(true);
                 }
                 else
                 {

@@ -234,9 +234,9 @@ namespace ODB
         AddStr, DecStr,
         AddDex, DecDex,
         AddInt, DecInt,
-        /*AddSpd, DecSpd,
+        AddSpd, DecSpd,
         AddQck, DecQck,
-        AddHPm, DecHPm*/
+        AddHPm, DecHPm
     }
 
     public class Mod {
