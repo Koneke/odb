@@ -18,6 +18,8 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 
 //~~~ QUEST TRACKER for 22 nov ~~~
 // * Migrate vision to actor class
+//   + Actually, that's dumb, we can just calculate it on the spot whenever
+// * Inventory textwrapping
 
 namespace ODB
 {
@@ -100,8 +102,12 @@ namespace ODB
             inputRowConsole.Position = new xnaPoint(0, 3);
             inputRowConsole.VirtualCursor.IsVisible = true;
 
-            inventoryConsole = new Console(30, 25);
-            inventoryConsole.Position = new xnaPoint(50, 0);
+            inventoryConsole = new Console(40, 25);
+            inventoryConsole.Position =
+                new xnaPoint(
+                    dfc.ViewArea.Width - inventoryConsole.ViewArea.Width,
+                    0
+                );
             inventoryConsole.IsVisible = false;
 
             statRowConsole = new Console(80, 2);
@@ -376,9 +382,7 @@ namespace ODB
             {
                 IO.WriteLevelToFile("Save/level.sv");
                 IO.WriteRoomsToFile("Save/rooms.sv");
-                //IO.WriteItemDefinitionsToFile("Save/items.def");
                 IO.WriteAllItemsToFile("Save/items.sv");
-                //IO.WriteActorDefinitionsToFile("Save/actors.def");
                 IO.WriteAllActorsToFile("Save/actors.sv");
                 IO.WriteSeenToFile("Save/seen.sv");
             }
@@ -387,12 +391,18 @@ namespace ODB
             {
                 IO.ReadLevelFromFile("Save/level.sv");
                 IO.ReadRoomsFromFile("Save/rooms.sv");
-                //IO.ReadItemDefinitionsFromFile("Save/items.def");
                 IO.ReadAllItemsFromFile("Save/items.sv");
-                //IO.ReadActorDefinitionsFromFile("Save/actors.def");
                 IO.ReadAllActorsFromFile("Save/actors.sv");
                 IO.ReadSeenFromFile("Save/seen.sv");
                 player = Util.GetActorByID(0);
+            }
+
+            if (KeyPressed(Keys.F3))
+            {
+                Game.allItems[0].Mods.Add(
+                    new Mod(ModType.AddStr, 2)
+                );
+                var a = 0;
             }
 
             //only do player movement if we're not currently asking something
@@ -900,12 +910,18 @@ namespace ODB
             for (int i = 0; i < player.inventory.Count; i++)
             {
                 bool equipped = Game.player.IsEquipped(player.inventory[i]);
-                    //player.paperDoll.Values.Contains(player.inventory[i]);
 
                 string name = "" + ((char)(97 + i));
                 name += " - ";
                 if (player.inventory[i].Definition.stacking)
                     name += player.inventory[i].count + "x ";
+
+                if (player.inventory[i].mod != 0)
+                {
+                    name += player.inventory[i].mod >= 0 ? "+" : "-";
+                    name += Math.Abs(player.inventory[i].mod) + " ";
+                }
+
                 name += player.inventory[i].Definition.name;
                 if (equipped) name += " (equipped)";
 
@@ -919,9 +935,9 @@ namespace ODB
             statRowConsole.CellData.Fill(Color.White, Color.Black, ' ', null);
             string namerow = player.Definition.name + " - Delver";
             namerow += "  ";
-            namerow += "STR " + player.Definition.strength + "  ";
-            namerow += "DEX " + player.Definition.dexterity + "  ";
-            namerow += "INT " + player.Definition.intelligence + "  ";
+            namerow += "STR " + player.GetStrength() + "  ";
+            namerow += "DEX " + player.GetDexterity() + "  ";
+            namerow += "INT " + player.GetIntelligence() + "  ";
             namerow += "AC " + player.GetAC();
             string statrow = "";
             statrow += "[";

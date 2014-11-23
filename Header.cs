@@ -229,5 +229,25 @@ namespace ODB
         }
     }
 
+    public enum ModType
+    {
+        AddStr, DecStr,
+        AddDex, DecDex,
+        AddInt, DecInt,
+        /*AddSpd, DecSpd,
+        AddQck, DecQck,
+        AddHPm, DecHPm*/
+    }
+
+    public class Mod {
+        public ModType Type;
+        public int Value;
+        public Mod(ModType Type, int Value)
+        {
+            this.Type = Type;
+            this.Value = Value;
+        }
+    }
+
     #endregion
 }

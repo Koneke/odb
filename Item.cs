@@ -71,8 +71,10 @@ namespace ODB
 
         //instance specifics
         public int id;
+        public int mod;
         public int count;
         public new ItemDefinition Definition;
+        public List<Mod> Mods;
 
         //SPAWNING a NEW item
         public Item(
@@ -81,6 +83,7 @@ namespace ODB
             id = IDCounter++;
             this.count = count;
             this.Definition = def;
+            Mods = new List<Mod>();
         }
 
         //LOADING an OLD item
@@ -95,8 +98,16 @@ namespace ODB
             string s = base.WriteGOBject();
             s += IO.WriteHex(Definition.type, 4);
             s += IO.WriteHex(id, 4);
+            s += IO.WriteHex(mod, 2); //even 1 should be enough, but eh
             s += IO.WriteHex(count, 2);
-
+            foreach (Mod m in Mods)
+            {
+                s += IO.WriteHex((int)m.Type, 2);
+                s += IO.Write(":", false);
+                s += IO.WriteHex((int)m.Value, 2);
+                s += ",";
+            }
+            s += ";";
             return s;
         }
 
@@ -108,7 +119,20 @@ namespace ODB
                     IO.ReadHex(s, 4, ref read, read)
                 ];
             id = IO.ReadHex(s, 4, ref read, read);
+            mod = IO.ReadHex(s, 2, ref read, read);
             count = IO.ReadHex(s, 2, ref read, read);
+
+            Mods = new List<Mod>();
+            string modString = IO.ReadString(s, ref read, read);
+            foreach (string ss in modString.Split(
+                new char[]{','}, StringSplitOptions.RemoveEmptyEntries))
+            {
+                Mod m = new Mod(
+                    (ModType)IO.ReadHex(ss.Split(':')[0]),
+                    IO.ReadHex(ss.Split(':')[1])
+                );
+                Mods.Add(m);
+            }
 
             return read;
         }

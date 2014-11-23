@@ -152,18 +152,108 @@ namespace ODB
                     equipped.Add(bp.Item);
 
             foreach(Item it in equipped)
-                ac += it.Definition.AC;
+                ac += it.Definition.AC + it.mod;
 
             return ac;
         }
 
+        public int GetStrength(bool modded = true)
+        {
+            return Definition.strength +
+                (modded ? GetStrengthMod() : 0); 
+        }
+
+        public int GetStrengthMod()
+        {
+            int modifier = 0;
+
+            List<Item> equipped = new List<Item>();
+            foreach (BodyPart bp in PaperDoll)
+                if(bp.Item != null)
+                    if (!equipped.Contains(bp.Item))
+                        equipped.Add(bp.Item);
+
+            foreach (Item it in equipped)
+            {
+                foreach (Mod m in it.Mods)
+                {
+                    if (m.Type == ModType.AddStr)
+                        modifier += m.Value;
+                    if (m.Type == ModType.DecStr)
+                        modifier -= m.Value;
+                }
+            }
+
+            return modifier;
+        }
+
+        public int GetDexterity(bool modded = true)
+        {
+            return Definition.dexterity +
+                (modded ? GetDexterityMod() : 0); 
+        }
+
+        public int GetDexterityMod()
+        {
+            int modifier = 0;
+
+            List<Item> equipped = new List<Item>();
+            foreach (BodyPart bp in PaperDoll)
+                if(bp.Item != null)
+                    if (!equipped.Contains(bp.Item))
+                        equipped.Add(bp.Item);
+
+            foreach (Item it in equipped)
+            {
+                foreach (Mod m in it.Mods)
+                {
+                    if (m.Type == ModType.AddDex)
+                        modifier += m.Value;
+                    if (m.Type == ModType.DecDex)
+                        modifier -= m.Value;
+                }
+            }
+
+            return modifier;
+        }
+
+        public int GetIntelligence(bool modded = true)
+        {
+            return Definition.intelligence +
+                (modded ? GetIntelligenceMod() : 0); 
+        }
+
+        public int GetIntelligenceMod()
+        {
+            int modifier = 0;
+
+            List<Item> equipped = new List<Item>();
+            foreach (BodyPart bp in PaperDoll)
+                if(bp.Item != null)
+                    if (!equipped.Contains(bp.Item))
+                        equipped.Add(bp.Item);
+
+            foreach (Item it in equipped)
+            {
+                foreach (Mod m in it.Mods)
+                {
+                    if (m.Type == ModType.AddInt)
+                        modifier += m.Value;
+                    if (m.Type == ModType.DecInt)
+                        modifier -= m.Value;
+                }
+            }
+
+            return modifier;
+        }
+
         public void Attack(Actor target)
         {
-            int hitRoll = Util.Roll("1d6") + Definition.dexterity;
+            int hitRoll = Util.Roll("1d6") + GetDexterity();
             int dodgeRoll = target.GetAC();
 
             if (hitRoll >= dodgeRoll) {
-                int damageRoll = Definition.strength;
+                int damageRoll = GetStrength();
 
                 foreach (
                     BodyPart bp in PaperDoll.FindAll(

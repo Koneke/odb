@@ -286,9 +286,9 @@ namespace ODB
             return s;
         }
 
-        public static string Write(String ss)
+        public static string Write(String ss, bool appendDelim = true)
         {
-            string s = ss + ";";
+            string s = ss + (appendDelim ? ";" : "");
             return s;
         }
 
@@ -359,6 +359,15 @@ namespace ODB
             string ss = s.Substring(start, s.Length - start);
             ss = ss.Split(';')[0];
             read += ss.Length + 1;
+            return ss;
+        }
+
+        public static string ReadString(
+            string s, int len, ref int read, int start = 0
+        ) {
+            int i = start;
+            string ss = s.Substring(start, len);
+            read += len;
             return ss;
         }
 
