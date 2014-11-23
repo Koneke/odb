@@ -238,5 +238,13 @@ namespace ODB
                         list.Add(m);
             return list;
         }
+
+        public static Color InvertColor(Color c) {
+            return new Color(
+                (byte)255 - c.R,
+                (byte)255 - c.G,
+                (byte)255 - c.B
+            );
+        }
     }
 }

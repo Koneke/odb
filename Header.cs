@@ -6,7 +6,6 @@ using System.Linq;
 
 namespace ODB
 {
-    #region structure
     public class Tile
     {
         public Color bg, fg;
@@ -105,6 +104,11 @@ namespace ODB
             this.y += y;
         }
 
+        public void Nudge(Point p)
+        {
+            this += p;
+        }
+
         public static bool operator ==(Point a, Point b)
         {
             return a.x == b.x && a.y == b.y;
@@ -118,6 +122,11 @@ namespace ODB
         public static Point operator +(Point a, Point b)
         {
             return new Point(a.x + b.x, a.y + b.y);
+        }
+
+        public static Point operator -(Point a, Point b)
+        {
+            return new Point(a.x - b.x, a.y - b.y);
         }
     }
 
@@ -249,5 +258,149 @@ namespace ODB
         }
     }
 
-    #endregion
+    public class Spell
+    {
+        //0 should mean self-cast..?
+        //projectile should explode without moving, so should be on self
+        public int Range;
+        //note: low = better here, amt of ticks, not amt of reduction
+        //0 SHOULD mean instant
+        public int Speed;
+        public int CastDifficulty;
+        public List<Action<Point>> Effects;
+
+        public Spell()
+        {
+            Range = 3;
+            Speed = 0;
+            CastDifficulty = 0;
+
+            Effects = new List<Action<Point>>();
+            Effects.Add(
+                delegate(Point p) {
+                    //like with the player attack code, should probably
+                    //not be foreach. in its defense though, there should only
+                    //ever be one actor per tile, atleast atm
+                    foreach (Actor a in Util.ActorsOnTile(p))
+                    {
+                        Util.Game.log.Add(a.Definition.name +
+                            " is hit by the bolt!"
+                        );
+                        a.Damage(Util.Roll("1d4"));
+                    }
+                }
+            );
+        }
+
+        public Projectile Cast(Actor caster, Point target)
+        {
+            Projectile p = new Projectile();
+            p.Effects = new List<Action<Point>>(Effects);
+            p.origin = caster.xy;
+            p.Delta = target - caster.xy;
+            //don't try to go further than we targeted
+            p.Range = Math.Max(
+                Math.Abs(p.Delta.x),
+                Math.Abs(p.Delta.y)
+            );
+            return p;
+        }
+    }
+
+    //should probably make this a gObj?
+    public class Projectile
+    {
+        public int Range;
+        public int Moved;
+        public bool Die;
+        public Point xy;
+        public Point origin;
+        public Point Delta;
+        public List<Action<Point>> Effects;
+
+        void calculatePosition()
+        {
+            float deltaRatio;
+            int offs;
+
+            int x, y;
+
+            if(Delta.x == 0) {
+                xy = new Point(origin.x, origin.y + Math.Sign(Delta.y) * Moved);
+                return;
+            }
+            else if(Delta.y == 0) {
+                xy = new Point(origin.x + Math.Sign(Delta.x) * Moved, origin.y);
+                return;
+            }
+
+            if (Delta.x > Delta.y)
+            {
+                deltaRatio = (float)Math.Abs(Delta.x) / Math.Abs(Delta.y);
+                offs = (int)Math.Floor(deltaRatio / 2);
+
+                x = Moved + offs;
+                y = (int)((x - (x % deltaRatio)) / deltaRatio);
+
+                xy = origin + new Point(
+                    Math.Sign(Delta.x) * Moved,
+                    Math.Sign(Delta.y) * y
+                );
+            }
+            else if (Delta.y > Delta.x)
+            {
+                deltaRatio = (float)Math.Abs(Delta.y) / Math.Abs(Delta.x);
+                offs = (int)Math.Floor(deltaRatio / 2);
+
+                y = Moved + offs;
+                x = (int)((y - (y % deltaRatio)) / deltaRatio);
+
+                xy = origin + new Point(
+                    Math.Sign(Delta.x) * x,
+                    Math.Sign(Delta.y) * Moved
+                );
+            }
+            else
+            {
+                xy = origin + new Point(
+                    Math.Sign(Delta.x) * Moved,
+                    Math.Sign(Delta.y) * Moved
+                );
+            }
+        }
+
+        public void Move()
+        {
+            calculatePosition();
+
+            if (Moved < Range) {
+                Moved++;
+                calculatePosition();
+            }
+            if (Util.Game.map[xy.x, xy.y] == null)
+            {
+                Moved--;
+                calculatePosition();
+                Die = true;
+            }
+            else if (Util.Game.map[xy.x, xy.y].solid)
+            {
+                //unmove
+                Moved--;
+                calculatePosition();
+                Die = true;
+            }
+            if (Moved >= Range) Die = true;
+
+            if(!Die)
+                if (Util.ActorsOnTile(xy).Count > 0)
+                    Die = true; //explode without unmoving
+
+            if (Die)
+                foreach (Action<Point> effect in Effects)
+                    effect(xy);
+
+            if (!Die) Move();
+        }
+    }
 }

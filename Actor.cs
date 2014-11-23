@@ -274,26 +274,12 @@ namespace ODB
                         //barehanded/bash damage
                         damageRoll += Util.Roll("1d4");
 
-                target.hpCurrent -= damageRoll;
-
                 Game.log.Add(
                     Definition.name + " strikes " +target.Definition.name +
-                    " (" + hitRoll + " vs AC" + dodgeRoll + ")" +
-                    " (-" + damageRoll + "hp)"
+                    " (" + hitRoll + " vs AC" + dodgeRoll + ")"
                 );
 
-                if (target.hpCurrent <= 0)
-                {
-                    Game.log.Add(target.Definition.name + " dies!");
-                    Item corpse = new Item(
-                        target.xy,
-                        ItemDefinition.ItemDefinitions[
-                            target.Definition.CorpseType]
-                    );
-                    Game.worldItems.Add(corpse);
-                    Game.allItems.Add(corpse);
-                    Game.worldActors.Remove(target);
-                }
+                target.Damage(damageRoll);
             }
             else
             {
@@ -301,6 +287,34 @@ namespace ODB
                     " (" + hitRoll + " vs " + dodgeRoll + ")"
                 );
             }
+        }
+        public void Damage(int d)
+        {
+            hpCurrent -= d;
+            if (hpCurrent <= 0)
+            {
+                Game.log.Add(Definition.name + " dies!");
+                Item corpse = new Item(
+                    xy,
+                    ItemDefinition.ItemDefinitions[
+                        Definition.CorpseType]
+                );
+                Game.worldItems.Add(corpse);
+                Game.allItems.Add(corpse);
+                Game.worldActors.Remove(this);
+            }
+        }
+
+        public void Cast(Point target)
+        {
+            Spell s = new Spell();
+            Projectile p = s.Cast(this, target);
+            Game.projectiles.Add(p);
+            //all projectiles are instant move
+            //atleast right now
+            //so just go ahead and move as soon as we cast
+            p.Move(); 
+            Pass();
         }
 
         //movement/standard action
