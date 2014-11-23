@@ -90,6 +90,7 @@ namespace ODB
 
         public List<BodyPart> PaperDoll;
         public List<Item> inventory;
+        public List<Spell> Spellbook;
 
         public Actor(
             Point xy, ActorDefinition def
@@ -104,12 +105,14 @@ namespace ODB
             foreach (DollSlot ds in def.BodyParts)
                 PaperDoll.Add(new BodyPart(ds));
             Cooldown = 0;
+            Spellbook = new List<Spell>();
         }
 
         public Actor(string s)
             : base(s)
         {
             ReadActor(s);
+            Spellbook = new List<Spell>();
         }
 
         public bool HasFree(DollSlot slot)
@@ -305,15 +308,19 @@ namespace ODB
             }
         }
 
-        public void Cast(Point target)
+        public void Cast(Spell s, Point target)
         {
-            Spell s = new Spell();
-            Projectile p = s.Cast(this, target);
-            Game.projectiles.Add(p);
-            //all projectiles are instant move
-            //atleast right now
-            //so just go ahead and move as soon as we cast
-            p.Move(); 
+            if (Util.Roll("1d6") + GetIntelligence() > s.CastDifficulty)
+            {
+                Game.log.Add(Definition.name + " casts " + s.Name + ".");
+                Projectile p = s.Cast(this, target);
+                Game.projectiles.Add(p);
+                //all projectiles are instant move
+                //atleast right now
+                //so just go ahead and move as soon as we cast
+                p.Move();
+            }
+            else Game.log.Add("The spell fizzles.");
             Pass();
         }
 
@@ -323,6 +330,57 @@ namespace ODB
         {
             Cooldown = Game.standardActionLength -
                 (movement ? GetSpeed() : GetQuickness());
+        }
+
+        //will atm only be called by the player,
+        //but should, I guess, be called by monsters as well in the future
+        public void TryMove(Point offset)
+        {
+            Tile target = Game.map[
+                Game.player.xy.x + offset.x,
+                Game.player.xy.y + offset.y
+            ];
+
+            bool legalMove = true;
+
+            if (target == null)
+                legalMove = false;
+            else if (target.doorState == Door.Closed || target.solid)
+                legalMove = false;
+
+            if (!legalMove)
+            {
+                offset = new Point(0, 0);
+                if(this == Game.player)
+                    Game.log.Add("Bump!");
+            }
+            else
+            {
+                if (Util.ActorsOnTile(target).Count <= 0)
+                {
+                    int numberOfLegs = 0;
+                    int numberOfFreeHands = 0;
+                    foreach (BodyPart bp in PaperDoll)
+                    {
+                        if (bp.Type == DollSlot.Legs) numberOfLegs++;
+                        if (bp.Type == DollSlot.Hand && bp.Item == null)
+                            numberOfFreeHands++;
+                    }
+                    if (!(numberOfLegs >= 1 || numberOfFreeHands > 2))
+                        if(this == Game.player)
+                            Game.log.Add("You roll forwards!");
+
+                    xy.Nudge(offset.x, offset.y);
+                    Pass(true);
+                }
+                else
+                {
+                    //should only be 1, but... eh
+                    foreach (Actor a in Util.ActorsOnTile(target))
+                        Attack(a);
+                    Game.player.Pass();
+                }
+            }
         }
 
         public string WriteActor()

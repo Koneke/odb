@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using Microsoft.Xna.Framework.Input;
+
 namespace ODB
 {
     public class Player
@@ -89,7 +91,7 @@ namespace ODB
             //not actually using the stack here yet, but we want
             //to drop the string answer bit in the sign later...
             //I think.
-            Game.qpAnswerStack.Peek();
+            answer = Game.qpAnswerStack.Peek();
             if (answer.Length <= 0) return;
 
             if(Game.logPlayerActions)
@@ -123,7 +125,7 @@ namespace ODB
 
         public static void Sheath(string answer)
         {
-            Game.qpAnswerStack.Pop();
+            answer = Game.qpAnswerStack.Pop();
             if (answer.Length <= 0) return;
 
             int i = letterAnswerToIndex(answer[0]);
@@ -315,6 +317,266 @@ namespace ODB
             {
                 Game.log.Add("There's no open door there.");
             }
+        }
+
+        public static void Zap(string answer)
+        {
+            Game.qpAnswerStack.Peek();
+            if (answer.Length <= 0) return;
+            int i = letterAnswerToIndex(answer[0]);
+            if (i >= Game.player.Spellbook.Count)
+            {
+                Game.log.Add("Invalid selection (" + answer[0] + ").");
+                return;
+            }
+            else
+            {
+                Game.targeting = true;
+                Game.target = Game.player.xy;
+                Game.targetingReaction = Player.Cast;
+            }
+        }
+
+        public static void Cast(Point p)
+        {
+            int index = letterAnswerToIndex(Game.qpAnswerStack.Pop()[0]);
+            if (Game.map[p.x, p.y] != null)
+                Game.player.Cast(
+                    Game.player.Spellbook[index], p
+                );
+            else
+                Game.log.Add("Invalid target.");
+        }
+
+        public static void PlayerInputHandling()
+        {
+            #region movement
+            Point offset = new Point(0, 0);
+
+            if (Game.KeyPressed(Keys.NumPad8)) offset.Nudge(0, -1);
+            if (Game.KeyPressed(Keys.NumPad9)) offset.Nudge(1, -1);
+            if (Game.KeyPressed(Keys.NumPad6)) offset.Nudge(1, 0);
+            if (Game.KeyPressed(Keys.NumPad3)) offset.Nudge(1, 1);
+            if (Game.KeyPressed(Keys.NumPad2)) offset.Nudge(0, 1);
+            if (Game.KeyPressed(Keys.NumPad1)) offset.Nudge(-1, 1);
+            if (Game.KeyPressed(Keys.NumPad4)) offset.Nudge(-1, 0);
+            if (Game.KeyPressed(Keys.NumPad7)) offset.Nudge(-1, -1);
+
+            if (Game.KeyPressed(Keys.NumPad5)) Game.player.Pass(true);
+
+            Tile target = Game.map[
+                Game.player.xy.x + offset.x,
+                Game.player.xy.y + offset.y
+            ];
+
+            if (offset.x != 0 || offset.y != 0)
+                Game.player.TryMove(offset);
+
+            //should be replaced with a look command
+            //which could be called here maybe
+            #region looking at our new tile
+            //if we have moved, do fun stuff.
+            if (offset.x != 0 || offset.y != 0)
+            {
+                List<Item> itemsOnSquare = Util.ItemsOnTile(Game.player.xy);
+
+                switch (itemsOnSquare.Count)
+                {
+                    case 0:
+                        break;
+                    case 1:
+                        Game.log.Add(
+                            "There is " +
+                            Util.article(
+                                itemsOnSquare[0].Definition.name
+                            ) + " " + itemsOnSquare[0].Definition.name +
+                            " here."
+                        );
+                        break;
+                    default:
+                        Game.log.Add(
+                            "There are " + itemsOnSquare.Count +
+                            " items here."
+                        );
+                        break;
+                }
+            }
+            #endregion
+
+            #endregion
+
+            #region drop
+            if (Game.KeyPressed(Keys.D) && !Game.shift)
+            {
+                string _q = "Drop what? [";
+                Game.acceptedInput.Clear();
+                for (int i = 0; i < Game.player.inventory.Count; i++)
+                {
+                    char index = (char)(97 + i);
+                    _q += index;
+                    Game.acceptedInput.Add((int)(index + "").ToUpper()[0]);
+                }
+                _q += "]";
+                Game.setupQuestionPrompt(_q);
+                Game.questionPromptOpen = true;
+
+                Game.questionReaction = Player.Drop;
+            }
+            #endregion
+
+            #region open
+            if (Game.KeyPressed(Keys.O) && !Game.shift)
+            {
+                Game.acceptedInput.Clear();
+                Game.acceptedInput.AddRange(Game.directions);
+                Game.setupQuestionPrompt("Open where?");
+                Game.questionPromptOpen = true;
+                Game.questionReaction = Player.Open;
+            }
+            #endregion
+
+            #region close
+            if (Game.KeyPressed(Keys.C) && !Game.shift)
+            {
+                Game.acceptedInput.Clear();
+                Game.acceptedInput.AddRange(Game.directions);
+                Game.setupQuestionPrompt("Close where?");
+                Game.questionPromptOpen = true;
+                Game.questionReaction = Player.Close;
+            }
+            #endregion
+
+            #region wield/wear //AHAHAHA IM A GENIUS
+            if (Game.KeyPressed(Keys.W))
+            {
+                List<Item> equipables = new List<Item>();
+
+                foreach (Item it in Game.player.inventory)
+                    //is it wieldable?
+                    if (
+                        it.Definition.equipSlots.Contains(DollSlot.Hand)
+                        && !Game.shift
+                    )
+                        equipables.Add(it);
+                    else if (
+                        it.Definition.equipSlots.FindAll(
+                            x => x != DollSlot.Hand
+                        ).Count > 0 && Game.shift
+                    )
+                        equipables.Add(it);
+
+                //remove items we've already equipped from the
+                //list of potential items to equip
+                foreach (BodyPart bp in Game.player.PaperDoll)
+                    equipables.Remove(bp.Item);
+
+                if (equipables.Count > 0)
+                {
+                    string _q = (Game.shift ? "Wear" : "Wield") + " what? [";
+                    Game.acceptedInput.Clear();
+                    foreach (Item it in equipables)
+                    {
+                        //show the character corresponding with the one
+                        //shown in the inventory.
+                        char index =
+                            (char)(97 + Game.player.inventory.IndexOf(it));
+                        _q += index;
+                        Game.acceptedInput.Add((int)(index + "")
+                            .ToUpper()[0]
+                        );
+                    }
+                    _q += "]";
+                    Game.setupQuestionPrompt(_q);
+                    Game.questionPromptOpen = true;
+
+                    Game.questionReaction = Player.Wield;
+                }
+                else
+                {
+                    Game.log.Add("Nothing to " +
+                        (Game.shift ? "wear" : "wield") + ".");
+                }
+            }
+            #endregion
+
+            #region sheath
+            if (Game.KeyPressed(Keys.S) && Game.shift)
+            {
+                List<Item> equipped = new List<Item>();
+                foreach (
+                    BodyPart bp in Game.player.PaperDoll.FindAll(
+                        x => x.Type == DollSlot.Hand
+                    )
+                )
+                {
+                    if (bp.Item != null)
+                        equipped.Add(bp.Item);
+                }
+
+                if (equipped.Count > 0)
+                {
+                    string _q = "Sheath what? [";
+                    foreach (Item it in equipped)
+                    {
+                        char index =
+                            (char)(97 +
+                                Game.player.inventory.IndexOf(it)
+                            );
+                        _q += index;
+                        Game.acceptedInput.Add((int)(index + "")
+                            .ToUpper()[0]
+                        );
+                    }
+                    _q += "]";
+                    Game.setupQuestionPrompt(_q);
+                    Game.questionPromptOpen = true;
+
+                    Game.questionReaction = Player.Sheath;
+                }
+                else
+                {
+                    Game.log.Add("Nothing to sheath.");
+                }
+            }
+            #endregion
+
+            #region get
+            if (
+                (Game.KeyPressed(Keys.G) && !Game.shift) ||
+                (Game.KeyPressed(Keys.OemComma) && !Game.shift)
+            ) {
+                List<Item> onFloor = Util.ItemsOnTile(Game.player.xy);
+                if (onFloor.Count > 0)
+                {
+                    if (onFloor.Count > 1)
+                    {
+                        string _q = "Pick up what? [";
+                        Game.acceptedInput.Clear();
+                        for (int i = 0; i < onFloor.Count; i++)
+                        {
+                            char index = (char)(97 + i);
+                            _q += index;
+                            Game.acceptedInput.Add(
+                                (int)(index + "").ToUpper()[0]
+                            );
+                        }
+                        _q += "]";
+                        Game.setupQuestionPrompt(_q);
+                        Game.questionPromptOpen = true;
+
+                        Game.acceptedInput.Clear();
+                        Game.acceptedInput.AddRange(Game.letters);
+
+                        Game.questionReaction = Player.Get;
+                    }
+                    else //remove me? just show the option for just "a"
+                    {
+                        Game.qpAnswerStack.Push("a");
+                        Player.Get("a");
+                    }
+                }
+            }
+            #endregion
         }
     }
 }

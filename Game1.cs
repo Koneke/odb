@@ -39,7 +39,7 @@ namespace ODB
         #endregion
 
         KeyboardState ks, oks;
-        bool shift;
+        public bool shift;
 
         public Tile[,] map;
         public bool[,] seen;
@@ -78,9 +78,9 @@ namespace ODB
 
         //currently doing some targeting, like, selecting spell target or
         //what not.
-        bool targeting;
-        Point target;
-        Action<Point> targetingReaction;
+        public bool targeting;
+        public Point target;
+        public Action<Point> targetingReaction;
 
         bool questionPrompOneKey;
         public List<int> acceptedInput;
@@ -215,10 +215,29 @@ namespace ODB
 
             projectiles = new List<Projectile>();
 
+            Spell ForceBolt = new Spell(
+                "Force bolt",
+                new List<Action<Point>>()
+                {
+                    delegate(Point p) {
+                        foreach (Actor a in Util.ActorsOnTile(p))
+                        {
+                            Util.Game.log.Add(a.Definition.name +
+                                " is hit by the bolt!"
+                            );
+                            a.Damage(Util.Roll("1d4"));
+                        }
+                    }
+                },
+                7, 3
+            );
+
+            player.Spellbook.Add(ForceBolt);
+
             base.Initialize();
         }
 
-        bool KeyPressed(Keys k)
+        public bool KeyPressed(Keys k)
         {
             return ks.IsKeyDown(k) && !oks.IsKeyDown(k);
         }
@@ -277,16 +296,6 @@ namespace ODB
             inventoryConsole.CellData.Print(
                 r.wh.x-1, r.wh.y-1, (char)188 + ""
             );
-        }
-
-        string article(string name)
-        {
-            //not ENTIRELY correct, whatwith exceptions,
-            //but close enough.
-            return
-                new List<char>() { 'a', 'e', 'i', 'o', 'u' }
-                    .Contains(name.ToLower()[0]) ?
-                "an" : "a";
         }
 
         public void setupQuestionPrompt(string q, bool onekey = true)
@@ -411,10 +420,19 @@ namespace ODB
 
             if (KeyPressed(Keys.F3))
             {
-                //Game.player.Cast();
-                targeting = true;
-                target = player.xy;
-                targetingReaction = Game.player.Cast;
+                string _q = "Cast what? [";
+                acceptedInput.Clear();
+                for (int i = 0; i < player.Spellbook.Count; i++)
+                {
+                    char index = (char)(97 + i);
+                    _q += index;
+                    acceptedInput.Add((int)(index + "").ToUpper()[0]);
+                }
+                _q += "]";
+                setupQuestionPrompt(_q);
+                questionPromptOpen = true;
+
+                questionReaction = Player.Zap;
             }
 
             //only do player movement if we're not currently asking something
@@ -426,264 +444,7 @@ namespace ODB
                     //ingame time) should be in this if-clause.
                     if (player.Cooldown == 0)
                     {
-                        #region movement
-                        Point offset = new Point(0, 0);
-
-                        if (KeyPressed(Keys.NumPad8)) offset.Nudge(0, -1);
-                        if (KeyPressed(Keys.NumPad9)) offset.Nudge(1, -1);
-                        if (KeyPressed(Keys.NumPad6)) offset.Nudge(1, 0);
-                        if (KeyPressed(Keys.NumPad3)) offset.Nudge(1, 1);
-                        if (KeyPressed(Keys.NumPad2)) offset.Nudge(0, 1);
-                        if (KeyPressed(Keys.NumPad1)) offset.Nudge(-1, 1);
-                        if (KeyPressed(Keys.NumPad4)) offset.Nudge(-1, 0);
-                        if (KeyPressed(Keys.NumPad7)) offset.Nudge(-1, -1);
-
-                        if (KeyPressed(Keys.NumPad5)) Game.player.Pass(true);
-
-                        Tile target =
-                            map[player.xy.x + offset.x, player.xy.y + offset.y];
-
-                        #region actual moving/attacking
-                        if (offset.x != 0 || offset.y != 0)
-                        {
-                            bool legalMove = true;
-                            if (target == null)
-                                legalMove = false;
-                            else if (
-                                target.doorState == Door.Closed || target.solid
-                            )
-                                legalMove = false;
-
-                            if (!legalMove)
-                            {
-                                offset = new Point(0, 0);
-                                Game.log.Add("Bump!");
-                            }
-                            else
-                            {
-                                if (Util.ActorsOnTile(target).Count <= 0)
-                                {
-                                    player.xy.Nudge(offset.x, offset.y);
-                                    Game.player.Pass(true);
-                                }
-                                else
-                                {
-                                    //fighty time!
-                                    offset = new Point(0, 0);
-
-                                    //in reality, there should only be max 1.
-                                    //but yknow, in case of...
-                                    //this really shouldn't be a foreach.
-                                    foreach (Actor a in
-                                        Util.ActorsOnTile(target)
-                                    ) {
-                                        player.Attack(a);
-                                    }
-                                    Game.player.Pass();
-                                }
-                            }
-                        }
-                        #endregion
-
-                        #region looking at our new tile
-                        //if we have moved, do fun stuff.
-                        if (offset.x != 0 || offset.y != 0)
-                        {
-                            List<Item> itemsOnSquare = Util.ItemsOnTile(player.xy);
-
-                            switch (itemsOnSquare.Count)
-                            {
-                                case 0:
-                                    break;
-                                case 1:
-                                    log.Add(
-                                        "There is " +
-                                        article(
-                                            itemsOnSquare[0].Definition.name
-                                        ) + " " + itemsOnSquare[0].Definition.name +
-                                        " here."
-                                    );
-                                    break;
-                                default:
-                                    log.Add(
-                                        "There are " + itemsOnSquare.Count +
-                                        " items here."
-                                    );
-                                    break;
-                            }
-                        }
-                        #endregion
-
-                        #endregion
-
-                        #region drop
-                        if (KeyPressed(Keys.D) && !shift)
-                        {
-                            string _q = "Drop what? [";
-                            acceptedInput.Clear();
-                            for (int i = 0; i < player.inventory.Count; i++)
-                            {
-                                char index = (char)(97 + i);
-                                _q += index;
-                                acceptedInput.Add((int)(index + "").ToUpper()[0]);
-                            }
-                            _q += "]";
-                            setupQuestionPrompt(_q);
-                            questionPromptOpen = true;
-
-                            questionReaction = Player.Drop;
-                        }
-                        #endregion
-
-                        #region open
-                        if (KeyPressed(Keys.O) && !shift)
-                        {
-                            acceptedInput.Clear();
-                            acceptedInput.AddRange(directions);
-                            setupQuestionPrompt("Open where?");
-                            questionPromptOpen = true;
-                            questionReaction = Player.Open;
-                        }
-                        #endregion
-
-                        #region close
-                        if (KeyPressed(Keys.C) && !shift)
-                        {
-                            acceptedInput.Clear();
-                            acceptedInput.AddRange(directions);
-                            setupQuestionPrompt("Close where?");
-                            questionPromptOpen = true;
-                            questionReaction = Player.Close;
-                        }
-                        #endregion
-
-                        #region wield/wear //AHAHAHA IM A GENIUS
-                        if (KeyPressed(Keys.W))
-                        {
-                            List<Item> equipables = new List<Item>();
-
-                            foreach (Item it in player.inventory)
-                                //is it wieldable?
-                                if (
-                                    it.Definition.equipSlots.Contains(DollSlot.Hand)
-                                    && !shift
-                                )
-                                    equipables.Add(it);
-                                else if (
-                                    it.Definition.equipSlots.FindAll(
-                                        x => x != DollSlot.Hand
-                                    ).Count > 0 && shift
-                                )
-                                    equipables.Add(it);
-
-                            //remove items we've already equipped from the
-                            //list of potential items to equip
-                            foreach (BodyPart bp in player.PaperDoll)
-                                equipables.Remove(bp.Item);
-
-                            if (equipables.Count > 0)
-                            {
-                                string _q = (shift ? "Wear" : "Wield") + " what? [";
-                                acceptedInput.Clear();
-                                foreach (Item it in equipables)
-                                {
-                                    //show the character corresponding with the one
-                                    //shown in the inventory.
-                                    char index =
-                                        (char)(97 + player.inventory.IndexOf(it));
-                                    _q += index;
-                                    acceptedInput.Add((int)(index + "")
-                                        .ToUpper()[0]
-                                    );
-                                }
-                                _q += "]";
-                                setupQuestionPrompt(_q);
-                                questionPromptOpen = true;
-
-                                questionReaction = Player.Wield;
-                            }
-                            else
-                            {
-                                log.Add("Nothing to " +
-                                    (shift ? "wear" : "wield") + ".");
-                            }
-                        }
-                        #endregion
-
-                        #region sheath
-                        if (KeyPressed(Keys.S) && shift)
-                        {
-                            List<Item> equipped = new List<Item>();
-                            foreach (
-                                BodyPart bp in Game.player.PaperDoll.FindAll(
-                                    x => x.Type == DollSlot.Hand
-                                )
-                            )
-                            {
-                                if (bp.Item != null)
-                                    equipped.Add(bp.Item);
-                            }
-
-                            if (equipped.Count > 0)
-                            {
-                                string _q = "Sheath what? [";
-                                foreach (Item it in equipped)
-                                {
-                                    char index =
-                                        (char)(97 +
-                                            Game.player.inventory.IndexOf(it)
-                                        );
-                                    _q += index;
-                                    acceptedInput.Add((int)(index + "")
-                                        .ToUpper()[0]
-                                    );
-                                }
-                                _q += "]";
-                                setupQuestionPrompt(_q);
-                                questionPromptOpen = true;
-
-                                questionReaction = Player.Sheath;
-                            }
-                            else
-                            {
-                                Game.log.Add("Nothing to sheath.");
-                            }
-                        }
-                        #endregion
-
-                        #region get
-                        if (KeyPressed(Keys.G) && !shift)
-                        {
-                            List<Item> onFloor = Util.ItemsOnTile(player.xy);
-                            if (onFloor.Count > 0)
-                            {
-                                if (onFloor.Count > 1)
-                                {
-                                    string _q = "Pick up what? [";
-                                    acceptedInput.Clear();
-                                    for (int i = 0; i < onFloor.Count; i++)
-                                    {
-                                        char index = (char)(97 + i);
-                                        _q += index;
-                                        acceptedInput.Add((int)(index + "").ToUpper()[0]);
-                                    }
-                                    _q += "]";
-                                    setupQuestionPrompt(_q);
-                                    questionPromptOpen = true;
-
-                                    acceptedInput.Clear();
-                                    acceptedInput.AddRange(letters);
-
-                                    questionReaction = Player.Get;
-                                }
-                                else //remove me? just show the option for just "a"
-                                {
-                                    qpAnswerStack.Push("a");
-                                    Player.Get("a");
-                                }
-                            }
-                        }
-                        #endregion
+                        Player.PlayerInputHandling();
                     }
                     else
                     {

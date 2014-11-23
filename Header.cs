@@ -260,42 +260,33 @@ namespace ODB
 
     public class Spell
     {
+        public static int IDCounter = 0;
+        public int id;
+
+        public string Name;
         //0 should mean self-cast..?
         //projectile should explode without moving, so should be on self
         public int Range;
-        //note: low = better here, amt of ticks, not amt of reduction
-        //0 SHOULD mean instant
-        public int Speed;
         public int CastDifficulty;
         public List<Action<Point>> Effects;
 
-        public Spell()
-        {
-            Range = 3;
-            Speed = 0;
-            CastDifficulty = 0;
-
-            Effects = new List<Action<Point>>();
-            Effects.Add(
-                delegate(Point p) {
-                    //like with the player attack code, should probably
-                    //not be foreach. in its defense though, there should only
-                    //ever be one actor per tile, atleast atm
-                    foreach (Actor a in Util.ActorsOnTile(p))
-                    {
-                        Util.Game.log.Add(a.Definition.name +
-                            " is hit by the bolt!"
-                        );
-                        a.Damage(Util.Roll("1d4"));
-                    }
-                }
-            );
+        public Spell(
+            string Name,
+            List<Action<Point>> Effects = null,
+            int CastDifficulty = 0,
+            int Range = 0
+        ) {
+            this.Name = Name;
+            this.Range = Range;
+            this.CastDifficulty = CastDifficulty;
+            this.Effects = Effects;
         }
 
         public Projectile Cast(Actor caster, Point target)
         {
             Projectile p = new Projectile();
-            p.Effects = new List<Action<Point>>(Effects);
+            if(Effects != null)
+                p.Effects = new List<Action<Point>>(Effects);
             p.origin = caster.xy;
             p.Delta = target - caster.xy;
             //don't try to go further than we targeted
@@ -303,6 +294,9 @@ namespace ODB
                 Math.Abs(p.Delta.x),
                 Math.Abs(p.Delta.y)
             );
+            //and don't go longer than allowed
+            //that should probably be handled somewhere else though
+            if (p.Range > Range) p.Range = Range;
             return p;
         }
     }

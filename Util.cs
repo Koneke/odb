@@ -246,5 +246,16 @@ namespace ODB
                 (byte)255 - c.B
             );
         }
+
+        public static string article(string name)
+        {
+            //not ENTIRELY correct, whatwith exceptions,
+            //but close enough.
+            return
+                new List<char>() { 'a', 'e', 'i', 'o', 'u' }
+                    .Contains(name.ToLower()[0]) ?
+                "an" : "a";
+        }
+
     }
 }
