@@ -442,9 +442,9 @@ namespace ODB
                 DollSlot type =
                         (DollSlot)IO.ReadHex(ss.Split(':')[0]);
                 Item item = 
-                        ss.Split(':')[1].Contains("X") ?
-                            null :
-                            Util.GetItemByID(IO.ReadHex(ss.Split(':')[1]));
+                    ss.Split(':')[1].Contains("X") ?
+                        null :
+                        Util.GetItemByID(IO.ReadHex(ss.Split(':')[1]));
                 PaperDoll.Add(new BodyPart(type, item));
             }
 
@@ -455,9 +455,9 @@ namespace ODB
                     StringSplitOptions.RemoveEmptyEntries
                 ).ToList()
             ) {
-                Item it = Util.GetItemByID(IO.ReadHex(ss));
-                inventory.Add(it);
-                Game.Level.WorldItems.Remove(it);
+                inventory.Add(
+                    Util.GetItemByID(IO.ReadHex(ss))
+                );
             }
 
             return read;

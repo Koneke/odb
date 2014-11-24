@@ -339,6 +339,16 @@ namespace ODB
                 IO.ReadSeenFromFile("Save/seen.sv");
                 player = Util.GetActorByID(0);
             }
+
+            if (IO.KeyPressed(Keys.F3))
+            {
+                Level.WriteLevelSave("Save/newlevel.sv");
+            }
+
+            if(IO.KeyPressed(Keys.F4))
+            {
+                Level.LoadLevelSave("Save/newlevel.sv");
+            }
             #endregion
 
             //only do player movement if we're not currently asking something

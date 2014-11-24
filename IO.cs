@@ -74,9 +74,8 @@ namespace ODB
 
                     if (AcceptedInput.Contains(c))
                     {
-                        //push it to the answer
                         Answer += c;
-                        //and if we only look for one key, we out, peace
+
                         if (IOState == InputType.QuestionPromptSingle)
                         {
                             IOState = InputType.PlayerInput;
@@ -88,17 +87,13 @@ namespace ODB
             }
 
             if (IO.KeyPressed(Keys.Back))
-                //if (Game.questionPromptAnswer.Length > 0)
                 if (Answer.Length > 0)
                     Answer = Answer.Substring(0, Answer.Length - 1);
 
             if (IO.KeyPressed(Keys.Enter))
             {
-                //Game.questionPromptOpen = false;
                 IOState = InputType.PlayerInput;
-                //Game.qpAnswerStack.Push(Game.questionPromptAnswer);
                 Game.qpAnswerStack.Push(Answer);
-                //Game.questionReaction(Game.questionPromptAnswer);
                 Game.questionReaction(Answer);
             }
         }
@@ -290,8 +285,6 @@ namespace ODB
             Game.lvlH = int.Parse(header[0].Split('x')[1]);
 
             Game.Level.Map = new Tile[Game.lvlW, Game.lvlH];
-            //Game.seen = new bool[Game.lvlW, Game.lvlH];
-            //Game.vision = new bool[Game.lvlW, Game.lvlH];
 
             List<string> body = content.Split(
                 //do NOT remove empty entries, they are null tiles!
@@ -477,6 +470,15 @@ namespace ODB
             s += p.x + "x" + p.y + ";";
             return s;
         }
+        public static Point ReadPoint(string s)
+        {
+            s = s.Substring(0, s.Length - 1); //strip ;
+            Point p = new Point(
+                int.Parse(s.Split('x')[0]),
+                int.Parse(s.Split('x')[1])
+            );
+            return p;
+        }
         public static Point ReadPoint(
             string s, ref int read, int start = 0
         ) {
@@ -535,6 +537,10 @@ namespace ODB
         public static string Write(bool b)
         {
             return b ? "1" : "0";
+        }
+        public static bool ReadBool(string s)
+        {
+            return s.Substring(0, 1) == "1";
         }
         public static bool ReadBool(string s, ref int read, int start = 0)
         {

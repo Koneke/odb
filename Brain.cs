@@ -18,7 +18,6 @@ namespace ODB
 
         public void Tick()
         {
-            //if (!Game.worldActors.Contains(MeatPuppet))
             if (!Game.Level.WorldActors.Contains(MeatPuppet))
                 return;
 
@@ -37,6 +36,7 @@ namespace ODB
                 goal.x - MeatPuppet.xy.x,
                 goal.y - MeatPuppet.xy.y 
             );
+
             if (offset.x > 1) offset.x = 1;
             if (offset.x <-1) offset.x = -1;
             if (offset.y > 1) offset.y = 1;
@@ -47,7 +47,7 @@ namespace ODB
             if (Game.Level.ActorsOnTile(target).Contains(Game.player))
             {
                 MeatPuppet.Attack(Game.player);
-                MeatPuppet.Cooldown = 10; //combat cost
+                MeatPuppet.Pass();
             }
             else
             {
@@ -56,33 +56,46 @@ namespace ODB
                 //todo: respect other actors
 
                 if (Game.Level.Map[target.x, target.y].solid == false)
+                {
                     moveTo = MeatPuppet.xy + offset;
+                }
                 else if (
-                    Game.Level.Map[target.x, MeatPuppet.xy.y].solid == false
-                )
+                    Game.Level.Map[
+                        target.x,
+                        MeatPuppet.xy.y
+                    ].solid == false
+                ) {
                     moveTo = MeatPuppet.xy + new Point(offset.x, 0);
+                }
                 else if (
-                    Game.Level.Map[MeatPuppet.xy.x, target.y].solid == false
-                )
+                    Game.Level.Map[
+                        MeatPuppet.xy.x,
+                        target.y
+                    ].solid == false
+                ) {
                     moveTo = MeatPuppet.xy + new Point(0, offset.y);
-                else throw new Exception(
-                    "Bad things are happening to either me or mathematics."
-                );
+                }
+                else
+                {
+                    throw new Exception(
+                        "Bad things are happening to either me or mathematics."
+                    );
+                }
 
                 if (Game.Level.Map[moveTo.x, moveTo.y].doorState == Door.Closed)
                 {
                     Game.Level.Map[moveTo.x, moveTo.y].doorState = Door.Open;
                     if (Game.player.Vision[moveTo.x, moveTo.y])
-                        Game.log.Add(MeatPuppet.Definition.name +
+                    {
+                        Game.log.Add(
+                            MeatPuppet.Definition.name +
                             " opens a door."
                         );
+                    }
                 }
-                else
-                {
-                    MeatPuppet.xy = moveTo;
-                }
+                else MeatPuppet.xy = moveTo;
 
-                MeatPuppet.Cooldown = 10; //movement cost
+                MeatPuppet.Pass(true);
             }
         }
     }
