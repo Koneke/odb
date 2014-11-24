@@ -14,22 +14,23 @@ using Microsoft.Xna.Framework.Graphics;
 using xnaPoint = Microsoft.Xna.Framework.Point;
 
 //~~~ QUEST TRACKER for 23 nov ~~~
-// * Inventory textwrapping //postponed
 // * Item value and paid-for status
-
-//~~~ QUEST TRACKER for 24 nov ~~~
-// * Extract drawy bits from Update [x]
 
 namespace ODB
 {
 
     public class Game1 : Microsoft.Xna.Framework.Game
     {
-        #region engineshit
-
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
+
         Console dfc;
+        Console logConsole;
+        Console inputRowConsole;
+        Console inventoryConsole;
+        Console statRowConsole;
+
+        Game1 Game;
 
         public Game1()
         {
@@ -37,20 +38,8 @@ namespace ODB
             Content.RootDirectory = "Content";
         }
 
-        Game1 Game;
-        #endregion
-
-        public Tile[,] map;
-        public bool[,] seen;
-        public List<Room> rooms;
-
-        public List<Actor> worldActors; //in world (levelfloor)
-        public List<Item> worldItems; //in world (levelfloor)
-        public List<Item> allItems; //in level
+        public Level Level;
         public List<Brain> Brains;
-
-        //semi-temp?
-        //should probably start subclassing gObj later
         public List<Projectile> projectiles;
 
         public Actor player;
@@ -60,10 +49,7 @@ namespace ODB
         public int lvlW, lvlH;
 
         int logSize;
-        Console logConsole;
         public List<string> log;
-
-        Console inputRowConsole;
 
         public Point target;
         //make these two Action, and merge into one?
@@ -75,15 +61,6 @@ namespace ODB
         public Action<Point> targetingReaction;
         public Action<string> questionReaction;
         public Stack<string> qpAnswerStack;
-
-        public List<int> letters, numbers, directions;
-        int space;
-
-        Console inventoryConsole;
-
-        List<DollSlot> standardHuman;
-
-        Console statRowConsole;
 
         public int standardActionLength = 10;
 
@@ -150,46 +127,18 @@ namespace ODB
             SetupConsoles();
 
             camX = camY = 0;
-            scrW = 80;
-            scrH = 25;
+            scrW = 80; scrH = 25;
+            lvlW = 160; lvlH = 25;
 
-            lvlW = 160;
-            lvlH = 25;
+            Level = new ODB.Level(lvlW, lvlH);
 
-            map = new Tile[lvlW, lvlH];
-            seen = new bool[lvlW, lvlH];
-
-            worldActors = new List<Actor>();
-            worldItems = new List<Item>();
-            allItems = new List<Item>();
             Brains = new List<Brain>();
 
             logSize = 3;
             log = new List<string>();
             log.Add("Welcome!");
 
-            standardHuman = new List<DollSlot>();
-            standardHuman.Add(DollSlot.Head);
-            standardHuman.Add(DollSlot.Torso);
-            standardHuman.Add(DollSlot.Hand);
-            standardHuman.Add(DollSlot.Hand);
-            standardHuman.Add(DollSlot.Legs);
-            standardHuman.Add(DollSlot.Feet);
-
             qpAnswerStack = new Stack<string>();
-
-            letters = new List<int>();
-            numbers = new List<int>();
-            for (int i = 65; i <= 90; i++) letters.Add(i);
-            for (int i = 48; i <= 57; i++) numbers.Add(i);
-            directions = new List<int>{
-                (int)Keys.NumPad7, (int)Keys.NumPad8, (int)Keys.NumPad9,
-                (int)Keys.NumPad4,                    (int)Keys.NumPad6,
-                (int)Keys.NumPad1, (int)Keys.NumPad2, (int)Keys.NumPad3,
-            };
-            space = 32;
-
-            rooms = new List<Room>();
 
             IO.ReadActorDefinitionsFromFile("Data/actors.def");
             IO.ReadItemDefinitionsFromFile("Data/items.def");
@@ -208,7 +157,7 @@ namespace ODB
                 new List<Action<Point>>()
                 {
                     delegate(Point p) {
-                        foreach (Actor a in Util.ActorsOnTile(p))
+                        foreach (Actor a in Game.Level.ActorsOnTile(p))
                         {
                             Util.Game.log.Add(a.Definition.name +
                                 " is hit by the bolt!"
@@ -224,7 +173,7 @@ namespace ODB
 
             for (int x = 0; x < lvlW; x++)
                 for (int y = 0; y < lvlH; y++)
-                    Game.seen[x, y] = false;
+                    Game.Level.Seen[x, y] = false;
             //currently, let's just overwrite it, while testing stuff
             IO.WriteSeenToFile("Save/seen.sv");
 
@@ -239,7 +188,7 @@ namespace ODB
                 );
             else
             {
-                Tile bgtile = map[xy.x, xy.y];
+                Tile bgtile = Game.Level.Map[xy.x, xy.y];
                 dfc.CellData.SetBackground(
                     xy.x - camX, xy.y - camY,
                     bgtile.bg
@@ -412,8 +361,9 @@ namespace ODB
 
                             foreach (Brain b in Brains)
                                 if (
-                                    Game.worldActors.Contains(b.MeatPuppet) &&
-                                    b.MeatPuppet.Cooldown == 0
+                                    Game.Level.WorldActors.Contains(
+                                        b.MeatPuppet
+                                    ) && b.MeatPuppet.Cooldown == 0
                                 )
                                     b.Tick();
 
@@ -426,7 +376,7 @@ namespace ODB
                 default: throw new Exception("");
             }
 
-            foreach (Actor a in Game.worldActors)
+            foreach (Actor a in Game.Level.WorldActors)
             {
                 a.ResetVision();
                 foreach (Room r in Util.GetRooms(a))
@@ -448,10 +398,10 @@ namespace ODB
 
             for (int x = 0; x < scrW; x++) for (int y = 0; y < scrH; y++)
             {
-                Tile t = map[x + camX, y + camY];
+                Tile t = Game.Level.Map[x + camX, y + camY];
 
                 if (t == null) continue;
-                if (!seen[x + camX, y + camY]) continue;
+                if (!Game.Level.Seen[x + camX, y + camY]) continue;
 
                 bool inVision = Game.player.Vision[x + camX, y + camY];
 
@@ -474,8 +424,9 @@ namespace ODB
             #region render items to screen
             int[,] itemCount = new int[lvlW, lvlH];
 
-            foreach (Item i in worldItems) itemCount[i.xy.x, i.xy.y]++;
-            foreach (Item i in worldItems)
+            foreach (Item i in Game.Level.WorldItems)
+                itemCount[i.xy.x, i.xy.y]++;
+            foreach (Item i in Game.Level.WorldItems)
             {
                 if (!Game.player.Vision[i.xy.x, i.xy.y]) continue;
                 if (!screen.ContainsPoint(i.xy)) continue;
@@ -495,8 +446,10 @@ namespace ODB
             #region render actors to screen
             int[,] actorCount = new int[lvlW, lvlH];
 
-            foreach (Actor a in worldActors) actorCount[a.xy.x, a.xy.y]++;
-            foreach (Actor a in worldActors)
+            foreach (Actor a in Game.Level.WorldActors)
+                actorCount[a.xy.x, a.xy.y]++;
+
+            foreach (Actor a in Game.Level.WorldActors)
             {
                 if (!Game.player.Vision[a.xy.x, a.xy.y]) continue;
                 if (!screen.ContainsPoint(a.xy)) continue;

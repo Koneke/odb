@@ -371,13 +371,13 @@ namespace ODB
                 Moved++;
                 calculatePosition();
             }
-            if (Util.Game.map[xy.x, xy.y] == null)
+            if (Util.Game.Level.Map[xy.x, xy.y] == null)
             {
                 Moved--;
                 calculatePosition();
                 Die = true;
             }
-            else if (Util.Game.map[xy.x, xy.y].solid)
+            else if (Util.Game.Level.Map[xy.x, xy.y].solid)
             {
                 //unmove
                 Moved--;
@@ -387,7 +387,7 @@ namespace ODB
             if (Moved >= Range) Die = true;
 
             if(!Die)
-                if (Util.ActorsOnTile(xy).Count > 0)
+                if (Util.Game.Level.ActorsOnTile(xy).Count > 0)
                     Die = true; //explode without unmoving
 
             if (Die)

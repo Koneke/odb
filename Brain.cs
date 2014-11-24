@@ -18,7 +18,8 @@ namespace ODB
 
         public void Tick()
         {
-            if (!Game.worldActors.Contains(MeatPuppet))
+            //if (!Game.worldActors.Contains(MeatPuppet))
+            if (!Game.Level.WorldActors.Contains(MeatPuppet))
                 return;
 
             List<Room> route = 
@@ -43,7 +44,7 @@ namespace ODB
 
             Point target = offset + MeatPuppet.xy;
 
-            if (Util.ActorsOnTile(target).Contains(Game.player))
+            if (Game.Level.ActorsOnTile(target).Contains(Game.player))
             {
                 MeatPuppet.Attack(Game.player);
                 MeatPuppet.Cooldown = 10; //combat cost
@@ -54,19 +55,23 @@ namespace ODB
 
                 //todo: respect other actors
 
-                if (Game.map[target.x, target.y].solid == false)
+                if (Game.Level.Map[target.x, target.y].solid == false)
                     moveTo = MeatPuppet.xy + offset;
-                else if (Game.map[target.x, MeatPuppet.xy.y].solid == false)
+                else if (
+                    Game.Level.Map[target.x, MeatPuppet.xy.y].solid == false
+                )
                     moveTo = MeatPuppet.xy + new Point(offset.x, 0);
-                else if (Game.map[MeatPuppet.xy.x, target.y].solid == false)
+                else if (
+                    Game.Level.Map[MeatPuppet.xy.x, target.y].solid == false
+                )
                     moveTo = MeatPuppet.xy + new Point(0, offset.y);
                 else throw new Exception(
                     "Bad things are happening to either me or mathematics."
                 );
 
-                if (Game.map[moveTo.x, moveTo.y].doorState == Door.Closed)
+                if (Game.Level.Map[moveTo.x, moveTo.y].doorState == Door.Closed)
                 {
-                    Game.map[moveTo.x, moveTo.y].doorState = Door.Open;
+                    Game.Level.Map[moveTo.x, moveTo.y].doorState = Door.Open;
                     if (Game.player.Vision[moveTo.x, moveTo.y])
                         Game.log.Add(MeatPuppet.Definition.name +
                             " opens a door."

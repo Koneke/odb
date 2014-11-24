@@ -165,6 +165,8 @@ namespace ODB
         //like, the same kind? Could put below into file or save or something
 
         #region File IO
+        //todo: probably merge seen and level
+        //      writeallitems/allactors/rooms etc. should take a level as arg
         public static void WriteToFile(string path, string content)
         {
             string cwd = Directory.GetCurrentDirectory();
@@ -204,14 +206,14 @@ namespace ODB
         public static string WriteAllItemsToFile(string path)
         {
             string output = "";
-            foreach (Item item in Game.allItems)
+            foreach (Item item in Game.Level.AllItems)
                 output += item.WriteItem() + "##";
             WriteToFile(path, output);
             return output;
         }
         public static void ReadAllItemsFromFile(string path)
         {
-            Game.allItems = new List<Item>();
+            Game.Level.AllItems = new List<Item>();
 
             string content = ReadFromFile(path);
             List<string> itemStrings = content.Split(
@@ -220,27 +222,27 @@ namespace ODB
             ).ToList();
 
             foreach (string s in itemStrings)
-                Game.allItems.Add(new Item(s));
+                Game.Level.AllItems.Add(new Item(s));
             Item.IDCounter = Math.Max(itemStrings.Count - 1, 0);
 
             //when we spawn in actors, they are responsible for making sure
             //that the items in their inventories are not left in the worldItems
             //list.
-            Game.worldItems = new List<Item>();
-            Game.worldItems.AddRange(Game.allItems);
+            Game.Level.WorldItems = new List<Item>();
+            Game.Level.WorldItems.AddRange(Game.Level.AllItems);
         }
 
         public static string WriteAllActorsToFile(string path)
         {
             string output = "";
-            foreach (Actor actor in Game.worldActors)
+            foreach (Actor actor in Game.Level.WorldActors)
                 output += actor.WriteActor() + "##";
             WriteToFile(path, output);
             return output;
         }
         public static void ReadAllActorsFromFile(string path)
         {
-            Game.worldActors = new List<Actor>();
+            Game.Level.WorldActors = new List<Actor>();
             Game.Brains = new List<Brain>();
 
             string content = ReadFromFile(path);
@@ -256,7 +258,7 @@ namespace ODB
                 if (a.id == 0) Game.player = a;
                 else Game.Brains.Add(new Brain(a));
 
-                Game.worldActors.Add(a);
+                Game.Level.WorldActors.Add(a);
             }
             //Actor.IDCounter = Math.Max(actorStrings.Count - 1, 0);
         }
@@ -270,8 +272,8 @@ namespace ODB
             for (int y = 0; y < Game.lvlH ; y++)
                 for (int x = 0; x < Game.lvlW; x++)
                 {
-                    if (Game.map[x, y] != null)
-                        output += Game.map[x, y].writeTile();
+                    if (Game.Level.Map[x, y] != null)
+                        output += Game.Level.Map[x, y].writeTile();
                     output += ";";
                 }
             WriteToFile(path, output);
@@ -287,8 +289,8 @@ namespace ODB
             Game.lvlW = int.Parse(header[0].Split('x')[0]);
             Game.lvlH = int.Parse(header[0].Split('x')[1]);
 
-            Game.map = new Tile[Game.lvlW, Game.lvlH];
-            Game.seen = new bool[Game.lvlW, Game.lvlH];
+            Game.Level.Map = new Tile[Game.lvlW, Game.lvlH];
+            //Game.seen = new bool[Game.lvlW, Game.lvlH];
             //Game.vision = new bool[Game.lvlW, Game.lvlH];
 
             List<string> body = content.Split(
@@ -301,9 +303,9 @@ namespace ODB
                 int x = i % Game.lvlW;
                 int y = (i - (i % Game.lvlW))/Game.lvlW;
                 if (body[i] == "")
-                    Game.map[x, y] = null;
+                    Game.Level.Map[x, y] = null;
                 else
-                    Game.map[x, y] = new Tile(body[i]);
+                    Game.Level.Map[x, y] = new Tile(body[i]);
             }
         }
 
@@ -375,7 +377,7 @@ namespace ODB
         public static string WriteRoomsToFile(string path)
         {
             string output = "";
-            foreach (Room r in Game.rooms)
+            foreach (Room r in Game.Level.Rooms)
                 output += r.WriteRoom() + "##";
             WriteToFile(path, output);
             return output;
@@ -383,14 +385,14 @@ namespace ODB
         public static void ReadRoomsFromFile(string path)
         {
             string content = ReadFromFile(path);
-            Game.rooms = new List<Room>();
+            Game.Level.Rooms = new List<Room>();
             foreach (
                 String s in content.Split(
                     new string[]{ "##" },
                     StringSplitOptions.RemoveEmptyEntries
             ).ToList()) {
                 Room r = new Room(s);
-                Game.rooms.Add(r);
+                Game.Level.Rooms.Add(r);
             }
         }
 
@@ -398,7 +400,7 @@ namespace ODB
         {
             string output = "";
             for (int i = 0; i < Game.lvlW * Game.lvlH; i++)
-                output += IO.Write(Game.seen[
+                output += IO.Write(Game.Level.Seen[
                     i % Game.lvlW,
                     (i - (i % Game.lvlW)) / Game.lvlW]
                 );
@@ -410,8 +412,10 @@ namespace ODB
             string content = IO.ReadFromFile(path);
             int n = 0;
             for (int i = 0; i < Game.lvlW * Game.lvlH; i++)
-                Game.seen[i % Game.lvlW, (i - (i % Game.lvlW)) / Game.lvlW] =
-                    IO.ReadBool(content, ref n, i);
+                Game.Level.Seen[
+                    i % Game.lvlW,
+                    (i - (i % Game.lvlW)) / Game.lvlW
+                ] = IO.ReadBool(content, ref n, i);
         }
 
         public static string Write(Color c)

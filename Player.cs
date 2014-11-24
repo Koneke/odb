@@ -54,7 +54,7 @@ namespace ODB
             if (i < onTile.Count)
             {
                 Item it = onTile[i];
-                Game.worldItems.Remove(it);
+                Game.Level.WorldItems.Remove(it);
 
                 if (it.Definition.stacking)
                 {
@@ -65,7 +65,7 @@ namespace ODB
                             alreadyHolding = true;
                             item.count++;
                             //merging into the already held item
-                            Game.allItems.Remove(it);
+                            Game.Level.AllItems.Remove(it);
                         }
                     if (!alreadyHolding)
                         Game.player.inventory.Add(it);
@@ -141,7 +141,7 @@ namespace ODB
             Item it = Game.player.inventory[index];
 
             Game.player.inventory.Remove(it);
-            Game.worldItems.Add(it);
+            Game.Level.WorldItems.Add(it);
 
             it.xy = Game.player.xy;
 
@@ -177,8 +177,8 @@ namespace ODB
                     droppedStack.id = Item.IDCounter++;
                     droppedStack.count = count;
                     it.count -= count;
-                    Game.worldItems.Add(droppedStack);
-                    Game.allItems.Add(droppedStack);
+                    Game.Level.WorldItems.Add(droppedStack);
+                    Game.Level.AllItems.Add(droppedStack);
 
                     Game.log.Add("Dropped " + count + " " +
                         it.Definition.name + "."
@@ -279,7 +279,7 @@ namespace ODB
 
             Point offset = Game.NumpadToDirection(answer[0]);
             Tile t = 
-                Game.map[
+                Game.Level.Map[
                     Game.player.xy.x + offset.x,
                     Game.player.xy.y + offset.y
                 ];
@@ -302,7 +302,7 @@ namespace ODB
 
             Point offset = Game.NumpadToDirection(answer[0]);
             Tile t = 
-                Game.map[
+                Game.Level.Map[
                     Game.player.xy.x + offset.x,
                     Game.player.xy.y + offset.y
                 ];
@@ -347,7 +347,7 @@ namespace ODB
         public static void Cast(Point p)
         {
             int index = letterAnswerToIndex(Game.qpAnswerStack.Pop()[0]);
-            if (Game.map[p.x, p.y] != null)
+            if (Game.Level.Map[p.x, p.y] != null)
                 Game.player.Cast(
                     Game.player.Spellbook[index], p
                 );
@@ -372,7 +372,7 @@ namespace ODB
 
             if (IO.KeyPressed(Keys.NumPad5)) Game.player.Pass(true);
 
-            Tile target = Game.map[
+            Tile target = Game.Level.Map[
                 Game.player.xy.x + offset.x,
                 Game.player.xy.y + offset.y
             ];

@@ -315,9 +315,9 @@ namespace ODB
                     ItemDefinition.ItemDefinitions[
                         Definition.CorpseType]
                 );
-                Game.worldItems.Add(corpse);
-                Game.allItems.Add(corpse);
-                Game.worldActors.Remove(this);
+                Game.Level.WorldItems.Add(corpse);
+                Game.Level.AllItems.Add(corpse);
+                Game.Level.WorldActors.Remove(this);
             }
         }
 
@@ -349,7 +349,7 @@ namespace ODB
         //but should, I guess, be called by monsters as well in the future
         public void TryMove(Point offset)
         {
-            Tile target = Game.map[
+            Tile target = Game.Level.Map[
                 Game.player.xy.x + offset.x,
                 Game.player.xy.y + offset.y
             ];
@@ -369,7 +369,7 @@ namespace ODB
             }
             else
             {
-                if (Util.ActorsOnTile(target).Count <= 0)
+                if (Game.Level.ActorsOnTile(target).Count <= 0)
                 {
                     int numberOfLegs = 0;
                     int numberOfFreeHands = 0;
@@ -389,7 +389,7 @@ namespace ODB
                 else
                 {
                     //should only be 1, but... eh
-                    foreach (Actor a in Util.ActorsOnTile(target))
+                    foreach (Actor a in Game.Level.ActorsOnTile(target))
                         Attack(a);
                     Game.player.Pass();
                 }
@@ -457,7 +457,7 @@ namespace ODB
             ) {
                 Item it = Util.GetItemByID(IO.ReadHex(ss));
                 inventory.Add(it);
-                Game.worldItems.Remove(it);
+                Game.Level.WorldItems.Remove(it);
             }
 
             return read;
@@ -482,7 +482,7 @@ namespace ODB
                         ] = true;
 
                         if(this == Game.player)
-                            Game.seen[
+                            Game.Level.Seen[
                                 rr.xy.x + x,
                                 rr.xy.y + y
                             ] = true;
