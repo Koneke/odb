@@ -21,6 +21,110 @@ namespace ODB
             return i; 
         }
 
+        /*
+         * ToC:
+         * Prompt answer functions:
+             * Get
+             * Drop
+                 * DropCount
+                 * Drop aux funcs
+             * Wield
+             * Sheath
+             * Open
+             * Close
+             * Zap
+         * Target answer functions:
+             * Cast
+         * Thanks for keeping order in the realm of man.
+         */
+
+        #region Get/Drop
+        public static void Get(string answer)
+        {
+            Game.qpAnswerStack.Pop();
+            if (answer.Length <= 0) return;
+
+            int i = letterAnswerToIndex(answer[0]);
+            
+            List<Item> onTile = Util.ItemsOnTile(
+                Game.player.xy
+            );
+
+            if (i < onTile.Count)
+            {
+                Item it = onTile[i];
+                Game.worldItems.Remove(it);
+
+                if (it.Definition.stacking)
+                {
+                    bool alreadyHolding = false;
+                    foreach (Item item in Game.player.inventory)
+                        if (item.Definition.type == it.Definition.type)
+                        {
+                            alreadyHolding = true;
+                            item.count++;
+                            //merging into the already held item
+                            Game.allItems.Remove(it);
+                        }
+                    if (!alreadyHolding)
+                        Game.player.inventory.Add(it);
+                }
+                else
+                {
+                    Game.player.inventory.Add(it);
+                }
+                Game.log.Add("Picked up " + it.Definition.name + ".");
+
+                Game.player.Pass();
+            }
+            else
+            {
+                Game.log.Add("Invalid selection ("+answer[0]+").");
+                return;
+            }
+        }
+
+        public static void Drop(string answer)
+        {
+            //NOTE, PEEK.
+            //BECAUSE WE NEED TO REUSE THE ANSWER LATER?
+            //not actually using the stack here yet, but we want
+            //to drop the string answer bit in the sign later...
+            //I think.
+            answer = Game.qpAnswerStack.Peek();
+            if (answer.Length <= 0) return;
+
+            int i = letterAnswerToIndex(answer[0]);
+
+            if (i >= Game.player.inventory.Count)
+            {
+                Game.log.Add("Invalid selection ("+answer[0]+").");
+                return;
+            }
+
+            if (i < Game.player.inventory.Count)
+            {
+                Item it = Game.player.inventory[i];
+
+                if (it.Definition.stacking && it.count > 1)
+                {
+                    /*Game.setupQuestionPrompt("How many?", false);
+                    Game.acceptedInput = Game.numbers;
+                    Game.questionReaction = Player.DropCount;
+                    Game.questionPromptOpen = true;*/
+                    IO.AskPlayer(
+                        "How many?",
+                        IO.InputState.QuestionPrompt,
+                        Player.DropCount
+                    );
+                }
+                else
+                {
+                    drop(i);
+                }
+            }
+        }
+
         public static void DropCount(string answer)
         {
             string count = Game.qpAnswerStack.Pop();
@@ -83,86 +187,13 @@ namespace ODB
                 }
             }
         }
+        #endregion
 
-        public static void Drop(string answer)
-        {
-            //NOTE, PEEK.
-            //BECAUSE WE NEED TO REUSE THE ANSWER LATER?
-            //not actually using the stack here yet, but we want
-            //to drop the string answer bit in the sign later...
-            //I think.
-            answer = Game.qpAnswerStack.Peek();
-            if (answer.Length <= 0) return;
-
-            if(Game.logPlayerActions)
-                Game.log.Add(" > Drop item");
-
-            int i = letterAnswerToIndex(answer[0]);
-
-            if (i >= Game.player.inventory.Count)
-            {
-                Game.log.Add("Invalid selection ("+answer[0]+").");
-                return;
-            }
-
-            if (i < Game.player.inventory.Count)
-            {
-                Item it = Game.player.inventory[i];
-
-                if (it.Definition.stacking && it.count > 1)
-                {
-                    Game.setupQuestionPrompt("How many?", false);
-                    Game.acceptedInput = Game.numbers;
-                    Game.questionReaction = Player.DropCount;
-                    Game.questionPromptOpen = true;
-                }
-                else
-                {
-                    drop(i);
-                }
-            }
-        }
-
-        public static void Sheath(string answer)
-        {
-            answer = Game.qpAnswerStack.Pop();
-            if (answer.Length <= 0) return;
-
-            int i = letterAnswerToIndex(answer[0]);
-            if (i >= Game.player.inventory.Count)
-            {
-                Game.log.Add("Invalid selection (" + answer[0] + ").");
-                return;
-            }
-
-            bool itemWielded = false;
-            Item it = null;
-
-            foreach (BodyPart bp in Game.player.PaperDoll.FindAll(
-                x => x.Type == DollSlot.Hand))
-                if (bp.Item == Game.player.inventory[i]) {
-                    itemWielded = true;
-                    it = bp.Item;
-                }
-
-            if (itemWielded)
-            {
-                foreach (BodyPart bp in Game.player.PaperDoll.FindAll(
-                    x => x.Type == DollSlot.Hand))
-                    if (bp.Item == it) bp.Item = null;
-                Game.log.Add("Sheathed " + it.Definition.name + ".");
-
-                Game.player.Pass();
-            }
-        }
-
+        #region Wield/Sheath
         public static void Wield(string answer)
         {
             Game.qpAnswerStack.Pop();
             if (answer.Length <= 0) return;
-
-            if(Game.logPlayerActions)
-                Game.log.Add(" > Wield item");
 
             int i = letterAnswerToIndex(answer[0]);
 
@@ -205,61 +236,45 @@ namespace ODB
             }
         }
 
-        public static void Get(string answer)
+        public static void Sheath(string answer)
         {
-            Game.qpAnswerStack.Pop();
+            answer = Game.qpAnswerStack.Pop();
             if (answer.Length <= 0) return;
 
-            if(Game.logPlayerActions)
-                Game.log.Add(" > Pick up item");
-
             int i = letterAnswerToIndex(answer[0]);
-            
-            List<Item> onTile = Util.ItemsOnTile(
-                Game.player.xy
-            );
-
-            if (i < onTile.Count)
+            if (i >= Game.player.inventory.Count)
             {
-                Item it = onTile[i];
-                Game.worldItems.Remove(it);
+                Game.log.Add("Invalid selection (" + answer[0] + ").");
+                return;
+            }
 
-                if (it.Definition.stacking)
-                {
-                    bool alreadyHolding = false;
-                    foreach (Item item in Game.player.inventory)
-                        if (item.Definition.type == it.Definition.type)
-                        {
-                            alreadyHolding = true;
-                            item.count++;
-                            //merging into the already held item
-                            Game.allItems.Remove(it);
-                        }
-                    if (!alreadyHolding)
-                        Game.player.inventory.Add(it);
+            bool itemWielded = false;
+            Item it = null;
+
+            foreach (BodyPart bp in Game.player.PaperDoll.FindAll(
+                x => x.Type == DollSlot.Hand))
+                if (bp.Item == Game.player.inventory[i]) {
+                    itemWielded = true;
+                    it = bp.Item;
                 }
-                else
-                {
-                    Game.player.inventory.Add(it);
-                }
-                Game.log.Add("Picked up " + it.Definition.name + ".");
+
+            if (itemWielded)
+            {
+                foreach (BodyPart bp in Game.player.PaperDoll.FindAll(
+                    x => x.Type == DollSlot.Hand))
+                    if (bp.Item == it) bp.Item = null;
+                Game.log.Add("Sheathed " + it.Definition.name + ".");
 
                 Game.player.Pass();
             }
-            else
-            {
-                Game.log.Add("Invalid selection ("+answer[0]+").");
-                return;
-            }
         }
+        #endregion
 
+        #region Open/Close door
         public static void Open(string answer)
         {
             Game.qpAnswerStack.Pop();
             if (answer.Length <= 0) return;
-
-            if(Game.logPlayerActions)
-                Game.log.Add(" > Open door");
 
             Point offset = Game.NumpadToDirection(answer[0]);
             Tile t = 
@@ -276,19 +291,13 @@ namespace ODB
                 //on the dnd rules.
                 Game.player.Pass(true);
             }
-            else
-            {
-                Game.log.Add("There's no closed door there.");
-            }
+            else Game.log.Add("There's no closed door there.");
         }
 
         public static void Close(string answer)
         {
             Game.qpAnswerStack.Pop();
             if (answer.Length <= 0) return;
-
-            if(Game.logPlayerActions)
-                Game.log.Add(" > Close door");
 
             Point offset = Game.NumpadToDirection(answer[0]);
             Tile t = 
@@ -308,16 +317,11 @@ namespace ODB
                     //on the dnd rules.
                     Game.player.Pass(true);
                 }
-                else
-                {
-                    Game.log.Add("There's something in the way.");
-                }
+                else Game.log.Add("There's something in the way.");
             }
-            else
-            {
-                Game.log.Add("There's no open door there.");
-            }
+            else Game.log.Add("There's no open door there.");
         }
+        #endregion
 
         public static void Zap(string answer)
         {
@@ -331,9 +335,11 @@ namespace ODB
             }
             else
             {
-                Game.targeting = true;
-                Game.target = Game.player.xy;
-                Game.targetingReaction = Player.Cast;
+                IO.AskPlayer(
+                    "Casting " + Game.player.Spellbook[i].Name,
+                    IO.InputState.Targeting,
+                    Player.Cast
+                );
             }
         }
 
@@ -405,48 +411,56 @@ namespace ODB
 
             #endregion
 
-            #region drop
-            if (IO.KeyPressed(Keys.D) && !Game.shift)
+            #region get/drop
+            if (
+                (IO.KeyPressed(Keys.G) && !IO.shift) ||
+                (IO.KeyPressed(Keys.OemComma) && !IO.shift)
+            ) {
+                List<Item> onFloor = Util.ItemsOnTile(Game.player.xy);
+                if (onFloor.Count > 1)
+                {
+                    string _q = "Pick up what? [";
+                    IO.AcceptedInput.Clear();
+                    for (int i = 0; i < onFloor.Count; i++)
+                    {
+                        char index = IO.indexes[i];
+                        _q += index;
+                        IO.AcceptedInput.Add(IO.indexes[i]);
+                    }
+                    _q += "]";
+
+                    IO.AskPlayer(
+                        _q,
+                        IO.InputState.QuestionPromptSingle,
+                        Player.Get
+                    );
+                }
+                //just more convenient this way
+                else if (onFloor.Count > 0) Player.Get("a");
+            }
+
+            if (IO.KeyPressed(Keys.D) && !IO.shift)
             {
                 string _q = "Drop what? [";
-                Game.acceptedInput.Clear();
+                IO.AcceptedInput.Clear();
                 for (int i = 0; i < Game.player.inventory.Count; i++)
                 {
-                    char index = (char)(97 + i);
+                    //char index = (char)(97 + i);
+                    char index = IO.indexes[i];
                     _q += index;
-                    Game.acceptedInput.Add((int)(index + "").ToUpper()[0]);
+                    IO.AcceptedInput.Add(IO.indexes[i]);
                 }
                 _q += "]";
-                Game.setupQuestionPrompt(_q);
-                Game.questionPromptOpen = true;
 
-                Game.questionReaction = Player.Drop;
+                IO.AskPlayer(
+                    _q,
+                    IO.InputState.QuestionPromptSingle,
+                    Player.Drop
+                );
             }
             #endregion
 
-            #region open
-            if (IO.KeyPressed(Keys.O) && !Game.shift)
-            {
-                Game.acceptedInput.Clear();
-                Game.acceptedInput.AddRange(Game.directions);
-                Game.setupQuestionPrompt("Open where?");
-                Game.questionPromptOpen = true;
-                Game.questionReaction = Player.Open;
-            }
-            #endregion
-
-            #region close
-            if (IO.KeyPressed(Keys.C) && !Game.shift)
-            {
-                Game.acceptedInput.Clear();
-                Game.acceptedInput.AddRange(Game.directions);
-                Game.setupQuestionPrompt("Close where?");
-                Game.questionPromptOpen = true;
-                Game.questionReaction = Player.Close;
-            }
-            #endregion
-
-            #region wield/wear //AHAHAHA IM A GENIUS
+            #region wield/wear/sheath
             if (IO.KeyPressed(Keys.W))
             {
                 List<Item> equipables = new List<Item>();
@@ -455,13 +469,14 @@ namespace ODB
                     //is it wieldable?
                     if (
                         it.Definition.equipSlots.Contains(DollSlot.Hand)
-                        && !Game.shift
+                        && !IO.shift
                     )
                         equipables.Add(it);
                     else if (
+                    //wearable?
                         it.Definition.equipSlots.FindAll(
                             x => x != DollSlot.Hand
-                        ).Count > 0 && Game.shift
+                        ).Count > 0 && IO.shift
                     )
                         equipables.Add(it);
 
@@ -472,35 +487,33 @@ namespace ODB
 
                 if (equipables.Count > 0)
                 {
-                    string _q = (Game.shift ? "Wear" : "Wield") + " what? [";
-                    Game.acceptedInput.Clear();
+                    string _q = (IO.shift ? "Wear" : "Wield") + " what? [";
+                    IO.AcceptedInput.Clear();
                     foreach (Item it in equipables)
                     {
                         //show the character corresponding with the one
                         //shown in the inventory.
                         char index =
-                            (char)(97 + Game.player.inventory.IndexOf(it));
+                            IO.indexes[Game.player.inventory.IndexOf(it)];
                         _q += index;
-                        Game.acceptedInput.Add((int)(index + "")
-                            .ToUpper()[0]
-                        );
+                        IO.AcceptedInput.Add(index);
                     }
                     _q += "]";
-                    Game.setupQuestionPrompt(_q);
-                    Game.questionPromptOpen = true;
 
-                    Game.questionReaction = Player.Wield;
+                    IO.AskPlayer(
+                        _q,
+                        IO.InputState.QuestionPromptSingle,
+                        Player.Wield
+                    );
                 }
                 else
                 {
                     Game.log.Add("Nothing to " +
-                        (Game.shift ? "wear" : "wield") + ".");
+                        (IO.shift ? "wear" : "wield") + ".");
                 }
             }
-            #endregion
 
-            #region sheath
-            if (IO.KeyPressed(Keys.S) && Game.shift)
+            if (IO.KeyPressed(Keys.S) && IO.shift)
             {
                 List<Item> equipped = new List<Item>();
                 foreach (
@@ -516,22 +529,24 @@ namespace ODB
                 if (equipped.Count > 0)
                 {
                     string _q = "Sheath what? [";
+                    IO.AcceptedInput.Clear();
                     foreach (Item it in equipped)
                     {
                         char index =
-                            (char)(97 +
-                                Game.player.inventory.IndexOf(it)
-                            );
+                            IO.indexes[Game.player.inventory.IndexOf(it)];
                         _q += index;
-                        Game.acceptedInput.Add((int)(index + "")
-                            .ToUpper()[0]
+                        IO.AcceptedInput.Add(
+                            index
+                            //IO.indexes[Game.player.inventory.IndexOf(it)]
                         );
                     }
                     _q += "]";
-                    Game.setupQuestionPrompt(_q);
-                    Game.questionPromptOpen = true;
 
-                    Game.questionReaction = Player.Sheath;
+                    IO.AskPlayer(
+                        _q,
+                        IO.InputState.QuestionPrompt,
+                        Player.Sheath
+                    );
                 }
                 else
                 {
@@ -540,43 +555,63 @@ namespace ODB
             }
             #endregion
 
-            #region get
-            if (
-                (IO.KeyPressed(Keys.G) && !Game.shift) ||
-                (IO.KeyPressed(Keys.OemComma) && !Game.shift)
-            ) {
-                List<Item> onFloor = Util.ItemsOnTile(Game.player.xy);
-                if (onFloor.Count > 0)
-                {
-                    if (onFloor.Count > 1)
-                    {
-                        string _q = "Pick up what? [";
-                        Game.acceptedInput.Clear();
-                        for (int i = 0; i < onFloor.Count; i++)
-                        {
-                            char index = (char)(97 + i);
-                            _q += index;
-                            Game.acceptedInput.Add(
-                                (int)(index + "").ToUpper()[0]
-                            );
-                        }
-                        _q += "]";
-                        Game.setupQuestionPrompt(_q);
-                        Game.questionPromptOpen = true;
+            #region open/close
+            if (IO.KeyPressed(Keys.O) && !IO.shift)
+            {
+                IO.AcceptedInput.Clear();
 
-                        Game.acceptedInput.Clear();
-                        Game.acceptedInput.AddRange(Game.letters);
+                for(int i = (int)Keys.NumPad1; i <= (int)Keys.NumPad9; i++)
+                    //because some bright motherfucker at microsoft felt that
+                    //97, aka 'a', was a good place for the numpad
+                    IO.AcceptedInput.Add(
+                        (char)(48 + i - Keys.NumPad0)
+                    );
+                
+                IO.AskPlayer(
+                    "Open where?",
+                    IO.InputState.QuestionPromptSingle,
+                    Player.Open
+                );
+            }
 
-                        Game.questionReaction = Player.Get;
-                    }
-                    else //remove me? just show the option for just "a"
-                    {
-                        Game.qpAnswerStack.Push("a");
-                        Player.Get("a");
-                    }
-                }
+            if (IO.KeyPressed(Keys.C) && !IO.shift)
+            {
+                IO.AcceptedInput.Clear();
+
+                for(int i = (int)Keys.NumPad1; i <= (int)Keys.NumPad9; i++)
+                    //this might seem wonk, but we're handling the
+                    //numpad to normal number stuff, so it's k
+                    IO.AcceptedInput.Add(
+                        (char)(48 + i - Keys.NumPad0)
+                    );
+                
+                IO.AskPlayer(
+                    "Close where?",
+                    IO.InputState.QuestionPromptSingle,
+                    Player.Close
+                );
             }
             #endregion
+
+            if (IO.KeyPressed(Keys.Z) && !IO.shift)
+            {
+                string _q = "Cast what? [";
+                IO.AcceptedInput.Clear();
+                for (int i = 0; i < Game.player.Spellbook.Count; i++)
+                {
+                    char index = IO.indexes[i];
+                    _q += index;
+                    IO.AcceptedInput.Add(index);
+                }
+                _q += "]";
+
+                IO.AskPlayer(
+                    _q,
+                    IO.InputState.QuestionPromptSingle,
+                    Player.Zap
+                );
+            }
+
         }
     }
 }

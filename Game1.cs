@@ -15,8 +15,10 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 
 //~~~ QUEST TRACKER for 23 nov ~~~
 // * Inventory textwrapping
-// * Basic magic?
 // * Item value and paid-for status
+
+//~~~ QUEST TRACKER for 24 nov ~~~
+// * Extract drawy bits from Update
 
 namespace ODB
 {
@@ -38,12 +40,8 @@ namespace ODB
         Game1 Game;
         #endregion
 
-        public bool shift;
-
         public Tile[,] map;
         public bool[,] seen;
-        //consider moving vision into actor class
-        public bool[,] vision;
         public List<Room> rooms;
 
         public List<Actor> worldActors; //in world (levelfloor)
@@ -61,32 +59,22 @@ namespace ODB
         int scrW, scrH;
         public int lvlW, lvlH;
 
-        public bool logPlayerActions;
         int logSize;
         Console logConsole;
         public List<string> log;
 
         Console inputRowConsole;
 
-        public bool questionPromptOpen;
-
-        //var to hold input before it being sent
-        public string questionPromptAnswer;
-        //we're starting to need two questions for one thing now
-        public Stack<string> qpAnswerStack;
-
-    //these two (q/t) should maybe be moved to IO as well
-    //since it's not really directly tied to the game, but rather
-    //the pbkac steering their avatar
-        //currently doing some targeting, like, selecting spell target or
-        //what not.
-        public bool targeting;
         public Point target;
+        //make these two Action, and merge into one?
+        //the targetting reaction functions can just read the
+        //Game.target directly
+        //and the others can use the stack
+        //perhaps make a stack for the targets as well later,
+        //but doesn't seem necessary atm
         public Action<Point> targetingReaction;
-
-        public bool questionPrompOneKey;
-        public List<int> acceptedInput;
         public Action<string> questionReaction;
+        public Stack<string> qpAnswerStack;
 
         public List<int> letters, numbers, directions;
         int space;
@@ -167,19 +155,18 @@ namespace ODB
 
             lvlW = 160;
             lvlH = 25;
+
             map = new Tile[lvlW, lvlH];
             seen = new bool[lvlW, lvlH];
-            vision = new bool[lvlW, lvlH]; //playervision
 
             worldActors = new List<Actor>();
             worldItems = new List<Item>();
             allItems = new List<Item>();
             Brains = new List<Brain>();
 
-            logPlayerActions = !true;
             logSize = 3;
             log = new List<string>();
-            log.Add("Something something dungeon");
+            log.Add("Welcome!");
 
             standardHuman = new List<DollSlot>();
             standardHuman.Add(DollSlot.Head);
@@ -189,7 +176,6 @@ namespace ODB
             standardHuman.Add(DollSlot.Legs);
             standardHuman.Add(DollSlot.Feet);
 
-            acceptedInput = new List<int>();
             qpAnswerStack = new Stack<string>();
 
             letters = new List<int>();
@@ -235,6 +221,12 @@ namespace ODB
             );
 
             player.Spellbook.Add(ForceBolt);
+
+            for (int x = 0; x < lvlW; x++)
+                for (int y = 0; y < lvlH; y++)
+                    Game.seen[x, y] = false;
+            //currently, let's just overwrite it, while testing stuff
+            IO.WriteSeenToFile("Save/seen.sv");
 
             base.Initialize();
         }
@@ -295,45 +287,33 @@ namespace ODB
             );
         }
 
-        public void setupQuestionPrompt(string q, bool onekey = true)
-        {
-            q = q + " ";
-            questionPromptAnswer = "";
-            questionPrompOneKey = onekey;
-            inputRowConsole.CellData.Clear();
-            inputRowConsole.CellData.Fill(Color.Black, Color.White, ' ', null);
-            inputRowConsole.CellData.Print(0, 0, q);
-            inputRowConsole.VirtualCursor.Position =
-                new xnaPoint(q.Length, 0);
-        }
-
         public Point NumpadToDirection(char c)
         {
             Point p;
             switch (c)
             {
-                case (char)Keys.NumPad7:
+                case (char)Keys.D7:
                     p = new Point(-1, -1);
                     break;
-                case (char)Keys.NumPad8:
+                case (char)Keys.D8:
                     p = new Point(0, -1);
                     break;
-                case (char)Keys.NumPad9:
+                case (char)Keys.D9:
                     p = new Point(1, -1);
                     break;
-                case (char)Keys.NumPad4:
+                case (char)Keys.D4:
                     p = new Point(-1, 0);
                     break;
-                case (char)Keys.NumPad6:
+                case (char)Keys.D6:
                     p = new Point(1, 0);
                     break;
-                case (char)Keys.NumPad1:
+                case (char)Keys.D1:
                     p = new Point(-1, 1);
                     break;
-                case (char)Keys.NumPad2:
+                case (char)Keys.D2:
                     p = new Point(0, 1);
                     break;
-                case (char)Keys.NumPad3:
+                case (char)Keys.D3:
                     p = new Point(1, 1);
                     break;
                 default:
@@ -351,14 +331,19 @@ namespace ODB
             dfc.CellData.Clear();
 
             IO.Update(false);
-
             #endregion
 
             #region ui interaction
-            if (
-                IO.KeyPressed(Keys.Q) ||
-                (IO.KeyPressed(Keys.Escape) && !questionPromptOpen)
-            ) this.Exit();
+            if (IO.KeyPressed(Keys.Escape))
+            {
+                if (IO.IOState != IO.InputState.PlayerInput)
+                    IO.IOState = IO.InputState.PlayerInput;
+                else if (inventoryConsole.IsVisible == true)
+                    inventoryConsole.IsVisible = false;
+                else
+                    this.Exit();
+            }
+            if (IO.KeyPressed(Keys.Q)) this.Exit();
 
             if (IO.KeyPressed(Keys.I))
                 inventoryConsole.IsVisible =
@@ -409,40 +394,23 @@ namespace ODB
                 IO.ReadSeenFromFile("Save/seen.sv");
                 player = Util.GetActorByID(0);
             }
-
-            if (IO.KeyPressed(Keys.F3))
-            {
-                string _q = "Cast what? [";
-                acceptedInput.Clear();
-                for (int i = 0; i < player.Spellbook.Count; i++)
-                {
-                    char index = (char)(97 + i);
-                    _q += index;
-                    acceptedInput.Add((int)(index + "").ToUpper()[0]);
-                }
-                _q += "]";
-                setupQuestionPrompt(_q);
-                questionPromptOpen = true;
-
-                questionReaction = Player.Zap;
-            }
             #endregion
 
             //only do player movement if we're not currently asking something
-            if (!questionPromptOpen)
+            switch (IO.IOState)
             {
-                if (!targeting)
-                {
-                    //pretty much every possible player interaction (that uses
-                    //ingame time) should be in this if-clause.
-                    if (player.Cooldown == 0)
-                    {
+                case IO.InputState.QuestionPromptSingle:
+                case IO.InputState.QuestionPrompt:
+                    IO.QuestionPromptInput();
+                    break;
+                case IO.InputState.Targeting:
+                    IO.TargetInput();
+                    break;
+                case IO.InputState.PlayerInput:
+                    if(player.Cooldown == 0)
                         Player.PlayerInput();
-                    }
                     else
-                    {
-                        #region tick brains
-                        while (Game.player.Cooldown > 0)
+                        while(Game.player.Cooldown > 0)
                         {
                             projectiles.RemoveAll(x => x.Die);
 
@@ -456,48 +424,18 @@ namespace ODB
                             foreach (Brain b in Brains) b.MeatPuppet.Cooldown--;
                             Game.player.Cooldown--;
                         }
-                        #endregion
-                    }
-                }
-                else
-                {
-                    IO.TargetInput();
-                }
-            }
-            else
-            {
-                #region qp input
-                IO.QuestionPromptInput();
-                #endregion
+                    break;
+                //if this happens,
+                //you're breaking some kind of weird shit somehow
+                default: throw new Exception("");
             }
 
             #region vision
-            for (int x = 0; x < lvlW; x++)
+            foreach (Actor a in Game.worldActors)
             {
-                for (int y = 0; y < lvlH; y++)
-                {
-                    //reset vision
-                    vision[x, y] = false;
-                     //wizion
-                    /*vision[x, y] = true;
-                    seen[x, y] = true;*/
-                }
-            }
-
-            //see room
-            foreach (Room R in Util.GetRooms(player))
-            {
-                foreach (Rect r in R.rects)
-                {
-                    for (int x = 0; x < r.wh.x; x++)
-                    {
-                        for (int y = 0; y < r.wh.y; y++)
-                        {
-                            seen[r.xy.x + x, r.xy.y + y] = true;
-                            vision[r.xy.x + x, r.xy.y + y] = true;
-                        }
-                    }
-                }
+                a.ResetVision();
+                foreach (Room r in Util.GetRooms(a))
+                    a.AddRoomToVision(r);
             }
             #endregion
 
@@ -517,7 +455,7 @@ namespace ODB
                     if (!seen[x + camX, y + camY]) continue;
 
                     //whether or not the player currently sees the tile
-                    bool inVision = vision[x + camX, y + camY];
+                    bool inVision = Game.player.Vision[x + camX, y + camY];
 
                     dfc.CellData.SetBackground(x, y, t.bg * 1f);
                     dfc.CellData.SetForeground(
@@ -548,7 +486,7 @@ namespace ODB
             }
             foreach (Item i in worldItems)
             {
-                if (!vision[i.xy.x, i.xy.y]) continue;
+                if (!Game.player.Vision[i.xy.x, i.xy.y]) continue;
                 if (screen.ContainsPoint(i.xy))
                 {
                     if (itemCount[i.xy.x, i.xy.y] == 1)
@@ -576,7 +514,7 @@ namespace ODB
             }
             foreach (Actor a in worldActors)
             {
-                if (!vision[a.xy.x, a.xy.y]) continue;
+                if (!Game.player.Vision[a.xy.x, a.xy.y]) continue;
                 if (screen.ContainsPoint(a.xy))
                 {
                     if (actorCount[a.xy.x, a.xy.y] == 1)
@@ -608,8 +546,6 @@ namespace ODB
                 );
             }
 
-            
-
             #region render ui
             logConsole.CellData.Clear();
             logConsole.CellData.Fill(Color.White, Color.Black, ' ', null);
@@ -624,9 +560,25 @@ namespace ODB
                 );
             }
 
-            inputRowConsole.IsVisible = questionPromptOpen;
-            inputRowConsole.Position = new xnaPoint(0, logSize);
-            inputRowConsole.CellData.Print(0, 0, questionPromptAnswer);
+            //inputRowConsole.IsVisible = questionPromptOpen;
+            inputRowConsole.IsVisible =
+                IO.IOState != IO.InputState.PlayerInput;
+            if (inputRowConsole.IsVisible)
+            {
+                inputRowConsole.Position = new xnaPoint(0, logSize);
+                //inputRowConsole.CellData.Print(0, 0, questionPromptAnswer);
+                inputRowConsole.CellData.Fill(
+                    Color.Black,
+                    Color.WhiteSmoke,
+                    ' ',
+                    null
+                );
+                inputRowConsole.CellData.Print(
+                    0, 0,
+                    //questionPromptAnswer
+                    IO.Question + " " + IO.Answer
+                );
+            }
 
             #region inventory
             int inventoryW = inventoryConsole.ViewArea.Width;
@@ -705,7 +657,7 @@ namespace ODB
             statRowConsole.CellData.Print(0, 0, namerow);
             statRowConsole.CellData.Print(0, 1, statrow);
 
-            if (targeting)
+            if (IO.IOState == IO.InputState.Targeting)
             {
                 dfc.CellData[target.x, target.y].Background =
                 Util.InvertColor(
@@ -720,7 +672,6 @@ namespace ODB
             #endregion
 
             #region engineshit
-            //IO.oks = IO.ks;
             IO.Update(true);
 
             base.Update(gameTime);

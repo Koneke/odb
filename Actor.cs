@@ -80,32 +80,43 @@ namespace ODB
     public class Actor : gObject
     {
         public static int IDCounter = 0;
+
+    #region written to save
         public int id;
 
         public new ActorDefinition Definition;
-
         public int hpCurrent;
-
         public int Cooldown;
 
         public List<BodyPart> PaperDoll;
         public List<Item> inventory;
-        public List<Spell> Spellbook;
+        public List<Spell> Spellbook; //not yet written to file
+    #endregion
+
+    #region temporary/cached (nonwritten)
+        public bool[,] Vision;
+    #endregion
 
         public Actor(
             Point xy, ActorDefinition def
         )
             : base(xy, def)
         {
-            Definition = def;
             id = IDCounter++;
+
+            Definition = def;
             this.hpCurrent = def.hpMax;
-            inventory = new List<Item>();
+            Cooldown = 0;
+
             PaperDoll = new List<BodyPart>();
             foreach (DollSlot ds in def.BodyParts)
                 PaperDoll.Add(new BodyPart(ds));
-            Cooldown = 0;
+            inventory = new List<Item>();
             Spellbook = new List<Spell>();
+
+            //not sure how this handles changing level sizes?
+            //maybe we just won't have that, we'll experiment later
+            Vision = new bool[Game.lvlW, Game.lvlH];
         }
 
         public Actor(string s)
@@ -113,6 +124,8 @@ namespace ODB
         {
             ReadActor(s);
             Spellbook = new List<Spell>();
+
+            Vision = new bool[Game.lvlW, Game.lvlH];
         }
 
         public bool HasFree(DollSlot slot)
@@ -448,6 +461,32 @@ namespace ODB
             }
 
             return read;
+        }
+
+        public void ResetVision()
+        {
+            for (int x = 0; x < Game.lvlW; x++)
+                for (int y = 0; y < Game.lvlH; y++)
+                    Vision[x, y] = false;
+        }
+
+        public void AddRoomToVision(Room r)
+        {
+            foreach (Rect rr in r.rects)
+                for (int x = 0; x < rr.wh.x; x++)
+                    for (int y = 0; y < rr.wh.y; y++)
+                    {
+                        Vision[
+                            rr.xy.x + x,
+                            rr.xy.y + y
+                        ] = true;
+
+                        if(this == Game.player)
+                            Game.seen[
+                                rr.xy.x + x,
+                                rr.xy.y + y
+                            ] = true;
+                    }
         }
     }
 

@@ -16,11 +16,19 @@ namespace ODB
         static KeyboardState ks, oks;
         public static bool shift;
 
+        public static string lowercase = "abcdefghijklmnopqrstuvwxyz";
+        public static string uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        public static string indexes = lowercase + uppercase;
+
         public static void Update(bool final)
         {
             shift =
                 (IO.ks.IsKeyDown(Keys.LeftShift) ||
                 IO.ks.IsKeyDown(Keys.RightShift));
+
+            if (IOState != InputState.QuestionPrompt)
+                Answer = "";
+
             if (!final) ks = Keyboard.GetState();
             else oks = ks;
         }
@@ -30,57 +38,95 @@ namespace ODB
             return ks.IsKeyDown(k) && !oks.IsKeyDown(k);
         }
 
+        public static List<char> AcceptedInput = new List<char>();
         public static void QuestionPromptInput()
         {
-            Keys[] pk = ks.GetPressedKeys();
-            Keys[] opk = oks.GetPressedKeys();
-
-            foreach (int i in Game.acceptedInput)
+            //check every available key
+            for (int i = 0; i < Enum.GetNames(typeof(Keys)).Length; i++)
             {
-                if (pk.Contains((Keys)i) && !opk.Contains((Keys)i))
+                if (KeyPressed((Keys)i))
                 {
-                    char c = (char)i;
-                    //if our char is a letter, affect it by shift
-                    if(i >= 65 && i <= 90)
-                        c += (char)(shift ? 0 : 32);
-                    Game.questionPromptAnswer += c;
-                    
-                    //type it out
+                    char c = (char)0xFFFF;
 
-                    if (Game.questionPrompOneKey)
+                    if (i >= (int)Keys.NumPad1 && i <= (int)Keys.NumPad9)
                     {
-                        Game.questionPromptOpen = false;
-                        Game.qpAnswerStack.Push(Game.questionPromptAnswer);
-                        Game.questionReaction(Game.questionPromptAnswer);
+                        //mapping kp1-9 to chars 0-9
+                        //this means that you can't have a question which
+                        //treats 0-9 and kp0-9 differently,
+                        //but I don't see where that'd be a problem anyways
+                        c = (char)(48 + i - Keys.NumPad0);
+                    }
+
+                    if (i >= (int)Keys.A && i < (int)Keys.Z)
+                    {
+                        //nudge it so we get either A or a, dep. on shiftstate
+                        c = (char)(i + (shift ? 0 : 32));
+                    }
+
+                    if (AcceptedInput.Contains(c))
+                    {
+                        //push it to the answer
+                        Answer += c;
+                        //and if we only look for one key, we out, peace
+                        if (IOState == InputState.QuestionPromptSingle)
+                        {
+                            IOState = InputState.PlayerInput;
+                            Game.qpAnswerStack.Push(Answer);
+                            Game.questionReaction(Answer);
+                        }
                     }
                 }
             }
+
             if (IO.KeyPressed(Keys.Back))
-            {
-                if (Game.questionPromptAnswer.Length > 0)
-                {
-                    Game.questionPromptAnswer =
-                        Game.questionPromptAnswer.Substring(
-                        0, Game.questionPromptAnswer.Length - 1
-                    );
-                    /*inputRowConsole.VirtualCursor.Left(1);
-                    inputRowConsole.CellData.Print(
-                        inputRowConsole.VirtualCursor.Position.X,
-                        inputRowConsole.VirtualCursor.Position.Y,
-                        " ");*/
-                }
-            }
+                //if (Game.questionPromptAnswer.Length > 0)
+                if (Answer.Length > 0)
+                    Answer = Answer.Substring(0, Answer.Length - 1);
+
             if (IO.KeyPressed(Keys.Enter))
             {
-                Game.questionPromptOpen = false;
-                Game.qpAnswerStack.Push(Game.questionPromptAnswer);
-                Game.questionReaction(Game.questionPromptAnswer);
+                //Game.questionPromptOpen = false;
+                IOState = InputState.PlayerInput;
+                //Game.qpAnswerStack.Push(Game.questionPromptAnswer);
+                Game.qpAnswerStack.Push(Answer);
+                //Game.questionReaction(Game.questionPromptAnswer);
+                Game.questionReaction(Answer);
             }
-            if (IO.KeyPressed(Keys.Escape))
-            {
-                Game.questionPromptAnswer = "";
-                Game.questionPromptOpen = false;
-            }
+        }
+
+        public enum InputState
+        {
+            QuestionPrompt,
+            QuestionPromptSingle,
+            Targeting,
+            PlayerInput
+        }
+
+        public static InputState IOState = InputState.PlayerInput;
+        public static string Question;
+        public static string Answer;
+
+        //prompt question
+        public static void AskPlayer(
+            string question,
+            InputState type,
+            Action<string> reaction
+        ) {
+            IOState = type;
+            Question = question;
+            Game.questionReaction = reaction;
+        }
+
+        //targeting question
+        public static void AskPlayer(
+            string question,
+            InputState type,
+            Action<Point> reaction
+        ) {
+            IOState = type;
+            Question = question;
+            Game.targetingReaction = reaction;
+            Game.target = Game.player.xy;
         }
 
         public static void TargetInput()
@@ -103,7 +149,8 @@ namespace ODB
                 IO.KeyPressed(Keys.OemPeriod) ||
                 IO.KeyPressed(Keys.Enter)
             ) {
-                Game.targeting = false;
+                //Game.targeting = false;
+                IO.IOState = InputState.PlayerInput;
                 Game.targetingReaction(Game.target);
             }
         }
@@ -232,7 +279,7 @@ namespace ODB
 
             Game.map = new Tile[Game.lvlW, Game.lvlH];
             Game.seen = new bool[Game.lvlW, Game.lvlH];
-            Game.vision = new bool[Game.lvlW, Game.lvlH];
+            //Game.vision = new bool[Game.lvlW, Game.lvlH];
 
             List<string> body = content.Split(
                 //do NOT remove empty entries, they are null tiles!
