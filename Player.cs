@@ -348,21 +348,21 @@ namespace ODB
                 Game.log.Add("Invalid target.");
         }
 
-        public static void PlayerInputHandling()
+        public static void PlayerInput()
         {
             #region movement
             Point offset = new Point(0, 0);
 
-            if (Game.KeyPressed(Keys.NumPad8)) offset.Nudge(0, -1);
-            if (Game.KeyPressed(Keys.NumPad9)) offset.Nudge(1, -1);
-            if (Game.KeyPressed(Keys.NumPad6)) offset.Nudge(1, 0);
-            if (Game.KeyPressed(Keys.NumPad3)) offset.Nudge(1, 1);
-            if (Game.KeyPressed(Keys.NumPad2)) offset.Nudge(0, 1);
-            if (Game.KeyPressed(Keys.NumPad1)) offset.Nudge(-1, 1);
-            if (Game.KeyPressed(Keys.NumPad4)) offset.Nudge(-1, 0);
-            if (Game.KeyPressed(Keys.NumPad7)) offset.Nudge(-1, -1);
+            if (IO.KeyPressed(Keys.NumPad8)) offset.Nudge(0, -1);
+            if (IO.KeyPressed(Keys.NumPad9)) offset.Nudge(1, -1);
+            if (IO.KeyPressed(Keys.NumPad6)) offset.Nudge(1, 0);
+            if (IO.KeyPressed(Keys.NumPad3)) offset.Nudge(1, 1);
+            if (IO.KeyPressed(Keys.NumPad2)) offset.Nudge(0, 1);
+            if (IO.KeyPressed(Keys.NumPad1)) offset.Nudge(-1, 1);
+            if (IO.KeyPressed(Keys.NumPad4)) offset.Nudge(-1, 0);
+            if (IO.KeyPressed(Keys.NumPad7)) offset.Nudge(-1, -1);
 
-            if (Game.KeyPressed(Keys.NumPad5)) Game.player.Pass(true);
+            if (IO.KeyPressed(Keys.NumPad5)) Game.player.Pass(true);
 
             Tile target = Game.map[
                 Game.player.xy.x + offset.x,
@@ -406,7 +406,7 @@ namespace ODB
             #endregion
 
             #region drop
-            if (Game.KeyPressed(Keys.D) && !Game.shift)
+            if (IO.KeyPressed(Keys.D) && !Game.shift)
             {
                 string _q = "Drop what? [";
                 Game.acceptedInput.Clear();
@@ -425,7 +425,7 @@ namespace ODB
             #endregion
 
             #region open
-            if (Game.KeyPressed(Keys.O) && !Game.shift)
+            if (IO.KeyPressed(Keys.O) && !Game.shift)
             {
                 Game.acceptedInput.Clear();
                 Game.acceptedInput.AddRange(Game.directions);
@@ -436,7 +436,7 @@ namespace ODB
             #endregion
 
             #region close
-            if (Game.KeyPressed(Keys.C) && !Game.shift)
+            if (IO.KeyPressed(Keys.C) && !Game.shift)
             {
                 Game.acceptedInput.Clear();
                 Game.acceptedInput.AddRange(Game.directions);
@@ -447,7 +447,7 @@ namespace ODB
             #endregion
 
             #region wield/wear //AHAHAHA IM A GENIUS
-            if (Game.KeyPressed(Keys.W))
+            if (IO.KeyPressed(Keys.W))
             {
                 List<Item> equipables = new List<Item>();
 
@@ -500,7 +500,7 @@ namespace ODB
             #endregion
 
             #region sheath
-            if (Game.KeyPressed(Keys.S) && Game.shift)
+            if (IO.KeyPressed(Keys.S) && Game.shift)
             {
                 List<Item> equipped = new List<Item>();
                 foreach (
@@ -542,8 +542,8 @@ namespace ODB
 
             #region get
             if (
-                (Game.KeyPressed(Keys.G) && !Game.shift) ||
-                (Game.KeyPressed(Keys.OemComma) && !Game.shift)
+                (IO.KeyPressed(Keys.G) && !Game.shift) ||
+                (IO.KeyPressed(Keys.OemComma) && !Game.shift)
             ) {
                 List<Item> onFloor = Util.ItemsOnTile(Game.player.xy);
                 if (onFloor.Count > 0)

@@ -38,7 +38,6 @@ namespace ODB
         Game1 Game;
         #endregion
 
-        KeyboardState ks, oks;
         public bool shift;
 
         public Tile[,] map;
@@ -72,17 +71,20 @@ namespace ODB
         public bool questionPromptOpen;
 
         //var to hold input before it being sent
-        string questionPromptAnswer;
+        public string questionPromptAnswer;
         //we're starting to need two questions for one thing now
         public Stack<string> qpAnswerStack;
 
+    //these two (q/t) should maybe be moved to IO as well
+    //since it's not really directly tied to the game, but rather
+    //the pbkac steering their avatar
         //currently doing some targeting, like, selecting spell target or
         //what not.
         public bool targeting;
         public Point target;
         public Action<Point> targetingReaction;
 
-        bool questionPrompOneKey;
+        public bool questionPrompOneKey;
         public List<int> acceptedInput;
         public Action<string> questionReaction;
 
@@ -237,11 +239,6 @@ namespace ODB
             base.Initialize();
         }
 
-        public bool KeyPressed(Keys k)
-        {
-            return ks.IsKeyDown(k) && !oks.IsKeyDown(k);
-        }
-
         void DrawToScreen(Point xy, Color? bg, Color fg, String tile)
         {
             if (bg != null)
@@ -353,43 +350,37 @@ namespace ODB
             SadConsole.Engine.Update(gameTime, this.IsActive);
             dfc.CellData.Clear();
 
-            ks = Keyboard.GetState();
-            shift =
-                (ks.IsKeyDown(Keys.LeftShift) ||
-                ks.IsKeyDown(Keys.RightShift));
+            IO.Update(false);
+
             #endregion
 
             #region ui interaction
             if (
-                KeyPressed(Keys.Q) ||
-                (KeyPressed(Keys.Escape) && !questionPromptOpen)
+                IO.KeyPressed(Keys.Q) ||
+                (IO.KeyPressed(Keys.Escape) && !questionPromptOpen)
             ) this.Exit();
 
-            if (KeyPressed(Keys.I))
+            if (IO.KeyPressed(Keys.I))
                 inventoryConsole.IsVisible =
                     !inventoryConsole.IsVisible;
-            #endregion
 
-            #region log
-            if (KeyPressed((Keys)0x6B)) //np+
+            if (IO.KeyPressed((Keys)0x6B)) //np+
                 logSize = Math.Min(logConsole.ViewArea.Height, ++logSize);
-            if (KeyPressed((Keys)0x6D)) //np-
+            if (IO.KeyPressed((Keys)0x6D)) //np-
                 logSize = Math.Max(0, --logSize);
             logConsole.Position = new xnaPoint(
                 0, -logConsole.ViewArea.Height + logSize
             );
-            #endregion
 
-            #region camera
             //todo: edge scrolling
             int scrollSpeed = 3; ;
-            if (KeyPressed(Keys.Right))
+            if (IO.KeyPressed(Keys.Right))
                 camX+=scrollSpeed;
-            if(KeyPressed(Keys.Left))
+            if(IO.KeyPressed(Keys.Left))
                 camX-=scrollSpeed;
-            if (KeyPressed(Keys.Up))
+            if (IO.KeyPressed(Keys.Up))
                 camY+=scrollSpeed;
-            if(KeyPressed(Keys.Down))
+            if(IO.KeyPressed(Keys.Down))
                 camY-=scrollSpeed;
 
             camX = Math.Max(0, camX);
@@ -398,6 +389,7 @@ namespace ODB
             camY = Math.Min(lvlH - scrH, camY);
             #endregion camera
 
+            #region f-keys
             //temp disable so we don't botch things
             /*if (KeyPressed(Keys.F1))
             {
@@ -408,7 +400,7 @@ namespace ODB
                 IO.WriteSeenToFile("Save/seen.sv");
             }*/
 
-            if (KeyPressed(Keys.F2))
+            if (IO.KeyPressed(Keys.F2))
             {
                 IO.ReadLevelFromFile("Save/level.sv");
                 IO.ReadRoomsFromFile("Save/rooms.sv");
@@ -418,7 +410,7 @@ namespace ODB
                 player = Util.GetActorByID(0);
             }
 
-            if (KeyPressed(Keys.F3))
+            if (IO.KeyPressed(Keys.F3))
             {
                 string _q = "Cast what? [";
                 acceptedInput.Clear();
@@ -434,6 +426,7 @@ namespace ODB
 
                 questionReaction = Player.Zap;
             }
+            #endregion
 
             //only do player movement if we're not currently asking something
             if (!questionPromptOpen)
@@ -444,7 +437,7 @@ namespace ODB
                     //ingame time) should be in this if-clause.
                     if (player.Cooldown == 0)
                     {
-                        Player.PlayerInputHandling();
+                        Player.PlayerInput();
                     }
                     else
                     {
@@ -468,86 +461,13 @@ namespace ODB
                 }
                 else
                 {
-                    Point offset = new Point(0, 0);
-
-                    if (KeyPressed(Keys.NumPad8)) offset.Nudge(0, -1);
-                    if (KeyPressed(Keys.NumPad9)) offset.Nudge(1, -1);
-                    if (KeyPressed(Keys.NumPad6)) offset.Nudge(1, 0);
-                    if (KeyPressed(Keys.NumPad3)) offset.Nudge(1, 1);
-                    if (KeyPressed(Keys.NumPad2)) offset.Nudge(0, 1);
-                    if (KeyPressed(Keys.NumPad1)) offset.Nudge(-1, 1);
-                    if (KeyPressed(Keys.NumPad4)) offset.Nudge(-1, 0);
-                    if (KeyPressed(Keys.NumPad7)) offset.Nudge(-1, -1);
-
-                    target.Nudge(offset);
-
-                    if (
-                        KeyPressed(Keys.NumPad5) ||
-                        KeyPressed(Keys.OemPeriod) ||
-                        KeyPressed(Keys.Enter)
-                    ) {
-                        targeting = false;
-                        targetingReaction(target);
-                    }
+                    IO.TargetInput();
                 }
             }
             else
             {
                 #region qp input
-                Keys[] pk = ks.GetPressedKeys();
-                Keys[] opk = oks.GetPressedKeys();
-
-                foreach (int i in acceptedInput)
-                {
-                    if (pk.Contains((Keys)i) && !opk.Contains((Keys)i))
-                    {
-                        char c = (char)i;
-                        //if our char is a letter, affect it by shift
-                        if(i >= 65 && i <= 90)
-                            c += (char)(shift ? 0 : 32);
-                        questionPromptAnswer += c;
-                        
-                        //type it out
-                        inputRowConsole.CellData.Print(
-                            inputRowConsole.VirtualCursor.Position.X,
-                            inputRowConsole.VirtualCursor.Position.Y,
-                            c+"");
-                        inputRowConsole.VirtualCursor.Left(-1);
-
-                        if (questionPrompOneKey)
-                        {
-                            questionPromptOpen = false;
-                            qpAnswerStack.Push(questionPromptAnswer);
-                            questionReaction(questionPromptAnswer);
-                        }
-                    }
-                }
-                if (KeyPressed(Keys.Back))
-                {
-                    if (questionPromptAnswer.Length > 0)
-                    {
-                        questionPromptAnswer =
-                            questionPromptAnswer.Substring(
-                            0, questionPromptAnswer.Length - 1
-                        );
-                        inputRowConsole.VirtualCursor.Left(1);
-                        inputRowConsole.CellData.Print(
-                            inputRowConsole.VirtualCursor.Position.X,
-                            inputRowConsole.VirtualCursor.Position.Y,
-                            " ");
-                    }
-                }
-                if (KeyPressed(Keys.Enter))
-                {
-                    questionPromptOpen = false;
-                    qpAnswerStack.Push(questionPromptAnswer);
-                    questionReaction(questionPromptAnswer);
-                }
-                if (KeyPressed(Keys.Escape))
-                {
-                    questionPromptAnswer = "";
-                    questionPromptOpen = false;
-                }
+                IO.QuestionPromptInput();
                 #endregion
             }
 
@@ -688,17 +608,6 @@ namespace ODB
                 );
             }
 
-            if (targeting)
-            {
-                dfc.CellData[target.x, target.y].Background =
-                Util.InvertColor(
-                    dfc.CellData[target.x, target.y].Background
-                );
-                dfc.CellData[target.x, target.y].Foreground =
-                Util.InvertColor(
-                    dfc.CellData[target.x, target.y].Foreground
-                );
-            }
             
 
             #region render ui
@@ -717,6 +626,7 @@ namespace ODB
 
             inputRowConsole.IsVisible = questionPromptOpen;
             inputRowConsole.Position = new xnaPoint(0, logSize);
+            inputRowConsole.CellData.Print(0, 0, questionPromptAnswer);
 
             #region inventory
             int inventoryW = inventoryConsole.ViewArea.Width;
@@ -795,10 +705,23 @@ namespace ODB
             statRowConsole.CellData.Print(0, 0, namerow);
             statRowConsole.CellData.Print(0, 1, statrow);
 
+            if (targeting)
+            {
+                dfc.CellData[target.x, target.y].Background =
+                Util.InvertColor(
+                    dfc.CellData[target.x, target.y].Background
+                );
+                dfc.CellData[target.x, target.y].Foreground =
+                Util.InvertColor(
+                    dfc.CellData[target.x, target.y].Foreground
+                );
+            }
+
             #endregion
 
             #region engineshit
-            oks = ks;
+            //IO.oks = IO.ks;
+            IO.Update(true);
 
             base.Update(gameTime);
             #endregion

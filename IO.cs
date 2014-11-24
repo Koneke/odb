@@ -5,12 +5,108 @@ using System.Text;
 using System.Collections.Generic;
 
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 
 namespace ODB
 {
     class IO
     {
         public static Game1 Game;
+
+        static KeyboardState ks, oks;
+        public static bool shift;
+
+        public static void Update(bool final)
+        {
+            shift =
+                (IO.ks.IsKeyDown(Keys.LeftShift) ||
+                IO.ks.IsKeyDown(Keys.RightShift));
+            if (!final) ks = Keyboard.GetState();
+            else oks = ks;
+        }
+
+        public static bool KeyPressed(Keys k)
+        {
+            return ks.IsKeyDown(k) && !oks.IsKeyDown(k);
+        }
+
+        public static void QuestionPromptInput()
+        {
+            Keys[] pk = ks.GetPressedKeys();
+            Keys[] opk = oks.GetPressedKeys();
+
+            foreach (int i in Game.acceptedInput)
+            {
+                if (pk.Contains((Keys)i) && !opk.Contains((Keys)i))
+                {
+                    char c = (char)i;
+                    //if our char is a letter, affect it by shift
+                    if(i >= 65 && i <= 90)
+                        c += (char)(shift ? 0 : 32);
+                    Game.questionPromptAnswer += c;
+                    
+                    //type it out
+
+                    if (Game.questionPrompOneKey)
+                    {
+                        Game.questionPromptOpen = false;
+                        Game.qpAnswerStack.Push(Game.questionPromptAnswer);
+                        Game.questionReaction(Game.questionPromptAnswer);
+                    }
+                }
+            }
+            if (IO.KeyPressed(Keys.Back))
+            {
+                if (Game.questionPromptAnswer.Length > 0)
+                {
+                    Game.questionPromptAnswer =
+                        Game.questionPromptAnswer.Substring(
+                        0, Game.questionPromptAnswer.Length - 1
+                    );
+                    /*inputRowConsole.VirtualCursor.Left(1);
+                    inputRowConsole.CellData.Print(
+                        inputRowConsole.VirtualCursor.Position.X,
+                        inputRowConsole.VirtualCursor.Position.Y,
+                        " ");*/
+                }
+            }
+            if (IO.KeyPressed(Keys.Enter))
+            {
+                Game.questionPromptOpen = false;
+                Game.qpAnswerStack.Push(Game.questionPromptAnswer);
+                Game.questionReaction(Game.questionPromptAnswer);
+            }
+            if (IO.KeyPressed(Keys.Escape))
+            {
+                Game.questionPromptAnswer = "";
+                Game.questionPromptOpen = false;
+            }
+        }
+
+        public static void TargetInput()
+        {
+            Point offset = new Point(0, 0);
+
+            if (IO.KeyPressed(Keys.NumPad8)) offset.Nudge(0, -1);
+            if (IO.KeyPressed(Keys.NumPad9)) offset.Nudge(1, -1);
+            if (IO.KeyPressed(Keys.NumPad6)) offset.Nudge(1, 0);
+            if (IO.KeyPressed(Keys.NumPad3)) offset.Nudge(1, 1);
+            if (IO.KeyPressed(Keys.NumPad2)) offset.Nudge(0, 1);
+            if (IO.KeyPressed(Keys.NumPad1)) offset.Nudge(-1, 1);
+            if (IO.KeyPressed(Keys.NumPad4)) offset.Nudge(-1, 0);
+            if (IO.KeyPressed(Keys.NumPad7)) offset.Nudge(-1, -1);
+
+            Game.target.Nudge(offset);
+
+            if (
+                IO.KeyPressed(Keys.NumPad5) ||
+                IO.KeyPressed(Keys.OemPeriod) ||
+                IO.KeyPressed(Keys.Enter)
+            ) {
+                Game.targeting = false;
+                Game.targetingReaction(Game.target);
+            }
+        }
 
         public static void WriteToFile(string path, string content)
         {
@@ -269,6 +365,21 @@ namespace ODB
             s += String.Format("{0:X2}", c.B);
             return s;
         }
+        public static Color ReadColor(
+            string s, ref int read, int start = 0
+        ) {
+            int i = start;
+            Color c = new Color(
+                Int32.Parse(s.Substring(start, 2),
+                    System.Globalization.NumberStyles.HexNumber),
+                Int32.Parse(s.Substring(start + 2, 2),
+                    System.Globalization.NumberStyles.HexNumber),
+                Int32.Parse(s.Substring(start + 4, 2),
+                    System.Globalization.NumberStyles.HexNumber)
+            );
+            read += 6; //we read 6 chars
+            return c;
+        }
 
         public static string Write(Color? c)
         {
@@ -277,44 +388,6 @@ namespace ODB
             else s += "XXXXXX";
             return s;
         }
-
-        public static string Write(Point p)
-        {
-            string s = "";
-            //var length data, add ;
-            s += p.x + "x" + p.y + ";";
-            return s;
-        }
-
-        public static string Write(String ss, bool appendDelim = true)
-        {
-            string s = ss + (appendDelim ? ";" : "");
-            return s;
-        }
-
-        public static string WriteHex(int i, int len) {
-            return String.Format("{0:X"+len+"}", i);
-        }
-
-        public static string Write(bool b)
-        {
-            return b ? "1" : "0";
-        }
-
-        public static Point ReadPoint(
-            string s, ref int read, int start = 0
-        ) {
-            int i = start;
-            string inp = s.Substring(start, s.Length - start);
-            inp = inp.Split(';')[0];
-            Point p = new Point(
-                int.Parse(inp.Split('x')[0]),
-                int.Parse(inp.Split('x')[1])
-            );
-            read += inp.Length + 1;
-            return p;
-        }
-
         public static Color? ReadNullableColor(
             string s, ref int read, int start = 0
         ) {
@@ -336,22 +409,32 @@ namespace ODB
             return c;
         }
 
-        public static Color ReadColor(
+        public static string Write(Point p)
+        {
+            string s = "";
+            //var length data, add ;
+            s += p.x + "x" + p.y + ";";
+            return s;
+        }
+        public static Point ReadPoint(
             string s, ref int read, int start = 0
         ) {
             int i = start;
-            Color c = new Color(
-                Int32.Parse(s.Substring(start, 2),
-                    System.Globalization.NumberStyles.HexNumber),
-                Int32.Parse(s.Substring(start + 2, 2),
-                    System.Globalization.NumberStyles.HexNumber),
-                Int32.Parse(s.Substring(start + 4, 2),
-                    System.Globalization.NumberStyles.HexNumber)
+            string inp = s.Substring(start, s.Length - start);
+            inp = inp.Split(';')[0];
+            Point p = new Point(
+                int.Parse(inp.Split('x')[0]),
+                int.Parse(inp.Split('x')[1])
             );
-            read += 6; //we read 6 chars
-            return c;
+            read += inp.Length + 1;
+            return p;
         }
 
+        public static string Write(String ss, bool appendDelim = true)
+        {
+            string s = ss + (appendDelim ? ";" : "");
+            return s;
+        }
         public static string ReadString(
             string s, ref int read, int start = 0
         ) {
@@ -361,7 +444,6 @@ namespace ODB
             read += ss.Length + 1;
             return ss;
         }
-
         public static string ReadString(
             string s, int len, ref int read, int start = 0
         ) {
@@ -371,12 +453,14 @@ namespace ODB
             return ss;
         }
 
+        public static string WriteHex(int i, int len) {
+            return String.Format("{0:X"+len+"}", i);
+        }
         public static int ReadHex(
             string s
         ) {
             return Int32.Parse(s, System.Globalization.NumberStyles.HexNumber);
         }
-
         public static int ReadHex(
             string s, int len, ref int read, int start = 0
         ) {
@@ -387,6 +471,10 @@ namespace ODB
             return ReadHex(ss);
         }
 
+        public static string Write(bool b)
+        {
+            return b ? "1" : "0";
+        }
         public static bool ReadBool(string s, ref int read, int start = 0)
         {
             read += 1;
