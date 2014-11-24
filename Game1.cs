@@ -336,8 +336,8 @@ namespace ODB
             #region ui interaction
             if (IO.KeyPressed(Keys.Escape))
             {
-                if (IO.IOState != IO.InputState.PlayerInput)
-                    IO.IOState = IO.InputState.PlayerInput;
+                if (IO.IOState != InputType.PlayerInput)
+                    IO.IOState = InputType.PlayerInput;
                 else if (inventoryConsole.IsVisible == true)
                     inventoryConsole.IsVisible = false;
                 else
@@ -374,7 +374,7 @@ namespace ODB
             camY = Math.Min(lvlH - scrH, camY);
             #endregion camera
 
-            #region f-keys
+            #region f-keys //devstuff
             //temp disable so we don't botch things
             /*if (KeyPressed(Keys.F1))
             {
@@ -399,14 +399,14 @@ namespace ODB
             //only do player movement if we're not currently asking something
             switch (IO.IOState)
             {
-                case IO.InputState.QuestionPromptSingle:
-                case IO.InputState.QuestionPrompt:
+                case InputType.QuestionPromptSingle:
+                case InputType.QuestionPrompt:
                     IO.QuestionPromptInput();
                     break;
-                case IO.InputState.Targeting:
+                case InputType.Targeting:
                     IO.TargetInput();
                     break;
-                case IO.InputState.PlayerInput:
+                case InputType.PlayerInput:
                     if(player.Cooldown == 0)
                         Player.PlayerInput();
                     else
@@ -562,7 +562,7 @@ namespace ODB
 
             //inputRowConsole.IsVisible = questionPromptOpen;
             inputRowConsole.IsVisible =
-                IO.IOState != IO.InputState.PlayerInput;
+                IO.IOState != InputType.PlayerInput;
             if (inputRowConsole.IsVisible)
             {
                 inputRowConsole.Position = new xnaPoint(0, logSize);
@@ -657,7 +657,7 @@ namespace ODB
             statRowConsole.CellData.Print(0, 0, namerow);
             statRowConsole.CellData.Print(0, 1, statrow);
 
-            if (IO.IOState == IO.InputState.Targeting)
+            if (IO.IOState == InputType.Targeting)
             {
                 dfc.CellData[target.x, target.y].Background =
                 Util.InvertColor(

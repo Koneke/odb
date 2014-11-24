@@ -38,6 +38,7 @@ namespace ODB
          * Thanks for keeping order in the realm of man.
          */
 
+    #region responses
         #region Get/Drop
         public static void Get(string answer)
         {
@@ -108,13 +109,13 @@ namespace ODB
 
                 if (it.Definition.stacking && it.count > 1)
                 {
-                    /*Game.setupQuestionPrompt("How many?", false);
-                    Game.acceptedInput = Game.numbers;
-                    Game.questionReaction = Player.DropCount;
-                    Game.questionPromptOpen = true;*/
+                    IO.AcceptedInput.Clear();
+                    for (Keys k = Keys.D0; k <= Keys.D9; k++)
+                        IO.AcceptedInput.Add((char)k);
+
                     IO.AskPlayer(
                         "How many?",
-                        IO.InputState.QuestionPrompt,
+                        InputType.QuestionPrompt,
                         Player.DropCount
                     );
                 }
@@ -337,7 +338,7 @@ namespace ODB
             {
                 IO.AskPlayer(
                     "Casting " + Game.player.Spellbook[i].Name,
-                    IO.InputState.Targeting,
+                    InputType.Targeting,
                     Player.Cast
                 );
             }
@@ -353,6 +354,7 @@ namespace ODB
             else
                 Game.log.Add("Invalid target.");
         }
+    #endregion
 
         public static void PlayerInput()
         {
@@ -431,12 +433,16 @@ namespace ODB
 
                     IO.AskPlayer(
                         _q,
-                        IO.InputState.QuestionPromptSingle,
+                        InputType.QuestionPromptSingle,
                         Player.Get
                     );
                 }
                 //just more convenient this way
-                else if (onFloor.Count > 0) Player.Get("a");
+                else if (onFloor.Count > 0)
+                {
+                    Game.qpAnswerStack.Push("a");
+                    Player.Get("a");
+                }
             }
 
             if (IO.KeyPressed(Keys.D) && !IO.shift)
@@ -445,7 +451,6 @@ namespace ODB
                 IO.AcceptedInput.Clear();
                 for (int i = 0; i < Game.player.inventory.Count; i++)
                 {
-                    //char index = (char)(97 + i);
                     char index = IO.indexes[i];
                     _q += index;
                     IO.AcceptedInput.Add(IO.indexes[i]);
@@ -454,7 +459,7 @@ namespace ODB
 
                 IO.AskPlayer(
                     _q,
-                    IO.InputState.QuestionPromptSingle,
+                    InputType.QuestionPromptSingle,
                     Player.Drop
                 );
             }
@@ -502,7 +507,7 @@ namespace ODB
 
                     IO.AskPlayer(
                         _q,
-                        IO.InputState.QuestionPromptSingle,
+                        InputType.QuestionPromptSingle,
                         Player.Wield
                     );
                 }
@@ -544,7 +549,7 @@ namespace ODB
 
                     IO.AskPlayer(
                         _q,
-                        IO.InputState.QuestionPrompt,
+                        InputType.QuestionPrompt,
                         Player.Sheath
                     );
                 }
@@ -569,7 +574,7 @@ namespace ODB
                 
                 IO.AskPlayer(
                     "Open where?",
-                    IO.InputState.QuestionPromptSingle,
+                    InputType.QuestionPromptSingle,
                     Player.Open
                 );
             }
@@ -587,12 +592,13 @@ namespace ODB
                 
                 IO.AskPlayer(
                     "Close where?",
-                    IO.InputState.QuestionPromptSingle,
+                    InputType.QuestionPromptSingle,
                     Player.Close
                 );
             }
             #endregion
 
+            #region zap
             if (IO.KeyPressed(Keys.Z) && !IO.shift)
             {
                 string _q = "Cast what? [";
@@ -607,10 +613,11 @@ namespace ODB
 
                 IO.AskPlayer(
                     _q,
-                    IO.InputState.QuestionPromptSingle,
+                    InputType.QuestionPromptSingle,
                     Player.Zap
                 );
             }
+            #endregion
 
         }
     }

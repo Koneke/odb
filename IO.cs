@@ -9,6 +9,14 @@ using Microsoft.Xna.Framework.Input;
 
 namespace ODB
 {
+    public enum InputType
+    {
+        QuestionPrompt,
+        QuestionPromptSingle,
+        Targeting,
+        PlayerInput
+    }
+
     class IO
     {
         public static Game1 Game;
@@ -19,6 +27,7 @@ namespace ODB
         public static string lowercase = "abcdefghijklmnopqrstuvwxyz";
         public static string uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         public static string indexes = lowercase + uppercase;
+        public static List<char> AcceptedInput = new List<char>();
 
         public static void Update(bool final)
         {
@@ -26,7 +35,7 @@ namespace ODB
                 (IO.ks.IsKeyDown(Keys.LeftShift) ||
                 IO.ks.IsKeyDown(Keys.RightShift));
 
-            if (IOState != InputState.QuestionPrompt)
+            if (IOState != InputType.QuestionPrompt)
                 Answer = "";
 
             if (!final) ks = Keyboard.GetState();
@@ -38,7 +47,6 @@ namespace ODB
             return ks.IsKeyDown(k) && !oks.IsKeyDown(k);
         }
 
-        public static List<char> AcceptedInput = new List<char>();
         public static void QuestionPromptInput()
         {
             //check every available key
@@ -46,7 +54,8 @@ namespace ODB
             {
                 if (KeyPressed((Keys)i))
                 {
-                    char c = (char)0xFFFF;
+                    //because sometimes, the key-char mapping isn't botched
+                    char c = (char)i;
 
                     if (i >= (int)Keys.NumPad1 && i <= (int)Keys.NumPad9)
                     {
@@ -68,9 +77,9 @@ namespace ODB
                         //push it to the answer
                         Answer += c;
                         //and if we only look for one key, we out, peace
-                        if (IOState == InputState.QuestionPromptSingle)
+                        if (IOState == InputType.QuestionPromptSingle)
                         {
-                            IOState = InputState.PlayerInput;
+                            IOState = InputType.PlayerInput;
                             Game.qpAnswerStack.Push(Answer);
                             Game.questionReaction(Answer);
                         }
@@ -86,7 +95,7 @@ namespace ODB
             if (IO.KeyPressed(Keys.Enter))
             {
                 //Game.questionPromptOpen = false;
-                IOState = InputState.PlayerInput;
+                IOState = InputType.PlayerInput;
                 //Game.qpAnswerStack.Push(Game.questionPromptAnswer);
                 Game.qpAnswerStack.Push(Answer);
                 //Game.questionReaction(Game.questionPromptAnswer);
@@ -94,24 +103,17 @@ namespace ODB
             }
         }
 
-        public enum InputState
-        {
-            QuestionPrompt,
-            QuestionPromptSingle,
-            Targeting,
-            PlayerInput
-        }
-
-        public static InputState IOState = InputState.PlayerInput;
+        public static InputType IOState = InputType.PlayerInput;
         public static string Question;
         public static string Answer;
 
         //prompt question
         public static void AskPlayer(
             string question,
-            InputState type,
+            InputType type,
             Action<string> reaction
         ) {
+            Answer = "";
             IOState = type;
             Question = question;
             Game.questionReaction = reaction;
@@ -120,9 +122,10 @@ namespace ODB
         //targeting question
         public static void AskPlayer(
             string question,
-            InputState type,
+            InputType type,
             Action<Point> reaction
         ) {
+            Answer = "";
             IOState = type;
             Question = question;
             Game.targetingReaction = reaction;
@@ -150,11 +153,18 @@ namespace ODB
                 IO.KeyPressed(Keys.Enter)
             ) {
                 //Game.targeting = false;
-                IO.IOState = InputState.PlayerInput;
+                IO.IOState = InputType.PlayerInput;
                 Game.targetingReaction(Game.target);
             }
         }
 
+        //might want to consider ejecting either the stuff above or below
+        //into its own place
+        //which might seem a bit silly since I just restructured shit
+        //but even though they're both sort of IO, they're not really,
+        //like, the same kind? Could put below into file or save or something
+
+        #region File IO
         public static void WriteToFile(string path, string content)
         {
             string cwd = Directory.GetCurrentDirectory();
@@ -527,5 +537,6 @@ namespace ODB
             read += 1;
             return s.Substring(start, 1) == "1";
         }
+        #endregion
     }
 }
