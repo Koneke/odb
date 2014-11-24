@@ -14,11 +14,11 @@ using Microsoft.Xna.Framework.Graphics;
 using xnaPoint = Microsoft.Xna.Framework.Point;
 
 //~~~ QUEST TRACKER for 23 nov ~~~
-// * Inventory textwrapping
+// * Inventory textwrapping //postponed
 // * Item value and paid-for status
 
 //~~~ QUEST TRACKER for 24 nov ~~~
-// * Extract drawy bits from Update
+// * Extract drawy bits from Update [x]
 
 namespace ODB
 {
@@ -326,12 +326,8 @@ namespace ODB
 
         protected override void Update(GameTime gameTime)
         {
-            #region engineshit
             SadConsole.Engine.Update(gameTime, this.IsActive);
-            dfc.CellData.Clear();
-
             IO.Update(false);
-            #endregion
 
             #region ui interaction
             if (IO.KeyPressed(Keys.Escape))
@@ -430,143 +426,122 @@ namespace ODB
                 default: throw new Exception("");
             }
 
-            #region vision
             foreach (Actor a in Game.worldActors)
             {
                 a.ResetVision();
                 foreach (Room r in Util.GetRooms(a))
                     a.AddRoomToVision(r);
             }
-            #endregion
 
-            #region render level to screen
-            //render to screen
-            for (int x = 0; x < 80; x++)
+            RenderConsoles();
+            IO.Update(true);
+            base.Update(gameTime);
+        }
+
+        public void RenderConsoles()
+        {
+            Rect screen = new Rect(new Point(camX, camY), new Point(80, 25));
+
+            #region world
+            #region map to screen
+            dfc.CellData.Clear();
+
+            for (int x = 0; x < scrW; x++) for (int y = 0; y < scrH; y++)
             {
-                for (int y = 0; y < 25; y++)
-                {
-                    //tile we're working on, (screen)X/Y and cam offsets
-                    Tile t = map[x + camX, y + camY];
+                Tile t = map[x + camX, y + camY];
 
-                    //if the coordinate is void, skip
-                    if (t == null) continue;
+                if (t == null) continue;
+                if (!seen[x + camX, y + camY]) continue;
 
-                    //if the coordinate has no been seen, skip
-                    if (!seen[x + camX, y + camY]) continue;
+                bool inVision = Game.player.Vision[x + camX, y + camY];
 
-                    //whether or not the player currently sees the tile
-                    bool inVision = Game.player.Vision[x + camX, y + camY];
+                dfc.CellData.SetBackground(x, y, t.bg * 1f);
+                dfc.CellData.SetForeground(
+                    x, y, t.fg * (inVision ? 1f : 0.6f)
+                );
 
-                    dfc.CellData.SetBackground(x, y, t.bg * 1f);
-                    dfc.CellData.SetForeground(
-                        x, y, t.fg * (inVision ? 1f : 0.6f)
-                    );
+                string tileToDraw = t.tile;
+                //doors override the normal tile
+                //which shouldn't be a problem
+                //if it is a problem, it's not, it's something else
+                if (t.doorState == Door.Closed) tileToDraw = "+";
+                if (t.doorState == Door.Open) tileToDraw = "/";
 
-                    string tileToDraw = t.tile;
-                    //doors override the normal tile
-                    //which shouldn't be a problem
-                    //if it is a problem, it's not, it's something else
-                    if (t.doorState == Door.Closed)
-                        tileToDraw = "+";
-                    if (t.doorState == Door.Open)
-                        tileToDraw = "/";
-
-                    dfc.CellData.Print(x, y, tileToDraw);
-                }
+                dfc.CellData.Print(x, y, tileToDraw);
             }
             #endregion
-
-            Rect screen = new Rect(new Point(camX, camY), new Point(80, 25));
 
             #region render items to screen
             int[,] itemCount = new int[lvlW, lvlH];
-            foreach (Item i in worldItems)
-            {
-                itemCount[i.xy.x, i.xy.y]++;
-            }
+
+            foreach (Item i in worldItems) itemCount[i.xy.x, i.xy.y]++;
             foreach (Item i in worldItems)
             {
                 if (!Game.player.Vision[i.xy.x, i.xy.y]) continue;
-                if (screen.ContainsPoint(i.xy))
-                {
-                    if (itemCount[i.xy.x, i.xy.y] == 1)
-                    {
-                        DrawToScreen(
-                            i.xy,
-                            i.Definition.bg,
-                            i.Definition.fg,
-                            i.Definition.tile
-                        );
-                    }
-                    else //draw a "pile"
-                    {
-                        DrawToScreen(i.xy, null, Color.White, "+");
-                    }
-                }
+                if (!screen.ContainsPoint(i.xy)) continue;
+
+                if (itemCount[i.xy.x, i.xy.y] == 1)
+                    DrawToScreen(
+                        i.xy,
+                        i.Definition.bg,
+                        i.Definition.fg,
+                        i.Definition.tile
+                    );
+                //not sure I like the + for pile, since doors are +
+                else DrawToScreen(i.xy, null, Color.White, "+");
             }
             #endregion
 
             #region render actors to screen
             int[,] actorCount = new int[lvlW, lvlH];
-            foreach (Actor a in worldActors)
-            {
-                actorCount[a.xy.x, a.xy.y]++;
-            }
+
+            foreach (Actor a in worldActors) actorCount[a.xy.x, a.xy.y]++;
             foreach (Actor a in worldActors)
             {
                 if (!Game.player.Vision[a.xy.x, a.xy.y]) continue;
-                if (screen.ContainsPoint(a.xy))
-                {
-                    if (actorCount[a.xy.x, a.xy.y] == 1)
-                    {
-                        DrawToScreen(
-                            a.xy, a.Definition.bg,
-                            a.Definition.fg, a.Definition.tile
-                        );
-                    }
-                    else //draw a "pile"
-                    {
-                        DrawToScreen(a.xy, null, Color.White, "*");
-                    }
-                }
+                if (!screen.ContainsPoint(a.xy)) continue;
+
+                if (actorCount[a.xy.x, a.xy.y] == 1)
+                    DrawToScreen(
+                        a.xy, a.Definition.bg,
+                        a.Definition.fg, a.Definition.tile
+                    );
+                //draw a "pile" (shouldn't happen at all atm
+                else DrawToScreen(a.xy, null, Color.White, "*");
             }
             #endregion
 
-            //they are not really visible now, unless they are pretty slow
-            //but eh, in theory, they /are/ there
-            //maybe draw them onto a transparent-bg console, which only clears
-            //like, five times a second..? or have them leave a trail and only
-            //clear when they've hit (+half a sec or summin)
-            //or when the player gets a turn
+            #region projectiles to screen
+            //visible for ~half a sec, if that, but we'll keep it until we
+            //(possibly) add a trail
             foreach (Projectile p in projectiles)
-            {
                 dfc.CellData.Print(
                     p.xy.x, p.xy.y,
                     "*", Color.Cyan
                 );
-            }
+            #endregion
+            #endregion
 
             #region render ui
+            #region log
             logConsole.CellData.Clear();
             logConsole.CellData.Fill(Color.White, Color.Black, ' ', null);
             for (
                 int i = log.Count, n = 0;
                 i > 0 && n < logConsole.ViewArea.Height;
                 i--, n++
-            ) {
+            )
                 logConsole.CellData.Print(
-                    0, logConsole.ViewArea.Height-(n+1),
-                    log[i-1]
+                    0, logConsole.ViewArea.Height - (n + 1),
+                    log[i - 1]
                 );
-            }
+            #endregion
 
-            //inputRowConsole.IsVisible = questionPromptOpen;
-            inputRowConsole.IsVisible =
-                IO.IOState != InputType.PlayerInput;
+            #region inputrow
+            inputRowConsole.IsVisible = IO.IOState != InputType.PlayerInput;
             if (inputRowConsole.IsVisible)
             {
                 inputRowConsole.Position = new xnaPoint(0, logSize);
-                //inputRowConsole.CellData.Print(0, 0, questionPromptAnswer);
                 inputRowConsole.CellData.Fill(
                     Color.Black,
                     Color.WhiteSmoke,
@@ -574,11 +549,10 @@ namespace ODB
                     null
                 );
                 inputRowConsole.CellData.Print(
-                    0, 0,
-                    //questionPromptAnswer
-                    IO.Question + " " + IO.Answer
+                    0, 0, IO.Question + " " + IO.Answer
                 );
             }
+            #endregion
 
             #region inventory
             int inventoryW = inventoryConsole.ViewArea.Width;
@@ -618,22 +592,25 @@ namespace ODB
                 }
 
                 name += player.inventory[i].Definition.name;
-                if (equipped) name += " (equipped)";
+                if (equipped) name += " (eq)";
 
                 inventoryConsole.CellData.Print(
-                    2, i+1, name
+                    2, i + 1, name
                 );
             }
             #endregion
 
+            #region statrow
             statRowConsole.CellData.Clear();
             statRowConsole.CellData.Fill(Color.White, Color.Black, ' ', null);
-            string namerow = player.Definition.name + " - Delver";
+
+            string namerow = player.Definition.name + " - Title";
             namerow += "  ";
             namerow += "STR " + player.GetStrength() + "  ";
             namerow += "DEX " + player.GetDexterity() + "  ";
             namerow += "INT " + player.GetIntelligence() + "  ";
             namerow += "AC " + player.GetAC();
+
             string statrow = "";
             statrow += "[";
             statrow += player.hpCurrent.ToString().PadLeft(3, ' ');
@@ -641,22 +618,26 @@ namespace ODB
             statrow += player.Definition.hpMax.ToString().PadLeft(3, ' ');
             statrow += "]";
 
-            float playerHealthPcnt = (player.hpCurrent /
-                (float)player.Definition.hpMax);
-            float colourStrength = 0.6f + 0.4f - (0.4f * playerHealthPcnt);
+            float playerHealthPcnt =
+                player.hpCurrent /
+                (float)player.Definition.hpMax
+            ;
+            float colorStrength = 0.6f + 0.4f - (0.4f * playerHealthPcnt);
 
             for (int x = 0; x < 9; x++)
                 statRowConsole.CellData.SetBackground(
                     x, 1, new Color(
-                        colourStrength - colourStrength * playerHealthPcnt,
-                        colourStrength * playerHealthPcnt,
+                        colorStrength - colorStrength * playerHealthPcnt,
+                        colorStrength * playerHealthPcnt,
                         0
                     )
                 );
 
             statRowConsole.CellData.Print(0, 0, namerow);
             statRowConsole.CellData.Print(0, 1, statrow);
+            #endregion
 
+            #region reticule
             if (IO.IOState == InputType.Targeting)
             {
                 dfc.CellData[target.x, target.y].Background =
@@ -668,13 +649,7 @@ namespace ODB
                     dfc.CellData[target.x, target.y].Foreground
                 );
             }
-
             #endregion
-
-            #region engineshit
-            IO.Update(true);
-
-            base.Update(gameTime);
             #endregion
         }
 
