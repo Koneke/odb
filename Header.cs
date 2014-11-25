@@ -261,6 +261,7 @@ namespace ODB
 
     public class Spell
     {
+        public static Spell[] Spells = new Spell[0xFFFF];
         public static int IDCounter = 0;
         public int id;
 
@@ -277,10 +278,13 @@ namespace ODB
             int CastDifficulty = 0,
             int Range = 0
         ) {
+            this.id = IDCounter++;
             this.Name = Name;
             this.Range = Range;
             this.CastDifficulty = CastDifficulty;
             this.Effects = Effects;
+
+            Spells[id] = this;
         }
 
         public Projectile Cast(Actor caster, Point target)

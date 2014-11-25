@@ -141,17 +141,6 @@ namespace ODB
             IO.ReadActorDefinitionsFromFile("Data/actors.def");
             IO.ReadItemDefinitionsFromFile("Data/items.def");
 
-            Level = new ODB.Level(lvlW, lvlH);
-            Level.LoadLevelSave("Save/newlevel.sv");
-
-            logSize = 3;
-            log = new List<string>();
-            log.Add("Welcome!");
-
-            qpAnswerStack = new Stack<string>();
-
-            projectiles = new List<Projectile>();
-
             Spell ForceBolt = new Spell(
                 "Force bolt",
                 new List<Action<Point>>()
@@ -169,7 +158,18 @@ namespace ODB
                 7, 3
             );
 
-            player.Spellbook.Add(ForceBolt);
+            Level = new ODB.Level(lvlW, lvlH);
+            Level.LoadLevelSave("Save/newlevel.sv");
+
+            logSize = 3;
+            log = new List<string>();
+            log.Add("Welcome!");
+
+            qpAnswerStack = new Stack<string>();
+
+            projectiles = new List<Projectile>();
+
+            //player.Spellbook.Add(ForceBolt);
 
             base.Initialize();
         }
@@ -591,9 +591,9 @@ namespace ODB
 
             string namerow = player.Definition.name + " - Title";
             namerow += "  ";
-            namerow += "STR " + player.GetStrength() + "  ";
-            namerow += "DEX " + player.GetDexterity() + "  ";
-            namerow += "INT " + player.GetIntelligence() + "  ";
+            namerow += "STR " + player.Get(Stat.Strength) + "  ";
+            namerow += "DEX " + player.Get(Stat.Dexterity) + "  ";
+            namerow += "INT " + player.Get(Stat.Intelligence) + "  ";
             namerow += "AC " + player.GetAC();
 
             string statrow = "";

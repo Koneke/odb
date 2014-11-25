@@ -6,6 +6,15 @@ using Microsoft.Xna.Framework;
 
 namespace ODB
 {
+    public enum Stat
+    {
+        Strength,
+        Dexterity,
+        Intelligence,
+        Speed,
+        Quickness,
+    }
+
     public class ActorDefinition : gObjectDefinition
     {
         public static ActorDefinition[] ActorDefinitions =
@@ -125,7 +134,6 @@ namespace ODB
             : base(s)
         {
             ReadActor(s);
-            Spellbook = new List<Spell>();
 
             Vision = new bool[Game.lvlW, Game.lvlH];
         }
@@ -180,95 +188,55 @@ namespace ODB
             return ac;
         }
 
-        //we can probably condense these a bit by doing something cool with
-        //the stats. so you'd do like player.Get(Stat.Strength) or something
-        //instead, but that's a later thing, it works atm.
-
-        public int GetStrength(bool modded = true)
+        public int Get(Stat stat, bool modded = true)
         {
-            return Definition.strength +
-                (modded ? GetStrengthMod() : 0); 
+            switch (stat)
+            {
+                case Stat.Strength:
+                    return Definition.strength +
+                        (modded ? GetMod(stat) : 0);
+                case Stat.Dexterity:
+                    return Definition.dexterity +
+                        (modded ? GetMod(stat) : 0);
+                case Stat.Intelligence:
+                    return Definition.intelligence +
+                        (modded ? GetMod(stat) : 0);
+                case Stat.Speed:
+                    return Definition.speed +
+                        (modded ? GetMod(stat) : 0);
+                case Stat.Quickness:
+                    return Definition.quickness +
+                        (modded ? GetMod(stat) : 0);
+                default:
+                    return -1;
+            }
         }
-        public int GetStrengthMod()
+
+        public int GetMod(Stat stat)
         {
             int modifier = 0;
 
-            List<Item> worn = Util.GetWornItems(this);
-            foreach (Mod m in Util.GetModsOfType(ModType.AddStr, worn))
-                modifier += m.Value;
-            foreach (Mod m in Util.GetModsOfType(ModType.DecStr, worn))
-                modifier -= m.Value;
-
-            return modifier;
-        }
-
-        public int GetDexterity(bool modded = true)
-        {
-            return Definition.dexterity +
-                (modded ? GetDexterityMod() : 0); 
-        }
-        public int GetDexterityMod()
-        {
-            int modifier = 0;
-
-            List<Item> worn = Util.GetWornItems(this);
-            foreach (Mod m in Util.GetModsOfType(ModType.AddDex, worn))
-                modifier += m.Value;
-            foreach (Mod m in Util.GetModsOfType(ModType.DecDex, worn))
-                modifier -= m.Value;
-
-            return modifier;
-        }
-
-        public int GetIntelligence(bool modded = true)
-        {
-            return Definition.intelligence +
-                (modded ? GetIntelligenceMod() : 0); 
-        }
-        public int GetIntelligenceMod()
-        {
-            int modifier = 0;
+            ModType addMod, decMod;
+            switch (stat)
+            {
+                case Stat.Strength:
+                    addMod = ModType.AddStr; decMod = ModType.DecStr; break;
+                case Stat.Dexterity:
+                    addMod = ModType.AddStr; decMod = ModType.DecStr; break;
+                case Stat.Intelligence:
+                    addMod = ModType.AddInt; decMod = ModType.DecInt; break;
+                case Stat.Speed:
+                    addMod = ModType.AddSpd; decMod = ModType.DecSpd; break;
+                case Stat.Quickness:
+                    addMod = ModType.AddQck; decMod = ModType.DecQck; break;
+                default:
+                    return 0;
+            }
 
             List<Item> worn = Util.GetWornItems(this);
-            foreach (Mod m in Util.GetModsOfType(ModType.AddInt, worn))
+            foreach (Mod m in Util.GetModsOfType(addMod, worn))
                 modifier += m.Value;
-            foreach (Mod m in Util.GetModsOfType(ModType.DecInt, worn))
-                modifier -= m.Value;
-
-            return modifier;
-        }
-
-        public int GetQuickness(bool modded = true)
-        {
-            return Definition.quickness +
-                (modded ? GetQuicknessMod() : 0);
-        }
-        public int GetQuicknessMod()
-        {
-            int modifier = 0;
-
-            List<Item> worn = Util.GetWornItems(this);
-            foreach (Mod m in Util.GetModsOfType(ModType.AddQck, worn))
-                modifier += m.Value;
-            foreach (Mod m in Util.GetModsOfType(ModType.DecQck, worn))
-                modifier -= m.Value;
-
-            return modifier;
-        }
-
-        public int GetSpeed(bool modded = true)
-        {
-            return Definition.speed +
-                (modded ? GetSpeedMod() : 0);
-        }
-        public int GetSpeedMod()
-        {
-            int modifier = 0;
-
-            List<Item> worn = Util.GetWornItems(this);
-            foreach (Mod m in Util.GetModsOfType(ModType.AddSpd, worn))
-                modifier += m.Value;
-            foreach (Mod m in Util.GetModsOfType(ModType.DecSpd, worn))
+            foreach (Mod m in Util.GetModsOfType(decMod, worn))
                 modifier -= m.Value;
 
             return modifier;
@@ -276,11 +244,11 @@ namespace ODB
 
         public void Attack(Actor target)
         {
-            int hitRoll = Util.Roll("1d6") + GetDexterity();
+            int hitRoll = Util.Roll("1d6") + Get(Stat.Dexterity);
             int dodgeRoll = target.GetAC();
 
             if (hitRoll >= dodgeRoll) {
-                int damageRoll = GetStrength();
+                int damageRoll = Get(Stat.Strength);
 
                 foreach (
                     BodyPart bp in PaperDoll.FindAll(
@@ -325,7 +293,7 @@ namespace ODB
 
         public void Cast(Spell s, Point target)
         {
-            if (Util.Roll("1d6") + GetIntelligence() > s.CastDifficulty)
+            if (Util.Roll("1d6") + Get(Stat.Intelligence) > s.CastDifficulty)
             {
                 Game.log.Add(Definition.name + " casts " + s.Name + ".");
                 Projectile p = s.Cast(this, target);
@@ -344,7 +312,7 @@ namespace ODB
         public void Pass(bool movement = false)
         {
             Cooldown = Game.standardActionLength -
-                (movement ? GetSpeed() : GetQuickness());
+                (movement ? Get(Stat.Speed) : Get(Stat.Quickness));
         }
 
         //will atm only be called by the player,
@@ -425,6 +393,13 @@ namespace ODB
             }
             stream.Write(";", false);
 
+            foreach (Spell s in Spellbook)
+            {
+                stream.Write(s.id, 4);
+                stream.Write(",", false);
+            }
+            stream.Write(";", false);
+
             return stream;
         }
         public Stream ReadActor(string s)
@@ -467,6 +442,16 @@ namespace ODB
                 );
             }
 
+            Spellbook = new List<Spell>();
+            foreach (string ss in
+                stream.ReadString().Split(
+                    new string[] { "," },
+                    StringSplitOptions.RemoveEmptyEntries
+                ).ToList()
+            ) {
+                Spellbook.Add(Spell.Spells[IO.ReadHex(ss)]);
+            }
+
             return stream;
         }
 
@@ -496,5 +481,4 @@ namespace ODB
                     }
         }
     }
-
 }
