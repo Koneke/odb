@@ -293,14 +293,11 @@ namespace ODB
 
         public void Cast(Spell s, Point target)
         {
+            Game.log.Add(Definition.name + " casts " + s.Name + ".");
             if (Util.Roll("1d6") + Get(Stat.Intelligence) > s.CastDifficulty)
             {
-                Game.log.Add(Definition.name + " casts " + s.Name + ".");
                 Projectile p = s.Cast(this, target);
                 Game.projectiles.Add(p);
-                //all projectiles are instant move
-                //atleast right now
-                //so just go ahead and move as soon as we cast
                 p.Move();
             }
             else Game.log.Add("The spell fizzles.");

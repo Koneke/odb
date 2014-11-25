@@ -38,7 +38,7 @@ namespace ODB
          * Thanks for keeping order in the realm of man.
          */
 
-    #region responses
+        #region responses
         #region Get/Drop
         public static void Get(string answer)
         {
@@ -63,7 +63,7 @@ namespace ODB
                         if (item.Definition.type == it.Definition.type)
                         {
                             alreadyHolding = true;
-                            item.count++;
+                            item.count+=it.count;
                             //merging into the already held item
                             Game.Level.AllItems.Remove(it);
                         }
@@ -74,7 +74,8 @@ namespace ODB
                 {
                     Game.player.inventory.Add(it);
                 }
-                Game.log.Add("Picked up " + it.Definition.name + ".");
+                //Game.log.Add("Picked up " + it.Definition.name + ".");
+                Game.log.Add("Picked up " + it.GetName() + ".");
 
                 Game.player.Pass();
             }
@@ -149,7 +150,7 @@ namespace ODB
             foreach (BodyPart bp in Game.player.PaperDoll)
                 if (bp.Item == it) bp.Item = null;
 
-            Game.log.Add("Dropped " + it.Definition.name + ".");
+            Game.log.Add("Dropped " + it.GetName() + ".");
 
             Game.player.Pass();
         }
@@ -183,8 +184,8 @@ namespace ODB
                     Game.Level.WorldItems.Add(droppedStack);
                     Game.Level.AllItems.Add(droppedStack);
 
-                    Game.log.Add("Dropped " + count + " " +
-                        it.Definition.name + "."
+                    Game.log.Add("Dropped "+// count + " " +
+                        it.GetName() + "."
                     );
 
                     Game.player.Pass();
@@ -233,7 +234,7 @@ namespace ODB
 
             if (canEquip)
             {
-                Game.log.Add("Equipped "+ selected.Definition.name + ".");
+                Game.log.Add("Equipped "+ selected.GetName() + ".");
                 Game.player.Equip(selected);
 
                 Game.player.Pass();
@@ -267,7 +268,7 @@ namespace ODB
                 foreach (BodyPart bp in Game.player.PaperDoll.FindAll(
                     x => x.Type == DollSlot.Hand))
                     if (bp.Item == it) bp.Item = null;
-                Game.log.Add("Sheathed " + it.Definition.name + ".");
+                Game.log.Add("Sheathed " + it.GetName() + ".");
 
                 Game.player.Pass();
             }
@@ -339,6 +340,7 @@ namespace ODB
             }
             else
             {
+                Game.TargetedSpell = Game.player.Spellbook[i];
                 IO.AskPlayer(
                     "Casting " + Game.player.Spellbook[i].Name,
                     InputType.Targeting,
@@ -347,17 +349,87 @@ namespace ODB
             }
         }
 
+        public static void Use(string answer)
+        {
+            Game.qpAnswerStack.Peek();
+            if (answer.Length <= 0) return;
+
+            Item it = Game.player.inventory[
+                IO.indexes.IndexOf(answer[0])
+            ];
+            if (it.count <= 0)
+            {
+                Game.log.Add(it.GetName(true) + " lacks charges.");
+                return;
+            }
+
+            //nontargeted
+            if (it.UseEffect.Range <= 0)
+            {
+                Projectile pr = it.UseEffect.Cast(
+                    Game.player,
+                    Game.player.xy
+                );
+                pr.Move();
+                it.count--;
+                if (it.count <= 0)
+                {
+                    Game.player.inventory.Remove(it);
+                    Game.Level.AllItems.Remove(it);
+                    Game.log.Add(it.GetName(true, false, true) + " is spent!");
+                }
+                Game.player.Pass();
+            }
+            //targeted
+            else
+            {
+                Game.TargetedSpell = it.UseEffect;
+                IO.AskPlayer(
+                    "Using " + it.GetName(true),
+                    InputType.Targeting,
+                    Player.UseCast
+                );
+            }
+        }
+
         public static void Cast(Point p)
         {
             int index = letterAnswerToIndex(Game.qpAnswerStack.Pop()[0]);
-            if (Game.Level.Map[p.x, p.y] != null)
+            if (Game.Level.Map[p.x, p.y] != null) {
                 Game.player.Cast(
-                    Game.player.Spellbook[index], p
+                    //Game.player.Spellbook[index], p
+                    Game.TargetedSpell, p
                 );
+            }
             else
                 Game.log.Add("Invalid target.");
         }
-    #endregion
+
+        public static void UseCast(Point p)
+        {
+            if (Game.Level.Map[p.x, p.y] != null)
+            {
+                int i = IO.indexes.IndexOf(Game.qpAnswerStack.Pop()[0]);
+                Item it = Game.player.inventory[i];
+                Game.log.Add("You use " + it.GetName(true) + ".");
+                Projectile pr = Game.TargetedSpell.Cast(Game.player, p);
+                pr.Move();
+                //spend charge
+                it.count--;
+                //rechargin items should probably not trigger this
+                //but that's a later issue
+                if (it.count <= 0)
+                {
+                    Game.player.inventory.Remove(it);
+                    Game.Level.AllItems.Remove(it);
+                    Game.log.Add(it.GetName(true, false, true) + " is spent!");
+                }
+                Game.player.Pass();
+            }
+            else
+                Game.log.Add("Invalid target.");
+        }
+        #endregion
 
         public static void PlayerInput()
         {
@@ -397,10 +469,7 @@ namespace ODB
                         break;
                     case 1:
                         Game.log.Add(
-                            "There is " +
-                            Util.article(
-                                itemsOnSquare[0].Definition.name
-                            ) + " " + itemsOnSquare[0].Definition.name +
+                            "There is " + itemsOnSquare[0].GetName() +
                             " here."
                         );
                         break;
@@ -543,16 +612,13 @@ namespace ODB
                         char index =
                             IO.indexes[Game.player.inventory.IndexOf(it)];
                         _q += index;
-                        IO.AcceptedInput.Add(
-                            index
-                            //IO.indexes[Game.player.inventory.IndexOf(it)]
-                        );
+                        IO.AcceptedInput.Add(index);
                     }
                     _q += "]";
 
                     IO.AskPlayer(
                         _q,
-                        InputType.QuestionPrompt,
+                        InputType.QuestionPromptSingle,
                         Player.Sheath
                     );
                 }
@@ -622,6 +688,27 @@ namespace ODB
             }
             #endregion
 
+            if (IO.KeyPressed(Keys.A) && !IO.shift)
+            {
+                string _q = "Use what? [";
+                IO.AcceptedInput.Clear();
+                for (int i = 0; i < Game.player.inventory.Count; i++)
+                {
+                    if (Game.player.inventory[i].UseEffect != null)
+                    {
+                        char index = IO.indexes[i];
+                        _q += index;
+                        IO.AcceptedInput.Add(index);
+                    }
+                }
+                _q += "]";
+
+                IO.AskPlayer(
+                    _q,
+                    InputType.QuestionPromptSingle,
+                    Player.Use
+                );
+            }
         }
     }
 }

@@ -17,7 +17,6 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 // * Item value and paid-for status
 
 //~~~ QUEST TRACKER for 25 nov ~~~
-// * Save actor spellbooks to file
 // * Scrolls and/or wands (should be fairly similar)
 //   * In essence, item with a spell attached to it.
 
@@ -57,6 +56,7 @@ namespace ODB
         public List<string> log;
 
         public Point target;
+        public Spell TargetedSpell;
         //make these two Action, and merge into one?
         //the targetting reaction functions can just read the
         //Game.target directly
@@ -158,8 +158,31 @@ namespace ODB
                 7, 3
             );
 
+            Spell SoConfusionEffect = new Spell(
+                "Confusion",
+                new List<Action<Point>>() {
+                    delegate(Point p) {
+                        foreach(Actor a in Game.Level.ActorsOnTile(p)) {
+                            Util.Game.log.Add(a.Definition.name +
+                                " looks dizzy!"
+                            );
+                        }
+                    }
+                }
+            );
+
             Level = new ODB.Level(lvlW, lvlH);
             Level.LoadLevelSave("Save/newlevel.sv");
+
+            Level.WorldItems[0].UseEffect = ForceBolt;
+
+            ItemDefinition SoConfusion = new ItemDefinition(
+                null, Color.White, "?", "Scroll of Confusion"
+            );
+            Item soc = new Item(player.xy, SoConfusion, 1);
+            soc.UseEffect = SoConfusionEffect;
+            Level.AllItems.Add(soc);
+            Level.WorldItems.Add(soc);
 
             logSize = 3;
             log = new List<string>();
@@ -168,8 +191,6 @@ namespace ODB
             qpAnswerStack = new Stack<string>();
 
             projectiles = new List<Projectile>();
-
-            //player.Spellbook.Add(ForceBolt);
 
             base.Initialize();
         }
@@ -562,12 +583,16 @@ namespace ODB
 
             for (int i = 0; i < player.inventory.Count; i++)
             {
-                bool equipped = Game.player.IsEquipped(player.inventory[i]);
+                Item it = player.inventory[i];
+
+                bool equipped = Game.player.IsEquipped(it);
 
                 string name = "" + ((char)(97 + i));
                 name += " - ";
-                if (player.inventory[i].Definition.stacking)
-                    name += player.inventory[i].count + "x ";
+
+
+                if (it.Definition.stacking)
+                    name += it.count + "x ";
 
                 if (player.inventory[i].mod != 0)
                 {
@@ -575,7 +600,12 @@ namespace ODB
                     name += Math.Abs(player.inventory[i].mod) + " ";
                 }
 
-                name += player.inventory[i].Definition.name;
+                //name += player.inventory[i].Definition.name;
+                name += player.inventory[i].GetName(false, true, true);
+                if (it.Charged)
+                {
+                    name += "["+it.count+"]";
+                }
                 if (equipped) name += " (eq)";
 
                 inventoryConsole.CellData.Print(

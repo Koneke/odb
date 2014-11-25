@@ -266,7 +266,7 @@ namespace ODB
         public int id;
 
         public string Name;
-        //0 should mean self-cast..?
+        //0 should mean self-cast..? (or just non-targetted)
         //projectile should explode without moving, so should be on self
         public int Range;
         public int CastDifficulty;
