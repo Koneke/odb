@@ -15,6 +15,9 @@ namespace ODB
         public string Damage;
         public bool stacking;
         public List<DollSlot> equipSlots;
+        //ranged _weapons_
+        public bool Ranged;
+        public List<ItemDefinition> AmmoTypes;
 
         //creating a NEW definition
         public ItemDefinition(
@@ -22,12 +25,16 @@ namespace ODB
             string tile, string name,
             //item def specific stuff
             string Damage = "", int AC = 0,
-            bool stacking = false, List<DollSlot> equipSlots = null)
+            bool stacking = false, List<DollSlot> equipSlots = null,
+            bool Ranged = false, List<ItemDefinition> AmmoTypes = null
+            )
         : base(bg, fg, tile, name) {
             this.Damage = Damage;
             this.AC = AC;
             this.stacking = stacking;
             this.equipSlots = equipSlots ?? new List<DollSlot>();
+            this.Ranged = Ranged;
+            this.AmmoTypes = AmmoTypes;
             ItemDefinitions[this.type] = this;
         }
 
@@ -63,6 +70,14 @@ namespace ODB
 
             foreach (DollSlot ds in equipSlots)
                 stream.Write((int)ds + ",", false);
+
+            stream.Write(Ranged);
+            foreach (ItemDefinition itd in AmmoTypes)
+            {
+                stream.Write(itd.type, 4);
+                stream.Write(",", false);
+            }
+            stream.Write(";", false);
             return stream;
         }
     }
@@ -84,6 +99,14 @@ namespace ODB
 
         //not to file
         public bool Charged;
+
+        //wrapping directly to the def for ease
+        public List<DollSlot> equipSlots {
+            get
+            {
+                return Definition.equipSlots;
+            }
+        }
 
         //SPAWNING a NEW item
         public Item(
@@ -117,7 +140,44 @@ namespace ODB
             if (Definition.stacking && count > 1)
                 article = count + "x";
 
-            string s = (noArt ? "" : (article + " ")) + Definition.name;
+            string s = (noArt ? "" : (article + " "));
+
+            if(Mods.Count > 0) {
+                switch (Mods[0].Type)
+                {
+                    case ModType.AddStr: s += "fierce"; break;
+                    case ModType.DecStr: s += "frail"; break;
+                    case ModType.AddDex: s += "vile"; break;
+                    case ModType.DecDex: s += "dull"; break;
+                    case ModType.AddInt: s += "clever"; break;
+                    case ModType.DecInt: s += "clouded"; break;
+                    case ModType.AddSpd: s += "fast"; break;
+                    case ModType.DecSpd: s += "trudging"; break;
+                    case ModType.AddQck: s += "eager"; break;
+                    case ModType.DecQck: s += "lazy"; break;
+                }
+                s += " ";
+            }
+
+            s += Definition.name;
+
+            if(Mods.Count > 1) {
+                s += " of ";
+                switch (Mods[1].Type)
+                {
+                    case ModType.AddStr: s += "might"; break;
+                    case ModType.DecStr: s += "twigs"; break;
+                    case ModType.AddDex: s += "wounding"; break;
+                    case ModType.DecDex: s += "bumbling"; break;
+                    case ModType.AddInt: s += "clarity"; break;
+                    case ModType.DecInt: s += "shrouds"; break;
+                    case ModType.AddSpd: s += "wind"; break;
+                    case ModType.DecSpd: s += "dawdling"; break;
+                    case ModType.AddQck: s += "lightning"; break;
+                    case ModType.DecQck: s += "dallying"; break;
+                }
+            }
+
             s = s.ToLower();
             if (capitalized)
                 s = s.Substring(0, 1).ToUpper() +

@@ -244,5 +244,11 @@ namespace ODB
                 "an" : "a";
         }
 
+        public static int Distance(Point a, Point b)
+        {
+            int dx = Math.Abs(a.x - b.x);
+            int dy = Math.Abs(a.y - b.y);
+            return Math.Max(dx, dy);
+        }
     }
 }

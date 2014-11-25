@@ -81,7 +81,7 @@ namespace ODB
             inputRowConsole.Position = new xnaPoint(0, 3);
             inputRowConsole.VirtualCursor.IsVisible = true;
 
-            inventoryConsole = new Console(40, 25);
+            inventoryConsole = new Console(80, 25);
             inventoryConsole.Position =
                 new xnaPoint(
                     dfc.ViewArea.Width - inventoryConsole.ViewArea.Width,
@@ -127,10 +127,12 @@ namespace ODB
                 new List<Action<Actor, Point>>() {
                     delegate(Actor caster, Point p) {
                         Actor a = Game.Level.ActorOnTile(p);
-                        Util.Game.log.Add(a.Definition.name +
-                            " is hit by the bolt!"
-                        );
-                        a.Damage(Util.Roll("1d4"));
+                        if(a != null) {
+                            Util.Game.log.Add(a.Definition.name +
+                                " is hit by the bolt!"
+                            );
+                            a.Damage(Util.Roll("1d4"));
+                        }
                     }
                 },
                 7, 3
@@ -157,6 +159,7 @@ namespace ODB
         {
             #region engineshit
             //this is starting to look dumb
+            PlayerResponses.Game =
             gObject.Game =
             Player.Game =
             Brain.Game =
@@ -185,16 +188,40 @@ namespace ODB
             camX = camY = 0;
             scrW = 80; scrH = 25;
 
+            SetupMagic(); //essentially magic defs, but we hardcode magic
             IO.ReadActorDefinitionsFromFile("Data/actors.def");
             IO.ReadItemDefinitionsFromFile("Data/items.def");
-            SetupMagic(); //essentially magic defs, but we hardcode magic
 
             IO.Load(); //load entire game (except definitions atm)
             SetupBrains();
 
-            Level.WorldActors[1].Spellbook.Add(
-                Spell.Spells[1]
+            player.PaperDoll.Add(
+                new BodyPart(DollSlot.Quiver)
             );
+
+            Level.WorldItems[1].Mods.Add(
+                new Mod(ModType.AddStr, 1)
+            );
+            Level.WorldItems[1].Mods.Add(
+                new Mod(ModType.AddInt, 1)
+            );
+
+            ItemDefinition Arrow = new ItemDefinition(
+                null, Color.Brown, (char)24+"", "Arrow", "1d2",
+                0, true, new List<DollSlot> { DollSlot.Quiver }
+            );
+            ItemDefinition Bow = new ItemDefinition(
+                null, Color.Brown, "(", "Bow", "1d4",
+                0, false, new List<DollSlot>() {
+                    DollSlot.Hand, DollSlot.Hand
+                },
+                true, new List<ItemDefinition>() { Arrow }
+            );
+
+            Item bow = new Item(new Point(11, 11), Bow);
+            Level.AllItems.Add(bow); Level.WorldItems.Add(bow);
+            Item arrow = new Item(new Point(11, 12), Arrow, 5);
+            Level.AllItems.Add(arrow); Level.WorldItems.Add(arrow);
 
             logSize = 3;
             log = new List<string>();
@@ -285,7 +312,6 @@ namespace ODB
                     inventoryConsole.IsVisible = false;
                 else this.Exit();
             }
-            if (IO.KeyPressed(Keys.Q)) this.Exit();
 
             if (IO.KeyPressed(Keys.I))
                 inventoryConsole.IsVisible =

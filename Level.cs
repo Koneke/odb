@@ -5,6 +5,8 @@ namespace ODB
 {
     public class Level
     {
+        public string Name;
+
         public int LevelWidth, LevelHeight;
         public Point LevelSize;
 

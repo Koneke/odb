@@ -199,7 +199,8 @@ namespace ODB
         //Gloves, //maybe?
         Hand,
         Legs,
-        Feet
+        Feet,
+        Quiver
     }
 
     public class BodyPart

@@ -24,6 +24,7 @@ namespace ODB
         public int speed, quickness;
         public List<DollSlot> BodyParts;
         public int CorpseType;
+        public List<Spell> Spellbook;
 
         public ActorDefinition(
             Color? bg, Color fg,
@@ -41,6 +42,7 @@ namespace ODB
             ItemDefinition Corpse = new ItemDefinition(
                 null, Color.Red, "%", name + " corpse");
             CorpseType = Corpse.type;
+            Spellbook = new List<Spell>();
         }
 
         public ActorDefinition(string s) : base(s)
@@ -62,6 +64,12 @@ namespace ODB
                 stream.Write((int)ds + ",", false);
             stream.Write(";", false);
             stream.Write(CorpseType, 4);
+            foreach (Spell s in Spellbook)
+            {
+                stream.Write(s.id, 4);
+                stream.Write(",", false);
+            }
+            stream.Write(";", false);
             return stream;
         }
 
@@ -83,6 +91,12 @@ namespace ODB
 
             CorpseType = stream.ReadHex(4);
 
+            Spellbook = new List<Spell>();
+            string spellbook = stream.ReadString();
+            foreach (string spell in spellbook.Split(','))
+                if (spell != "")
+                    Spellbook.Add(Spell.Spells[IO.ReadHex(spell)]);
+
             ActorDefinitions[type] = this;
             return stream;
         }
@@ -101,7 +115,11 @@ namespace ODB
 
         public List<BodyPart> PaperDoll;
         public List<Item> inventory;
-        public List<Spell> Spellbook; //not yet written to file
+        public List<Spell> Spellbook {
+            get {
+                return Definition.Spellbook;
+            }
+        }
         #endregion
 
         #region temporary/cached (nonwritten)
@@ -123,7 +141,6 @@ namespace ODB
             foreach (DollSlot ds in def.BodyParts)
                 PaperDoll.Add(new BodyPart(ds));
             inventory = new List<Item>();
-            Spellbook = new List<Spell>();
         }
 
         public Actor(string s)
@@ -132,14 +149,22 @@ namespace ODB
             ReadActor(s);
         }
 
-        public bool HasFree(DollSlot slot)
+        public bool CanEquip(List<DollSlot> slots)
         {
-            return PaperDoll.Any(
-                x => x.Type == slot &&
-                x.Item == null
-            );
-        }
+            List<DollSlot> availableSlots = new List<DollSlot>();
+            foreach (BodyPart bp in PaperDoll)
+                if (bp.Item == null) availableSlots.Add(bp.Type);
 
+            bool canEquip = true;
+            foreach (DollSlot ds in slots)
+            {
+                if (!availableSlots.Contains(ds))
+                    canEquip = false;
+                else availableSlots.Remove(ds);
+            }
+            return canEquip;
+        }
+        
         public void Equip(Item it)
         {
             foreach (DollSlot ds in it.Definition.equipSlots)
@@ -151,6 +176,15 @@ namespace ODB
                         break;
                     }
             }
+        }
+
+        public List<BodyPart> GetSlots(DollSlot type)
+        {
+            List<BodyPart> parts = new List<BodyPart>();
+            foreach (BodyPart bp in PaperDoll)
+                if (bp.Type == type)
+                    parts.Add(bp);
+            return parts;
         }
 
         public bool IsEquipped(Item it)
@@ -180,6 +214,16 @@ namespace ODB
                 ac += it.Definition.AC + it.mod;
 
             return ac;
+        }
+
+        public List<Item> GetEquippedItems()
+        {
+            List<Item> equipped = new List<Item>();
+            foreach (BodyPart bp in PaperDoll)
+                if (bp != null)
+                    if (!equipped.Contains(bp.Item))
+                        equipped.Add(bp.Item);
+            return equipped;
         }
 
         public int Get(Stat stat, bool modded = true)
@@ -216,7 +260,7 @@ namespace ODB
                 case Stat.Strength:
                     addMod = ModType.AddStr; decMod = ModType.DecStr; break;
                 case Stat.Dexterity:
-                    addMod = ModType.AddStr; decMod = ModType.DecStr; break;
+                    addMod = ModType.AddDex; decMod = ModType.DecDex; break;
                 case Stat.Intelligence:
                     addMod = ModType.AddInt; decMod = ModType.DecInt; break;
                 case Stat.Speed:
@@ -236,9 +280,10 @@ namespace ODB
             return modifier;
         }
 
+        //crits
         public void Attack(Actor target)
         {
-            int hitRoll = Util.Roll("1d6") + Get(Stat.Dexterity);
+            int hitRoll = Util.Roll("1d6") + Get(Stat.Strength);
             int dodgeRoll = target.GetAC();
 
             if (hitRoll >= dodgeRoll) {
@@ -248,7 +293,11 @@ namespace ODB
                     BodyPart bp in PaperDoll.FindAll(
                         x => x.Type == DollSlot.Hand && x.Item != null)
                     )
-                    if (bp.Item.Definition.Damage != "")
+                    if (
+                        bp.Item.Definition.Damage != "" &&
+                        //no bow damage when bashing with it kthx 
+                        !bp.Item.Definition.Ranged
+                    )
                         damageRoll += Util.Roll(bp.Item.Definition.Damage);
                     else
                         //barehanded/bash damage
@@ -256,7 +305,7 @@ namespace ODB
 
                 Game.log.Add(
                     Definition.name + " strikes " +target.Definition.name +
-                    " (" + hitRoll + " vs AC" + dodgeRoll + ")"
+                    " (" + hitRoll + " vs " + dodgeRoll + ")"
                 );
 
                 target.Damage(damageRoll);
@@ -264,9 +313,57 @@ namespace ODB
             else
             {
                 Game.log.Add(Definition.name + " swings in the air." +
-                    " (" + hitRoll + " vs AC" + dodgeRoll + ")"
+                    " (" + hitRoll + " vs " + dodgeRoll + ")"
                 );
             }
+        }
+        public void Shoot(Actor target)
+        {
+            int hitRoll = Util.Roll("1d6") + Get(Stat.Dexterity);
+            int dodgeRoll =
+                target.GetAC() + Util.Distance(xy, target.xy)
+            ;
+
+            Item ammo = null;
+            foreach(BodyPart bp in PaperDoll)
+                if(bp.Type == DollSlot.Quiver)
+                    ammo = bp.Item;
+
+            ammo.count--;
+            if(ammo.count <= 0)
+            {
+                foreach(BodyPart bp in PaperDoll)
+                    if(bp.Type == DollSlot.Quiver)
+                        bp.Item = null;
+                Game.Level.AllItems.Remove(ammo);
+                Game.player.inventory.Remove(ammo);
+            }
+
+            if(hitRoll >= dodgeRoll) {
+                int damageRoll = 0;
+                Item weapon = null;
+                foreach (BodyPart bp in GetSlots(DollSlot.Hand))
+                {
+                    if (bp.Item == null) continue;
+                    if (bp.Item.Definition.Ranged)
+                        weapon = bp.Item;
+                }
+
+                damageRoll = Util.Roll(weapon.Definition.Damage);
+                damageRoll += Util.Roll(ammo.Definition.Damage);
+                Game.log.Add(
+                    target.Definition.name + " is hit! " +
+                    "(" + hitRoll + " vs " + dodgeRoll + ")"
+                );
+                target.Damage(damageRoll);
+            } else {
+                Game.log.Add(
+                    Definition.name + " misses" +
+                    "(" + hitRoll + " vs " + dodgeRoll + ")"
+                );
+            }
+
+            Pass();
         }
         public void Damage(int d)
         {
@@ -309,8 +406,10 @@ namespace ODB
 
         //will atm only be called by the player,
         //but should, I guess, be called by monsters as well in the future
-        public void TryMove(Point offset)
+        public bool TryMove(Point offset)
         {
+            bool moved = false;
+
             Tile target = Game.Level.Map[
                 Game.player.xy.x + offset.x,
                 Game.player.xy.y + offset.y
@@ -346,6 +445,7 @@ namespace ODB
                             Game.log.Add("You roll forwards!");
 
                     xy.Nudge(offset.x, offset.y);
+                    moved = true;
                     Pass(true);
                 }
                 else
@@ -354,6 +454,7 @@ namespace ODB
                     Game.player.Pass();
                 }
             }
+            return moved;
         }
 
         public Stream WriteActor()
@@ -383,11 +484,6 @@ namespace ODB
             }
             stream.Write(";", false);
 
-            foreach (Spell s in Spellbook)
-            {
-                stream.Write(s.id, 4);
-                stream.Write(",", false);
-            }
             stream.Write(";", false);
 
             return stream;
@@ -430,16 +526,6 @@ namespace ODB
                 inventory.Add(
                     Util.GetItemByID(IO.ReadHex(ss))
                 );
-            }
-
-            Spellbook = new List<Spell>();
-            foreach (string ss in
-                stream.ReadString().Split(
-                    new string[] { "," },
-                    StringSplitOptions.RemoveEmptyEntries
-                ).ToList()
-            ) {
-                Spellbook.Add(Spell.Spells[IO.ReadHex(ss)]);
             }
 
             return stream;
