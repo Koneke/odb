@@ -160,6 +160,7 @@ namespace ODB
             return false;
         }
 
+        //should probably switch to stream for ease
         public string WriteRoom()
         {
             string output = "";

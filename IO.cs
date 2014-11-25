@@ -246,7 +246,10 @@ namespace ODB
         }
         public static void ReadItemDefinitionsFromFile(string path)
         {
-            ItemDefinition.ItemDefinitions = new ItemDefinition[0xFFFF];
+            while (ItemDefinition.ItemDefinitions[
+                ItemDefinition.TypeCounter
+            ] != null)
+                ItemDefinition.TypeCounter++;
 
             string content = ReadFromFile(path);
             List<string> itemStrings = content.Split(

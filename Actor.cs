@@ -24,7 +24,7 @@ namespace ODB
         public int speed, quickness;
         public List<DollSlot> BodyParts;
         public int CorpseType;
-        public List<Spell> Spellbook;
+        public List<int> Spellbook;
 
         public ActorDefinition(
             Color? bg, Color fg,
@@ -42,7 +42,7 @@ namespace ODB
             ItemDefinition Corpse = new ItemDefinition(
                 null, Color.Red, "%", name + " corpse");
             CorpseType = Corpse.type;
-            Spellbook = new List<Spell>();
+            Spellbook = new List<int>();
         }
 
         public ActorDefinition(string s) : base(s)
@@ -53,6 +53,7 @@ namespace ODB
         public Stream WriteActorDefinition()
         {
             Stream stream = WriteGObjectDefinition();
+
             stream.Write(strength, 2);
             stream.Write(dexterity, 2);
             stream.Write(intelligence, 2);
@@ -63,13 +64,16 @@ namespace ODB
             foreach (DollSlot ds in BodyParts)
                 stream.Write((int)ds + ",", false);
             stream.Write(";", false);
+
             stream.Write(CorpseType, 4);
-            foreach (Spell s in Spellbook)
+
+            foreach (int spellId in Spellbook)
             {
-                stream.Write(s.id, 4);
+                stream.Write(spellId, 4);
                 stream.Write(",", false);
             }
             stream.Write(";", false);
+
             return stream;
         }
 
@@ -91,11 +95,19 @@ namespace ODB
 
             CorpseType = stream.ReadHex(4);
 
-            Spellbook = new List<Spell>();
+            if (Util.IDefByName(name + " corpse") == null)
+            //if (ItemDefinition.ItemDefinitions[CorpseType] == null)
+            {
+                //should be put into a func of its own..?
+                ItemDefinition Corpse = new ItemDefinition(
+                    null, Color.Red, "%", name + " corpse");
+                CorpseType = Corpse.type;
+            }
+
+            Spellbook = new List<int>();
             string spellbook = stream.ReadString();
             foreach (string spell in spellbook.Split(','))
-                if (spell != "")
-                    Spellbook.Add(Spell.Spells[IO.ReadHex(spell)]);
+                if (spell != "") Spellbook.Add(IO.ReadHex(spell));
 
             ActorDefinitions[type] = this;
             return stream;
@@ -115,16 +127,22 @@ namespace ODB
 
         public List<BodyPart> PaperDoll;
         public List<Item> inventory;
-        public List<Spell> Spellbook {
-            get {
-                return Definition.Spellbook;
-            }
-        }
         #endregion
 
         #region temporary/cached (nonwritten)
         public bool[,] Vision;
         #endregion
+
+        //wraps
+        public List<Spell> Spellbook {
+            get {
+                List<Spell> spells = new List<Spell>();
+                foreach(int spellId in Definition.Spellbook) {
+                    spells.Add(Spell.Spells[spellId]);
+                }
+                return spells;
+            }
+        }
 
         public Actor(
             Point xy, ActorDefinition def
@@ -221,8 +239,9 @@ namespace ODB
             List<Item> equipped = new List<Item>();
             foreach (BodyPart bp in PaperDoll)
                 if (bp != null)
-                    if (!equipped.Contains(bp.Item))
-                        equipped.Add(bp.Item);
+                    if (bp.Item != null)
+                        if (!equipped.Contains(bp.Item))
+                            equipped.Add(bp.Item);
             return equipped;
         }
 
@@ -358,7 +377,7 @@ namespace ODB
                 target.Damage(damageRoll);
             } else {
                 Game.log.Add(
-                    Definition.name + " misses" +
+                    Definition.name + " misses " +
                     "(" + hitRoll + " vs " + dodgeRoll + ")"
                 );
             }

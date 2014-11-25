@@ -71,11 +71,12 @@ namespace ODB
             return items;
         }
 
-        public string WriteLevelSave(string path)
+        public Stream WriteLevelSave(string path)
         {
             /*
              * Okay, so what do we need to write?
              * Header
+                 * Name
                  * Dimensions
                  * (future: our own id)
              * Body
@@ -85,40 +86,47 @@ namespace ODB
                  * Items
              */
 
-            string output = "";
+            Stream stream = new Stream();
 
             //should probably be a point not only here really
             Point levelSize = new Point(LevelWidth, LevelHeight);
-            output += IO.Write(levelSize);
-            output += "</DIMENSIONS>";
+
+            stream.Write(levelSize);
+            stream.Write("</DIMENSIONS>", false);
 
             for (int y = 0; y < levelSize.y; y++)
                 for (int x = 0; x < levelSize.x; x++)
                 {
                     if (Map[x, y] != null)
                     {
-                        output += Map[x, y].WriteTile();
-                        output += ";";
-                        output += IO.Write(Seen[x, y]);
+                        stream.Write(Map[x, y].WriteTile().ToString());
+                        stream.Write(Seen[x, y]);
                     }
-                    output += "##";
+                    stream.Write("##", false);
                 }
-            output += "</LEVEL>";
+            stream.Write("</LEVEL>", false);
 
             foreach (Room room in Rooms)
-                output += room.WriteRoom() + "##";
-            output += "</ROOMS>";
+            {
+                stream.Write(room.WriteRoom() + "##", false);
+            }
+            stream.Write("</ROOMS>", false);
 
             foreach (Item item in AllItems)
-                output += item.WriteItem() + "##";
-            output += "</ITEMS>";
+            {
+                stream.Write(item.WriteItem().ToString() + "##", false);
+            }
+            stream.Write("</ITEMS>", false);
 
             foreach (Actor actor in WorldActors)
-                output += actor.WriteActor() + "##";
-            output += "</ACTORS>";
+            {
+                stream.Write(
+                    actor.WriteActor().ToString() + "##", false);
+            }
+            stream.Write("</ACTORS>", false);
 
-            IO.WriteToFile(path, output);
-            return output;
+            IO.WriteToFile(path, stream.ToString());
+            return stream;
         }
 
         public void LoadLevelSave(string path)
@@ -214,6 +222,12 @@ namespace ODB
                 foreach (Item item in actor.inventory)
                     WorldItems.Remove(item);
             }
+        }
+
+        public void Spawn(Item item)
+        {
+            WorldItems.Add(item);
+            AllItems.Add(item);
         }
     }
 }

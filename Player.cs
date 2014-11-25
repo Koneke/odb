@@ -329,8 +329,9 @@ namespace ODB
                 IO.AcceptedInput.Clear();
                 for (int i = 0; i < Game.player.inventory.Count; i++)
                 {
-                    if (Game.player.inventory[i].UseEffect != null)
-                    {
+                    if (
+                        Game.player.inventory[i].UseEffect != null
+                    ) {
                         char index = IO.indexes[i];
                         _q += index;
                         IO.AcceptedInput.Add(index);
@@ -351,17 +352,17 @@ namespace ODB
             if (IO.KeyPressed(Keys.F) && !IO.shift)
             {
                 Item weapon = null;
-                foreach (BodyPart bp in Game.player.PaperDoll)
-                    if (bp.Item != null)
-                        if (bp.Type == DollSlot.Hand &&
-                            bp.Item.Definition.Ranged)
-                            weapon = bp.Item;
+
+                foreach (Item it in Game.player.GetEquippedItems())
+                    if (it.Definition.Ranged)
+                        weapon = it;
 
                 if (weapon == null)
                 {
                     Game.log.Add("You need something to fire with.");
                     return;
                 }
+
 
                 bool canFire = false;
                 foreach (BodyPart bp in Game.player.GetSlots(DollSlot.Quiver))
@@ -370,7 +371,8 @@ namespace ODB
                     if (
                         //these things are getting really hairy...
                         weapon.Definition.AmmoTypes.Contains(
-                            bp.Item.Definition)
+                            bp.Item.type
+                        )
                     )
                         canFire = true;
                 }

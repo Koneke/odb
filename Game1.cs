@@ -16,9 +16,6 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 //~~~ QUEST TRACKER for ?? nov ~~~
 // * Item value and paid-for status
 
-//~~~ QUEST TRACKER for 25 nov ~~~
-// * Stairs
-
 namespace ODB
 {
 
@@ -123,7 +120,7 @@ namespace ODB
         void SetupMagic()
         {
             Spell Forcebolt = new Spell(
-                "Force bolt",
+                "forcebolt",
                 new List<Action<Actor, Point>>() {
                     delegate(Actor caster, Point p) {
                         Actor a = Game.Level.ActorOnTile(p);
@@ -195,33 +192,33 @@ namespace ODB
             IO.Load(); //load entire game (except definitions atm)
             SetupBrains();
 
-            player.PaperDoll.Add(
-                new BodyPart(DollSlot.Quiver)
-            );
+            Level.Spawn(new Item(
+                new Point(12, 14),
+                Util.IDefByName("scroll of forcebolt"),
+                1,
+                null
+            ));
 
-            Level.WorldItems[1].Mods.Add(
-                new Mod(ModType.AddStr, 1)
-            );
-            Level.WorldItems[1].Mods.Add(
-                new Mod(ModType.AddInt, 1)
-            );
+            Level.Spawn(new Item(
+                new Point(11, 11),
+                Util.IDefByName("arrow"),
+                5
+            ));
 
-            ItemDefinition Arrow = new ItemDefinition(
-                null, Color.Brown, (char)24+"", "Arrow", "1d2",
-                0, true, new List<DollSlot> { DollSlot.Quiver }
-            );
-            ItemDefinition Bow = new ItemDefinition(
-                null, Color.Brown, "(", "Bow", "1d4",
-                0, false, new List<DollSlot>() {
-                    DollSlot.Hand, DollSlot.Hand
-                },
-                true, new List<ItemDefinition>() { Arrow }
-            );
+            Level.Spawn(new Item(
+                new Point(11, 12),
+                Util.IDefByName("bow")
+            ));
 
-            Item bow = new Item(new Point(11, 11), Bow);
-            Level.AllItems.Add(bow); Level.WorldItems.Add(bow);
-            Item arrow = new Item(new Point(11, 12), Arrow, 5);
-            Level.AllItems.Add(arrow); Level.WorldItems.Add(arrow);
+            Level.Spawn(new Item(
+                new Point(13, 13),
+                Util.IDefByName("longsword"),
+                -1,
+                new List<Mod> {
+                    new Mod(ModType.AddStr, 1),
+                    new Mod(ModType.AddDex, 1)
+                }
+            ));
 
             logSize = 3;
             log = new List<string>();

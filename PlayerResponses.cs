@@ -393,7 +393,7 @@ namespace ODB
             ];
             if (it.count <= 0)
             {
-                Game.log.Add(it.GetName(true) + " lacks charges.");
+                Game.log.Add(it.GetName(true, false, true) + " lacks charges.");
                 return;
             }
 

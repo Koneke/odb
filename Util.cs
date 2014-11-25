@@ -29,6 +29,33 @@ namespace ODB
             return Game.Level.WorldActors.Find(x => x.id == id);
         }
 
+        public static ItemDefinition IDefByName(string name)
+        {
+            for (int i = 0; i < 0xFFFF; i++)
+                if (ItemDefinition.ItemDefinitions[i] != null)
+                    if (ItemDefinition.ItemDefinitions[i].name == name)
+                        return ItemDefinition.ItemDefinitions[i];
+            return null;
+        }
+
+        public static ActorDefinition ADefByName(string name)
+        {
+            for (int i = 0; i < 0xFFFF; i++)
+                if (ActorDefinition.ActorDefinitions[i] != null)
+                    if (ActorDefinition.ActorDefinitions[i].name == name)
+                        return ActorDefinition.ActorDefinitions[i];
+            return null;
+        }
+
+        public static Spell SpellByName(string name)
+        {
+            for (int i = 0; i < 0xFFFF; i++)
+                if (Spell.Spells[i] != null)
+                    if (Spell.Spells[i].Name == name)
+                        return Spell.Spells[i];
+            return null;
+        }
+
         public static List<Room> GetRooms(Point xy)
         {
             List<Room> roomList = new List<Room>();

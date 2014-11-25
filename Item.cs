@@ -17,24 +17,34 @@ namespace ODB
         public List<DollSlot> equipSlots;
         //ranged _weapons_
         public bool Ranged;
-        public List<ItemDefinition> AmmoTypes;
+        public List<int> AmmoTypes;
+        public int UseEffect;
 
         //creating a NEW definition
         public ItemDefinition(
             Color? bg, Color fg,
             string tile, string name,
+
             //item def specific stuff
-            string Damage = "", int AC = 0,
-            bool stacking = false, List<DollSlot> equipSlots = null,
-            bool Ranged = false, List<ItemDefinition> AmmoTypes = null
-            )
-        : base(bg, fg, tile, name) {
+            string Damage = "",
+            int AC = 0,
+            bool stacking = false,
+
+            List<DollSlot> equipSlots = null,
+            bool Ranged = false,
+            List<int> AmmoTypes = null,
+            int UseEffect = 0xFFFF // SPELL ID
+
+        ) : base(bg, fg, tile, name) {
             this.Damage = Damage;
             this.AC = AC;
             this.stacking = stacking;
+
             this.equipSlots = equipSlots ?? new List<DollSlot>();
             this.Ranged = Ranged;
             this.AmmoTypes = AmmoTypes;
+            this.UseEffect = UseEffect;
+
             ItemDefinitions[this.type] = this;
         }
 
@@ -50,12 +60,21 @@ namespace ODB
             Damage = stream.ReadString();
             AC = stream.ReadHex(2);
             stacking = stream.ReadBool();
-            string slots = stream.ReadString();
 
+            string slots = stream.ReadString();
             equipSlots = new List<DollSlot>();
             foreach (string ss in slots.Split(','))
                 if(ss != "")
                     equipSlots.Add((DollSlot)int.Parse(ss));
+
+            Ranged = stream.ReadBool();
+
+            string ammos = stream.ReadString();
+            AmmoTypes = new List<int>();
+            foreach (string ss in ammos.Split(','))
+                if(ss != "") AmmoTypes.Add(IO.ReadHex(ss));
+
+            UseEffect = stream.ReadHex(4);
 
             ItemDefinitions[type] = this;
             return stream;
@@ -64,20 +83,27 @@ namespace ODB
         public Stream WriteItemDefinition()
         {
             Stream stream = WriteGObjectDefinition();
+
             stream.Write(Damage);
             stream.Write(AC, 2);
             stream.Write(stacking);
 
             foreach (DollSlot ds in equipSlots)
                 stream.Write((int)ds + ",", false);
+            stream.Write(";", false);
 
             stream.Write(Ranged);
-            foreach (ItemDefinition itd in AmmoTypes)
-            {
-                stream.Write(itd.type, 4);
-                stream.Write(",", false);
-            }
+
+            if(AmmoTypes != null)
+                foreach (int type in AmmoTypes)
+                {
+                    stream.Write(type, 4);
+                    stream.Write(",", false);
+                }
             stream.Write(";", false);
+
+            stream.Write(UseEffect, 4);
+
             return stream;
         }
     }
@@ -94,17 +120,25 @@ namespace ODB
         public int count;
         public new ItemDefinition Definition;
         public List<Mod> Mods;
-        //doesn't actually need to be "magic" per se
-        public Spell UseEffect;
 
         //not to file
         public bool Charged;
 
         //wrapping directly to the def for ease
         public List<DollSlot> equipSlots {
-            get
-            {
-                return Definition.equipSlots;
+            get { return Definition.equipSlots; }
+        }
+
+        public int type {
+            get { return Definition.type; }
+        }
+
+        public Spell UseEffect
+        {
+            get {
+                return Spell.Spells[
+                    Definition.UseEffect
+                ];
             }
         }
 
@@ -114,12 +148,14 @@ namespace ODB
             ItemDefinition def,
             //might not make 100% sense, but non-stacking items are 0
             //this so we can easily separate stacking, nonstacking and charged
-            int count = 0
+            int count = 0,
+            List<Mod> Mods = null
         ) : base(xy, def) {
             id = IDCounter++;
             this.count = count;
             this.Definition = def;
-            Mods = new List<Mod>();
+            this.Mods = new List<Mod>();
+            if (Mods != null) this.Mods.AddRange(Mods);
             Charged = !Definition.stacking && count > 0;
         }
 
@@ -188,10 +224,12 @@ namespace ODB
         public Stream WriteItem()
         {
             Stream stream = WriteGOBject();
+
             stream.Write(Definition.type, 4);
             stream.Write(id, 4);
             stream.Write(mod, 2);
             stream.Write(count, 2);
+
             foreach (Mod m in Mods)
             {
                 stream.Write((int)m.Type, 2);
@@ -200,8 +238,6 @@ namespace ODB
                 stream.Write(",", false);
             }
             stream.Write(";", false);
-            if (UseEffect == null) stream.Write("XXXX", false);
-            else stream.Write(UseEffect.id, 4);
 
             return stream;
         }
@@ -223,14 +259,10 @@ namespace ODB
             {
                 Mod m = new Mod(
                     (ModType)IO.ReadHex(ss.Split(':')[0]),
-                    IO.ReadHex(ss.Split(':')[1])
+                             IO.ReadHex(ss.Split(':')[1])
                 );
                 Mods.Add(m);
             }
-
-            string effect = stream.ReadString(4);
-            if (effect.Contains("X")) UseEffect = null;
-            else UseEffect = Spell.Spells[IO.ReadHex(effect)];
 
             return stream;
         }

@@ -89,11 +89,6 @@ namespace ODB
             stream.Write(Definition.type, 4);
             stream.Write(xy);
             return stream;
-
-            /*string s = "";
-            s += IO.WriteHex(Definition.type, 4);
-            s += IO.Write(xy);
-            return s;*/
         }
 
         public Stream ReadGOBject(string s)
