@@ -62,10 +62,12 @@ namespace ODB
                     foreach (Item item in Game.player.inventory)
                         if (item.Definition.type == it.Definition.type)
                         {
-                            alreadyHolding = true;
-                            item.count+=it.count;
-                            //merging into the already held item
-                            Game.Level.AllItems.Remove(it);
+                            if(!Game.player.IsEquipped(item)) {
+                                alreadyHolding = true;
+                                item.count+=it.count;
+                                //merging into the already held item
+                                Game.Level.AllItems.Remove(it);
+                            }
                         }
                     if (!alreadyHolding)
                         Game.player.inventory.Add(it);
@@ -74,9 +76,7 @@ namespace ODB
                 {
                     Game.player.inventory.Add(it);
                 }
-                //Game.log.Add("Picked up " + it.Definition.name + ".");
                 Game.log.Add("Picked up " + it.GetName() + ".");
-
                 Game.player.Pass();
             }
             else
@@ -197,7 +197,7 @@ namespace ODB
         #region Wield/Sheath
         public static void Wield(string answer)
         {
-            Game.qpAnswerStack.Pop();
+            answer = Game.qpAnswerStack.Pop();
             if (answer.Length <= 0) return;
 
             int i = letterAnswerToIndex(answer[0]);
@@ -209,33 +209,55 @@ namespace ODB
                 if (it.Definition.equipSlots.Count > 0)
                     equipables.Add(it);
 
-            if (i >= Game.player.inventory.Count)
-            {
-                Game.log.Add("Invalid selection ("+answer[0]+").");
-                return;
-            }
-
-            if (!equipables.Contains(Game.player.inventory[i]))
-            {
-                Game.log.Add("Invalid selection ("+answer[0]+").");
-                return;
-            }
-
             Item selected = Game.player.inventory[i];
             bool canEquip = true;
             foreach (DollSlot ds in selected.Definition.equipSlots)
-            {
                 if (!Game.player.HasFree(ds))
                 {
                     canEquip = false;
                     Game.log.Add("You need to remove something first.");
                 }
-            }
 
             if (canEquip)
             {
                 Game.log.Add("Equipped "+ selected.GetName() + ".");
                 Game.player.Equip(selected);
+
+                Game.player.Pass();
+            }
+        }
+
+        public static void Wear(string answer)
+        {
+            //make sure we start using this instead
+            //so we can phase the argument out
+            answer = Game.qpAnswerStack.Pop();
+            //and this instead of letterAnswerToIndex, which was dumb
+            int i = IO.indexes.IndexOf(answer[0]);
+            Item it = Game.player.inventory[i];
+
+            bool canEquip = true;
+            foreach (DollSlot ds in it.Definition.equipSlots)
+                if (!Game.player.HasFree(ds))
+                {
+                    canEquip = false;
+                    Game.log.Add("You need to remove something first.");
+                }
+
+            if (canEquip)
+            {
+                //make sure we're not equipping "2x ..."
+                if (it.Definition.stacking && it.count > 1)
+                {
+                    Item clone = new Item(it.WriteItem().ToString());
+                    clone.id = Item.IDCounter++;
+                    clone.count--;
+                    it.count = 1;
+                    Game.player.inventory.Add(clone);
+                    Game.Level.AllItems.Add(clone);
+                }
+                Game.player.Equip(it);
+                Game.log.Add("Wore " + it.GetName() + ".");
 
                 Game.player.Pass();
             }
@@ -253,25 +275,53 @@ namespace ODB
                 return;
             }
 
-            bool itemWielded = false;
             Item it = null;
 
-            foreach (BodyPart bp in Game.player.PaperDoll.FindAll(
-                x => x.Type == DollSlot.Hand))
+            foreach (BodyPart bp in Game.player.PaperDoll)
                 if (bp.Item == Game.player.inventory[i]) {
-                    itemWielded = true;
                     it = bp.Item;
                 }
 
-            if (itemWielded)
-            {
-                foreach (BodyPart bp in Game.player.PaperDoll.FindAll(
-                    x => x.Type == DollSlot.Hand))
-                    if (bp.Item == it) bp.Item = null;
-                Game.log.Add("Sheathed " + it.GetName() + ".");
+            foreach (BodyPart bp in Game.player.PaperDoll)
+                if (bp.Item == it) bp.Item = null;
 
-                Game.player.Pass();
+            Game.log.Add("Unequipped " + it.GetName() + ".");
+
+            Game.player.Pass();
+        }
+
+        public static void Remove(string answer)
+        {
+            answer = Game.qpAnswerStack.Pop();
+            if (answer.Length <= 0) return;
+
+            int i = IO.indexes.IndexOf(answer[0]);
+            Item it = null;
+
+            foreach (BodyPart bp in Game.player.PaperDoll)
+                if (bp.Item == Game.player.inventory[i])
+                    it = bp.Item;
+
+            foreach (BodyPart bp in Game.player.PaperDoll)
+                if (bp.Item == it) bp.Item = null;
+
+            Game.log.Add("Removed " + it.GetName());
+
+            Item stack = null;
+            if (it.Definition.stacking)
+                foreach (Item item in Game.player.inventory)
+                    if (
+                        item.Definition.type == it.Definition.type &&
+                        item != it
+                    ) stack = item;
+
+            if (stack != null)
+            {
+                stack.count += it.count;
+                Game.player.inventory.Remove(it);
+                Game.Level.AllItems.Remove(it);
             }
+
         }
         #endregion
 
@@ -538,7 +588,9 @@ namespace ODB
             #endregion
 
             #region wield/wear/sheath
-            if (IO.KeyPressed(Keys.W))
+            bool wield = IO.KeyPressed(Keys.W) && !IO.shift;
+            bool wear = IO.KeyPressed(Keys.W) && IO.shift;
+            if (wield || wear)
             {
                 List<Item> equipables = new List<Item>();
 
@@ -546,14 +598,14 @@ namespace ODB
                     //is it wieldable?
                     if (
                         it.Definition.equipSlots.Contains(DollSlot.Hand)
-                        && !IO.shift
+                        && wield
                     )
                         equipables.Add(it);
                     else if (
                     //wearable?
                         it.Definition.equipSlots.FindAll(
                             x => x != DollSlot.Hand
-                        ).Count > 0 && IO.shift
+                        ).Count > 0 && wear
                     )
                         equipables.Add(it);
 
@@ -577,35 +629,48 @@ namespace ODB
                     }
                     _q += "]";
 
-                    IO.AskPlayer(
-                        _q,
-                        InputType.QuestionPromptSingle,
-                        Player.Wield
-                    );
+                    if(wield)
+                        IO.AskPlayer(
+                            _q,
+                            InputType.QuestionPromptSingle,
+                            Player.Wield
+                        );
+                    else
+                        IO.AskPlayer(
+                            _q,
+                            InputType.QuestionPromptSingle,
+                            Player.Wear
+                        );
                 }
                 else
                 {
                     Game.log.Add("Nothing to " +
-                        (IO.shift ? "wear" : "wield") + ".");
+                        (wield ? "wield" : "wear") + ".");
                 }
             }
 
-            if (IO.KeyPressed(Keys.S) && IO.shift)
+            //we probably actually want to split these
+            //but it works well enough for right now
+            bool sheath = IO.KeyPressed(Keys.S) && IO.shift;
+            bool remove = IO.KeyPressed(Keys.R) && IO.shift;
+            if (sheath || remove)
             {
                 List<Item> equipped = new List<Item>();
                 foreach (
                     BodyPart bp in Game.player.PaperDoll.FindAll(
-                        x => x.Type == DollSlot.Hand
+                        x =>
+                            (x.Type == DollSlot.Hand && sheath) ||
+                            (x.Type != DollSlot.Hand && remove)
                     )
-                )
-                {
+                ) {
                     if (bp.Item != null)
                         equipped.Add(bp.Item);
                 }
 
                 if (equipped.Count > 0)
                 {
-                    string _q = "Sheath what? [";
+                    string _q =
+                        (sheath?"Sheath":"Remove")+" what? [";
                     IO.AcceptedInput.Clear();
                     foreach (Item it in equipped)
                     {
@@ -616,15 +681,24 @@ namespace ODB
                     }
                     _q += "]";
 
-                    IO.AskPlayer(
-                        _q,
-                        InputType.QuestionPromptSingle,
-                        Player.Sheath
-                    );
+                    if(sheath)
+                        IO.AskPlayer(
+                            _q,
+                            InputType.QuestionPromptSingle,
+                            Player.Sheath
+                        );
+                    else
+                        IO.AskPlayer(
+                            _q,
+                            InputType.QuestionPromptSingle,
+                            Player.Remove
+                        );
                 }
                 else
                 {
-                    Game.log.Add("Nothing to sheath.");
+                    Game.log.Add("Nothing to " +
+                        (sheath ? "sheath." : "remove.")
+                    );
                 }
             }
             #endregion
