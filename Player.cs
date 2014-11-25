@@ -172,7 +172,10 @@ namespace ODB
                 else
                 {
                     //copy the item
-                    Item droppedStack = new Item(it.WriteItem());
+                    Item droppedStack =
+                        new Item(
+                            it.WriteItem().ToString()
+                        );
                     //change id
                     droppedStack.id = Item.IDCounter++;
                     droppedStack.count = count;

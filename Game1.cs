@@ -13,8 +13,13 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Graphics;
 using xnaPoint = Microsoft.Xna.Framework.Point;
 
-//~~~ QUEST TRACKER for 23 nov ~~~
+//~~~ QUEST TRACKER for ?? nov ~~~
 // * Item value and paid-for status
+
+//~~~ QUEST TRACKER for 25 nov ~~~
+// * Save actor spellbooks to file
+// * Scrolls and/or wands (should be fairly similar)
+//   * In essence, item with a spell attached to it.
 
 namespace ODB
 {
@@ -130,25 +135,20 @@ namespace ODB
             scrW = 80; scrH = 25;
             lvlW = 160; lvlH = 25;
 
-            Level = new ODB.Level(lvlW, lvlH);
 
             Brains = new List<Brain>();
+
+            IO.ReadActorDefinitionsFromFile("Data/actors.def");
+            IO.ReadItemDefinitionsFromFile("Data/items.def");
+
+            Level = new ODB.Level(lvlW, lvlH);
+            Level.LoadLevelSave("Save/newlevel.sv");
 
             logSize = 3;
             log = new List<string>();
             log.Add("Welcome!");
 
             qpAnswerStack = new Stack<string>();
-
-            IO.ReadActorDefinitionsFromFile("Data/actors.def");
-            IO.ReadItemDefinitionsFromFile("Data/items.def");
-
-            IO.ReadLevelFromFile("Save/level.sv");
-            IO.ReadRoomsFromFile("Save/rooms.sv");
-            IO.ReadAllItemsFromFile("Save/items.sv");
-            IO.ReadAllActorsFromFile("Save/actors.sv");
-            IO.ReadSeenFromFile("Save/seen.sv");
-            player = Util.GetActorByID(0);
 
             projectiles = new List<Projectile>();
 
@@ -170,12 +170,6 @@ namespace ODB
             );
 
             player.Spellbook.Add(ForceBolt);
-
-            for (int x = 0; x < lvlW; x++)
-                for (int y = 0; y < lvlH; y++)
-                    Game.Level.Seen[x, y] = false;
-            //currently, let's just overwrite it, while testing stuff
-            IO.WriteSeenToFile("Save/seen.sv");
 
             base.Initialize();
         }
@@ -303,7 +297,7 @@ namespace ODB
             );
 
             //todo: edge scrolling
-            int scrollSpeed = 3; ;
+            int scrollSpeed = 3;
             if (IO.KeyPressed(Keys.Right))
                 camX+=scrollSpeed;
             if(IO.KeyPressed(Keys.Left))
@@ -320,35 +314,17 @@ namespace ODB
             #endregion camera
 
             #region f-keys //devstuff
-            //temp disable so we don't botch things
-            /*if (KeyPressed(Keys.F1))
+            if (IO.KeyPressed(Keys.F1))
             {
-                IO.WriteLevelToFile("Save/level.sv");
-                IO.WriteRoomsToFile("Save/rooms.sv");
-                IO.WriteAllItemsToFile("Save/items.sv");
-                IO.WriteAllActorsToFile("Save/actors.sv");
-                IO.WriteSeenToFile("Save/seen.sv");
-            }*/
-
-            if (IO.KeyPressed(Keys.F2))
-            {
-                IO.ReadLevelFromFile("Save/level.sv");
-                IO.ReadRoomsFromFile("Save/rooms.sv");
-                IO.ReadAllItemsFromFile("Save/items.sv");
-                IO.ReadAllActorsFromFile("Save/actors.sv");
-                IO.ReadSeenFromFile("Save/seen.sv");
-                player = Util.GetActorByID(0);
+                IO.WriteActorDefinitionsToFile("Save/foo.def");
+                IO.WriteItemDefinitionsToFile("Save/bar.def");
             }
 
             if (IO.KeyPressed(Keys.F3))
-            {
                 Level.WriteLevelSave("Save/newlevel.sv");
-            }
 
             if(IO.KeyPressed(Keys.F4))
-            {
                 Level.LoadLevelSave("Save/newlevel.sv");
-            }
             #endregion
 
             //only do player movement if we're not currently asking something
@@ -362,24 +338,9 @@ namespace ODB
                     IO.TargetInput();
                     break;
                 case InputType.PlayerInput:
-                    if(player.Cooldown == 0)
+                    if (player.Cooldown == 0)
                         Player.PlayerInput();
-                    else
-                        while(Game.player.Cooldown > 0)
-                        {
-                            projectiles.RemoveAll(x => x.Die);
-
-                            foreach (Brain b in Brains)
-                                if (
-                                    Game.Level.WorldActors.Contains(
-                                        b.MeatPuppet
-                                    ) && b.MeatPuppet.Cooldown == 0
-                                )
-                                    b.Tick();
-
-                            foreach (Brain b in Brains) b.MeatPuppet.Cooldown--;
-                            Game.player.Cooldown--;
-                        }
+                    else ProcessNPCs();
                     break;
                 //if this happens,
                 //you're breaking some kind of weird shit somehow
@@ -398,12 +359,60 @@ namespace ODB
             base.Update(gameTime);
         }
 
+        public void ProcessNPCs()
+        {
+            while(Game.player.Cooldown > 0)
+            {
+                projectiles.RemoveAll(x => x.Die);
+
+                foreach (Brain b in Brains)
+                    if (
+                        Game.Level.WorldActors.Contains(
+                            b.MeatPuppet
+                        ) && b.MeatPuppet.Cooldown == 0
+                    )
+                        b.Tick();
+
+                foreach (Brain b in Brains) b.MeatPuppet.Cooldown--;
+                Game.player.Cooldown--;
+            }
+        }
+
         public void RenderConsoles()
         {
-            Rect screen = new Rect(new Point(camX, camY), new Point(80, 25));
 
             #region world
-            #region map to screen
+            RenderMap();
+            RenderItems();
+            RenderActors();
+            RenderProjectiles();
+            #endregion
+
+            #region render ui
+            RenderLog();
+            RenderPrompt();
+            RenderInventory();
+            RenderStatus();
+
+            #region reticule
+            if (IO.IOState == InputType.Targeting)
+            {
+                dfc.CellData[target.x, target.y].Background =
+                Util.InvertColor(
+                    dfc.CellData[target.x, target.y].Background
+                );
+                dfc.CellData[target.x, target.y].Foreground =
+                Util.InvertColor(
+                    dfc.CellData[target.x, target.y].Foreground
+                );
+            }
+            #endregion
+
+            #endregion
+        }
+
+        public void RenderMap()
+        {
             dfc.CellData.Clear();
 
             for (int x = 0; x < scrW; x++) for (int y = 0; y < scrH; y++)
@@ -415,11 +424,6 @@ namespace ODB
 
                 bool inVision = Game.player.Vision[x + camX, y + camY];
 
-                dfc.CellData.SetBackground(x, y, t.bg * 1f);
-                dfc.CellData.SetForeground(
-                    x, y, t.fg * (inVision ? 1f : 0.6f)
-                );
-
                 string tileToDraw = t.tile;
                 //doors override the normal tile
                 //which shouldn't be a problem
@@ -427,11 +431,19 @@ namespace ODB
                 if (t.doorState == Door.Closed) tileToDraw = "+";
                 if (t.doorState == Door.Open) tileToDraw = "/";
 
-                dfc.CellData.Print(x, y, tileToDraw);
+                DrawToScreen(
+                    new Point(x, y),
+                    t.bg,
+                    t.fg * (inVision ? 1f : 0.6f),
+                    tileToDraw
+                );
             }
-            #endregion
+        }
 
-            #region render items to screen
+        public void RenderItems()
+        {
+            Rect screen = new Rect(new Point(camX, camY), new Point(80, 25));
+
             int[,] itemCount = new int[lvlW, lvlH];
 
             foreach (Item i in Game.Level.WorldItems)
@@ -451,9 +463,12 @@ namespace ODB
                 //not sure I like the + for pile, since doors are +
                 else DrawToScreen(i.xy, null, Color.White, "+");
             }
-            #endregion
+        }
 
-            #region render actors to screen
+        public void RenderActors()
+        {
+            Rect screen = new Rect(new Point(camX, camY), new Point(80, 25));
+
             int[,] actorCount = new int[lvlW, lvlH];
 
             foreach (Actor a in Game.Level.WorldActors)
@@ -472,21 +487,25 @@ namespace ODB
                 //draw a "pile" (shouldn't happen at all atm
                 else DrawToScreen(a.xy, null, Color.White, "*");
             }
-            #endregion
+        }
 
-            #region projectiles to screen
-            //visible for ~half a sec, if that, but we'll keep it until we
-            //(possibly) add a trail
+        public void RenderProjectiles()
+        {
+            Rect screen = new Rect(new Point(camX, camY), new Point(80, 25));
+
             foreach (Projectile p in projectiles)
-                dfc.CellData.Print(
-                    p.xy.x, p.xy.y,
-                    "*", Color.Cyan
-                );
-            #endregion
-            #endregion
+            {
+                Point coords = p.xy + new Point(camX, camY);
+                if(screen.ContainsPoint(coords))
+                    dfc.CellData.Print(
+                        p.xy.x, p.xy.y,
+                        "*", Color.Cyan
+                    );
+            }
+        }
 
-            #region render ui
-            #region log
+        public void RenderLog()
+        {
             logConsole.CellData.Clear();
             logConsole.CellData.Fill(Color.White, Color.Black, ' ', null);
             for (
@@ -498,9 +517,10 @@ namespace ODB
                     0, logConsole.ViewArea.Height - (n + 1),
                     log[i - 1]
                 );
-            #endregion
+        }
 
-            #region inputrow
+        public void RenderPrompt()
+        {
             inputRowConsole.IsVisible = IO.IOState != InputType.PlayerInput;
             if (inputRowConsole.IsVisible)
             {
@@ -515,9 +535,10 @@ namespace ODB
                     0, 0, IO.Question + " " + IO.Answer
                 );
             }
-            #endregion
+        }
 
-            #region inventory
+        public void RenderInventory()
+        {
             int inventoryW = inventoryConsole.ViewArea.Width;
             int inventoryH = inventoryConsole.ViewArea.Height;
 
@@ -561,9 +582,10 @@ namespace ODB
                     2, i + 1, name
                 );
             }
-            #endregion
+        }
 
-            #region statrow
+        public void RenderStatus()
+        {
             statRowConsole.CellData.Clear();
             statRowConsole.CellData.Fill(Color.White, Color.Black, ' ', null);
 
@@ -598,22 +620,6 @@ namespace ODB
 
             statRowConsole.CellData.Print(0, 0, namerow);
             statRowConsole.CellData.Print(0, 1, statrow);
-            #endregion
-
-            #region reticule
-            if (IO.IOState == InputType.Targeting)
-            {
-                dfc.CellData[target.x, target.y].Background =
-                Util.InvertColor(
-                    dfc.CellData[target.x, target.y].Background
-                );
-                dfc.CellData[target.x, target.y].Foreground =
-                Util.InvertColor(
-                    dfc.CellData[target.x, target.y].Foreground
-                );
-            }
-            #endregion
-            #endregion
         }
 
         #region engineshit

@@ -39,27 +39,28 @@ namespace ODB
             ReadGObjectDefinition(s);
         }
 
-        public int ReadGObjectDefinition(string s)
+        public Stream ReadGObjectDefinition(string s)
         {
-            int read = 0;
-            type = IO.ReadHex(s, 4, ref read, read);
-            bg = IO.ReadNullableColor(s, ref read, read);
-            fg = IO.ReadColor(s, ref read, read);
-            tile = s.Substring(read++, 1);
-            name = IO.ReadString(s, ref read, read);
+            Stream str = new Stream(s);
+            type = str.ReadHex(4);
+            bg = str.ReadNullableColor();
+            fg = str.ReadColor();
+            tile = str.ReadString(1);
+            name = str.ReadString();
+
             Definitions[this.type] = this;
-            return read;
+            return str;
         }
 
-        public string WriteGObjectDefinition()
+        public Stream WriteGObjectDefinition()
         {
-            string output = "";
-            output += IO.WriteHex(type, 4);
-            output += IO.Write(bg);
-            output += IO.Write(fg);
-            output += tile;
-            output += IO.Write(name);
-            return output;
+            Stream stream = new Stream();
+            stream.Write(type, 4);
+            stream.Write(bg);
+            stream.Write(fg);
+            stream.Write(tile, false);
+            stream.Write(name);
+            return stream;
         }
     }
 
@@ -82,24 +83,28 @@ namespace ODB
             ReadGOBject(s);
         }
 
-        public string WriteGOBject()
+        public Stream WriteGOBject()
         {
-            string s = "";
+            Stream stream = new Stream();
+            stream.Write(Definition.type, 4);
+            stream.Write(xy);
+            return stream;
+
+            /*string s = "";
             s += IO.WriteHex(Definition.type, 4);
             s += IO.Write(xy);
-            return s;
+            return s;*/
         }
 
-        //return how many characters we read
-        //so subclasses know where to start
-        public int ReadGOBject(string s)
+        public Stream ReadGOBject(string s)
         {
-            int read = 0;
-            this.Definition = gObjectDefinition.Definitions[
-                IO.ReadHex(s, 4, ref read, read)
+            Stream stream = new Stream(s);
+            Definition = gObjectDefinition.Definitions[
+                stream.ReadHex(4)
             ];
-            this.xy = IO.ReadPoint(s, ref read, read);
-            return read;
+
+            xy = stream.ReadPoint();
+            return stream;
         }
     }
 

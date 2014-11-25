@@ -89,16 +89,13 @@ namespace ODB
                 {
                     if (Map[x, y] != null)
                     {
-                        output += Map[x, y].writeTile();
+                        output += Map[x, y].WriteTile();
                         output += ";";
                         output += IO.Write(Seen[x, y]);
                     }
                     output += "##";
                 }
             output += "</LEVEL>";
-
-            //TODO WHEN YOU'RE BACK FROM DINNER
-            //ROOMS
 
             foreach (Room room in Rooms)
                 output += room.WriteRoom() + "##";
@@ -114,22 +111,6 @@ namespace ODB
 
             IO.WriteToFile(path, output);
             return output;
-        }
-
-        public string ReadSection(
-            string file,
-            string section,
-            ref int read
-        ) {
-            string divider = "</" + section.ToUpper() + ">";
-            file = file.Substring(read, file.Length - read);
-            string content =
-                file.Split(
-                    new string[] { divider },
-                    StringSplitOptions.None
-                )[0];
-            read += content.Length + ("</"+section.ToUpper()+">").Length;
-            return content;
         }
 
         public void LoadLevelSave(string path)

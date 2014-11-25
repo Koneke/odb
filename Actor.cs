@@ -39,41 +39,43 @@ namespace ODB
             ReadActorDefinition(s);
         }
 
-        public string WriteActorDefinition()
+        public Stream WriteActorDefinition()
         {
-            string output = WriteGObjectDefinition();
-            output += IO.WriteHex(strength, 2);
-            output += IO.WriteHex(dexterity, 2);
-            output += IO.WriteHex(intelligence, 2);
-            output += IO.WriteHex(hpMax, 2);
-            output += IO.WriteHex(speed, 2);
-            output += IO.WriteHex(quickness, 2);
+            Stream stream = WriteGObjectDefinition();
+            stream.Write(strength, 2);
+            stream.Write(dexterity, 2);
+            stream.Write(intelligence, 2);
+            stream.Write(hpMax, 2);
+            stream.Write(speed, 2);
+            stream.Write(quickness, 2);
+
             foreach (DollSlot ds in BodyParts)
-                output += (int)ds + ",";
-            output += ";";
-            output += IO.WriteHex(CorpseType, 4);
-            return output;
+                stream.Write((int)ds + ",", false);
+            stream.Write(";", false);
+            stream.Write(CorpseType, 4);
+            return stream;
         }
 
-        public int ReadActorDefinition(string s)
+        public Stream ReadActorDefinition(string s)
         {
-            int read = ReadGObjectDefinition(s);
-            strength = IO.ReadHex(s, 2, ref read, read);
-            dexterity = IO.ReadHex(s, 2, ref read, read);
-            intelligence = IO.ReadHex(s, 2, ref read, read);
-            hpMax = IO.ReadHex(s, 2, ref read, read);
-            speed = IO.ReadHex(s, 2, ref read, read);
-            quickness = IO.ReadHex(s, 2, ref read, read);
+            Stream stream = ReadGObjectDefinition(s);
+
+            strength = stream.ReadHex(2);
+            dexterity = stream.ReadHex(2);
+            intelligence = stream.ReadHex(2);
+            hpMax = stream.ReadHex(2);
+            speed = stream.ReadHex(2);
+            quickness = stream.ReadHex(2);
 
             BodyParts = new List<DollSlot>();
-            foreach (string ss in IO.ReadString(s, ref read, read).Split(','))
+            foreach (string ss in stream.ReadString().Split(','))
                 if(ss != "")
                     BodyParts.Add((DollSlot)int.Parse(ss));
 
-            CorpseType = IO.ReadHex(s, 4, ref read, read);
+            CorpseType = stream.ReadHex(4);
 
             ActorDefinitions[type] = this;
-            return read;
+            return stream;
         }
     }
 
@@ -81,7 +83,7 @@ namespace ODB
     {
         public static int IDCounter = 0;
 
-    #region written to save
+        #region written to save
         public int id;
 
         public new ActorDefinition Definition;
@@ -91,11 +93,11 @@ namespace ODB
         public List<BodyPart> PaperDoll;
         public List<Item> inventory;
         public List<Spell> Spellbook; //not yet written to file
-    #endregion
+        #endregion
 
-    #region temporary/cached (nonwritten)
+        #region temporary/cached (nonwritten)
         public bool[,] Vision;
-    #endregion
+        #endregion
 
         public Actor(
             Point xy, ActorDefinition def
@@ -396,45 +398,50 @@ namespace ODB
             }
         }
 
-        public string WriteActor()
+        public Stream WriteActor()
         {
-            string output = base.WriteGOBject();
-            output += IO.WriteHex(Definition.type, 4);
-            output += IO.WriteHex(id, 4);
-            output += IO.WriteHex(hpCurrent, 2);
-            output += IO.WriteHex(Cooldown, 2);
+            Stream stream = WriteGOBject();
+            stream.Write(Definition.type, 4);
+            stream.Write(id, 4);
+            stream.Write(hpCurrent, 2);
+            stream.Write(Cooldown, 2);
 
             foreach (BodyPart bp in PaperDoll)
             {
-                output += IO.WriteHex((int)bp.Type, 2) + ":";
+                stream.Write((int)bp.Type, 2);
+                stream.Write(":", false);
 
-                if (bp.Item == null) output += "XXXX";
-                else output += IO.WriteHex(bp.Item.id, 4);
+                if (bp.Item == null) stream.Write("XXXX", false);
+                else stream.Write(bp.Item.id, 4);
 
-                output += ",";
+                stream.Write(",", false);
             }
-            output += ";";
+            stream.Write(";", false);
 
             foreach (Item it in inventory)
-                output += IO.WriteHex(it.id, 4) + ",";
-            output += ";";
+            {
+                stream.Write(it.id, 4);
+                stream.Write(",", false);
+            }
+            stream.Write(";", false);
 
-            return output;
+            return stream;
         }
-        public int ReadActor(string s)
+        public Stream ReadActor(string s)
         {
-            int read = base.ReadGOBject(s);
+            Stream stream = ReadGOBject(s);
             Definition =
                 ActorDefinition.ActorDefinitions[
-                    IO.ReadHex(s, 4, ref read, read)
+                    stream.ReadHex(4)
                 ];
-            id = IO.ReadHex(s, 4, ref read, read);
-            hpCurrent = IO.ReadHex(s, 2, ref read, read);
-            Cooldown = IO.ReadHex(s, 2, ref read, read);
+
+            id = stream.ReadHex(4);
+            hpCurrent = stream.ReadHex(2);
+            Cooldown = stream.ReadHex(2);
 
             PaperDoll = new List<BodyPart>();
             foreach (string ss in
-                IO.ReadString(s, ref read, read).Split(
+                stream.ReadString().Split(
                     new string[] { "," },
                     StringSplitOptions.RemoveEmptyEntries
                 ).ToList()
@@ -450,7 +457,7 @@ namespace ODB
 
             inventory = new List<Item>();
             foreach (string ss in
-                IO.ReadString(s, ref read, read).Split(
+                stream.ReadString().Split(
                     new string[] { "," },
                     StringSplitOptions.RemoveEmptyEntries
                 ).ToList()
@@ -460,7 +467,7 @@ namespace ODB
                 );
             }
 
-            return read;
+            return stream;
         }
 
         public void ResetVision()

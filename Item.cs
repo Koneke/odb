@@ -36,32 +36,34 @@ namespace ODB
             ReadItemDefinition(s);
         }
 
-        public int ReadItemDefinition(string s)
+        public Stream ReadItemDefinition(string s)
         {
-            int read = ReadGObjectDefinition(s);
-            Damage = IO.ReadString(s, ref read, read);
-            AC = IO.ReadHex(s, 2, ref read, read);
-            stacking = IO.ReadBool(s, ref read, read);
+            Stream stream = ReadGObjectDefinition(s);
+            
+            Damage = stream.ReadString();
+            AC = stream.ReadHex(2);
+            stacking = stream.ReadBool();
+            string slots = stream.ReadString();
 
-            string slots = IO.ReadString(s, ref read, read);
             equipSlots = new List<DollSlot>();
             foreach (string ss in slots.Split(','))
                 if(ss != "")
                     equipSlots.Add((DollSlot)int.Parse(ss));
 
             ItemDefinitions[type] = this;
-            return read;
+            return stream;
         }
 
-        public string WriteItemDefinition()
+        public Stream WriteItemDefinition()
         {
-            string output = WriteGObjectDefinition();
-            output += IO.Write(Damage);
-            output += IO.WriteHex(AC, 2);
-            output += IO.Write(stacking);
+            Stream stream = WriteGObjectDefinition();
+            stream.Write(Damage);
+            stream.Write(AC, 2);
+            stream.Write(stacking);
+
             foreach (DollSlot ds in equipSlots)
-                output += (int)ds + ",";
-            return output;
+                stream.Write((int)ds + ",", false);
+            return stream;
         }
     }
 
@@ -92,39 +94,37 @@ namespace ODB
             ReadItem(s);
         }
 
-        public string WriteItem()
+        public Stream WriteItem()
         {
-            //utilize our definition instead
-            string s = base.WriteGOBject();
-            s += IO.WriteHex(Definition.type, 4);
-            s += IO.WriteHex(id, 4);
-            s += IO.WriteHex(mod, 2); //even 1 should be enough, but eh
-            s += IO.WriteHex(count, 2);
+            Stream stream = WriteGOBject();
+            stream.Write(Definition.type, 4);
+            stream.Write(id, 4);
+            stream.Write(mod, 2);
+            stream.Write(count, 2);
             foreach (Mod m in Mods)
             {
-                s += IO.WriteHex((int)m.Type, 2);
-                s += IO.Write(":", false);
-                s += IO.WriteHex((int)m.Value, 2);
-                s += ",";
+                stream.Write((int)m.Type, 2);
+                stream.Write(":", false);
+                stream.Write((int)m.Value, 2);
+                stream.Write(",", false);
             }
-            s += ";";
-            return s;
+            stream.Write(";", false);
+            return stream;
         }
 
-        public int ReadItem(string s)
+        public Stream ReadItem(string s)
         {
-            int read = base.ReadGOBject(s);
+            Stream stream = ReadGOBject(s);
             Definition =
                 ItemDefinition.ItemDefinitions[
-                    IO.ReadHex(s, 4, ref read, read)
+                    stream.ReadHex(4)
                 ];
-            id = IO.ReadHex(s, 4, ref read, read);
-            mod = IO.ReadHex(s, 2, ref read, read);
-            count = IO.ReadHex(s, 2, ref read, read);
+            id = stream.ReadHex(4);
+            mod = stream.ReadHex(2);
+            count = stream.ReadHex(2);
 
             Mods = new List<Mod>();
-            string modString = IO.ReadString(s, ref read, read);
-            foreach (string ss in modString.Split(
+            foreach (string ss in stream.ReadString().Split(
                 new char[]{','}, StringSplitOptions.RemoveEmptyEntries))
             {
                 Mod m = new Mod(
@@ -134,7 +134,7 @@ namespace ODB
                 Mods.Add(m);
             }
 
-            return read;
+            return stream;
         }
     }
 

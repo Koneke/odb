@@ -33,18 +33,19 @@ namespace ODB
             readTile(s);
         }
 
-        public string writeTile()
+        public Stream WriteTile()
         {
-            string s = "";
-            s += IO.Write(bg);
-            s += IO.Write(fg);
-            s += tile;
-            s += solid ? "1" : "0";
-            s += doorState == Door.None ?
-                "0" : (doorState == Door.Open ?
-                    "1" : "2"
+            Stream stream = new Stream();
+            stream.Write(bg);
+            stream.Write(fg);
+            stream.Write(tile, false);
+            stream.Write(solid);
+            stream.Write(
+                doorState == Door.None ?
+                "0" : (doorState == Door.Open ? "1" : "2"),
+                false
             );
-            return s;
+            return stream;
         }
 
         public void readTile(string s)
@@ -185,20 +186,20 @@ namespace ODB
             return output;
         }
 
-        public int ReadRoom(string s)
+        public Stream ReadRoom(string s)
         {
-            int read = 0;
-            int numRects = IO.ReadHex(s, 2, ref read, read);
+            Stream stream = new Stream(s);
+            int numRects = stream.ReadHex(2);
             rects = new List<Rect>();
             for (int i = 0; i < numRects; i++)
             {
                 rects.Add(new Rect(
-                    IO.ReadPoint(s, ref read, read),
-                    IO.ReadPoint(s, ref read, read)
+                    stream.ReadPoint(),
+                    stream.ReadPoint()
                     )
                 );
             }
-            return read;
+            return stream;
         }
     }
 
