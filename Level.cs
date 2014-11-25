@@ -6,6 +6,7 @@ namespace ODB
     public class Level
     {
         public int LevelWidth, LevelHeight;
+        public Point LevelSize;
 
         public Tile[,] Map;
         public bool[,] Seen;
@@ -20,7 +21,13 @@ namespace ODB
         ) {
             this.LevelWidth = LevelWidth;
             this.LevelHeight = LevelHeight;
+            this.LevelSize = new Point(LevelWidth, LevelHeight);
             Clear();
+        }
+
+        public Level(string s)
+        {
+            LoadLevelSave(s);
         }
 
         public void Clear()
@@ -128,6 +135,7 @@ namespace ODB
             Point levelSize = IO.ReadPoint(dimensions);
             LevelWidth = levelSize.x;
             LevelHeight = levelSize.y;
+            LevelSize = new Point(LevelWidth, LevelHeight);
             Clear();
 
             string levelSection =

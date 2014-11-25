@@ -43,15 +43,12 @@ namespace ODB
 
         public List<Level> Levels;
         public Level Level;
-        public Level Second;
         public List<Brain> Brains;
-        public List<Projectile> projectiles;
 
         public Actor player;
 
         int camX, camY;
         int scrW, scrH;
-        public int lvlW, lvlH;
 
         int logSize;
         public List<string> log;
@@ -103,8 +100,9 @@ namespace ODB
             SadConsole.Engine.ConsoleRenderStack.Add(inventoryConsole);
         }
 
-        void SetupBrains() {
-            Brains.Clear();
+        public void SetupBrains() {
+            if(Brains == null) Brains = new List<Brain>();
+            else Brains.Clear();
             foreach (Actor actor in Level.WorldActors)
                 //shouldn't be needed, but
                 if (actor.id == 0) Game.player = actor;
@@ -116,7 +114,30 @@ namespace ODB
             Level.WorldActors.Remove(player);
             Level = newLevel;
             Level.WorldActors.Add(player);
+            foreach (Actor a in Level.WorldActors)
+                //reset vision, incase the level we moved to is a different size
+                a.Vision = null;
             SetupBrains();
+        }
+
+        void SetupMagic()
+        {
+            Spell Forcebolt = new Spell(
+                "Force bolt",
+                new List<Action<Point>>()
+                {
+                    delegate(Point p) {
+                        foreach (Actor a in Game.Level.ActorsOnTile(p))
+                        {
+                            Util.Game.log.Add(a.Definition.name +
+                                " is hit by the bolt!"
+                            );
+                            a.Damage(Util.Roll("1d4"));
+                        }
+                    }
+                },
+                7, 3
+            );
         }
 
         protected override void Initialize()
@@ -150,40 +171,12 @@ namespace ODB
 
             camX = camY = 0;
             scrW = 80; scrH = 25;
-            lvlW = 160; lvlH = 25;
-
-            Brains = new List<Brain>();
 
             IO.ReadActorDefinitionsFromFile("Data/actors.def");
             IO.ReadItemDefinitionsFromFile("Data/items.def");
+            SetupMagic(); //essentially magic defs, but we hardcode magic
 
-            #region majyyks
-            Spell Forcebolt = new Spell(
-                "Force bolt",
-                new List<Action<Point>>()
-                {
-                    delegate(Point p) {
-                        foreach (Actor a in Game.Level.ActorsOnTile(p))
-                        {
-                            Util.Game.log.Add(a.Definition.name +
-                                " is hit by the bolt!"
-                            );
-                            a.Damage(Util.Roll("1d4"));
-                        }
-                    }
-                },
-                7, 3
-            );
-            #endregion
-
-            Levels = new List<Level>();
-
-            Level = new Level(lvlW, lvlH);
-            Level.LoadLevelSave("Save/newlevel.sv");
-
-            Second = new Level(lvlW, lvlH);
-            Second.LoadLevelSave("Save/level2.sv");
-
+            IO.Load(); //load entire game (except definitions atm)
             SetupBrains();
 
             logSize = 3;
@@ -191,8 +184,6 @@ namespace ODB
             log.Add("Welcome!");
 
             qpAnswerStack = new Stack<string>();
-
-            projectiles = new List<Projectile>();
 
             base.Initialize();
         }
@@ -212,15 +203,9 @@ namespace ODB
                 );
             }
 
-            dfc.CellData.SetForeground(
-                xy.x - camX, xy.y - camY,
-                fg
-            );
+            dfc.CellData.SetForeground(xy.x - camX, xy.y - camY, fg);
 
-            dfc.CellData.Print(
-                xy.x - camX, xy.y - camY,
-                tile
-            );
+            dfc.CellData.Print(xy.x - camX, xy.y - camY, tile);
         }
 
         void DrawBorder(Console c, Rect r, Color bg, Color fg)
@@ -228,29 +213,25 @@ namespace ODB
             for (int x = 0; x < r.wh.x; x++)
             {
                 inventoryConsole.CellData.Print(
-                    x, 0, (char)205+"", Color.DarkGray);
+                    x, 0, (char)205+"", Color.DarkGray
+                );
                 inventoryConsole.CellData.Print(
-                    x, r.wh.y-1, (char)205+"", Color.DarkGray);
+                    x, r.wh.y-1, (char)205+"", Color.DarkGray
+                );
             }
             for (int y = 0; y < r.wh.y; y++)
             {
                 inventoryConsole.CellData.Print(
-                    0, y, (char)186+"", Color.DarkGray);
+                    0, y, (char)186+"", Color.DarkGray
+                );
                 inventoryConsole.CellData.Print(
-                    r.wh.x-1, y, (char)186+"", Color.DarkGray);
+                    r.wh.x-1, y, (char)186+"", Color.DarkGray
+                );
             }
-            inventoryConsole.CellData.Print(
-                0, 0, (char)201 + ""
-            );
-            inventoryConsole.CellData.Print(
-                r.wh.x-1, 0, (char)187 + ""
-            );
-            inventoryConsole.CellData.Print(
-                0, r.wh.y-1, (char)200 + ""
-            );
-            inventoryConsole.CellData.Print(
-                r.wh.x-1, r.wh.y-1, (char)188 + ""
-            );
+            inventoryConsole.CellData.Print(0, 0, (char)201 + "");
+            inventoryConsole.CellData.Print(r.wh.x-1, 0, (char)187 + "");
+            inventoryConsole.CellData.Print(0, r.wh.y-1, (char)200 + "");
+            inventoryConsole.CellData.Print(r.wh.x-1, r.wh.y-1, (char)188 + "");
         }
 
         public Point NumpadToDirection(char c)
@@ -258,34 +239,17 @@ namespace ODB
             Point p;
             switch (c)
             {
-                case (char)Keys.D7:
-                    p = new Point(-1, -1);
-                    break;
-                case (char)Keys.D8:
-                    p = new Point(0, -1);
-                    break;
-                case (char)Keys.D9:
-                    p = new Point(1, -1);
-                    break;
-                case (char)Keys.D4:
-                    p = new Point(-1, 0);
-                    break;
-                case (char)Keys.D6:
-                    p = new Point(1, 0);
-                    break;
-                case (char)Keys.D1:
-                    p = new Point(-1, 1);
-                    break;
-                case (char)Keys.D2:
-                    p = new Point(0, 1);
-                    break;
-                case (char)Keys.D3:
-                    p = new Point(1, 1);
-                    break;
-                default:
-                    throw new Exception(
-                        "Bad input (expected numpad keycode," +
-                        " got something weird instead).");
+                case (char)Keys.D7: p = new Point(-1, -1); break;
+                case (char)Keys.D8: p = new Point(0, -1); break;
+                case (char)Keys.D9: p = new Point(1, -1); break;
+                case (char)Keys.D4: p = new Point(-1, 0); break;
+                case (char)Keys.D6: p = new Point(1, 0); break;
+                case (char)Keys.D1: p = new Point(-1, 1); break;
+                case (char)Keys.D2: p = new Point(0, 1); break;
+                case (char)Keys.D3: p = new Point(1, 1); break;
+                default: throw new Exception(
+                        "Bad input (expected numpad keycode, " +
+                        "got something weird instead).");
             }
             return p;
         }
@@ -302,8 +266,7 @@ namespace ODB
                     IO.IOState = InputType.PlayerInput;
                 else if (inventoryConsole.IsVisible == true)
                     inventoryConsole.IsVisible = false;
-                else
-                    this.Exit();
+                else this.Exit();
             }
             if (IO.KeyPressed(Keys.Q)) this.Exit();
 
@@ -321,19 +284,15 @@ namespace ODB
 
             //todo: edge scrolling
             int scrollSpeed = 3;
-            if (IO.KeyPressed(Keys.Right))
-                camX+=scrollSpeed;
-            if(IO.KeyPressed(Keys.Left))
-                camX-=scrollSpeed;
-            if (IO.KeyPressed(Keys.Up))
-                camY+=scrollSpeed;
-            if(IO.KeyPressed(Keys.Down))
-                camY-=scrollSpeed;
+            if (IO.KeyPressed(Keys.Right)) camX += scrollSpeed;
+            if (IO.KeyPressed(Keys.Left)) camX -= scrollSpeed;
+            if (IO.KeyPressed(Keys.Up)) camY += scrollSpeed;
+            if (IO.KeyPressed(Keys.Down)) camY -= scrollSpeed;
 
             camX = Math.Max(0, camX);
-            camX = Math.Min(lvlW - scrW, camX);
+            camX = Math.Min(Game.Level.LevelSize.x - scrW, camX);
             camY = Math.Max(0, camY);
-            camY = Math.Min(lvlH - scrH, camY);
+            camY = Math.Min(Game.Level.LevelSize.y - scrH, camY);
             #endregion camera
 
             #region f-keys //devstuff
@@ -343,15 +302,35 @@ namespace ODB
                 IO.WriteItemDefinitionsToFile("Data/items.def");
             }
 
-            if (IO.KeyPressed(Keys.F3))
-                Level.WriteLevelSave("Save/newlevel.sv");
-
-            if(IO.KeyPressed(Keys.F4))
-                Level.LoadLevelSave("Save/newlevel.sv");
-
-            if (IO.KeyPressed(Keys.F5))
-                SwitchLevel(Second);
+            if (IO.KeyPressed(Keys.F5)) IO.Save();
+            if (IO.KeyPressed(Keys.F6)) IO.Load();
             #endregion
+
+            if (IO.KeyPressed(Keys.OemPeriod) && IO.shift)
+                if (Level.Map[
+                    Game.player.xy.x,
+                    Game.player.xy.y].stairs == Stairs.Down)
+                {
+                    int depth = Levels.IndexOf(Level);
+                    if (depth + 1 <= Levels.Count - 1)
+                    {
+                        SwitchLevel(Levels[depth + 1]);
+                        Game.log.Add("You descend the stairs...");
+                    }
+                }
+
+            if (IO.KeyPressed(Keys.OemComma) && IO.shift)
+                if (Level.Map[
+                    Game.player.xy.x,
+                    Game.player.xy.y].stairs == Stairs.Up)
+                {
+                    int depth = Levels.IndexOf(Level);
+                    if (depth - 1 >= 0)
+                    {
+                        SwitchLevel(Levels[depth - 1]);
+                        Game.log.Add("You ascend the stairs...");
+                    }
+                }
 
             //only do player movement if we're not currently asking something
             switch (IO.IOState)
@@ -389,8 +368,6 @@ namespace ODB
         {
             while(Game.player.Cooldown > 0)
             {
-                projectiles.RemoveAll(x => x.Die);
-
                 foreach (Brain b in Brains)
                     if (
                         Game.Level.WorldActors.Contains(
@@ -399,22 +376,18 @@ namespace ODB
                     )
                         b.Tick();
 
-                foreach (Brain b in Brains) b.MeatPuppet.Cooldown--;
+                foreach (Brain b in Brains)
+                    b.MeatPuppet.Cooldown--;
                 Game.player.Cooldown--;
             }
         }
 
         public void RenderConsoles()
         {
-
-            #region world
             RenderMap();
             RenderItems();
             RenderActors();
-            RenderProjectiles();
-            #endregion
 
-            #region render ui
             RenderLog();
             RenderPrompt();
             RenderInventory();
@@ -432,8 +405,6 @@ namespace ODB
                     dfc.CellData[target.x, target.y].Foreground
                 );
             }
-            #endregion
-
             #endregion
         }
 
@@ -472,7 +443,10 @@ namespace ODB
         {
             Rect screen = new Rect(new Point(camX, camY), new Point(80, 25));
 
-            int[,] itemCount = new int[lvlW, lvlH];
+            int[,] itemCount = new int[
+                Game.Level.LevelSize.x,
+                Game.Level.LevelSize.y
+            ];
 
             foreach (Item i in Game.Level.WorldItems)
                 itemCount[i.xy.x, i.xy.y]++;
@@ -497,7 +471,10 @@ namespace ODB
         {
             Rect screen = new Rect(new Point(camX, camY), new Point(80, 25));
 
-            int[,] actorCount = new int[lvlW, lvlH];
+            int[,] actorCount = new int[
+                Game.Level.LevelSize.x,
+                Game.Level.LevelSize.y
+            ];
 
             foreach (Actor a in Game.Level.WorldActors)
                 actorCount[a.xy.x, a.xy.y]++;
@@ -514,21 +491,6 @@ namespace ODB
                     );
                 //draw a "pile" (shouldn't happen at all atm
                 else DrawToScreen(a.xy, null, Color.White, "*");
-            }
-        }
-
-        public void RenderProjectiles()
-        {
-            Rect screen = new Rect(new Point(camX, camY), new Point(80, 25));
-
-            foreach (Projectile p in projectiles)
-            {
-                Point coords = p.xy + new Point(camX, camY);
-                if(screen.ContainsPoint(coords))
-                    dfc.CellData.Print(
-                        p.xy.x, p.xy.y,
-                        "*", Color.Cyan
-                    );
             }
         }
 

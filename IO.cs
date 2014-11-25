@@ -160,6 +160,39 @@ namespace ODB
         //like, the same kind? Could put below into file or save or something
 
         #region File IO
+        public static void Save()
+        {
+            Stream stream = new Stream();
+            stream.Write(Game.Levels.Count, 2);
+            for (int i = 0; i < Game.Levels.Count; i++)
+            {
+                if (Game.Levels[i].WorldActors.Contains(Game.player))
+                    stream.Write(i, 2);
+                Game.Levels[i].WriteLevelSave("Save/level" + i + ".sv");
+            }
+            WriteToFile("Save/game.sv", stream.ToString());
+        }
+
+        public static void Load()
+        {
+            Stream stream = new Stream(ReadFromFile("Save/game.sv"));
+            int levels = stream.ReadHex(2);
+            int playerLocation = stream.ReadHex(2);
+
+            if (Game.Levels != null)
+            {
+                for (int i = 0; i < Game.Levels.Count; i++)
+                    Game.Levels[i] = null;
+                Game.Levels.Clear();
+            } else Game.Levels = new List<Level>();
+
+            for (int i = 0; i < levels; i++)
+                Game.Levels.Add(new Level("Save/level" + i + ".sv"));
+
+            Game.Level = Game.Levels[playerLocation];
+            Game.SetupBrains();
+        }
+
         public static void WriteToFile(string path, string content)
         {
             string cwd = Directory.GetCurrentDirectory();

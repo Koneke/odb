@@ -124,18 +124,12 @@ namespace ODB
                 PaperDoll.Add(new BodyPart(ds));
             inventory = new List<Item>();
             Spellbook = new List<Spell>();
-
-            //not sure how this handles changing level sizes?
-            //maybe we just won't have that, we'll experiment later
-            Vision = new bool[Game.lvlW, Game.lvlH];
         }
 
         public Actor(string s)
             : base(s)
         {
             ReadActor(s);
-
-            Vision = new bool[Game.lvlW, Game.lvlH];
         }
 
         public bool HasFree(DollSlot slot)
@@ -297,7 +291,6 @@ namespace ODB
             if (Util.Roll("1d6") + Get(Stat.Intelligence) > s.CastDifficulty)
             {
                 Projectile p = s.Cast(this, target);
-                Game.projectiles.Add(p);
                 p.Move();
             }
             else Game.log.Add("The spell fizzles.");
@@ -454,8 +447,13 @@ namespace ODB
 
         public void ResetVision()
         {
-            for (int x = 0; x < Game.lvlW; x++)
-                for (int y = 0; y < Game.lvlH; y++)
+            if (Vision == null)
+                Vision = new bool[
+                    Game.Level.LevelSize.x,
+                    Game.Level.LevelSize.y
+                ];
+            for (int x = 0; x < Game.Level.LevelSize.x; x++)
+                for (int y = 0; y < Game.Level.LevelSize.y; y++)
                     Vision[x, y] = false;
         }
 

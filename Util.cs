@@ -49,8 +49,8 @@ namespace ODB
 
         public static List<Item> ItemsOnTile(Tile t)
         {
-            for (int x = 0; x < Game.lvlW; x++)
-                for (int y = 0; y < Game.lvlH; y++)
+            for (int x = 0; x < Game.Level.LevelSize.x; x++)
+                for (int y = 0; y < Game.Level.LevelSize.y; y++)
                     if (Game.Level.Map[x, y] == t)
                         return Game.Level.WorldItems.
                             FindAll(z => z.xy == new Point(x, y));
