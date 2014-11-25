@@ -140,6 +140,9 @@ namespace ODB
                 stream.Write(",", false);
             }
             stream.Write(";", false);
+            if (UseEffect == null) stream.Write("XXXX", false);
+            else stream.Write(UseEffect.id, 4);
+
             return stream;
         }
 
@@ -164,6 +167,10 @@ namespace ODB
                 );
                 Mods.Add(m);
             }
+
+            string effect = stream.ReadString(4);
+            if (effect.Contains("X")) UseEffect = null;
+            else UseEffect = Spell.Spells[IO.ReadHex(effect)];
 
             return stream;
         }

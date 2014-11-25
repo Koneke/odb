@@ -82,9 +82,9 @@ namespace ODB
                     );
                 }
 
-                if (Game.Level.Map[moveTo.x, moveTo.y].doorState == Door.Closed)
+                if (Game.Level.Map[moveTo.x, moveTo.y].door == Door.Closed)
                 {
-                    Game.Level.Map[moveTo.x, moveTo.y].doorState = Door.Open;
+                    Game.Level.Map[moveTo.x, moveTo.y].door = Door.Open;
                     if (Game.player.Vision[moveTo.x, moveTo.y])
                     {
                         Game.log.Add(

@@ -270,7 +270,7 @@ namespace ODB
             else
             {
                 Game.log.Add(Definition.name + " swings in the air." +
-                    " (" + hitRoll + " vs " + dodgeRoll + ")"
+                    " (" + hitRoll + " vs AC" + dodgeRoll + ")"
                 );
             }
         }
@@ -325,7 +325,7 @@ namespace ODB
 
             if (target == null)
                 legalMove = false;
-            else if (target.doorState == Door.Closed || target.solid)
+            else if (target.door == Door.Closed || target.solid)
                 legalMove = false;
 
             if (!legalMove)

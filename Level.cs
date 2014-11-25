@@ -204,9 +204,6 @@ namespace ODB
                 WorldActors.Add(actor);
                 foreach (Item item in actor.inventory)
                     WorldItems.Remove(item);
-
-                if (actor.id == 0) Util.Game.player = actor;
-                else Util.Game.Brains.Add(new Brain(actor));
             }
         }
     }

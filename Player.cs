@@ -287,9 +287,9 @@ namespace ODB
                     Game.player.xy.x + offset.x,
                     Game.player.xy.y + offset.y
                 ];
-            if (t.doorState == Door.Closed)
+            if (t.door == Door.Closed)
             {
-                t.doorState = Door.Open;
+                t.door = Door.Open;
                 Game.log.Add("You opened the door.");
 
                 //counted as a movement action at the moment, based
@@ -310,12 +310,12 @@ namespace ODB
                     Game.player.xy.x + offset.x,
                     Game.player.xy.y + offset.y
                 ];
-            if (t.doorState == Door.Open)
+            if (t.door == Door.Open)
             {
                 //first check if something's in the way
                 if (Util.ItemsOnTile(t).Count <= 0)
                 {
-                    t.doorState = Door.Closed;
+                    t.door = Door.Closed;
                     Game.log.Add("You closed the door.");
 
                     //counted as a movement action at the moment, based

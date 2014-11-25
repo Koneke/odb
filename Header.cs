@@ -6,31 +6,49 @@ using System.Linq;
 
 namespace ODB
 {
+
+    public enum Door
+    {
+        None,
+        Open,
+        Closed
+    }
+
+    public enum Stairs
+    {
+        None,
+        Up,
+        Down
+    }
+
     public class Tile
     {
         public Color bg, fg;
         public string tile;
 
         public bool solid;
-        public Door doorState;
+        public Door door;
+        public Stairs stairs;
 
         public Tile(
             Color bg,
             Color fg,
             string tile,
             bool solid = false,
-            Door doorState = Door.None
+            Door doors = Door.None,
+            Stairs stairs = Stairs.None
         ) {
             this.bg = bg;
             this.fg = fg;
             this.tile = tile;
             this.solid = solid;
-            this.doorState = doorState;
+            this.door = doors;
+            this.stairs = stairs;
         }
 
         public Tile(string s)
         {
-            readTile(s);
+            ReadTile(s);
         }
 
         public Stream WriteTile()
@@ -40,54 +58,22 @@ namespace ODB
             stream.Write(fg);
             stream.Write(tile, false);
             stream.Write(solid);
-            stream.Write(
-                doorState == Door.None ?
-                "0" : (doorState == Door.Open ? "1" : "2"),
-                false
-            );
+            stream.Write((int)door, 1);
+            stream.Write((int)stairs, 1);
             return stream;
         }
 
-        public void readTile(string s)
+        public void ReadTile(string s)
         {
-            bg = new Color(
-                Int32.Parse(s.Substring(0, 2),
-                    System.Globalization.NumberStyles.HexNumber),
-                Int32.Parse(s.Substring(2, 2),
-                    System.Globalization.NumberStyles.HexNumber),
-                Int32.Parse(s.Substring(4, 2),
-                    System.Globalization.NumberStyles.HexNumber)
-            );
-            fg = new Color(
-                Int32.Parse(s.Substring(6, 2),
-                    System.Globalization.NumberStyles.HexNumber),
-                Int32.Parse(s.Substring(8, 2),
-                    System.Globalization.NumberStyles.HexNumber),
-                Int32.Parse(s.Substring(10, 2),
-                    System.Globalization.NumberStyles.HexNumber)
-            );
-            tile = s.Substring(12, 1);
-            solid = s.Substring(13, 1) == "1";
-            switch (s.Substring(14, 1))
-            {
-                case "0":
-                    doorState = Door.None; break;
-                case "1":
-                    doorState = Door.Open; break;
-                case "2":
-                    doorState = Door.Closed; break;
-                default:
-                    throw new Exception("Badly formatted tile.");
-            }
+            Stream stream = new Stream(s);
+            bg = stream.ReadColor();
+            fg = stream.ReadColor();
+            tile = stream.ReadString(1);
+            solid = stream.ReadBool();
+            door = (Door)stream.ReadHex(1);
+            stairs = (Stairs)stream.ReadHex(1);
             return;
         }
-    }
-
-    public enum Door
-    {
-        None,
-        Open,
-        Closed
     }
 
     public struct Point

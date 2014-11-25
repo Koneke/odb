@@ -53,8 +53,8 @@ namespace ODB
         public void Write(string ss, bool delimit = true)
         {
             string s = ss + (delimit ? ";" : "");
-            read += ss.Length;
-            stream += ss;
+            read += s.Length;
+            stream += s;
         }
 
         public void Write(int i, int len)

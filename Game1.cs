@@ -17,8 +17,7 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 // * Item value and paid-for status
 
 //~~~ QUEST TRACKER for 25 nov ~~~
-// * Scrolls and/or wands (should be fairly similar)
-//   * In essence, item with a spell attached to it.
+// * Stairs
 
 namespace ODB
 {
@@ -42,7 +41,9 @@ namespace ODB
             Content.RootDirectory = "Content";
         }
 
+        public List<Level> Levels;
         public Level Level;
+        public Level Second;
         public List<Brain> Brains;
         public List<Projectile> projectiles;
 
@@ -102,6 +103,22 @@ namespace ODB
             SadConsole.Engine.ConsoleRenderStack.Add(inventoryConsole);
         }
 
+        void SetupBrains() {
+            Brains.Clear();
+            foreach (Actor actor in Level.WorldActors)
+                //shouldn't be needed, but
+                if (actor.id == 0) Game.player = actor;
+                else Brains.Add(new Brain(actor));
+        }
+
+        void SwitchLevel(Level newLevel)
+        {
+            Level.WorldActors.Remove(player);
+            Level = newLevel;
+            Level.WorldActors.Add(player);
+            SetupBrains();
+        }
+
         protected override void Initialize()
         {
             #region engineshit
@@ -135,13 +152,13 @@ namespace ODB
             scrW = 80; scrH = 25;
             lvlW = 160; lvlH = 25;
 
-
             Brains = new List<Brain>();
 
             IO.ReadActorDefinitionsFromFile("Data/actors.def");
             IO.ReadItemDefinitionsFromFile("Data/items.def");
 
-            Spell ForceBolt = new Spell(
+            #region majyyks
+            Spell Forcebolt = new Spell(
                 "Force bolt",
                 new List<Action<Point>>()
                 {
@@ -157,32 +174,17 @@ namespace ODB
                 },
                 7, 3
             );
+            #endregion
 
-            Spell SoConfusionEffect = new Spell(
-                "Confusion",
-                new List<Action<Point>>() {
-                    delegate(Point p) {
-                        foreach(Actor a in Game.Level.ActorsOnTile(p)) {
-                            Util.Game.log.Add(a.Definition.name +
-                                " looks dizzy!"
-                            );
-                        }
-                    }
-                }
-            );
+            Levels = new List<Level>();
 
-            Level = new ODB.Level(lvlW, lvlH);
+            Level = new Level(lvlW, lvlH);
             Level.LoadLevelSave("Save/newlevel.sv");
 
-            Level.WorldItems[0].UseEffect = ForceBolt;
+            Second = new Level(lvlW, lvlH);
+            Second.LoadLevelSave("Save/level2.sv");
 
-            ItemDefinition SoConfusion = new ItemDefinition(
-                null, Color.White, "?", "Scroll of Confusion"
-            );
-            Item soc = new Item(player.xy, SoConfusion, 1);
-            soc.UseEffect = SoConfusionEffect;
-            Level.AllItems.Add(soc);
-            Level.WorldItems.Add(soc);
+            SetupBrains();
 
             logSize = 3;
             log = new List<string>();
@@ -337,8 +339,8 @@ namespace ODB
             #region f-keys //devstuff
             if (IO.KeyPressed(Keys.F1))
             {
-                IO.WriteActorDefinitionsToFile("Save/foo.def");
-                IO.WriteItemDefinitionsToFile("Save/bar.def");
+                IO.WriteActorDefinitionsToFile("Data/actors.def");
+                IO.WriteItemDefinitionsToFile("Data/items.def");
             }
 
             if (IO.KeyPressed(Keys.F3))
@@ -346,6 +348,9 @@ namespace ODB
 
             if(IO.KeyPressed(Keys.F4))
                 Level.LoadLevelSave("Save/newlevel.sv");
+
+            if (IO.KeyPressed(Keys.F5))
+                SwitchLevel(Second);
             #endregion
 
             //only do player movement if we're not currently asking something
@@ -449,8 +454,10 @@ namespace ODB
                 //doors override the normal tile
                 //which shouldn't be a problem
                 //if it is a problem, it's not, it's something else
-                if (t.doorState == Door.Closed) tileToDraw = "+";
-                if (t.doorState == Door.Open) tileToDraw = "/";
+                if (t.door == Door.Closed) tileToDraw = "+";
+                if (t.door == Door.Open) tileToDraw = "/";
+                if (t.stairs == Stairs.Down) tileToDraw = ">";
+                if (t.stairs == Stairs.Up) tileToDraw = "<";
 
                 DrawToScreen(
                     new Point(x, y),
