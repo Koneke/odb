@@ -41,24 +41,23 @@ namespace ODB
             AllItems = new List<Item>();
         }
 
-        public List<Actor> ActorsOnTile(Tile tile)
+        public Actor ActorOnTile(Tile t)
         {
             for(int x = 0; x < LevelWidth; x++)
                 for (int y = 0; y < LevelHeight; y++)
-                    //if (Map[x, y] == tile)
                     //do like this while migrating
-                    if (Util.Game.Level.Map[x, y] == tile)
-                        return ActorsOnTile(new Point(x, y));
+                    if (Map[x, y] == t) return ActorOnTile(
+                        new Point(x, y)
+                    );
             return null;
         }
 
-        public List<Actor> ActorsOnTile(Point xy)
+        public Actor ActorOnTile(Point xy)
         {
-            List<Actor> actors = new List<Actor>();
             foreach (Actor actor in WorldActors)
                 if (actor.xy == xy)
-                    actors.Add(actor);
-            return actors;
+                    return actor;
+            return null;
         }
 
         public List<Item> ItemsOnTile(Point xy)

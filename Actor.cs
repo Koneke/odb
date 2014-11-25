@@ -285,15 +285,17 @@ namespace ODB
             }
         }
 
-        public void Cast(Spell s, Point target)
+        public void Cast(Spell s, Point target, bool suppressMsg = false)
         {
-            Game.log.Add(Definition.name + " casts " + s.Name + ".");
+            if(!suppressMsg)
+                Game.log.Add(Definition.name + " casts " + s.Name + ".");
             if (Util.Roll("1d6") + Get(Stat.Intelligence) > s.CastDifficulty)
             {
                 Projectile p = s.Cast(this, target);
                 p.Move();
             }
-            else Game.log.Add("The spell fizzles.");
+            else if(suppressMsg)
+                Game.log.Add("The spell fizzles.");
             Pass();
         }
 
@@ -329,7 +331,7 @@ namespace ODB
             }
             else
             {
-                if (Game.Level.ActorsOnTile(target).Count <= 0)
+                if (Game.Level.ActorOnTile(target) == null)
                 {
                     int numberOfLegs = 0;
                     int numberOfFreeHands = 0;
@@ -348,9 +350,7 @@ namespace ODB
                 }
                 else
                 {
-                    //should only be 1, but... eh
-                    foreach (Actor a in Game.Level.ActorsOnTile(target))
-                        Attack(a);
+                    Attack(Game.Level.ActorOnTile(target));
                     Game.player.Pass();
                 }
             }

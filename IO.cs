@@ -172,7 +172,6 @@ namespace ODB
             }
             WriteToFile("Save/game.sv", stream.ToString());
         }
-
         public static void Load()
         {
             Stream stream = new Stream(ReadFromFile("Save/game.sv"));

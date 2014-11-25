@@ -124,19 +124,32 @@ namespace ODB
         {
             Spell Forcebolt = new Spell(
                 "Force bolt",
-                new List<Action<Point>>()
-                {
-                    delegate(Point p) {
-                        foreach (Actor a in Game.Level.ActorsOnTile(p))
-                        {
-                            Util.Game.log.Add(a.Definition.name +
-                                " is hit by the bolt!"
-                            );
-                            a.Damage(Util.Roll("1d4"));
-                        }
+                new List<Action<Actor, Point>>() {
+                    delegate(Actor caster, Point p) {
+                        Actor a = Game.Level.ActorOnTile(p);
+                        Util.Game.log.Add(a.Definition.name +
+                            " is hit by the bolt!"
+                        );
+                        a.Damage(Util.Roll("1d4"));
                     }
                 },
                 7, 3
+            );
+
+            Spell FieryTouch = new Spell(
+                "Fiery touch",
+                new List<Action<Actor, Point>>() {
+                    delegate(Actor caster, Point p) {
+                        Actor a = Game.Level.ActorOnTile(p);
+                        Util.Game.log.Add(
+                            a.Definition.name +
+                            " is burned by " +
+                            caster.Definition.name + "'s touch!"
+                        );
+                        a.Damage(Util.Roll("6d2"));
+                    }
+                },
+                0, 1
             );
         }
 
@@ -178,6 +191,10 @@ namespace ODB
 
             IO.Load(); //load entire game (except definitions atm)
             SetupBrains();
+
+            Level.WorldActors[1].Spellbook.Add(
+                Spell.Spells[1]
+            );
 
             logSize = 3;
             log = new List<string>();

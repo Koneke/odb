@@ -26,7 +26,6 @@ namespace ODB
                     MeatPuppet.xy, Game.player.xy
                 );
             Point goal;
-            //if (route.Count > 0)
             if (route != null)
                 goal = Util.NextGoalOnRoute(MeatPuppet.xy, route);
             else
@@ -44,9 +43,23 @@ namespace ODB
 
             Point target = offset + MeatPuppet.xy;
 
-            if (Game.Level.ActorsOnTile(target).Contains(Game.player))
+            if (Game.Level.ActorOnTile(target) == Game.player)
             {
-                MeatPuppet.Attack(Game.player);
+                Spell touchAttack = null;
+                //if we have an available, guaranteed castable touch attack
+                //just use that instead
+                //in the future, consider using non guaranteed as well
+                //and actually use them at range at times
+                foreach (Spell spell in MeatPuppet.Spellbook)
+                    if (
+                        spell.CastDifficulty <=
+                        MeatPuppet.Get(Stat.Intelligence) + 1 &&
+                        spell.Range >= 1
+                    ) touchAttack = spell;
+                if (touchAttack == null)
+                    MeatPuppet.Attack(Game.player);
+                else
+                    MeatPuppet.Cast(touchAttack, Game.player.xy, true);
                 MeatPuppet.Pass();
             }
             else

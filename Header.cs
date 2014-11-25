@@ -256,11 +256,11 @@ namespace ODB
         //projectile should explode without moving, so should be on self
         public int Range;
         public int CastDifficulty;
-        public List<Action<Point>> Effects;
+        public List<Action<Actor, Point>> Effects;
 
         public Spell(
             string Name,
-            List<Action<Point>> Effects = null,
+            List<Action<Actor, Point>> Effects,
             int CastDifficulty = 0,
             int Range = 0
         ) {
@@ -277,7 +277,8 @@ namespace ODB
         {
             Projectile p = new Projectile();
             if(Effects != null)
-                p.Effects = new List<Action<Point>>(Effects);
+                p.Effects = new List<Action<Actor, Point>>(Effects);
+            p.Caster = caster;
             p.origin = caster.xy;
             p.Delta = target - caster.xy;
             //don't try to go further than we targeted
@@ -301,7 +302,8 @@ namespace ODB
         public Point xy;
         public Point origin;
         public Point Delta;
-        public List<Action<Point>> Effects;
+        public List<Action<Actor, Point>> Effects;
+        public Actor Caster;
 
         void calculatePosition()
         {
@@ -311,11 +313,17 @@ namespace ODB
             int x, y;
 
             if(Delta.x == 0) {
-                xy = new Point(origin.x, origin.y + Math.Sign(Delta.y) * Moved);
+                xy = new Point(
+                    origin.x,
+                    origin.y + Math.Sign(Delta.y) * Moved
+                );
                 return;
             }
             else if(Delta.y == 0) {
-                xy = new Point(origin.x + Math.Sign(Delta.x) * Moved, origin.y);
+                xy = new Point(
+                    origin.x + Math.Sign(Delta.x) * Moved,
+                    origin.y
+                );
                 return;
             }
 
@@ -378,12 +386,12 @@ namespace ODB
             if (Moved >= Range) Die = true;
 
             if(!Die)
-                if (Util.Game.Level.ActorsOnTile(xy).Count > 0)
+                if (Util.Game.Level.ActorOnTile(xy) != null)
                     Die = true; //explode without unmoving
 
             if (Die)
-                foreach (Action<Point> effect in Effects)
-                    effect(xy);
+                foreach(Action<Actor, Point> effect in Effects)
+                    effect(Caster, xy);
 
             if (!Die) Move();
         }
