@@ -477,13 +477,18 @@ namespace ODB
 
         public static void Examine()
         {
+            Examine(true);
+        }
+
+        public static void Examine(bool verbose = false)
+        {
             Tile t = Game.Level.Map[Game.Target.x, Game.Target.y];
 
             string distString =
-                (Util.Distance(Game.player.xy, Game.Target) > 1 ?
-                    " there. " : ". ");
+                (Util.Distance(Game.player.xy, Game.Target) > 0 ?
+                    " there. " : " here. ");
 
-            if (t == null)
+            if (t == null || !Game.Level.Seen[Game.Target.x, Game.Target.y])
             {
                 Game.Log(
                     "You see nothing" + distString
@@ -499,9 +504,12 @@ namespace ODB
             List<Item> items = Util.ItemsOnTile(t);
             string str = "";
 
-            if (t.Door != Door.None) str = "You see a door. ";
-            else if (t.Stairs != Stairs.None) str = "You see a set of stairs.";
-            else str = "You see the dungeon floor. ";
+            if (verbose)
+            {
+                if (t.Door != Door.None) str = "You see a door. ";
+                else if (t.Stairs != Stairs.None) str = "You see a set of stairs.";
+                else str = "You see the dungeon floor. ";
+            }
 
 
             if (Game.player.Vision[Game.Target.x, Game.Target.y])
@@ -512,14 +520,16 @@ namespace ODB
 
                 Actor a;
                 if ((a = Game.Level.ActorOnTile(t)) != null)
-                    str += "You see " + a.Name + distString;
+                    if(a != Game.player)
+                        str += "You see " + a.Name + distString;
                 if (items.Count > 0)
                     str += "There's " + items[0].GetName() + distString;
                 else if (items.Count > 1)
                     str += "There's several items " + distString;
             }
 
-            Game.Log(str);
+            if(str != "")
+                Game.Log(str);
         }
 
     }

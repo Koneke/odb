@@ -142,6 +142,29 @@ namespace ODB
             );
         }
 
+        void SetupTickingEffects()
+        {
+            TickingEffectDefinition hpReg = new TickingEffectDefinition(
+                "passive hp regeneration",
+                100, //trigger once every 100 ticks
+                delegate(Actor holder)
+                {
+                    if (holder.hpCurrent < holder.hpMax)
+                        holder.hpCurrent++;
+                }
+            );
+
+            TickingEffectDefinition mpReg = new TickingEffectDefinition(
+                "passive mp regeneration",
+                100, //trigger once every 100 ticks
+                delegate(Actor holder)
+                {
+                    if (holder.mpCurrent < holder.mpMax)
+                        holder.mpCurrent++;
+                }
+            );
+        }
+
         protected override void Initialize()
         {
             #region engineshit
@@ -176,6 +199,7 @@ namespace ODB
             scrW = 80; scrH = 25;
 
             SetupMagic(); //essentially magic defs, but we hardcode magic
+            SetupTickingEffects(); //same as magic, cba to add scripting
             IO.ReadActorDefinitionsFromFile("Data/actors.def");
             IO.ReadItemDefinitionsFromFile("Data/items.def");
 
@@ -183,28 +207,14 @@ namespace ODB
             SetupBrains();
 
             Level.WorldActors[0].TickingEffects.Add(
-                new TickingEffect(
-                    Level.WorldActors[0],
-                    100, //trigger once every 100 ticks
-                    delegate(Actor holder) {
-                        if (holder.hpCurrent < holder.hpMax)
-                            holder.hpCurrent++;
-                    }
-                )
-            );
+                Util.TEDefByName("passive hp regeneration").Instantiate(
+                    Level.WorldActors[0]
+            ));
 
             Level.WorldActors[0].TickingEffects.Add(
-                new TickingEffect(
-                    Level.WorldActors[0],
-                    100, //trigger once every 100 ticks
-                    delegate(Actor holder) {
-                        if (holder.mpCurrent < holder.mpMax)
-                            holder.mpCurrent++;
-                    }
-                )
-            );
-
-            Game.Level.Map[13, 15].Engraving = "Don't stand in the fire!";
+                Util.TEDefByName("passive mp regeneration").Instantiate(
+                    Level.WorldActors[0]
+            ));
 
             logSize = 3;
             log = new List<string>();
@@ -385,11 +395,6 @@ namespace ODB
                     a.AddRoomToVision(r);
             }
 
-            Game.player.TickingEffects[0].Frequency =
-                100 - (Game.player.Get(Stat.Strength) - 5) * 2;
-            Game.player.TickingEffects[1].Frequency =
-                100 - (Game.player.Get(Stat.Intelligence) - 5) * 2;
-
             RenderConsoles();
             IO.Update(true);
             base.Update(gameTime);
@@ -426,8 +431,11 @@ namespace ODB
 
                 GameTick++;
                 foreach (Actor a in Level.WorldActors)
+                {
                     foreach (TickingEffect effect in a.TickingEffects)
                         effect.Tick();
+                    a.TickingEffects.RemoveAll(x => x.Die);
+                }
             }
         }
 

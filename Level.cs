@@ -166,9 +166,10 @@ namespace ODB
                 if(tiles[i] == "")
                     Map[x, y] = null;
                 else {
-                    string tile = tiles[i].Split(';')[0];
-                    Map[x, y] = new Tile(tile);
-                    Seen[x, y] = IO.ReadBool(tiles[i].Split(';')[1]);
+                    Tile t = new Tile();
+                    Stream s = t.ReadTile(tiles[i]);
+                    Seen[x, y] = s.ReadBool();
+                    Map[x, y] = t;
                 }
             }
 

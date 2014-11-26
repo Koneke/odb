@@ -27,20 +27,8 @@ namespace ODB
             #region looking at our new tile
             if (moved)
             {
-                List<Item> itemsOnSquare = Util.ItemsOnTile(Game.player.xy);
-
-                switch (itemsOnSquare.Count)
-                {
-                    case 0: break;
-                    case 1: Game.Log(
-                            "There is " + itemsOnSquare[0].GetName() +
-                            " here."
-                        ); break;
-                    default: Game.Log(
-                            "There are " + itemsOnSquare.Count +
-                            " items here."
-                        ); break;
-                }
+                Game.Target = Game.player.xy;
+                PlayerResponses.Examine(false);
             }
             #endregion
 

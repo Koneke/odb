@@ -53,6 +53,8 @@ namespace ODB
             Engraving = "";
         }
 
+        public Tile() { }
+
         public Stream WriteTile()
         {
             Stream stream = new Stream();
@@ -62,10 +64,11 @@ namespace ODB
             stream.Write(solid);
             stream.Write((int)Door, 1);
             stream.Write((int)Stairs, 1);
+            stream.Write(Engraving);
             return stream;
         }
 
-        public void ReadTile(string s)
+        public Stream ReadTile(string s)
         {
             Stream stream = new Stream(s);
             bg = stream.ReadColor();
@@ -74,7 +77,8 @@ namespace ODB
             solid = stream.ReadBool();
             Door = (Door)stream.ReadHex(1);
             Stairs = (Stairs)stream.ReadHex(1);
-            return;
+            Engraving = stream.ReadString();
+            return stream;
         }
     }
 
@@ -404,31 +408,77 @@ namespace ODB
         }
     }
 
-    public class TickingEffect
+    public class TickingEffectDefinition
     {
-        int life;
+        public static TickingEffectDefinition[] Definitions =
+            new TickingEffectDefinition[0xFFFF];
+        public static int IDCounter;
+
+        public int id;
+        public string Name;
         public int Frequency;
-        public Actor Holder;
         public Action<Actor> Effect;
 
-        public TickingEffect(
-            Actor Holder,
+        public TickingEffectDefinition(
+            string Name,
             int frequency,
             Action<Actor> Effect)
         {
-            this.Holder = Holder;
+            id = IDCounter++;
+            this.Name = Name;
             this.Frequency = frequency;
             this.Effect = Effect;
+
+            Definitions[id] = this;
+        }
+
+        public TickingEffect Instantiate(Actor Holder)
+        {
+            return new TickingEffect(Holder, this);
+        }
+    }
+
+    public class TickingEffect
+    {
+        int timer;
+        public Actor Holder;
+        TickingEffectDefinition definition;
+        public bool Die;
+
+        public TickingEffect(
+            Actor Holder,
+            TickingEffectDefinition definition
+        ) {
+            this.Holder = Holder;
+            this.definition = definition;
         }
 
         public void Tick()
         {
-            life++;
-            if (life > Frequency)
+            timer--;
+            if (timer <= 0)
             {
-                Effect(Holder);
-                life -= Frequency;
+                definition.Effect(Holder);
+                timer += definition.Frequency;
             }
+        }
+
+        public Stream WriteTickingEffect()
+        {
+            Stream stream = new Stream();
+            stream.Write(definition.id, 4);
+            stream.Write(timer, 4); //if you need more than 0xFFFF ticks, gtfo
+            stream.Write(Die);
+            return stream;
+        }
+
+        public Stream ReadTickingEffect(string s)
+        {
+            Stream stream = new Stream(s);
+            definition = TickingEffectDefinition.Definitions[stream.ReadHex(4)];
+            timer = stream.ReadHex(4);
+            Die = stream.ReadBool();
+            return stream;
         }
     }
 }

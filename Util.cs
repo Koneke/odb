@@ -54,6 +54,15 @@ namespace ODB
             return null;
         }
 
+        public static TickingEffectDefinition TEDefByName(string name)
+        {
+            for (int i = 0; i < 0xFFFF; i++)
+                if (TickingEffectDefinition.Definitions[i] != null)
+                    if (TickingEffectDefinition.Definitions[i].Name == name)
+                        return TickingEffectDefinition.Definitions[i];
+            return null;
+        }
+
         public static List<Room> GetRooms(Point xy)
         {
             List<Room> roomList = new List<Room>();
