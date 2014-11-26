@@ -20,7 +20,8 @@ namespace ODB
         public static ActorDefinition[] ActorDefinitions =
             new ActorDefinition[0xFFFF];
 
-        public int strength, dexterity, intelligence, hpMax;
+        public int strength, dexterity, intelligence;
+        public int hpMax, mpMax;
         public int speed, quickness;
         public List<DollSlot> BodyParts;
         public int CorpseType;
@@ -58,6 +59,7 @@ namespace ODB
             stream.Write(dexterity, 2);
             stream.Write(intelligence, 2);
             stream.Write(hpMax, 2);
+            stream.Write(mpMax, 2);
             stream.Write(speed, 2);
             stream.Write(quickness, 2);
 
@@ -85,6 +87,7 @@ namespace ODB
             dexterity = stream.ReadHex(2);
             intelligence = stream.ReadHex(2);
             hpMax = stream.ReadHex(2);
+            mpMax = stream.ReadHex(2);
             speed = stream.ReadHex(2);
             quickness = stream.ReadHex(2);
 
@@ -123,17 +126,21 @@ namespace ODB
 
         public new ActorDefinition Definition;
         public int hpCurrent;
+        public int mpCurrent;
         public int Cooldown;
 
         public List<BodyPart> PaperDoll;
         public List<Item> inventory;
+
+        //not yet to save
+        public List<TickingEffect> TickingEffects;
         #endregion
 
         #region temporary/cached (nonwritten)
         public bool[,] Vision;
         #endregion
 
-        //wraps
+        #region wraps
         public List<Spell> Spellbook {
             get {
                 List<Spell> spells = new List<Spell>();
@@ -143,6 +150,10 @@ namespace ODB
                 return spells;
             }
         }
+
+        public int hpMax { get { return Definition.hpMax; } }
+        public int mpMax { get { return Definition.mpMax; } }
+        #endregion
 
         public Actor(
             Point xy, ActorDefinition def
@@ -165,6 +176,7 @@ namespace ODB
             : base(s)
         {
             ReadActor(s);
+            TickingEffects = new List<TickingEffect>();
         }
 
         public bool CanEquip(List<DollSlot> slots)
@@ -476,6 +488,7 @@ namespace ODB
             stream.Write(Definition.type, 4);
             stream.Write(id, 4);
             stream.Write(hpCurrent, 2);
+            stream.Write(mpCurrent, 2);
             stream.Write(Cooldown, 2);
 
             foreach (BodyPart bp in PaperDoll)
@@ -511,6 +524,7 @@ namespace ODB
 
             id = stream.ReadHex(4);
             hpCurrent = stream.ReadHex(2);
+            mpCurrent = stream.ReadHex(2);
             Cooldown = stream.ReadHex(2);
 
             PaperDoll = new List<BodyPart>();

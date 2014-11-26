@@ -13,8 +13,6 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 // * Item value and paid-for status
 
 //~~~ QUEST TRACKER for 26 nov ~~~
-// * Spell cast cost
-// * Mana and hp/mp regeneration
 // * Brains respecting other NPC-actors
 
 namespace ODB
@@ -37,6 +35,8 @@ namespace ODB
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
         }
+
+        public int GameTick;
 
         public List<Level> Levels;
         public Level Level;
@@ -125,8 +125,7 @@ namespace ODB
                             a.Damage(Util.Roll("1d4"));
                         }
                     }
-                },
-                7, 3
+                }, 3, 7, 3
             );
 
             Spell FieryTouch = new Spell(
@@ -186,15 +185,25 @@ namespace ODB
             IO.Load(); //load entire game (except definitions atm)
             SetupBrains();
 
-            Level.Spawn(
-                new Item(
-                    new Point(12, 11),
-                    new ItemDefinition(
-                        null, Color.Pink, "[", "Apron", "", 2,
-                        false, new List<DollSlot>() {
-                            DollSlot.Torso
-                        }
-                    )
+            Level.WorldActors[0].TickingEffects.Add(
+                new TickingEffect(
+                    Level.WorldActors[0],
+                    100, //trigger once every 100 ticks
+                    delegate(Actor holder) {
+                        if (holder.hpCurrent < holder.hpMax)
+                            holder.hpCurrent++;
+                    }
+                )
+            );
+
+            Level.WorldActors[0].TickingEffects.Add(
+                new TickingEffect(
+                    Level.WorldActors[0],
+                    100, //trigger once every 100 ticks
+                    delegate(Actor holder) {
+                        if (holder.mpCurrent < holder.mpMax)
+                            holder.mpCurrent++;
+                    }
                 )
             );
 
@@ -363,7 +372,7 @@ namespace ODB
                 case InputType.PlayerInput:
                     if (player.Cooldown == 0)
                         Player.PlayerInput();
-                    else ProcessNPCs();
+                    else ProcessNPCs(); //mind: also ticks gameclock
                     break;
                 //if this happens,
                 //you're breaking some kind of weird shit somehow
@@ -376,6 +385,11 @@ namespace ODB
                 foreach (Room r in Util.GetRooms(a))
                     a.AddRoomToVision(r);
             }
+
+            Game.player.TickingEffects[0].Frequency =
+                100 - (Game.player.Get(Stat.Strength) - 5) * 2;
+            Game.player.TickingEffects[1].Frequency =
+                100 - (Game.player.Get(Stat.Intelligence) - 5) * 2;
 
             RenderConsoles();
             IO.Update(true);
@@ -397,6 +411,11 @@ namespace ODB
                 foreach (Brain b in Brains)
                     b.MeatPuppet.Cooldown--;
                 Game.player.Cooldown--;
+
+                GameTick++;
+                foreach (Actor a in Level.WorldActors)
+                    foreach (TickingEffect effect in a.TickingEffects)
+                        effect.Tick();
             }
         }
 
@@ -620,11 +639,28 @@ namespace ODB
             statrow += player.Definition.hpMax.ToString().PadLeft(3, ' ');
             statrow += "]";
 
+            statrow += " ";
+
+            statrow += "[";
+            statrow += player.mpCurrent.ToString().PadLeft(3, ' ');
+            statrow += "/";
+            statrow += player.Definition.mpMax.ToString().PadLeft(3, ' ');
+            statrow += "]";
+
+            statrow += " ";
+            statrow += "T:";
+            statrow += string.Format("{0:F1}", (float)(GameTick / 10f));
+
             float playerHealthPcnt =
                 player.hpCurrent /
-                (float)player.Definition.hpMax
+                (float)player.hpMax
+            ;
+            float playerManaPcnt =
+                player.mpCurrent /
+                (float)player.mpMax
             ;
             float colorStrength = 0.6f + 0.4f - (0.4f * playerHealthPcnt);
+            float manaColorStrength = 0.6f + 0.4f - (0.4f * playerManaPcnt);
 
             for (int x = 0; x < 9; x++)
                 statRowConsole.CellData.SetBackground(
@@ -632,6 +668,15 @@ namespace ODB
                         colorStrength - colorStrength * playerHealthPcnt,
                         colorStrength * playerHealthPcnt,
                         0
+                    )
+                );
+
+            for (int x = 10; x < 19; x++)
+                statRowConsole.CellData.SetBackground(
+                    x, 1, new Color(
+                        manaColorStrength - manaColorStrength * playerManaPcnt,
+                        manaColorStrength * playerManaPcnt / 2,
+                        manaColorStrength * playerManaPcnt
                     )
                 );
 

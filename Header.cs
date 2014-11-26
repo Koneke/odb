@@ -255,18 +255,21 @@ namespace ODB
         //0 should mean self-cast..? (or just non-targetted)
         //projectile should explode without moving, so should be on self
         public int Range;
+        public int Cost;
         public int CastDifficulty;
         public List<Action<Actor, Point>> Effects;
 
         public Spell(
             string Name,
             List<Action<Actor, Point>> Effects,
+            int Cost = 0,
             int CastDifficulty = 0,
             int Range = 0
         ) {
             this.id = IDCounter++;
             this.Name = Name;
             this.Range = Range;
+            this.Cost = Cost;
             this.CastDifficulty = CastDifficulty;
             this.Effects = Effects;
 
@@ -394,6 +397,34 @@ namespace ODB
                     effect(Caster, xy);
 
             if (!Die) Move();
+        }
+    }
+
+    public class TickingEffect
+    {
+        int life;
+        public int Frequency;
+        public Actor Holder;
+        public Action<Actor> Effect;
+
+        public TickingEffect(
+            Actor Holder,
+            int frequency,
+            Action<Actor> Effect)
+        {
+            this.Holder = Holder;
+            this.Frequency = frequency;
+            this.Effect = Effect;
+        }
+
+        public void Tick()
+        {
+            life++;
+            if (life > Frequency)
+            {
+                Effect(Holder);
+                life -= Frequency;
+            }
         }
     }
 }

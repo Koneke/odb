@@ -356,6 +356,11 @@ namespace ODB
                 Game.log.Add("Invalid selection (" + answer[0] + ").");
                 return;
             }
+            else if (Game.player.mpCurrent < Game.player.Spellbook[i].Cost)
+            {
+                Game.log.Add("You lack the energy.");
+                return;
+            }
             else
             {
                 Game.TargetedSpell = Game.player.Spellbook[i];
@@ -415,9 +420,9 @@ namespace ODB
             int index = IO.indexes.IndexOf(Game.qpAnswerStack.Pop()[0]);
             if (Game.Level.Map[Game.Target.x, Game.Target.y] != null) {
                 Game.player.Cast(
-                    //Game.TargetedSpell, p
                     Game.TargetedSpell, Game.Target
                 );
+                Game.player.mpCurrent -= Game.player.Spellbook[index].Cost;
             }
             else
                 Game.log.Add("Invalid target.");
