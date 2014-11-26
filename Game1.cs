@@ -126,7 +126,7 @@ namespace ODB
             );
 
             Spell FieryTouch = new Spell(
-                "Fiery touch",
+                "fiery touch",
                 new List<Action<Actor, Point>>() {
                     delegate(Actor caster, Point p) {
                         Actor a = Game.Level.ActorOnTile(p);
@@ -136,9 +136,17 @@ namespace ODB
                             caster.Definition.name + "'s touch!"
                         );
                         a.Damage(Util.Roll("6d2"));
+
+                        if(Util.Roll("1d6") >= 5) {
+                            Game.Log(a.GetName() + " starts bleeding!");
+                            TickingEffectDefinition bleed =
+                                Util.TEDefByName("bleed");
+                            if (!a.HasEffect(bleed))
+                                a.TickingEffects.Add(bleed.Instantiate(a));
+                        }
                     }
                 },
-                0, 1
+                0, 1, 1
             );
         }
 
@@ -161,6 +169,23 @@ namespace ODB
                 {
                     if (holder.mpCurrent < holder.mpMax)
                         holder.mpCurrent++;
+                }
+            );
+
+            TickingEffectDefinition bleed = new TickingEffectDefinition(
+                "bleed",
+                25,
+                delegate(Actor holder)
+                {
+                    if(holder == Game.player)
+                        Game.Log("Your wound bleeds!");
+                    else
+                        Game.Log(
+                            Util.Capitalize(
+                                holder.GetName(true)+"'s wound bleeds!"
+                            )
+                        );
+                    holder.Damage(Util.Roll("2d3"));
                 }
             );
         }
@@ -430,12 +455,14 @@ namespace ODB
                 Game.player.Cooldown--;
 
                 GameTick++;
-                foreach (Actor a in Level.WorldActors)
+                List<Actor> wa = new List<Actor>(Level.WorldActors);
+                foreach (Actor a in wa)
                 {
                     foreach (TickingEffect effect in a.TickingEffects)
                         effect.Tick();
                     a.TickingEffects.RemoveAll(x => x.Die);
                 }
+                Level.WorldActors = wa;
             }
         }
 

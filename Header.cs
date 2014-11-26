@@ -442,7 +442,7 @@ namespace ODB
     {
         int timer;
         public Actor Holder;
-        TickingEffectDefinition definition;
+        public TickingEffectDefinition Definition;
         public bool Die;
 
         public TickingEffect(
@@ -450,7 +450,9 @@ namespace ODB
             TickingEffectDefinition definition
         ) {
             this.Holder = Holder;
-            this.definition = definition;
+            this.Definition = definition;
+            //timer = definition.Frequency;
+            timer = 0;
         }
 
         public void Tick()
@@ -458,15 +460,15 @@ namespace ODB
             timer--;
             if (timer <= 0)
             {
-                definition.Effect(Holder);
-                timer += definition.Frequency;
+                Definition.Effect(Holder);
+                timer += Definition.Frequency;
             }
         }
 
         public Stream WriteTickingEffect()
         {
             Stream stream = new Stream();
-            stream.Write(definition.id, 4);
+            stream.Write(Definition.id, 4);
             stream.Write(timer, 4); //if you need more than 0xFFFF ticks, gtfo
             stream.Write(Die);
             return stream;
@@ -475,7 +477,7 @@ namespace ODB
         public Stream ReadTickingEffect(string s)
         {
             Stream stream = new Stream(s);
-            definition = TickingEffectDefinition.Definitions[stream.ReadHex(4)];
+            Definition = TickingEffectDefinition.Definitions[stream.ReadHex(4)];
             timer = stream.ReadHex(4);
             Die = stream.ReadBool();
             return stream;

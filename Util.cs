@@ -91,7 +91,7 @@ namespace ODB
             return null;
         }
 
-        public static int Roll(string s)
+        public static int Roll(string s, bool max = false)
         {
             s = s.ToLower();
             int number = int.Parse(s.Split('d')[0]);
@@ -111,11 +111,18 @@ namespace ODB
             );
         }
 
-        public static int Roll(int number, int sides, int mod = 0)
+        public static int Roll(
+            int number,
+            int sides,
+            int mod = 0,
+            bool max = false)
         {
             int sum = 0;
             for (int i = 0; i < number; i++)
-                sum += Random.Next(1, sides + 1);
+                if (!max)
+                    sum += Random.Next(1, sides + 1);
+                else
+                    sum += sides;
             return sum + mod;
         }
 
@@ -283,6 +290,13 @@ namespace ODB
             int dx = Math.Abs(a.x - b.x);
             int dy = Math.Abs(a.y - b.y);
             return Math.Max(dx, dy);
+        }
+
+        public static string Capitalize(string s)
+        {
+            return
+                s.Substring(0, 1).ToUpper() +
+                s.Substring(1, s.Length - 1);
         }
     }
 }

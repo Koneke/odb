@@ -507,7 +507,8 @@ namespace ODB
             if (verbose)
             {
                 if (t.Door != Door.None) str = "You see a door. ";
-                else if (t.Stairs != Stairs.None) str = "You see a set of stairs.";
+                else if (t.Stairs != Stairs.None)
+                    str = "You see a set of stairs.";
                 else str = "You see the dungeon floor. ";
             }
 
@@ -521,7 +522,7 @@ namespace ODB
                 Actor a;
                 if ((a = Game.Level.ActorOnTile(t)) != null)
                     if(a != Game.player)
-                        str += "You see " + a.Name + distString;
+                        str += "You see " + a.GetName() + distString;
                 if (items.Count > 0)
                     str += "There's " + items[0].GetName() + distString;
                 else if (items.Count > 1)

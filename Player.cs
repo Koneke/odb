@@ -20,6 +20,8 @@ namespace ODB
 
         public static void PlayerInput()
         {
+            if (Game.player.hpCurrent <= 0) return;
+
             bool moved = MovementInput();
 
             //should be replaced with a look command

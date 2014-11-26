@@ -71,27 +71,32 @@ namespace ODB
                     Game.Level.ActorOnTile(target) == null;
 
                 bool x =
-                    Game.Level.Map[target.x, MeatPuppet.xy.y].solid == false &&
+                    Game.Level.Map[
+                        target.x,
+                        MeatPuppet.xy.y
+                    ].solid == false &&
                     Game.Level.ActorOnTile(
                         new Point(target.x, MeatPuppet.xy.y)) == null;
 
                 bool y =
-                    Game.Level.Map[MeatPuppet.xy.x, target.y].solid == false &&
+                    Game.Level.Map[
+                        MeatPuppet.xy.x,
+                        target.y
+                    ].solid == false &&
                     Game.Level.ActorOnTile(
                         new Point(MeatPuppet.xy.x, target.x)) == null;
 
-                if (xy) { moveTo = MeatPuppet.xy + offset; }
-                else if (x) {
-                    moveTo = MeatPuppet.xy + new Point(offset.x, 0);
-                }
-                else if (y) {
-                    moveTo = MeatPuppet.xy + new Point(0, offset.y);
-                }
+                if (xy)  moveTo = MeatPuppet.xy + offset; 
+                else if (x) moveTo = MeatPuppet.xy + new Point(offset.x, 0);
+                else if (y) moveTo = MeatPuppet.xy + new Point(0, offset.y);
+                
 
                 if (xy || x || y)
                 {
-                    if (Game.Level.Map[moveTo.x, moveTo.y].Door == Door.Closed)
-                    {
+                    if (Game.Level.Map[
+                        moveTo.x,
+                        moveTo.y
+                    ].Door == Door.Closed) {
                         Game.Level.Map[moveTo.x, moveTo.y].Door = Door.Open;
                         if (Game.player.Vision[moveTo.x, moveTo.y])
                         {

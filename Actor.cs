@@ -26,13 +26,15 @@ namespace ODB
         public List<DollSlot> BodyParts;
         public int CorpseType;
         public List<int> Spellbook;
-        //public bool Named; //for uniques and what not
+        public bool Named; //for uniques and what not
 
         public ActorDefinition(
             Color? bg, Color fg,
             string tile, string name,
             int strength, int dexterity, int intelligence, int hp,
-            List<DollSlot> BodyParts
+            List<DollSlot> BodyParts,
+            List<int> Spellbook,
+            bool Named
         )
         : base(bg, fg, tile, name) {
             this.strength = strength;
@@ -44,7 +46,8 @@ namespace ODB
             ItemDefinition Corpse = new ItemDefinition(
                 null, Color.Red, "%", name + " corpse");
             CorpseType = Corpse.type;
-            Spellbook = new List<int>();
+            this.Spellbook = Spellbook ?? new List<int>();
+            this.Named = Named;
         }
 
         public ActorDefinition(string s) : base(s)
@@ -56,6 +59,7 @@ namespace ODB
         {
             Stream stream = WriteGObjectDefinition();
 
+            stream.Write(Named);
             stream.Write(strength, 2);
             stream.Write(dexterity, 2);
             stream.Write(intelligence, 2);
@@ -84,6 +88,7 @@ namespace ODB
         {
             Stream stream = ReadGObjectDefinition(s);
 
+            Named = stream.ReadBool();
             strength = stream.ReadHex(2);
             dexterity = stream.ReadHex(2);
             intelligence = stream.ReadHex(2);
@@ -100,7 +105,6 @@ namespace ODB
             CorpseType = stream.ReadHex(4);
 
             if (Util.IDefByName(name + " corpse") == null)
-            //if (ItemDefinition.ItemDefinitions[CorpseType] == null)
             {
                 //should be put into a func of its own..?
                 ItemDefinition Corpse = new ItemDefinition(
@@ -154,10 +158,6 @@ namespace ODB
 
         public int hpMax { get { return Definition.hpMax; } }
         public int mpMax { get { return Definition.mpMax; } }
-
-        public string Name { get {
-            return Util.article(Definition.name) + " " + Definition.name; }
-        }
         #endregion
 
         public Actor(
@@ -183,6 +183,17 @@ namespace ODB
         {
             ReadActor(s);
             TickingEffects = new List<TickingEffect>();
+        }
+
+        public string GetName(bool def = false)
+        {
+            string name = (def ? "the" : Util.article(Definition.name));
+            name += " ";
+
+            if (Definition.Named) name = "";
+            name += Definition.name;
+
+            return name;
         }
 
         public bool CanEquip(List<DollSlot> slots)
@@ -316,6 +327,11 @@ namespace ODB
         {
             int hitRoll = Util.Roll("1d6") + Get(Stat.Strength);
             int dodgeRoll = target.GetAC();
+            bool crit = Util.Roll("1d30") >= 30 -
+                Math.Max(
+                    Get(Stat.Dexterity)-5,
+                    0
+                );
 
             if (hitRoll >= dodgeRoll) {
                 int damageRoll = Get(Stat.Strength);
@@ -329,22 +345,26 @@ namespace ODB
                         //no bow damage when bashing with it kthx 
                         !bp.Item.Definition.Ranged
                     )
-                        damageRoll += Util.Roll(bp.Item.Definition.Damage);
+                        damageRoll += Util.Roll(
+                            bp.Item.Definition.Damage,
+                            crit
+                        );
                     else
                         //barehanded/bash damage
-                        damageRoll += Util.Roll("1d4");
+                        damageRoll += Util.Roll("1d4", crit);
 
                 Game.Log(
-                    Definition.name + " strikes " +target.Definition.name +
-                    " (" + hitRoll + " vs " + dodgeRoll + ")"
+                    Definition.name + " strikes " +
+                    target.Definition.name + (crit ? "!" : ".")
+                    //" (" + hitRoll + " vs " + dodgeRoll + ")"
                 );
 
                 target.Damage(damageRoll);
             }
             else
             {
-                Game.Log(Definition.name + " swings in the air." +
-                    " (" + hitRoll + " vs " + dodgeRoll + ")"
+                Game.Log(Definition.name + " swings in the air."
+                    //+ " (" + hitRoll + " vs " + dodgeRoll + ")"
                 );
             }
         }
@@ -425,6 +445,11 @@ namespace ODB
             else if(suppressMsg)
                 Game.Log("The spell fizzles.");
             Pass();
+        }
+
+        public bool HasEffect(TickingEffectDefinition def)
+        {
+            return TickingEffects.Any(x => x.Definition == def);
         }
 
         //movement/standard action
@@ -514,8 +539,6 @@ namespace ODB
                 stream.Write(it.id, 4);
                 stream.Write(",", false);
             }
-            stream.Write(";", false);
-
             stream.Write(";", false);
 
             return stream;
