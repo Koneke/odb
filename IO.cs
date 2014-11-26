@@ -80,7 +80,7 @@ namespace ODB
                         {
                             IOState = InputType.PlayerInput;
                             Game.qpAnswerStack.Push(Answer);
-                            Game.questionReaction(Answer);
+                            Game.QuestionReaction();
                         }
                     }
                 }
@@ -94,7 +94,7 @@ namespace ODB
             {
                 IOState = InputType.PlayerInput;
                 Game.qpAnswerStack.Push(Answer);
-                Game.questionReaction(Answer);
+                Game.QuestionReaction();
             }
         }
 
@@ -102,29 +102,17 @@ namespace ODB
         public static string Question;
         public static string Answer;
 
-        //prompt question
         public static void AskPlayer(
             string question,
             InputType type,
-            Action<string> reaction
+            Action reaction
         ) {
             Answer = "";
             IOState = type;
             Question = question;
-            Game.questionReaction = reaction;
-        }
-
-        //targeting question
-        public static void AskPlayer(
-            string question,
-            InputType type,
-            Action<Point> reaction
-        ) {
-            Answer = "";
-            IOState = type;
-            Question = question;
-            Game.targetingReaction = reaction;
-            Game.target = Game.player.xy;
+            Game.QuestionReaction = reaction;
+            if(type == InputType.Targeting)
+                Game.Target = Game.player.xy;
         }
 
         public static void TargetInput()
@@ -140,16 +128,15 @@ namespace ODB
             if (IO.KeyPressed(Keys.NumPad4)) offset.Nudge(-1, 0);
             if (IO.KeyPressed(Keys.NumPad7)) offset.Nudge(-1, -1);
 
-            Game.target.Nudge(offset);
+            Game.Target.Nudge(offset);
 
             if (
                 IO.KeyPressed(Keys.NumPad5) ||
                 IO.KeyPressed(Keys.OemPeriod) ||
                 IO.KeyPressed(Keys.Enter)
             ) {
-                //Game.targeting = false;
                 IO.IOState = InputType.PlayerInput;
-                Game.targetingReaction(Game.target);
+                Game.QuestionReaction();
             }
         }
 

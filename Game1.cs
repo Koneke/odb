@@ -1,11 +1,7 @@
 using System;
-using System.IO;
-using System.Linq;
-using System.Text;
 using System.Collections.Generic;
 
 using SadConsole;
-using SadConsole.Consoles;
 using Console = SadConsole.Consoles.Console;
 
 using Microsoft.Xna.Framework;
@@ -16,9 +12,13 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 //~~~ QUEST TRACKER for ?? nov ~~~
 // * Item value and paid-for status
 
+//~~~ QUEST TRACKER for 26 nov ~~~
+// * Spell cast cost
+// * Mana and hp/mp regeneration
+// * Brains respecting other NPC-actors
+
 namespace ODB
 {
-
     public class Game1 : Microsoft.Xna.Framework.Game
     {
         GraphicsDeviceManager graphics;
@@ -50,16 +50,9 @@ namespace ODB
         int logSize;
         public List<string> log;
 
-        public Point target;
+        public Point Target;
         public Spell TargetedSpell;
-        //make these two Action, and merge into one?
-        //the targetting reaction functions can just read the
-        //Game.target directly
-        //and the others can use the stack
-        //perhaps make a stack for the targets as well later,
-        //but doesn't seem necessary atm
-        public Action<Point> targetingReaction;
-        public Action<string> questionReaction;
+        public Action QuestionReaction;
         public Stack<string> qpAnswerStack;
 
         public int standardActionLength = 10;
@@ -102,6 +95,7 @@ namespace ODB
             else Brains.Clear();
             foreach (Actor actor in Level.WorldActors)
                 //shouldn't be needed, but
+                //what did i even mean with that comment
                 if (actor.id == 0) Game.player = actor;
                 else Brains.Add(new Brain(actor));
         }
@@ -192,33 +186,17 @@ namespace ODB
             IO.Load(); //load entire game (except definitions atm)
             SetupBrains();
 
-            Level.Spawn(new Item(
-                new Point(12, 14),
-                Util.IDefByName("scroll of forcebolt"),
-                1,
-                null
-            ));
-
-            Level.Spawn(new Item(
-                new Point(11, 11),
-                Util.IDefByName("arrow"),
-                5
-            ));
-
-            Level.Spawn(new Item(
-                new Point(11, 12),
-                Util.IDefByName("bow")
-            ));
-
-            Level.Spawn(new Item(
-                new Point(13, 13),
-                Util.IDefByName("longsword"),
-                -1,
-                new List<Mod> {
-                    new Mod(ModType.AddStr, 1),
-                    new Mod(ModType.AddDex, 1)
-                }
-            ));
+            Level.Spawn(
+                new Item(
+                    new Point(12, 11),
+                    new ItemDefinition(
+                        null, Color.Pink, "[", "Apron", "", 2,
+                        false, new List<DollSlot>() {
+                            DollSlot.Torso
+                        }
+                    )
+                )
+            );
 
             logSize = 3;
             log = new List<string>();
@@ -436,13 +414,13 @@ namespace ODB
             #region reticule
             if (IO.IOState == InputType.Targeting)
             {
-                dfc.CellData[target.x, target.y].Background =
+                dfc.CellData[Target.x, Target.y].Background =
                 Util.InvertColor(
-                    dfc.CellData[target.x, target.y].Background
+                    dfc.CellData[Target.x, Target.y].Background
                 );
-                dfc.CellData[target.x, target.y].Foreground =
+                dfc.CellData[Target.x, Target.y].Foreground =
                 Util.InvertColor(
-                    dfc.CellData[target.x, target.y].Foreground
+                    dfc.CellData[Target.x, Target.y].Foreground
                 );
             }
             #endregion

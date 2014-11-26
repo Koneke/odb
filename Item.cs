@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Microsoft.Xna.Framework;
@@ -254,7 +253,8 @@ namespace ODB
             count = stream.ReadHex(2);
 
             Mods = new List<Mod>();
-            foreach (string ss in stream.ReadString().Split(
+            string mods = stream.ReadString();
+            foreach (string ss in mods.Split(
                 new char[]{','}, StringSplitOptions.RemoveEmptyEntries))
             {
                 Mod m = new Mod(

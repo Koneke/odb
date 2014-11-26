@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 
 using Microsoft.Xna.Framework.Input;
 
@@ -115,7 +112,7 @@ namespace ODB
                 else if (onFloor.Count > 0)
                 {
                     Game.qpAnswerStack.Push("a");
-                    PlayerResponses.Get("a");
+                    PlayerResponses.Get();
                 }
             }
         }

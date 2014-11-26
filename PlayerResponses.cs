@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 
 using Microsoft.Xna.Framework.Input;
 
@@ -11,9 +8,9 @@ namespace ODB
     {
         public static Game1 Game;
 
-        public static void Get(string answer)
+        public static void Get()
         {
-            Game.qpAnswerStack.Pop();
+            string answer = Game.qpAnswerStack.Pop();
             if (answer.Length <= 0) return;
 
             int i = IO.indexes.IndexOf(answer[0]);
@@ -57,14 +54,14 @@ namespace ODB
             }
         }
 
-        public static void Drop(string answer)
+        public static void Drop()
         {
             //NOTE, PEEK.
             //BECAUSE WE NEED TO REUSE THE ANSWER LATER?
             //not actually using the stack here yet, but we want
             //to drop the string answer bit in the sign later...
             //I think.
-            answer = Game.qpAnswerStack.Peek();
+            string answer = Game.qpAnswerStack.Peek();
             if (answer.Length <= 0) return;
 
             int i = IO.indexes.IndexOf(answer[0]);
@@ -98,7 +95,7 @@ namespace ODB
             }
         }
 
-        public static void DropCount(string answer)
+        public static void DropCount()
         {
             string count = Game.qpAnswerStack.Pop();
             string index = Game.qpAnswerStack.Pop();
@@ -163,26 +160,13 @@ namespace ODB
             }
         }
 
-        public static void Wield(string answer)
+        public static void Wield()
         {
-            answer = Game.qpAnswerStack.Pop();
+            string answer = Game.qpAnswerStack.Pop();
             if (answer.Length <= 0) return;
 
             int i = IO.indexes.IndexOf(answer[0]);
             Item it = Game.player.inventory[i];
-
-            /*List<DollSlot> availableSlots = new List<DollSlot>();
-            foreach (BodyPart bp in Game.player.PaperDoll)
-                if (bp.Item == null)
-                    availableSlots.Add(bp.Type);
-
-            bool canEquip = true;
-            foreach (DollSlot ds in it.equipSlots)
-            {
-                if (!availableSlots.Contains(ds))
-                    canEquip = false;
-                else availableSlots.Remove(ds);
-            }*/
 
             if(!Game.player.CanEquip(it.equipSlots))
                 Game.log.Add("You need to remove something first.");
@@ -194,11 +178,11 @@ namespace ODB
             }
         }
 
-        public static void Wear(string answer)
+        public static void Wear()
         {
             //make sure we start using this instead
             //so we can phase the argument out
-            answer = Game.qpAnswerStack.Pop();
+            string answer = Game.qpAnswerStack.Pop();
 
             int i = IO.indexes.IndexOf(answer[0]);
             Item it = Game.player.inventory[i];
@@ -233,9 +217,9 @@ namespace ODB
             }
         }
 
-        public static void Quiver(string answer)
+        public static void Quiver()
         {
-            answer = Game.qpAnswerStack.Pop();
+            string answer = Game.qpAnswerStack.Pop();
             if (answer.Length <= 0) return;
 
             int i = IO.indexes.IndexOf(answer[0]);
@@ -250,9 +234,9 @@ namespace ODB
             Game.player.Pass();
         }
 
-        public static void Sheath(string answer)
+        public static void Sheath()
         {
-            answer = Game.qpAnswerStack.Pop();
+            string answer = Game.qpAnswerStack.Pop();
             if (answer.Length <= 0) return;
 
             int i = IO.indexes.IndexOf(answer[0]);
@@ -277,9 +261,9 @@ namespace ODB
             Game.player.Pass();
         }
 
-        public static void Remove(string answer)
+        public static void Remove()
         {
-            answer = Game.qpAnswerStack.Pop();
+            string answer = Game.qpAnswerStack.Pop();
             if (answer.Length <= 0) return;
 
             int i = IO.indexes.IndexOf(answer[0]);
@@ -311,9 +295,9 @@ namespace ODB
 
         }
 
-        public static void Open(string answer)
+        public static void Open()
         {
-            Game.qpAnswerStack.Pop();
+            string answer = Game.qpAnswerStack.Pop();
             if (answer.Length <= 0) return;
 
             Point offset = Game.NumpadToDirection(answer[0]);
@@ -334,9 +318,9 @@ namespace ODB
             else Game.log.Add("There's no closed door there.");
         }
 
-        public static void Close(string answer)
+        public static void Close()
         {
-            Game.qpAnswerStack.Pop();
+            string answer = Game.qpAnswerStack.Pop();
             if (answer.Length <= 0) return;
 
             Point offset = Game.NumpadToDirection(answer[0]);
@@ -362,9 +346,9 @@ namespace ODB
             else Game.log.Add("There's no open door there.");
         }
 
-        public static void Zap(string answer)
+        public static void Zap()
         {
-            Game.qpAnswerStack.Peek();
+            string answer = Game.qpAnswerStack.Peek();
             if (answer.Length <= 0) return;
             int i = IO.indexes.IndexOf(answer[0]);
             if (i >= Game.player.Spellbook.Count)
@@ -383,9 +367,9 @@ namespace ODB
             }
         }
 
-        public static void Use(string answer)
+        public static void Use()
         {
-            Game.qpAnswerStack.Peek();
+            string answer = Game.qpAnswerStack.Peek();
             if (answer.Length <= 0) return;
 
             Item it = Game.player.inventory[
@@ -426,27 +410,31 @@ namespace ODB
             }
         }
 
-        public static void Cast(Point p)
+        public static void Cast()
         {
             int index = IO.indexes.IndexOf(Game.qpAnswerStack.Pop()[0]);
-            if (Game.Level.Map[p.x, p.y] != null) {
+            if (Game.Level.Map[Game.Target.x, Game.Target.y] != null) {
                 Game.player.Cast(
-                    //Game.player.Spellbook[index], p
-                    Game.TargetedSpell, p
+                    //Game.TargetedSpell, p
+                    Game.TargetedSpell, Game.Target
                 );
             }
             else
                 Game.log.Add("Invalid target.");
         }
 
-        public static void UseCast(Point p)
+        public static void UseCast()
         {
-            if (Game.Level.Map[p.x, p.y] != null)
+            if (Game.Level.Map[Game.Target.x, Game.Target.y] != null)
             {
                 int i = IO.indexes.IndexOf(Game.qpAnswerStack.Pop()[0]);
                 Item it = Game.player.inventory[i];
                 Game.log.Add("You use " + it.GetName(true) + ".");
-                Projectile pr = Game.TargetedSpell.Cast(Game.player, p);
+                //Projectile pr = Game.TargetedSpell.Cast(Game.player, p);
+                Projectile pr = Game.TargetedSpell.Cast(
+                    Game.player,
+                    Game.Target
+                );
                 pr.Move();
                 //spend charge
                 it.count--;
@@ -464,14 +452,15 @@ namespace ODB
                 Game.log.Add("Invalid target.");
         }
 
-        public static void Fire(Point p)
+        public static void Fire()
         {
-            if (!Game.player.Vision[p.x, p.y])
-            {
+            if (!Game.player.Vision[
+                Game.Target.x, Game.Target.y
+            ]) {
                 Game.log.Add("You can't see that place.");
                 return;
             }
-            Actor a = Game.Level.ActorOnTile(p);
+            Actor a = Game.Level.ActorOnTile(Game.Target);
             if (a == null)
             {
                 Game.log.Add("Nothing there to fire upon.");

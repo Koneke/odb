@@ -182,7 +182,6 @@ namespace ODB
             }
             return canEquip;
         }
-        
         public void Equip(Item it)
         {
             foreach (DollSlot ds in it.Definition.equipSlots)
@@ -195,45 +194,10 @@ namespace ODB
                     }
             }
         }
-
-        public List<BodyPart> GetSlots(DollSlot type)
-        {
-            List<BodyPart> parts = new List<BodyPart>();
-            foreach (BodyPart bp in PaperDoll)
-                if (bp.Type == type)
-                    parts.Add(bp);
-            return parts;
-        }
-
         public bool IsEquipped(Item it)
         {
             return PaperDoll.Any(x => x.Item == it);
         }
-
-        public int GetAC()
-        {
-            int ac = 8;
-            List<Item> equipped = new List<Item>();
-            foreach (
-                BodyPart bp in PaperDoll.FindAll(
-                    x =>
-                        //might seem dumb, but ds.Hand is currently for
-                        //eh, like, the grip, more than the hand itself
-                        //glove-hands currently do not exist..?
-                        //idk, we'll get to it
-                        x.Type != DollSlot.Hand &&
-                        x.Item != null
-                    )
-                )
-                if(!equipped.Contains(bp.Item))
-                    equipped.Add(bp.Item);
-
-            foreach(Item it in equipped)
-                ac += it.Definition.AC + it.mod;
-
-            return ac;
-        }
-
         public List<Item> GetEquippedItems()
         {
             List<Item> equipped = new List<Item>();
@@ -243,6 +207,14 @@ namespace ODB
                         if (!equipped.Contains(bp.Item))
                             equipped.Add(bp.Item);
             return equipped;
+        }
+        public List<BodyPart> GetSlots(DollSlot type)
+        {
+            List<BodyPart> parts = new List<BodyPart>();
+            foreach (BodyPart bp in PaperDoll)
+                if (bp.Type == type)
+                    parts.Add(bp);
+            return parts;
         }
 
         public int Get(Stat stat, bool modded = true)
@@ -268,7 +240,6 @@ namespace ODB
                     return -1;
             }
         }
-
         public int GetMod(Stat stat)
         {
             int modifier = 0;
@@ -297,6 +268,29 @@ namespace ODB
                 modifier -= m.Value;
 
             return modifier;
+        }
+        public int GetAC()
+        {
+            int ac = 8;
+            List<Item> equipped = new List<Item>();
+            foreach (
+                BodyPart bp in PaperDoll.FindAll(
+                    x =>
+                        //might seem dumb, but ds.Hand is currently for
+                        //eh, like, the grip, more than the hand itself
+                        //glove-hands currently do not exist..?
+                        //idk, we'll get to it
+                        x.Type != DollSlot.Hand &&
+                        x.Item != null
+                    )
+                )
+                if(!equipped.Contains(bp.Item))
+                    equipped.Add(bp.Item);
+
+            foreach(Item it in equipped)
+                ac += it.Definition.AC + it.mod;
+
+            return ac;
         }
 
         //crits
@@ -561,7 +555,6 @@ namespace ODB
                 for (int y = 0; y < Game.Level.LevelSize.y; y++)
                     Vision[x, y] = false;
         }
-
         public void AddRoomToVision(Room r)
         {
             foreach (Rect rr in r.rects)
