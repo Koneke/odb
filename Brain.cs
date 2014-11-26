@@ -64,49 +64,45 @@ namespace ODB
             }
             else
             {
-                Point moveTo;
+                Point moveTo = new Point(0, 0);
 
-                //todo: respect other actors
+                bool xy =
+                    Game.Level.Map[target.x, target.y].solid == false &&
+                    Game.Level.ActorOnTile(target) == null;
 
-                if (Game.Level.Map[target.x, target.y].solid == false)
-                {
-                    moveTo = MeatPuppet.xy + offset;
-                }
-                else if (
-                    Game.Level.Map[
-                        target.x,
-                        MeatPuppet.xy.y
-                    ].solid == false
-                ) {
+                bool x =
+                    Game.Level.Map[target.x, MeatPuppet.xy.y].solid == false &&
+                    Game.Level.ActorOnTile(
+                        new Point(target.x, MeatPuppet.xy.y)) == null;
+
+                bool y =
+                    Game.Level.Map[MeatPuppet.xy.x, target.y].solid == false &&
+                    Game.Level.ActorOnTile(
+                        new Point(MeatPuppet.xy.x, target.x)) == null;
+
+                if (xy) { moveTo = MeatPuppet.xy + offset; }
+                else if (x) {
                     moveTo = MeatPuppet.xy + new Point(offset.x, 0);
                 }
-                else if (
-                    Game.Level.Map[
-                        MeatPuppet.xy.x,
-                        target.y
-                    ].solid == false
-                ) {
+                else if (y) {
                     moveTo = MeatPuppet.xy + new Point(0, offset.y);
                 }
-                else
-                {
-                    throw new Exception(
-                        "Bad things are happening to either me or mathematics."
-                    );
-                }
 
-                if (Game.Level.Map[moveTo.x, moveTo.y].door == Door.Closed)
+                if (xy || x || y)
                 {
-                    Game.Level.Map[moveTo.x, moveTo.y].door = Door.Open;
-                    if (Game.player.Vision[moveTo.x, moveTo.y])
+                    if (Game.Level.Map[moveTo.x, moveTo.y].Door == Door.Closed)
                     {
-                        Game.log.Add(
-                            MeatPuppet.Definition.name +
-                            " opens a door."
-                        );
+                        Game.Level.Map[moveTo.x, moveTo.y].Door = Door.Open;
+                        if (Game.player.Vision[moveTo.x, moveTo.y])
+                        {
+                            Game.Log(
+                                MeatPuppet.Definition.name +
+                                " opens a door."
+                            );
+                        }
                     }
+                    else MeatPuppet.xy = moveTo;
                 }
-                else MeatPuppet.xy = moveTo;
 
                 MeatPuppet.Pass(true);
             }

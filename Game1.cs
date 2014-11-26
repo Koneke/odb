@@ -12,9 +12,6 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 //~~~ QUEST TRACKER for ?? nov ~~~
 // * Item value and paid-for status
 
-//~~~ QUEST TRACKER for 26 nov ~~~
-// * Brains respecting other NPC-actors
-
 namespace ODB
 {
     public class Game1 : Microsoft.Xna.Framework.Game
@@ -48,7 +45,7 @@ namespace ODB
         int scrW, scrH;
 
         int logSize;
-        public List<string> log;
+        List<string> log;
 
         public Point Target;
         public Spell TargetedSpell;
@@ -119,7 +116,7 @@ namespace ODB
                     delegate(Actor caster, Point p) {
                         Actor a = Game.Level.ActorOnTile(p);
                         if(a != null) {
-                            Util.Game.log.Add(a.Definition.name +
+                            Util.Game.Log(a.Definition.name +
                                 " is hit by the bolt!"
                             );
                             a.Damage(Util.Roll("1d4"));
@@ -133,7 +130,7 @@ namespace ODB
                 new List<Action<Actor, Point>>() {
                     delegate(Actor caster, Point p) {
                         Actor a = Game.Level.ActorOnTile(p);
-                        Util.Game.log.Add(
+                        Util.Game.Log(
                             a.Definition.name +
                             " is burned by " +
                             caster.Definition.name + "'s touch!"
@@ -207,9 +204,11 @@ namespace ODB
                 )
             );
 
+            Game.Level.Map[13, 15].Engraving = "Don't stand in the fire!";
+
             logSize = 3;
             log = new List<string>();
-            log.Add("Welcome!");
+            Log("Welcome!");
 
             qpAnswerStack = new Stack<string>();
 
@@ -336,26 +335,26 @@ namespace ODB
             if (IO.KeyPressed(Keys.OemPeriod) && IO.shift)
                 if (Level.Map[
                     Game.player.xy.x,
-                    Game.player.xy.y].stairs == Stairs.Down)
+                    Game.player.xy.y].Stairs == Stairs.Down)
                 {
                     int depth = Levels.IndexOf(Level);
                     if (depth + 1 <= Levels.Count - 1)
                     {
                         SwitchLevel(Levels[depth + 1]);
-                        Game.log.Add("You descend the stairs...");
+                        Game.Log("You descend the stairs...");
                     }
                 }
 
             if (IO.KeyPressed(Keys.OemComma) && IO.shift)
                 if (Level.Map[
                     Game.player.xy.x,
-                    Game.player.xy.y].stairs == Stairs.Up)
+                    Game.player.xy.y].Stairs == Stairs.Up)
                 {
                     int depth = Levels.IndexOf(Level);
                     if (depth - 1 >= 0)
                     {
                         SwitchLevel(Levels[depth - 1]);
-                        Game.log.Add("You ascend the stairs...");
+                        Game.Log("You ascend the stairs...");
                     }
                 }
 
@@ -394,6 +393,19 @@ namespace ODB
             RenderConsoles();
             IO.Update(true);
             base.Update(gameTime);
+        }
+
+        public void Log(string s)
+        {
+            List<string> rows = new List<string>();
+            while (s.Length > 80)
+            {
+                rows.Add(s.Substring(0, 80));
+                s = s.Substring(80, s.Length - 80);
+            }
+            rows.Add(s);
+            foreach (string ss in rows)
+                log.Add(ss);
         }
 
         public void ProcessNPCs()
@@ -462,10 +474,10 @@ namespace ODB
                 //doors override the normal tile
                 //which shouldn't be a problem
                 //if it is a problem, it's not, it's something else
-                if (t.door == Door.Closed) tileToDraw = "+";
-                if (t.door == Door.Open) tileToDraw = "/";
-                if (t.stairs == Stairs.Down) tileToDraw = ">";
-                if (t.stairs == Stairs.Up) tileToDraw = "<";
+                if (t.Door == Door.Closed) tileToDraw = "+";
+                if (t.Door == Door.Open) tileToDraw = "/";
+                if (t.Stairs == Stairs.Down) tileToDraw = ">";
+                if (t.Stairs == Stairs.Up) tileToDraw = "<";
 
                 DrawToScreen(
                     new Point(x, y),
@@ -539,11 +551,12 @@ namespace ODB
                 int i = log.Count, n = 0;
                 i > 0 && n < logConsole.ViewArea.Height;
                 i--, n++
-            )
+            ) {
                 logConsole.CellData.Print(
                     0, logConsole.ViewArea.Height - (n + 1),
                     log[i - 1]
                 );
+            }
         }
 
         public void RenderPrompt()

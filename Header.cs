@@ -25,8 +25,10 @@ namespace ODB
         public string tile;
 
         public bool solid;
-        public Door door;
-        public Stairs stairs;
+        public Door Door;
+        public Stairs Stairs;
+
+        public string Engraving;
 
         public Tile(
             Color bg,
@@ -40,13 +42,15 @@ namespace ODB
             this.fg = fg;
             this.tile = tile;
             this.solid = solid;
-            this.door = doors;
-            this.stairs = stairs;
+            this.Door = doors;
+            this.Stairs = stairs;
+            Engraving = "";
         }
 
         public Tile(string s)
         {
             ReadTile(s);
+            Engraving = "";
         }
 
         public Stream WriteTile()
@@ -56,8 +60,8 @@ namespace ODB
             stream.Write(fg);
             stream.Write(tile, false);
             stream.Write(solid);
-            stream.Write((int)door, 1);
-            stream.Write((int)stairs, 1);
+            stream.Write((int)Door, 1);
+            stream.Write((int)Stairs, 1);
             return stream;
         }
 
@@ -68,8 +72,8 @@ namespace ODB
             fg = stream.ReadColor();
             tile = stream.ReadString(1);
             solid = stream.ReadBool();
-            door = (Door)stream.ReadHex(1);
-            stairs = (Stairs)stream.ReadHex(1);
+            Door = (Door)stream.ReadHex(1);
+            Stairs = (Stairs)stream.ReadHex(1);
             return;
         }
     }

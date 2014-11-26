@@ -32,11 +32,11 @@ namespace ODB
                 switch (itemsOnSquare.Count)
                 {
                     case 0: break;
-                    case 1: Game.log.Add(
+                    case 1: Game.Log(
                             "There is " + itemsOnSquare[0].GetName() +
                             " here."
                         ); break;
-                    default: Game.log.Add(
+                    default: Game.Log(
                             "There are " + itemsOnSquare.Count +
                             " items here."
                         ); break;
@@ -53,6 +53,7 @@ namespace ODB
             CheckApply();
             CheckFire();
             CheckQuiver();
+            CheckLook();
         }
 
         //return whether we moved or not
@@ -194,7 +195,7 @@ namespace ODB
                 }
                 else
                 {
-                    Game.log.Add("Nothing to " +
+                    Game.Log("Nothing to " +
                         (wield ? "wield" : "wear") + ".");
                 }
             }
@@ -251,7 +252,7 @@ namespace ODB
                 }
                 else
                 {
-                    Game.log.Add("Nothing to " +
+                    Game.Log("Nothing to " +
                         (sheath ? "sheath." : "remove.")
                     );
                 }
@@ -356,7 +357,7 @@ namespace ODB
 
                 if (weapon == null)
                 {
-                    Game.log.Add("You need something to fire with.");
+                    Game.Log("You need something to fire with.");
                     return;
                 }
 
@@ -376,7 +377,7 @@ namespace ODB
 
                 if (!canFire)
                 {
-                    Game.log.Add("You need something to fire.");
+                    Game.Log("You need something to fire.");
                     return;
                 }
 
@@ -417,5 +418,16 @@ namespace ODB
             }
         }
 
+        static void CheckLook()
+        {
+            if (IO.KeyPressed(Keys.OemSemicolon) && IO.shift)
+            {
+                IO.AskPlayer(
+                    "Examine what?",
+                    InputType.Targeting,
+                    PlayerResponses.Examine
+                );
+            }
+        }
     }
 }

@@ -26,6 +26,7 @@ namespace ODB
         public List<DollSlot> BodyParts;
         public int CorpseType;
         public List<int> Spellbook;
+        //public bool Named; //for uniques and what not
 
         public ActorDefinition(
             Color? bg, Color fg,
@@ -153,6 +154,10 @@ namespace ODB
 
         public int hpMax { get { return Definition.hpMax; } }
         public int mpMax { get { return Definition.mpMax; } }
+
+        public string Name { get {
+            return Util.article(Definition.name) + " " + Definition.name; }
+        }
         #endregion
 
         public Actor(
@@ -170,6 +175,7 @@ namespace ODB
             foreach (DollSlot ds in def.BodyParts)
                 PaperDoll.Add(new BodyPart(ds));
             inventory = new List<Item>();
+            TickingEffects = new List<TickingEffect>();
         }
 
         public Actor(string s)
@@ -328,7 +334,7 @@ namespace ODB
                         //barehanded/bash damage
                         damageRoll += Util.Roll("1d4");
 
-                Game.log.Add(
+                Game.Log(
                     Definition.name + " strikes " +target.Definition.name +
                     " (" + hitRoll + " vs " + dodgeRoll + ")"
                 );
@@ -337,7 +343,7 @@ namespace ODB
             }
             else
             {
-                Game.log.Add(Definition.name + " swings in the air." +
+                Game.Log(Definition.name + " swings in the air." +
                     " (" + hitRoll + " vs " + dodgeRoll + ")"
                 );
             }
@@ -376,13 +382,13 @@ namespace ODB
 
                 damageRoll = Util.Roll(weapon.Definition.Damage);
                 damageRoll += Util.Roll(ammo.Definition.Damage);
-                Game.log.Add(
+                Game.Log(
                     target.Definition.name + " is hit! " +
                     "(" + hitRoll + " vs " + dodgeRoll + ")"
                 );
                 target.Damage(damageRoll);
             } else {
-                Game.log.Add(
+                Game.Log(
                     Definition.name + " misses " +
                     "(" + hitRoll + " vs " + dodgeRoll + ")"
                 );
@@ -395,7 +401,7 @@ namespace ODB
             hpCurrent -= d;
             if (hpCurrent <= 0)
             {
-                Game.log.Add(Definition.name + " dies!");
+                Game.Log(Definition.name + " dies!");
                 Item corpse = new Item(
                     xy,
                     ItemDefinition.ItemDefinitions[
@@ -410,14 +416,14 @@ namespace ODB
         public void Cast(Spell s, Point target, bool suppressMsg = false)
         {
             if(!suppressMsg)
-                Game.log.Add(Definition.name + " casts " + s.Name + ".");
+                Game.Log(Definition.name + " casts " + s.Name + ".");
             if (Util.Roll("1d6") + Get(Stat.Intelligence) > s.CastDifficulty)
             {
                 Projectile p = s.Cast(this, target);
                 p.Move();
             }
             else if(suppressMsg)
-                Game.log.Add("The spell fizzles.");
+                Game.Log("The spell fizzles.");
             Pass();
         }
 
@@ -444,14 +450,14 @@ namespace ODB
 
             if (target == null)
                 legalMove = false;
-            else if (target.door == Door.Closed || target.solid)
+            else if (target.Door == Door.Closed || target.solid)
                 legalMove = false;
 
             if (!legalMove)
             {
                 offset = new Point(0, 0);
                 if(this == Game.player)
-                    Game.log.Add("Bump!");
+                    Game.Log("Bump!");
             }
             else
             {
@@ -467,7 +473,7 @@ namespace ODB
                     }
                     if (!(numberOfLegs >= 1 || numberOfFreeHands > 2))
                         if(this == Game.player)
-                            Game.log.Add("You roll forwards!");
+                            Game.Log("You roll forwards!");
 
                     xy.Nudge(offset.x, offset.y);
                     moved = true;

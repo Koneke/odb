@@ -44,12 +44,12 @@ namespace ODB
                 {
                     Game.player.inventory.Add(it);
                 }
-                Game.log.Add("Picked up " + it.GetName() + ".");
+                Util.Game.Log("Picked up " + it.GetName() + ".");
                 Game.player.Pass();
             }
             else
             {
-                Game.log.Add("Invalid selection ("+answer[0]+").");
+                Util.Game.Log("Invalid selection ("+answer[0]+").");
                 return;
             }
         }
@@ -68,7 +68,7 @@ namespace ODB
 
             if (i >= Game.player.inventory.Count)
             {
-                Game.log.Add("Invalid selection ("+answer[0]+").");
+                Game.Log("Invalid selection ("+answer[0]+").");
                 return;
             }
 
@@ -117,7 +117,7 @@ namespace ODB
             foreach (BodyPart bp in Game.player.PaperDoll)
                 if (bp.Item == it) bp.Item = null;
 
-            Game.log.Add("Dropped " + it.GetName() + ".");
+            Game.Log("Dropped " + it.GetName() + ".");
 
             Game.player.Pass();
         }
@@ -129,7 +129,7 @@ namespace ODB
             {
                 if (count > it.count)
                 {
-                    Game.log.Add("You don't have that many.");
+                    Game.Log("You don't have that many.");
                     return;
                 }
                 else if (count == it.count)
@@ -151,7 +151,7 @@ namespace ODB
                     Game.Level.WorldItems.Add(droppedStack);
                     Game.Level.AllItems.Add(droppedStack);
 
-                    Game.log.Add("Dropped "+// count + " " +
+                    Game.Log("Dropped "+// count + " " +
                         it.GetName() + "."
                     );
 
@@ -169,9 +169,9 @@ namespace ODB
             Item it = Game.player.inventory[i];
 
             if(!Game.player.CanEquip(it.equipSlots))
-                Game.log.Add("You need to remove something first.");
+                Game.Log("You need to remove something first.");
             else {
-                Game.log.Add("Equipped "+it.GetName() + ".");
+                Game.Log("Equipped "+it.GetName() + ".");
                 Game.player.Equip(it);
 
                 Game.player.Pass();
@@ -195,7 +195,7 @@ namespace ODB
             if (!Game.player.CanEquip(it.equipSlots))
             {
                 canEquip = false;
-                Game.log.Add("You need to remove something first.");
+                Game.Log("You need to remove something first.");
             }
 
             if (canEquip)
@@ -211,7 +211,7 @@ namespace ODB
                     Game.Level.AllItems.Add(clone);
                 }
                 Game.player.Equip(it);
-                Game.log.Add("Wore " + it.GetName() + ".");
+                Game.Log("Wore " + it.GetName() + ".");
 
                 Game.player.Pass();
             }
@@ -229,7 +229,7 @@ namespace ODB
                 if (bp.Type == DollSlot.Quiver)
                     bp.Item = selected;
 
-            Game.log.Add("Quivered "+ selected.GetName() + ".");
+            Game.Log("Quivered "+ selected.GetName() + ".");
 
             Game.player.Pass();
         }
@@ -242,7 +242,7 @@ namespace ODB
             int i = IO.indexes.IndexOf(answer[0]);
             if (i >= Game.player.inventory.Count)
             {
-                Game.log.Add("Invalid selection (" + answer[0] + ").");
+                Game.Log("Invalid selection (" + answer[0] + ").");
                 return;
             }
 
@@ -256,7 +256,7 @@ namespace ODB
             foreach (BodyPart bp in Game.player.PaperDoll)
                 if (bp.Item == it) bp.Item = null;
 
-            Game.log.Add("Unequipped " + it.GetName() + ".");
+            Util.Game.Log("Unequipped " + it.GetName() + ".");
 
             Game.player.Pass();
         }
@@ -276,7 +276,7 @@ namespace ODB
             foreach (BodyPart bp in Game.player.PaperDoll)
                 if (bp.Item == it) bp.Item = null;
 
-            Game.log.Add("Removed " + it.GetName());
+            Game.Log("Removed " + it.GetName());
 
             Item stack = null;
             if (it.Definition.stacking)
@@ -306,16 +306,16 @@ namespace ODB
                     Game.player.xy.x + offset.x,
                     Game.player.xy.y + offset.y
                 ];
-            if (t.door == Door.Closed)
+            if (t.Door == Door.Closed)
             {
-                t.door = Door.Open;
-                Game.log.Add("You opened the door.");
+                t.Door = Door.Open;
+                Game.Log("You opened the door.");
 
                 //counted as a movement action at the moment, based
                 //on the dnd rules.
                 Game.player.Pass(true);
             }
-            else Game.log.Add("There's no closed door there.");
+            else Game.Log("There's no closed door there.");
         }
 
         public static void Close()
@@ -329,21 +329,21 @@ namespace ODB
                     Game.player.xy.x + offset.x,
                     Game.player.xy.y + offset.y
                 ];
-            if (t.door == Door.Open)
+            if (t.Door == Door.Open)
             {
                 //first check if something's in the way
                 if (Util.ItemsOnTile(t).Count <= 0)
                 {
-                    t.door = Door.Closed;
-                    Game.log.Add("You closed the door.");
+                    t.Door = Door.Closed;
+                    Game.Log("You closed the door.");
 
                     //counted as a movement action at the moment, based
                     //on the dnd rules.
                     Game.player.Pass(true);
                 }
-                else Game.log.Add("There's something in the way.");
+                else Game.Log("There's something in the way.");
             }
-            else Game.log.Add("There's no open door there.");
+            else Game.Log("There's no open door there.");
         }
 
         public static void Zap()
@@ -353,12 +353,12 @@ namespace ODB
             int i = IO.indexes.IndexOf(answer[0]);
             if (i >= Game.player.Spellbook.Count)
             {
-                Game.log.Add("Invalid selection (" + answer[0] + ").");
+                Game.Log("Invalid selection (" + answer[0] + ").");
                 return;
             }
             else if (Game.player.mpCurrent < Game.player.Spellbook[i].Cost)
             {
-                Game.log.Add("You lack the energy.");
+                Game.Log("You lack the energy.");
                 return;
             }
             else
@@ -382,7 +382,7 @@ namespace ODB
             ];
             if (it.count <= 0)
             {
-                Game.log.Add(it.GetName(true, false, true) + " lacks charges.");
+                Game.Log(it.GetName(true, false, true) + " lacks charges.");
                 return;
             }
 
@@ -399,7 +399,7 @@ namespace ODB
                 {
                     Game.player.inventory.Remove(it);
                     Game.Level.AllItems.Remove(it);
-                    Game.log.Add(it.GetName(true, false, true) + " is spent!");
+                    Game.Log(it.GetName(true, false, true) + " is spent!");
                 }
                 Game.player.Pass();
             }
@@ -425,7 +425,7 @@ namespace ODB
                 Game.player.mpCurrent -= Game.player.Spellbook[index].Cost;
             }
             else
-                Game.log.Add("Invalid target.");
+                Game.Log("Invalid target.");
         }
 
         public static void UseCast()
@@ -434,7 +434,7 @@ namespace ODB
             {
                 int i = IO.indexes.IndexOf(Game.qpAnswerStack.Pop()[0]);
                 Item it = Game.player.inventory[i];
-                Game.log.Add("You use " + it.GetName(true) + ".");
+                Game.Log("You use " + it.GetName(true) + ".");
                 //Projectile pr = Game.TargetedSpell.Cast(Game.player, p);
                 Projectile pr = Game.TargetedSpell.Cast(
                     Game.player,
@@ -449,12 +449,12 @@ namespace ODB
                 {
                     Game.player.inventory.Remove(it);
                     Game.Level.AllItems.Remove(it);
-                    Game.log.Add(it.GetName(true, false, true) + " is spent!");
+                    Game.Log(it.GetName(true, false, true) + " is spent!");
                 }
                 Game.player.Pass();
             }
             else
-                Game.log.Add("Invalid target.");
+                Game.Log("Invalid target.");
         }
 
         public static void Fire()
@@ -462,17 +462,65 @@ namespace ODB
             if (!Game.player.Vision[
                 Game.Target.x, Game.Target.y
             ]) {
-                Game.log.Add("You can't see that place.");
+                Game.Log("You can't see that place.");
                 return;
             }
             Actor a = Game.Level.ActorOnTile(Game.Target);
             if (a == null)
             {
-                Game.log.Add("Nothing there to fire upon.");
+                Game.Log("Nothing there to fire upon.");
                 return;
             }
 
             Game.player.Shoot(a);
         }
+
+        public static void Examine()
+        {
+            Tile t = Game.Level.Map[Game.Target.x, Game.Target.y];
+
+            string distString =
+                (Util.Distance(Game.player.xy, Game.Target) > 1 ?
+                    " there. " : ". ");
+
+            if (t == null)
+            {
+                Game.Log(
+                    "You see nothing" + distString
+                );
+                return;
+            }
+            if (t.solid)
+            {
+                Game.Log("You see a dungeon wall" + distString);
+                return;
+            }
+
+            List<Item> items = Util.ItemsOnTile(t);
+            string str = "";
+
+            if (t.Door != Door.None) str = "You see a door. ";
+            else if (t.Stairs != Stairs.None) str = "You see a set of stairs.";
+            else str = "You see the dungeon floor. ";
+
+
+            if (Game.player.Vision[Game.Target.x, Game.Target.y])
+            {
+                if (t.Engraving != "")
+                    str += "\"" + t.Engraving + "\" is written on the floor" +
+                        distString;
+
+                Actor a;
+                if ((a = Game.Level.ActorOnTile(t)) != null)
+                    str += "You see " + a.Name + distString;
+                if (items.Count > 0)
+                    str += "There's " + items[0].GetName() + distString;
+                else if (items.Count > 1)
+                    str += "There's several items " + distString;
+            }
+
+            Game.Log(str);
+        }
+
     }
 }
