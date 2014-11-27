@@ -49,6 +49,34 @@ namespace ODB
         //return whether we moved or not
         static bool MovementInput()
         {
+            #region stairs
+            if (IO.KeyPressed(Keys.OemPeriod) && IO.shift)
+                if (Game.Level.Map[
+                    Game.player.xy.x,
+                    Game.player.xy.y].Stairs == Stairs.Down)
+                {
+                    int depth = Game.Levels.IndexOf(Game.Level);
+                    if (depth + 1 <= Game.Levels.Count - 1)
+                    {
+                        Game.SwitchLevel(Game.Levels[depth + 1]);
+                        Game.Log("You descend the stairs...");
+                    }
+                }
+
+            if (IO.KeyPressed(Keys.OemComma) && IO.shift)
+                if (Game.Level.Map[
+                    Game.player.xy.x,
+                    Game.player.xy.y].Stairs == Stairs.Up)
+                {
+                    int depth = Game.Levels.IndexOf(Game.Level);
+                    if (depth - 1 >= 0)
+                    {
+                        Game.SwitchLevel(Game.Levels[depth - 1]);
+                        Game.Log("You ascend the stairs...");
+                    }
+                }
+            #endregion
+
             bool moved = false;
             Point offset = new Point(0, 0);
 

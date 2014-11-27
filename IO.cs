@@ -54,7 +54,6 @@ namespace ODB
             {
                 if (KeyPressed((Keys)i))
                 {
-                    if (i == 59) { var a = 0; }
                     //because sometimes, the key-char mapping isn't botched
                     char c = (char)i;
 
@@ -67,7 +66,7 @@ namespace ODB
                         c = (char)(48 + i - Keys.NumPad0);
                     }
 
-                    if (i >= (int)Keys.A && i < (int)Keys.Z)
+                    if (i >= (int)Keys.A && i <= (int)Keys.Z)
                     {
                         //nudge it so we get either A or a, dep. on shiftstate
                         c = (char)(i + (shift ? 0 : 32));
@@ -101,8 +100,8 @@ namespace ODB
                 }
                 else
                 {
-                    Game.wmHistory.Add(Answer);
-                    Game.wmCommand(Answer);
+                    Wizard.wmHistory.Add(Answer);
+                    Wizard.wmCommand(Answer);
                 }
             }
         }
@@ -166,6 +165,7 @@ namespace ODB
                     stream.Write(i, 2);
                 Game.Levels[i].WriteLevelSave("Save/level" + i + ".sv");
             }
+            //gametick
             WriteToFile("Save/game.sv", stream.ToString());
         }
         public static void Load()
@@ -173,6 +173,7 @@ namespace ODB
             Stream stream = new Stream(ReadFromFile("Save/game.sv"));
             int levels = stream.ReadHex(2);
             int playerLocation = stream.ReadHex(2);
+            //int gametick
 
             if (Game.Levels != null)
             {

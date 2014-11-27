@@ -183,7 +183,6 @@ namespace ODB
             : base(s)
         {
             ReadActor(s);
-            TickingEffects = new List<TickingEffect>();
         }
 
         public string GetName(bool def = false)
@@ -529,7 +528,7 @@ namespace ODB
                 stream.Write((int)bp.Type, 2);
                 stream.Write(":", false);
 
-                if (bp.Item == null) stream.Write("XXXX", false);
+                if (bp.Item == null) stream.Write("X", false);
                 else stream.Write(bp.Item.id, 4);
 
                 stream.Write(",", false);
@@ -539,6 +538,13 @@ namespace ODB
             foreach (Item it in inventory)
             {
                 stream.Write(it.id, 4);
+                stream.Write(",", false);
+            }
+            stream.Write(";", false);
+
+            foreach (TickingEffect te in TickingEffects)
+            {
+                stream.Write(te.WriteTickingEffect().ToString(), false);
                 stream.Write(",", false);
             }
             stream.Write(";", false);
@@ -584,6 +590,16 @@ namespace ODB
                 inventory.Add(
                     Util.GetItemByID(IO.ReadHex(ss))
                 );
+            }
+
+            TickingEffects = new List<TickingEffect>();
+            string tickers = stream.ReadString();
+            foreach (string ticker in tickers.Split(','))
+            {
+                if (ticker == "") continue;
+                TickingEffect te;
+                TickingEffects.Add(te = new TickingEffect(ticker));
+                te.Holder = this;
             }
 
             return stream;

@@ -129,8 +129,10 @@
     <Compile Include="Program.cs" />
     <Compile Include="Game1.cs" />
     <Compile Include="Stream.cs" />
+    <Compile Include="TickingEffect.cs" />
     <Compile Include="Tile.cs" />
     <Compile Include="Util.cs" />
+    <Compile Include="Wizard.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Game.ico" />
