@@ -170,6 +170,7 @@ namespace ODB
 
             Definition = def;
             this.hpCurrent = def.hpMax;
+            this.mpCurrent = def.mpMax;
             Cooldown = 0;
 
             PaperDoll = new List<BodyPart>();

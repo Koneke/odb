@@ -163,17 +163,57 @@ namespace ODB
                     }
                     break;
                     #endregion
+                case "am": case "addmod":
+                    #region addmod
+                    foreach (Item item in Util.ItemsOnTile(wmCursor))
+                    {
+                        item.Mods.Add(
+                            new Mod(
+                                (ModType)IO.ReadHex(args[0]),
+                                IO.ReadHex(args[1])
+                            )
+                        );
+                    }
+                    break;
+                    #endregion
+                case "rm": case "remmod": case "removemod":
+                    #region remove mod
+                    bool removed = false;
+                    foreach (Item item in Util.ItemsOnTile(wmCursor))
+                    {
+                        if (removed) break;
+                        for (int i = 0; i < item.Mods.Count; i++)
+                        {
+                            if (item.Mods[i].Type ==
+                                (ModType)IO.ReadHex(args[0]))
+                            {
+                                item.Mods.RemoveAt(i);
+                                removed = true;
+                                break;
+                            }
+                        }
+                    }
+                    break;
+                    #endregion
                 case "si": case "spawnitem":
                     #region spawnitem
-                    Item it = new Item(args[0]);
+                    Item it = new Item(
+                        Wizard.wmCursor,
+                        Util.IDefByName(args[0]),
+                        IO.ReadHex(args[1])
+                    );
                     Game.Level.AllItems.Add(it);
                     Game.Level.WorldItems.Add(it);
                     break;
                     #endregion
                 case "sa":  case "spawnactor":
                     #region spawnactor
-                    Actor act = new Actor(args[0]);
+                    Actor act = new Actor(
+                        Wizard.wmCursor,
+                        Util.ADefByName(args[0])
+                    );
                     Game.Level.WorldActors.Add(act);
+                    Game.Brains.Add(new Brain(act));
                     break;
                     #endregion
                 case "sp": case "setplayer":
@@ -211,6 +251,14 @@ namespace ODB
                     );
                     break;
                     #endregion
+                case "printitem": case "pitem": case "pi":
+                    #region pa
+                    foreach(Item item in Util.ItemsOnTile(Wizard.wmCursor))
+                        Game.Log(
+                            item.WriteItem().ToString()
+                        );
+                    break;
+                    #endregion
                 case "cast":
                     #region cast
                     Spell.Spells[IO.ReadHex(args[0])].Cast(
@@ -229,6 +277,9 @@ namespace ODB
                     );
                     break;
                     #endregion
+                case "teleport": case "tp":
+                    Game.player.xy = wmCursor;
+                    break;
                 default:
                     Game.Log("Unrecognized cmd " + cmd);
                     break;

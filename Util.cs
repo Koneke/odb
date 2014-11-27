@@ -31,7 +31,8 @@ namespace ODB
         {
             for (int i = 0; i < 0xFFFF; i++)
                 if (ItemDefinition.ItemDefinitions[i] != null)
-                    if (ItemDefinition.ItemDefinitions[i].name == name)
+                    if (ItemDefinition.
+                        ItemDefinitions[i].name.ToLower() == name.ToLower())
                         return ItemDefinition.ItemDefinitions[i];
             return null;
         }
@@ -40,7 +41,8 @@ namespace ODB
         {
             for (int i = 0; i < 0xFFFF; i++)
                 if (ActorDefinition.ActorDefinitions[i] != null)
-                    if (ActorDefinition.ActorDefinitions[i].name == name)
+                    if (ActorDefinition.
+                        ActorDefinitions[i].name.ToLower() == name.ToLower())
                         return ActorDefinition.ActorDefinitions[i];
             return null;
         }

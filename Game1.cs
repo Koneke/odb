@@ -280,14 +280,14 @@ namespace ODB
                 Tile bgtile = Game.Level.Map[xy.x, xy.y];
                 if(bgtile != null)
                     dfc.CellData.SetBackground(
-                        xy.x - camX, xy.y - camY,
+                        xy.x, xy.y,
                         bgtile.bg
                     );
             }
 
-            dfc.CellData.SetForeground(xy.x - camX, xy.y - camY, fg);
+            dfc.CellData.SetForeground(xy.x, xy.y, fg);
 
-            dfc.CellData.Print(xy.x - camX, xy.y - camY, tile);
+            dfc.CellData.Print(xy.x, xy.y, tile);
         }
 
         void DrawBorder(Console c, Rect r, Color bg, Color fg)
@@ -490,38 +490,28 @@ namespace ODB
             #region reticule
             if (IO.IOState == InputType.Targeting)
             {
-                dfc.CellData[Target.x, Target.y].Background =
-                Util.InvertColor(
-                    dfc.CellData[Target.x, Target.y].Background
-                );
-                dfc.CellData[Target.x, Target.y].Foreground =
-                Util.InvertColor(
-                    dfc.CellData[Target.x, Target.y].Foreground
-                );
+                Cell cs = dfc.CellData[Target.x, Target.y];
+
+                bool blink = (DateTime.Now.Millisecond % 500 > 250);
+
+                cs.Background = blink ?
+                    Util.InvertColor(cs.Background) : Color.White;
+
+                cs.Foreground = blink ?
+                    Util.InvertColor(cs.Foreground) : Color.White;
             }
             if (wizMode)
             {
-                //ugly as fuck, but detailwork, works, more important things to
-                //work on.
-                dfc.CellData[
-                    Wizard.wmCursor.x, Wizard.wmCursor.y
-                ].Background =
-                    (DateTime.Now.Millisecond % 500 > 250) ?
-                    Util.InvertColor(
-                        dfc.CellData[
-                            Wizard.wmCursor.x, Wizard.wmCursor.y
-                        ].Background
-                    ) : Color.White;
+                Cell cs = dfc.CellData[
+                    Wizard.wmCursor.x, Wizard.wmCursor.y];
 
-                dfc.CellData[
-                    Wizard.wmCursor.x, Wizard.wmCursor.y
-                ].Foreground =
-                    (DateTime.Now.Millisecond % 500 > 250) ?
-                    Util.InvertColor(
-                        dfc.CellData[
-                            Wizard.wmCursor.x, Wizard.wmCursor.y
-                        ].Foreground
-                    ) : Color.White;
+                bool blink = (DateTime.Now.Millisecond % 500 > 250);
+
+                cs.Background = blink ?
+                    Util.InvertColor(cs.Background) : Color.White;
+
+                cs.Foreground = blink ?
+                    Util.InvertColor(cs.Foreground) : Color.White;
             }
             #endregion
         }
@@ -722,6 +712,8 @@ namespace ODB
                 str += " (" + String.Format("{0:X2}", Wizard.wmCursor.x);
                 str += " ; ";
                 str += String.Format("{0:X2}", Wizard.wmCursor.y) + ")";
+                str += " (" + Wizard.wmCursor.x + " ; " +
+                    Wizard.wmCursor.y + ")";
                 statRowConsole.CellData.Print(
                     0, 0, str 
                 );
