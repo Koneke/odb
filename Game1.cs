@@ -33,6 +33,11 @@ namespace ODB
             Content.RootDirectory = "Content";
         }
 
+        public bool wizMode;
+        Point wmCursor;
+        public List<string> wmHistory;
+        int wmScrollback;
+
         public int GameTick;
 
         public List<Level> Levels;
@@ -223,15 +228,38 @@ namespace ODB
             camX = camY = 0;
             scrW = 80; scrH = 25;
 
+            TileDefinition floor = new TileDefinition(
+                Color.Black, Color.LightGray, ".", false);
+            TileDefinition wall = new TileDefinition(
+                Color.Gray, Color.Gray, " ", true);
+
+            IO.WriteTileDefinitionsToFile("Data/tiles.def");
+
             SetupMagic(); //essentially magic defs, but we hardcode magic
             SetupTickingEffects(); //same as magic, cba to add scripting
             IO.ReadActorDefinitionsFromFile("Data/actors.def");
             IO.ReadItemDefinitionsFromFile("Data/items.def");
 
-            IO.Load(); //load entire game (except definitions atm)
+            //IO.Load(); //load entire game (except definitions atm)
+            Game.Level = new Level(80, 25);
+            Game.Level.WorldActors.Add(
+                new Actor(
+                    new Point(13, 15),
+                    Util.ADefByName("Moribund")
+                )
+            );
+            Level.CreateRoom(
+                new Rect(new Point(10, 10), new Point(5, 7)),
+                floor,
+                wall
+            );
+            Level.CreateRoom(
+                new Rect(new Point(14, 13), new Point(7, 1)),
+                floor
+            );
             SetupBrains();
 
-            Level.WorldActors[0].TickingEffects.Add(
+            /*Level.WorldActors[0].TickingEffects.Add(
                 Util.TEDefByName("passive hp regeneration").Instantiate(
                     Level.WorldActors[0]
             ));
@@ -239,13 +267,17 @@ namespace ODB
             Level.WorldActors[0].TickingEffects.Add(
                 Util.TEDefByName("passive mp regeneration").Instantiate(
                     Level.WorldActors[0]
-            ));
+            ));*/
 
             logSize = 3;
             log = new List<string>();
             Log("Welcome!");
 
             qpAnswerStack = new Stack<string>();
+
+            //wiz
+            wmCursor = Game.player.xy;
+            wmHistory = new List<string>();
 
             base.Initialize();
         }
@@ -331,7 +363,7 @@ namespace ODB
                 else this.Exit();
             }
 
-            if (IO.KeyPressed(Keys.I))
+            if (IO.KeyPressed(Keys.I) && !wizMode)
                 inventoryConsole.IsVisible =
                     !inventoryConsole.IsVisible;
 
@@ -365,54 +397,72 @@ namespace ODB
 
             if (IO.KeyPressed(Keys.F5)) IO.Save();
             if (IO.KeyPressed(Keys.F6)) IO.Load();
+
+            if (IO.KeyPressed(Keys.F9))
+            {
+                if (wizMode)
+                {
+                    IO.Answer = "";
+                    IO.IOState = InputType.PlayerInput;
+                }
+                wizMode = !wizMode;
+            }
             #endregion
 
-            if (IO.KeyPressed(Keys.OemPeriod) && IO.shift)
-                if (Level.Map[
-                    Game.player.xy.x,
-                    Game.player.xy.y].Stairs == Stairs.Down)
-                {
-                    int depth = Levels.IndexOf(Level);
-                    if (depth + 1 <= Levels.Count - 1)
-                    {
-                        SwitchLevel(Levels[depth + 1]);
-                        Game.Log("You descend the stairs...");
-                    }
-                }
-
-            if (IO.KeyPressed(Keys.OemComma) && IO.shift)
-                if (Level.Map[
-                    Game.player.xy.x,
-                    Game.player.xy.y].Stairs == Stairs.Up)
-                {
-                    int depth = Levels.IndexOf(Level);
-                    if (depth - 1 >= 0)
-                    {
-                        SwitchLevel(Levels[depth - 1]);
-                        Game.Log("You ascend the stairs...");
-                    }
-                }
-
-            //only do player movement if we're not currently asking something
-            switch (IO.IOState)
+            if (wizMode)
             {
-                case InputType.QuestionPromptSingle:
-                case InputType.QuestionPrompt:
-                    IO.QuestionPromptInput();
-                    break;
-                case InputType.Targeting:
-                    IO.TargetInput();
-                    break;
-                case InputType.PlayerInput:
-                    if (player.Cooldown == 0)
-                        Player.PlayerInput();
-                    else ProcessNPCs(); //mind: also ticks gameclock
-                    break;
-                //if this happens,
-                //you're breaking some kind of weird shit somehow
-                default: throw new Exception("");
+                wmInput();
+            }
+            else
+            {
+                //should be moved into player movement somewhere
+                if (IO.KeyPressed(Keys.OemPeriod) && IO.shift)
+                    if (Level.Map[
+                        Game.player.xy.x,
+                        Game.player.xy.y].Stairs == Stairs.Down)
+                    {
+                        int depth = Levels.IndexOf(Level);
+                        if (depth + 1 <= Levels.Count - 1)
+                        {
+                            SwitchLevel(Levels[depth + 1]);
+                            Game.Log("You descend the stairs...");
+                        }
+                    }
+
+                if (IO.KeyPressed(Keys.OemComma) && IO.shift)
+                    if (Level.Map[
+                        Game.player.xy.x,
+                        Game.player.xy.y].Stairs == Stairs.Up)
+                    {
+                        int depth = Levels.IndexOf(Level);
+                        if (depth - 1 >= 0)
+                        {
+                            SwitchLevel(Levels[depth - 1]);
+                            Game.Log("You ascend the stairs...");
+                        }
+                    }
+
+                switch (IO.IOState)
+                {
+                    case InputType.QuestionPromptSingle:
+                    case InputType.QuestionPrompt:
+                        IO.QuestionPromptInput();
+                        break;
+                    case InputType.Targeting:
+                        IO.TargetInput();
+                        break;
+                    case InputType.PlayerInput:
+                        if (player.Cooldown == 0)
+                            Player.PlayerInput();
+                        else ProcessNPCs(); //mind: also ticks gameclock
+                        break;
+                    //if this happens,
+                    //you're breaking some kind of weird shit somehow
+                    default: throw new Exception("");
+                }
             }
 
+            //should probably find a better place to tick this
             foreach (Actor a in Game.Level.WorldActors)
             {
                 a.ResetVision();
@@ -489,6 +539,17 @@ namespace ODB
                     dfc.CellData[Target.x, Target.y].Foreground
                 );
             }
+            if (wizMode)
+            {
+                dfc.CellData[wmCursor.x, wmCursor.y].Background =
+                Util.InvertColor(
+                    dfc.CellData[wmCursor.x, wmCursor.y].Background
+                );
+                dfc.CellData[wmCursor.x, wmCursor.y].Foreground =
+                Util.InvertColor(
+                    dfc.CellData[wmCursor.x, wmCursor.y].Foreground
+                );
+            }
             #endregion
         }
 
@@ -501,9 +562,12 @@ namespace ODB
                 Tile t = Game.Level.Map[x + camX, y + camY];
 
                 if (t == null) continue;
-                if (!Game.Level.Seen[x + camX, y + camY]) continue;
+                if (
+                    !(Game.Level.Seen[x + camX, y + camY] || wizMode)
+                ) continue;
 
-                bool inVision = Game.player.Vision[x + camX, y + camY];
+                bool inVision =
+                    Game.player.Vision[x + camX, y + camY] || wizMode;
 
                 string tileToDraw = t.tile;
                 //doors override the normal tile
@@ -536,7 +600,9 @@ namespace ODB
                 itemCount[i.xy.x, i.xy.y]++;
             foreach (Item i in Game.Level.WorldItems)
             {
-                if (!Game.player.Vision[i.xy.x, i.xy.y]) continue;
+                if (
+                    !(Game.player.Vision[i.xy.x, i.xy.y] || wizMode)
+                ) continue;
                 if (!screen.ContainsPoint(i.xy)) continue;
 
                 if (itemCount[i.xy.x, i.xy.y] == 1)
@@ -565,7 +631,9 @@ namespace ODB
 
             foreach (Actor a in Game.Level.WorldActors)
             {
-                if (!Game.player.Vision[a.xy.x, a.xy.y]) continue;
+                if (
+                    !(Game.player.Vision[a.xy.x, a.xy.y] || wizMode)
+                ) continue;
                 if (!screen.ContainsPoint(a.xy)) continue;
 
                 if (actorCount[a.xy.x, a.xy.y] == 1)
@@ -596,7 +664,8 @@ namespace ODB
 
         public void RenderPrompt()
         {
-            inputRowConsole.IsVisible = IO.IOState != InputType.PlayerInput;
+            inputRowConsole.IsVisible =
+                (IO.IOState != InputType.PlayerInput) || wizMode;
             if (inputRowConsole.IsVisible)
             {
                 inputRowConsole.Position = new xnaPoint(0, logSize);
@@ -607,7 +676,8 @@ namespace ODB
                     null
                 );
                 inputRowConsole.CellData.Print(
-                    0, 0, IO.Question + " " + IO.Answer
+                    0, 0,
+                    (wizMode ? "" : IO.Question + " ") + IO.Answer
                 );
             }
         }
@@ -672,6 +742,18 @@ namespace ODB
         {
             statRowConsole.CellData.Clear();
             statRowConsole.CellData.Fill(Color.White, Color.Black, ' ', null);
+
+            if (wizMode)
+            {
+                string str = "W I Z A R D";
+                str += " (" + String.Format("{0:X2}", wmCursor.x);
+                str += " ; ";
+                str += String.Format("{0:X2}", wmCursor.y) + ")";
+                statRowConsole.CellData.Print(
+                    0, 0, str 
+                );
+                return;
+            }
 
             string namerow = player.Definition.name + " - Title";
             namerow += "  ";
@@ -747,5 +829,143 @@ namespace ODB
             base.Draw(gameTime);
         }
         #endregion
+
+        public void wmInput()
+        {
+            //wizmode terminal
+
+            bool scrolled = false;
+            if (IO.KeyPressed(Keys.Up))
+            {
+                wmScrollback++;
+                scrolled = true;
+            }
+            if (IO.KeyPressed(Keys.Down))
+            {
+                wmScrollback--;
+                scrolled = true;
+            }
+            if (scrolled)
+            {
+                if (wmScrollback < 0) wmScrollback = 0;
+                if (wmScrollback > wmHistory.Count)
+                    wmScrollback = wmHistory.Count;
+                if (wmScrollback > 0)
+                    IO.Answer = wmHistory[wmHistory.Count - wmScrollback];
+                else IO.Answer = "";
+            }
+
+            bool b = false;
+            if (IO.KeyPressed(Keys.NumPad8))
+                { wmCursor.Nudge(0, -1); b = true; }
+            if (IO.KeyPressed(Keys.NumPad9)) {
+                wmCursor.Nudge(1, -1); b = true; }
+            if (IO.KeyPressed(Keys.NumPad6)) {
+                wmCursor.Nudge(1, 0); b = true; }
+            if (IO.KeyPressed(Keys.NumPad3)) {
+                wmCursor.Nudge(1, 1); b = true; }
+            if (IO.KeyPressed(Keys.NumPad2)) {
+                wmCursor.Nudge(0, 1); b = true; }
+            if (IO.KeyPressed(Keys.NumPad1)) {
+                wmCursor.Nudge(-1, 1); b = true; }
+            if (IO.KeyPressed(Keys.NumPad4)) {
+                wmCursor.Nudge(-1, 0); b = true; }
+            if (IO.KeyPressed(Keys.NumPad7)) {
+                wmCursor.Nudge(-1, -1); b = true; }
+
+            if (b) return; //so we don't get numbers in the prompt when we
+            //try to target stuff
+
+            IO.IOState = InputType.QuestionPrompt;
+
+            IO.AcceptedInput.Clear();
+            foreach (char c in IO.indexes) IO.AcceptedInput.Add(c);
+            IO.AcceptedInput.Add(' ');
+            for (int i = 48; i < 58; i++) IO.AcceptedInput.Add((char)i);
+            //doesn't want to work otherwise apparently and I can't be bothered
+            //fixing it atm since it's only for wizmode anyways
+            if (IO.KeyPressed(Keys.OemPeriod)) IO.Answer += "="; //arg delim
+            if (IO.KeyPressed(Keys.OemSemicolon)) IO.Answer += ";";
+            if (IO.KeyPressed(Keys.OemBackslash)) IO.Answer += "/";
+
+            IO.QuestionPromptInput();
+        }
+
+        public void wmCommand(string s)
+        {
+            string cmd = s.Split('/')[0];
+            string[] args = s.Split('/')[1].Split('=');
+
+            Game.Log(" > " + cmd);
+            for (int i = 0; i < args.Length; i++)
+                Game.Log("  > \"" + args[i] + "\"");
+
+            switch (cmd)
+            {
+                case "n": //new
+                    Game.Level = new Level(
+                        IO.ReadHex(args[0]),
+                        IO.ReadHex(args[1])
+                    );
+                    break;
+                case "dt": //del tile
+                    Game.Level.Map[wmCursor.x, wmCursor.y] = null;
+                    break;
+                case "dr": //del room
+                    List<Room> rooms =
+                        Util.GetRooms(new Point(wmCursor.x, wmCursor.y));
+                    Game.Level.Rooms.RemoveAll(x => rooms.Contains(x));
+                    break;
+                case "st": //set tile
+                    Game.Level.Map[wmCursor.x, wmCursor.y].Definition =
+                        Util.TDef(IO.ReadHex(args[0]));
+                    break;
+                case "cr": //create room
+                    if (args.Length >= 5)
+                    {
+                        Level.CreateRoom(
+                            new Rect(
+                                new Point(
+                                    IO.ReadHex(args[0]),
+                                    IO.ReadHex(args[1])
+                                ),
+                                new Point(
+                                    IO.ReadHex(args[2]),
+                                    IO.ReadHex(args[3])
+                                )
+                            ),
+                            Util.TDef(IO.ReadHex(args[4])),
+                            args.Length >= 6 ?
+                                Util.TDef(IO.ReadHex(args[5])) :
+                                null
+                        );
+                    }
+                    break;
+                case "si": //spawn item
+                    Item it = new Item(args[0]);
+                    Level.AllItems.Add(it);
+                    Level.WorldItems.Add(it);
+                    break;
+                case "sa": //spawn actor 
+                    Actor act = new Actor(args[0]);
+                    Level.WorldActors.Add(act);
+                    break;
+                case "sp": //set player
+                    Game.player = Level.ActorOnTile(
+                        new Point(wmCursor.x, wmCursor.y));
+                    break;
+                case "save":
+                    Level.WriteLevelSave("Save/" + args[0]);
+                    break;
+                case "load":
+                    Level = new Level("Save/" + args[0]);
+                    break;
+                default:
+                    Game.Log("Unrecognized cmd " + cmd);
+                    break;
+            }
+
+            IO.Answer = "";
+        }
     }
 }

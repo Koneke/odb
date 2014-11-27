@@ -54,6 +54,7 @@ namespace ODB
             {
                 if (KeyPressed((Keys)i))
                 {
+                    if (i == 59) { var a = 0; }
                     //because sometimes, the key-char mapping isn't botched
                     char c = (char)i;
 
@@ -92,9 +93,17 @@ namespace ODB
 
             if (IO.KeyPressed(Keys.Enter))
             {
-                IOState = InputType.PlayerInput;
-                Game.qpAnswerStack.Push(Answer);
-                Game.QuestionReaction();
+                if (!Game.wizMode)
+                {
+                    IOState = InputType.PlayerInput;
+                    Game.qpAnswerStack.Push(Answer);
+                    Game.QuestionReaction();
+                }
+                else
+                {
+                    Game.wmHistory.Add(Answer);
+                    Game.wmCommand(Answer);
+                }
             }
         }
 
@@ -280,6 +289,36 @@ namespace ODB
             foreach (string definition in itemStrings)
             {
                 ActorDefinition idef = new ActorDefinition(definition);
+            }
+        }
+
+        public static Stream WriteTileDefinitionsToFile(string path)
+        {
+            Stream stream = new Stream();
+            for (int i = 0; i < 0xFFFF; i++)
+            {
+                if (TileDefinition.Definitions[i] != null)
+                {
+                    stream.Write(
+                        TileDefinition.Definitions[i].WriteTileDefinition()
+                        .ToString(), false
+                    );
+                    stream.Write("##", false);
+                }
+            }
+            WriteToFile(path, stream.ToString());
+            return stream;
+        }
+        public static void ReadTileDefinitionsFromFile(string path)
+        {
+            string content = ReadFromFile(path);
+            string[] definitions = content.Split(
+                new string[] { "##" },
+                StringSplitOptions.RemoveEmptyEntries
+            );
+            for (int i = 0; i < definitions.Length; i++)
+            {
+                TileDefinition tdef = new TileDefinition(definitions[i]);
             }
         }
 

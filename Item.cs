@@ -248,6 +248,7 @@ namespace ODB
                 ItemDefinition.ItemDefinitions[
                     stream.ReadHex(4)
                 ];
+            //are we actually setting the IDef.ItemDefinitions when loading..?
             id = stream.ReadHex(4);
             mod = stream.ReadHex(2);
             count = stream.ReadHex(2);

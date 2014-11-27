@@ -230,5 +230,62 @@ namespace ODB
             WorldItems.Add(item);
             AllItems.Add(item);
         }
+
+        public void CreateRoom(
+            Rect rect,
+            TileDefinition floor,
+            TileDefinition walls = null
+        ) {
+            CreateRoom(new List<Rect>{ rect }, floor, walls);
+        }
+
+        public void CreateRoom(
+            List<Rect> rects,
+            TileDefinition floor,
+            TileDefinition walls = null
+        ) {
+            Room R = new Room();
+            R.rects.AddRange(rects);
+            Rooms.Add(R);
+
+            bool[,] drawn = new bool[LevelSize.x, LevelSize.y];
+            foreach (Rect r in rects)
+            {
+                for (int x = 0; x < r.wh.x; x++)
+                {
+                    for (int y = 0; y < r.wh.y; y++)
+                    {
+                        Map[r.xy.x + x, r.xy.y + y] = new Tile(floor);
+                        drawn[r.xy.x + x, r.xy.y + y] = true;
+                    }
+                }
+            }
+
+            if (walls == null) return;
+
+            for (int x = 1; x < LevelSize.x-1; x++)
+            {
+                for (int y = 1; y < LevelSize.y-1; y++)
+                {
+                    bool border = false;
+                    if(
+                        drawn[x, y] &&
+                        (
+                            !drawn[x-1, y] ||
+                            !drawn[x+1, y] ||
+                            !drawn[x, y-1] ||
+                            !drawn[x, y+1]
+                        )
+                    ) {
+                        //do overlap check here like old wall rendering
+                        //so we can draw a room on top of a corridor
+                        //without closing the corridor
+                        border = true;
+                    }
+
+                    if(border) Map[x, y].Definition = walls;
+                }
+            }
+        }
     }
 }

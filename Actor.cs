@@ -13,6 +13,7 @@ namespace ODB
         Intelligence,
         Speed,
         Quickness,
+        PoisonRes
     }
 
     public class ActorDefinition : gObjectDefinition
@@ -265,6 +266,7 @@ namespace ODB
                 case Stat.Quickness:
                     return Definition.quickness +
                         (modded ? GetMod(stat) : 0);
+                case Stat.PoisonRes: return GetMod(stat);
                 default:
                     return -1;
             }
@@ -286,15 +288,19 @@ namespace ODB
                     addMod = ModType.AddSpd; decMod = ModType.DecSpd; break;
                 case Stat.Quickness:
                     addMod = ModType.AddQck; decMod = ModType.DecQck; break;
+                case Stat.PoisonRes:
+                    addMod = ModType.PoisonRes; decMod = (ModType)0xFF; break;
                 default:
                     return 0;
             }
 
             List<Item> worn = Util.GetWornItems(this);
-            foreach (Mod m in Util.GetModsOfType(addMod, worn))
-                modifier += m.Value;
-            foreach (Mod m in Util.GetModsOfType(decMod, worn))
-                modifier -= m.Value;
+            if((int)addMod != 0xFF)
+                foreach (Mod m in Util.GetModsOfType(addMod, worn))
+                    modifier += m.Value;
+            if((int)decMod != 0xFF)
+                foreach (Mod m in Util.GetModsOfType(decMod, worn))
+                    modifier -= m.Value;
 
             return modifier;
         }
@@ -322,7 +328,6 @@ namespace ODB
             return ac;
         }
 
-        //crits
         public void Attack(Actor target)
         {
             int hitRoll = Util.Roll("1d6") + Get(Stat.Strength);
@@ -356,16 +361,13 @@ namespace ODB
                 Game.Log(
                     Definition.name + " strikes " +
                     target.Definition.name + (crit ? "!" : ".")
-                    //" (" + hitRoll + " vs " + dodgeRoll + ")"
                 );
 
                 target.Damage(damageRoll);
             }
             else
             {
-                Game.Log(Definition.name + " swings in the air."
-                    //+ " (" + hitRoll + " vs " + dodgeRoll + ")"
-                );
+                Game.Log(Definition.name + " swings in the air.");
             }
         }
         public void Shoot(Actor target)

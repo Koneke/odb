@@ -63,6 +63,12 @@ namespace ODB
             return null;
         }
 
+        //just terser this way
+        public static TileDefinition TDef(int id)
+        {
+            return TileDefinition.Definitions[id];
+        }
+
         public static List<Room> GetRooms(Point xy)
         {
             List<Room> roomList = new List<Room>();

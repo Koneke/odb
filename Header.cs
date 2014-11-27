@@ -4,84 +4,6 @@ using System.Collections.Generic;
 
 namespace ODB
 {
-
-    public enum Door
-    {
-        None,
-        Open,
-        Closed
-    }
-
-    public enum Stairs
-    {
-        None,
-        Up,
-        Down
-    }
-
-    public class Tile
-    {
-        public Color bg, fg;
-        public string tile;
-
-        public bool solid;
-        public Door Door;
-        public Stairs Stairs;
-
-        public string Engraving;
-
-        public Tile(
-            Color bg,
-            Color fg,
-            string tile,
-            bool solid = false,
-            Door doors = Door.None,
-            Stairs stairs = Stairs.None
-        ) {
-            this.bg = bg;
-            this.fg = fg;
-            this.tile = tile;
-            this.solid = solid;
-            this.Door = doors;
-            this.Stairs = stairs;
-            Engraving = "";
-        }
-
-        public Tile(string s)
-        {
-            ReadTile(s);
-            Engraving = "";
-        }
-
-        public Tile() { }
-
-        public Stream WriteTile()
-        {
-            Stream stream = new Stream();
-            stream.Write(bg);
-            stream.Write(fg);
-            stream.Write(tile, false);
-            stream.Write(solid);
-            stream.Write((int)Door, 1);
-            stream.Write((int)Stairs, 1);
-            stream.Write(Engraving);
-            return stream;
-        }
-
-        public Stream ReadTile(string s)
-        {
-            Stream stream = new Stream(s);
-            bg = stream.ReadColor();
-            fg = stream.ReadColor();
-            tile = stream.ReadString(1);
-            solid = stream.ReadBool();
-            Door = (Door)stream.ReadHex(1);
-            Stairs = (Stairs)stream.ReadHex(1);
-            Engraving = stream.ReadString();
-            return stream;
-        }
-    }
-
     public struct Point
     {
         public int x, y;
@@ -240,7 +162,8 @@ namespace ODB
         AddInt, DecInt,
         AddSpd, DecSpd,
         AddQck, DecQck,
-        AddHPm, DecHPm
+        AddHPm, DecHPm,
+        PoisonRes
     }
 
     public class Mod {
