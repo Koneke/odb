@@ -884,7 +884,10 @@ namespace ODB
             for (int i = 48; i < 58; i++) IO.AcceptedInput.Add((char)i);
             //doesn't want to work otherwise apparently and I can't be bothered
             //fixing it atm since it's only for wizmode anyways
-            if (IO.KeyPressed(Keys.OemPeriod)) IO.Answer += "="; //arg delim
+            if (IO.KeyPressed(Keys.OemComma)) IO.Answer += "~"; //arg delim
+            if (IO.KeyPressed(Keys.OemPeriod))
+                if(wmHistory.Count > 0)
+                    wmCommand(wmHistory[wmHistory.Count - 1]);
             if (IO.KeyPressed(Keys.OemSemicolon)) IO.Answer += ";";
             if (IO.KeyPressed(Keys.OemBackslash)) IO.Answer += "/";
 
@@ -893,34 +896,65 @@ namespace ODB
 
         public void wmCommand(string s)
         {
-            string cmd = s.Split('/')[0];
-            string[] args = s.Split('/')[1].Split('=');
+            string[] split = s.Split('/');
+            string cmd = split[0];
 
-            Game.Log(" > " + cmd);
-            for (int i = 0; i < args.Length; i++)
-                Game.Log("  > \"" + args[i] + "\"");
+            string[] args = null;
+            if (split.Length > 1)
+            {
+                args = split[1].Split('~');
+
+                Game.Log(" > " + cmd);
+                for (int i = 0; i < args.Length; i++)
+                    Game.Log("  > \"" + args[i] + "\"");
+            }
 
             switch (cmd)
             {
                 case "n": //new
+                case "new":
                     Game.Level = new Level(
                         IO.ReadHex(args[0]),
                         IO.ReadHex(args[1])
                     );
                     break;
+                case "d": //door
+                case "door":
+                    if (Game.Level.Map[wmCursor.x, wmCursor.y] != null)
+                    {
+                        Tile t = Game.Level.Map[wmCursor.x, wmCursor.y];
+                        t.Door = (Door)((((int)t.Door)+1) % 3);
+                    }
+                    break;
+                case "s": //stairs
+                case "stairs":
+                    if (Game.Level.Map[wmCursor.x, wmCursor.y] != null)
+                    {
+                        Tile t = Game.Level.Map[wmCursor.x, wmCursor.y];
+                        t.Stairs = (Stairs)((((int)t.Stairs)+1) % 3);
+                    }
+                    break;
                 case "dt": //del tile
+                case "delt":
+                case "deletetile":
+                case "deltile":
                     Game.Level.Map[wmCursor.x, wmCursor.y] = null;
                     break;
                 case "dr": //del room
+                case "delr":
+                case "deleteroom":
+                case "delroom":
                     List<Room> rooms =
                         Util.GetRooms(new Point(wmCursor.x, wmCursor.y));
                     Game.Level.Rooms.RemoveAll(x => rooms.Contains(x));
                     break;
                 case "st": //set tile
+                case "settile":
                     Game.Level.Map[wmCursor.x, wmCursor.y].Definition =
                         Util.TDef(IO.ReadHex(args[0]));
                     break;
                 case "cr": //create room
+                case "createroom":
                     if (args.Length >= 5)
                     {
                         Level.CreateRoom(
@@ -942,15 +976,18 @@ namespace ODB
                     }
                     break;
                 case "si": //spawn item
+                case "spawnitem":
                     Item it = new Item(args[0]);
                     Level.AllItems.Add(it);
                     Level.WorldItems.Add(it);
                     break;
                 case "sa": //spawn actor 
+                case "spawnactor":
                     Actor act = new Actor(args[0]);
                     Level.WorldActors.Add(act);
                     break;
                 case "sp": //set player
+                case "setplayer":
                     Game.player = Level.ActorOnTile(
                         new Point(wmCursor.x, wmCursor.y));
                     break;
@@ -959,6 +996,19 @@ namespace ODB
                     break;
                 case "load":
                     Level = new Level("Save/" + args[0]);
+                    break;
+                //di/da are untested atm
+                case "da":
+                case "defa":
+                case "defineactor":
+                case "defactor":
+                    ActorDefinition adef = new ActorDefinition(args[0]);
+                    break;
+                case "di":
+                case "defi":
+                case "defineitem":
+                case "defitem":
+                    ItemDefinition idef = new ItemDefinition(args[0]);
                     break;
                 default:
                     Game.Log("Unrecognized cmd " + cmd);
