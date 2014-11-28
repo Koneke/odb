@@ -11,6 +11,19 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 
 //~~~ QUEST TRACKER for ?? nov ~~~
 // * Item value and paid-for status
+// * Eating
+// * Wizard mode area select
+// * Clean up wizard mode class a bit
+//   * Fairly low prio, since it's not part of the /game/ per se,
+//     but it /is/ fairly messy.
+// * Switch from numbers in actor def to die?
+
+//~~~ QUEST TRACKER for 28 nov ~~~
+// * Actor intrinsics
+//   * In essence, just rip the mods straight from the items.
+//     Hell, we don't even need new modtypes.
+// * Save/load level name (just put it in the header)
+//   * n/ or name/ in WM to name for now.
 
 namespace ODB
 {
