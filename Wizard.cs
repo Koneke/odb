@@ -49,6 +49,30 @@ namespace ODB
             if (IO.KeyPressed(Keys.NumPad7)) {
                 wmCursor.Nudge(-1, -1); b = true; }
 
+            if (IO.KeyPressed(Keys.OemPeriod) && IO.shift)
+            {
+                if (Game.Levels.IndexOf(Game.Level) == Game.Levels.Count - 1)
+                {
+                    Level l;
+                    Game.Levels.Add(l = new Level(80, 25));
+                    Game.Level = l;
+                    Game.Log("Spawning new level.");
+                }
+                else
+                {
+                    Game.Level = Game.Levels
+                        [Game.Levels.IndexOf(Game.Level) + 1];
+                    Game.Log("Descending stairs.");
+                }
+            }
+
+            if (IO.KeyPressed(Keys.OemComma) && IO.shift)
+            {
+                if (Game.Levels.IndexOf(Game.Level) > 0)
+                    Game.Level = Game.Levels
+                        [Game.Levels.IndexOf(Game.Level) - 1];
+            }
+
             if (b) return; //so we don't get numbers in the prompt when we
             //try to target stuff
 
@@ -59,7 +83,7 @@ namespace ODB
             IO.AcceptedInput.Add(' ');
             for (int i = 48; i < 58; i++) IO.AcceptedInput.Add((char)i); //nums
             if (IO.KeyPressed(Keys.OemComma)) IO.Answer += "~"; //arg. delimiter
-            if (IO.KeyPressed(Keys.OemPeriod) && IO.shift) //shift-. to repeat
+            if (IO.KeyPressed(Keys.OemQuestion)) //shift-. to repeat
             {
                 if (wmHistory.Count > 0 && IO.Answer == "")
                     wmCommand(wmHistory[wmHistory.Count - 1]);
@@ -163,6 +187,27 @@ namespace ODB
                     }
                     break;
                     #endregion
+                case "abp": case "addbodypart":
+                    #region addbodypart 
+                    Game.Level.ActorOnTile(wmCursor).PaperDoll.Add(
+                        new BodyPart(
+                            (DollSlot)IO.ReadHex(args[0])
+                        )
+                    );
+                    break;
+                    #endregion
+                case "rbp": case "rembodypart": case "removebodypart":
+                    #region remove bp
+                    Actor bpactor = Game.Level.ActorOnTile(wmCursor);
+                    for (int i = 0; i < bpactor.PaperDoll.Count; i++)
+                        if (bpactor.PaperDoll[i].Type ==
+                            (DollSlot)IO.ReadHex(args[0]))
+                        {
+                            bpactor.PaperDoll.RemoveAt(i);
+                            break;
+                        }
+                    break;
+                    #endregion
                 case "am": case "addmod":
                     #region addmod
                     foreach (Item item in Util.ItemsOnTile(wmCursor))
@@ -222,15 +267,25 @@ namespace ODB
                         new Point(wmCursor.x, wmCursor.y));
                     break;
                     #endregion
-                case "save":
+                case "savelevel": case "savelvl": case "sl":
                     #region save
                     Game.Level.WriteLevelSave("Save/" + args[0]);
                     break;
                     #endregion
-                case "load":
+                case "loadlevel": case "loadlvl": case "ll":
                     #region load
                     Game.Level = new Level("Save/" + args[0]);
                     Game.SetupBrains();
+                    break;
+                    #endregion
+                case "rl": case "rmlvl": case "rmlevel": case "removelevel":
+                    #region rmlvl
+                    if (Game.Levels.Count > 0){
+                        Game.Levels.Remove(Game.Level);
+                        if (Game.Level.WorldActors.Contains(Game.player))
+                            Game.Levels[0].WorldActors.Add(Game.player);
+                        Game.Level = Game.Levels[0];
+                    }
                     break;
                     #endregion
                 //di/da are untested atm
@@ -279,6 +334,16 @@ namespace ODB
                     #endregion
                 case "teleport": case "tp":
                     Game.player.xy = wmCursor;
+                    break;
+                case "identify": case "id":
+                    foreach (Item iditem in Util.ItemsOnTile(wmCursor))
+                        ItemDefinition.IdentifiedDefs.Add(iditem.type);
+                    break;
+                case "save":
+                    IO.Save();
+                    break;
+                case "load":
+                    IO.Load();
                     break;
                 default:
                     Game.Log("Unrecognized cmd " + cmd);

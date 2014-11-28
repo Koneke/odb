@@ -10,6 +10,18 @@ namespace ODB
         public static ItemDefinition[] ItemDefinitions =
             new ItemDefinition[0xFFFF];
 
+        //should be loaded on game load
+        public static int ApperanceOffset;
+        public static Dictionary<int, List<string>> Appearances =
+            new Dictionary<int, List<string>>()
+            {
+                {0, new List<string>{
+                    "violet potion",
+                    "turqoise potion"
+                }}
+            };
+        public static List<int> IdentifiedDefs = new List<int>();
+
         public int AC;
         public string Damage;
         public bool stacking;
@@ -18,6 +30,14 @@ namespace ODB
         public bool Ranged;
         public List<int> AmmoTypes;
         public int UseEffect;
+        //groups potions together and what not
+        //mainly, unidentified items of different defs take from the same
+        //random appearance pool (but still only one appearance per def)
+        public int Category;
+        //saved in game file, not idef file
+        public bool Identified {
+            get { return IdentifiedDefs.Contains(type); }
+        }
 
         //creating a NEW definition
         public ItemDefinition(
@@ -75,6 +95,8 @@ namespace ODB
 
             UseEffect = stream.ReadHex(4);
 
+            Category = stream.ReadHex(2);
+
             ItemDefinitions[type] = this;
             return stream;
         }
@@ -102,6 +124,8 @@ namespace ODB
             stream.Write(";", false);
 
             stream.Write(UseEffect, 4);
+
+            stream.Write(Category, 2);
 
             return stream;
         }
@@ -134,12 +158,10 @@ namespace ODB
 
         public Spell UseEffect
         {
-            get {
-                return Spell.Spells[
-                    Definition.UseEffect
-                ];
-            }
+            get { return Spell.Spells[Definition.UseEffect]; }
         }
+
+        public bool Identified { get { return Definition.Identified; } }
 
         //SPAWNING a NEW item
         public Item(
@@ -170,14 +192,23 @@ namespace ODB
             bool noArt = false,
             bool capitalized = false
         ) {
-            string article = Util.article(Definition.name);
+            string name;
+            if (!Identified)
+            {
+                name = ItemDefinition.Appearances
+                    [Definition.Category]
+                    [Definition.type % ItemDefinition.Appearances[0].Count];
+            } else name = Definition.name;
+
+            string article = Util.article(name);
             if (definite) article = "the";
             if (Definition.stacking && count > 1)
                 article = count + "x";
 
             string s = (noArt ? "" : (article + " "));
 
-            if(Mods.Count > 0) {
+            #region mods
+            if (Mods.Count > 0 && Identified) {
                 switch (Mods[0].Type)
                 {
                     case ModType.AddStr: s += "fierce"; break;
@@ -193,10 +224,13 @@ namespace ODB
                 }
                 s += " ";
             }
+            #endregion
 
-            s += Definition.name;
+            //s += Definition.name;
+            s += name;
 
-            if(Mods.Count > 1) {
+            #region mods
+            if (Mods.Count > 1 && Identified) {
                 s += " of ";
                 switch (Mods[1].Type)
                 {
@@ -212,6 +246,7 @@ namespace ODB
                     case ModType.DecQck: s += "dallying"; break;
                 }
             }
+            #endregion
 
             s = s.ToLower();
             if (capitalized)

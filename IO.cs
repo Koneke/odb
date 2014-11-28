@@ -165,6 +165,18 @@ namespace ODB
                     stream.Write(i, 2);
                 Game.Levels[i].WriteLevelSave("Save/level" + i + ".sv");
             }
+
+            stream.Write(ItemDefinition.ApperanceOffset, 4);
+
+            for (int i = 0; i < ItemDefinition.ItemDefinitions.Length; i++)
+            {
+                if (ItemDefinition.IdentifiedDefs.Contains(i))
+                {
+                    stream.Write(i, 4);
+                    stream.Write(",", false);
+                }
+                stream.Write(";", false);
+            }
             //gametick
             WriteToFile("Save/game.sv", stream.ToString());
         }
@@ -184,6 +196,12 @@ namespace ODB
 
             for (int i = 0; i < levels; i++)
                 Game.Levels.Add(new Level("Save/level" + i + ".sv"));
+
+            ItemDefinition.ApperanceOffset = stream.ReadHex(4);
+
+            string identifieds = stream.ReadString();
+            foreach (string ided in identifieds.Split(','))
+                ItemDefinition.IdentifiedDefs.Add(IO.ReadHex(ided));
 
             Game.Level = Game.Levels[playerLocation];
             Game.SetupBrains();

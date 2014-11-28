@@ -12,11 +12,6 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 //~~~ QUEST TRACKER for ?? nov ~~~
 // * Item value and paid-for status
 
-//~~~ QUEST TRACKER for 27 nov ~~~
-// * Item categories
-// * Item identified status (randomize unid look within category)
-// * I had some other thought but I forgot it
-
 namespace ODB
 {
     public class Game1 : Microsoft.Xna.Framework.Game
@@ -104,8 +99,10 @@ namespace ODB
                 else Brains.Add(new Brain(actor));
         }
 
-        public void SwitchLevel(Level newLevel)
+        public void SwitchLevel(Level newLevel, bool gotoStairs = true)
         {
+            bool downwards =
+                Game.Levels.IndexOf(newLevel) > Game.Levels.IndexOf(Level);
             Level.WorldActors.Remove(player);
             Level = newLevel;
             Level.WorldActors.Add(player);
@@ -113,6 +110,23 @@ namespace ODB
                 //reset vision, incase the level we moved to is a different size
                 a.Vision = null;
             SetupBrains();
+
+            if (!gotoStairs) return;
+
+            //auto tele to (a) pair of stairs
+            //so hint for now: don't have more stairs, it gets weird
+            for (int x = 0; x < Level.LevelSize.x; x++)
+                for (int y = 0; y < Level.LevelSize.y; y++)
+                    if (Level.Map[x, y] != null)
+                    {
+                        if (
+                            (Level.Map[x, y].Stairs == Stairs.Up &&
+                                downwards) ||
+                            (Level.Map[x, y].Stairs == Stairs.Down &&
+                                !downwards)
+                        )
+                            player.xy = new Point(x, y);
+                    }
         }
 
         void SetupMagic()
@@ -242,10 +256,12 @@ namespace ODB
             SetupTickingEffects(); //same as magic, cba to add scripting
             IO.ReadActorDefinitionsFromFile("Data/actors.def");
             IO.ReadItemDefinitionsFromFile("Data/items.def");
+            ItemDefinition.ApperanceOffset = Util.Roll("1d100");
 
             //IO.Load(); //load entire game (except definitions atm)
-
+            Game.Levels = new List<ODB.Level>();
             Game.Level = new ODB.Level(80, 25);
+            Game.Levels.Add(Game.Level);
 
             Game.Level.WorldActors.Add(
                 player = new Actor(
@@ -411,10 +427,9 @@ namespace ODB
 
             #region f-keys //devstuff
             if (IO.KeyPressed(Keys.F1))
-            {
                 IO.WriteActorDefinitionsToFile("Data/actors.def");
+            if (IO.KeyPressed(Keys.F2))
                 IO.WriteItemDefinitionsToFile("Data/items.def");
-            }
 
             if (IO.KeyPressed(Keys.F5)) IO.Save();
             if (IO.KeyPressed(Keys.F6)) IO.Load();
@@ -571,8 +586,8 @@ namespace ODB
                 if (itemCount[i.xy.x, i.xy.y] == 1)
                     DrawToScreen(
                         i.xy,
-                        i.Definition.bg,
-                        i.Definition.fg,
+                        i.Identified ? i.Definition.bg : null,
+                        i.Identified ? i.Definition.fg : Color.Gray,
                         i.Definition.tile
                     );
                 //not sure I like the + for pile, since doors are +
@@ -720,8 +735,9 @@ namespace ODB
                 return;
             }
 
-            string namerow = player.Definition.name + " - Title";
-            namerow += "  ";
+            //string namerow = player.Definition.name + " - Title";
+            string namerow = player.Definition.name;
+            namerow += " ";
             namerow += "STR " + player.Get(Stat.Strength) + "  ";
             namerow += "DEX " + player.Get(Stat.Dexterity) + "  ";
             namerow += "INT " + player.Get(Stat.Intelligence) + "  ";
@@ -745,6 +761,9 @@ namespace ODB
             statrow += " ";
             statrow += "T:";
             statrow += string.Format("{0:F1}", (float)(GameTick / 10f));
+
+            statrow += " ";
+            statrow += "D:" + (Game.Levels.IndexOf(Game.Level) + 1) + "0M";
 
             float playerHealthPcnt =
                 player.hpCurrent /
@@ -794,7 +813,6 @@ namespace ODB
             base.Draw(gameTime);
         }
         #endregion
-
 
     }
 }
