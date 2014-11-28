@@ -122,10 +122,23 @@ namespace ODB
             {
                 case "n": case "new":
                     #region new
-                    Game.Level = new Level(
-                        IO.ReadHex(args[0]),
-                        IO.ReadHex(args[1])
-                    );
+                    bool hadplayer = false;
+                    Game.Level.LevelSize.x = IO.ReadHex(args[0]);
+                    Game.Level.LevelSize.y = IO.ReadHex(args[1]);
+                    if (Game.Level.WorldActors.Contains(Game.player))
+                        hadplayer = true;
+                    Game.Level.Clear();
+                    if (hadplayer) Game.Level.WorldActors.Add(Game.player);
+                    break;
+                    #endregion
+                case "mu": case "moveup":
+                    #region mu
+                    int depth = Game.Levels.IndexOf(Game.Level);
+                    if (depth > 0)
+                    {
+                        Game.Levels.Remove(Game.Level);
+                        Game.Levels.Insert(depth - 1, Game.Level);
+                    }
                     break;
                     #endregion
                 case "d": case "door":
@@ -274,7 +287,7 @@ namespace ODB
                     #endregion
                 case "loadlevel": case "loadlvl": case "ll":
                     #region load
-                    Game.Level = new Level("Save/" + args[0]);
+                    Game.Level.LoadLevelSave("Save/" + args[0]);
                     Game.SetupBrains();
                     break;
                     #endregion
@@ -338,6 +351,9 @@ namespace ODB
                 case "identify": case "id":
                     foreach (Item iditem in Util.ItemsOnTile(wmCursor))
                         ItemDefinition.IdentifiedDefs.Add(iditem.type);
+                    break;
+                case "name":
+                    Game.Level.Name = args[0];
                     break;
                 case "save":
                     IO.Save();

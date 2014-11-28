@@ -22,8 +22,6 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 // * Actor intrinsics
 //   * In essence, just rip the mods straight from the items.
 //     Hell, we don't even need new modtypes.
-// * Save/load level name (just put it in the header)
-//   * n/ or name/ in WM to name for now.
 
 namespace ODB
 {
@@ -741,7 +739,11 @@ namespace ODB
                 str += " ; ";
                 str += String.Format("{0:X2}", Wizard.wmCursor.y) + ")";
                 str += " (" + Wizard.wmCursor.x + " ; " +
-                    Wizard.wmCursor.y + ")";
+                    Wizard.wmCursor.y + ") ";
+
+                str += "D:" + (Game.Levels.IndexOf(Game.Level) + 1) + "0M";
+                str += " (" + Game.Level.Name + ")";
+
                 statRowConsole.CellData.Print(
                     0, 0, str 
                 );
@@ -777,6 +779,8 @@ namespace ODB
 
             statrow += " ";
             statrow += "D:" + (Game.Levels.IndexOf(Game.Level) + 1) + "0M";
+
+            statrow += " (" + Game.Level.Name + ")";
 
             float playerHealthPcnt =
                 player.hpCurrent /

@@ -92,7 +92,8 @@ namespace ODB
             Point levelSize = new Point(LevelWidth, LevelHeight);
 
             stream.Write(levelSize);
-            stream.Write("</DIMENSIONS>", false);
+            stream.Write(Name);
+            stream.Write("</HEADER>", false);
 
             for (int y = 0; y < levelSize.y; y++)
                 for (int x = 0; x < levelSize.x; x++)
@@ -136,16 +137,21 @@ namespace ODB
 
             string dimensions =
                 content.Substring(read, content.Length - read).Split(
-                    new string[] { "</DIMENSIONS>" },
+                    new string[] { "</HEADER>" },
                     StringSplitOptions.None
                 )[0];
-            read += dimensions.Length + "</DIMENSIONS>".Length;
+            read += dimensions.Length + "</HEADER>".Length;
 
-            Point levelSize = IO.ReadPoint(dimensions);
+            Stream stream = new Stream(dimensions);
+
+            //Point levelSize = IO.ReadPoint(dimensions);
+            Point levelSize = stream.ReadPoint();
             LevelWidth = levelSize.x;
             LevelHeight = levelSize.y;
             LevelSize = new Point(LevelWidth, LevelHeight);
             Clear();
+
+            Name = stream.ReadString();
 
             string levelSection =
                 content.Substring(read, content.Length - read).Split(
