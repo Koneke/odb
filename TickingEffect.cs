@@ -40,6 +40,7 @@ namespace ODB
         public TickingEffectDefinition Definition;
         public int Timer;
         public Actor Holder;
+        public int LifeTime;
 
         //does not need to be saved
         //if die, it should just not be saved (since it's about to be removed)
@@ -54,6 +55,7 @@ namespace ODB
             this.Holder = Holder;
             this.Definition = definition;
             Timer = 0;
+            LifeTime = 0;
         }
 
         public TickingEffect(string s)
@@ -63,6 +65,7 @@ namespace ODB
 
         public void Tick()
         {
+            LifeTime++;
             Timer--;
             if (Timer <= 0)
             {
@@ -76,6 +79,9 @@ namespace ODB
             Stream stream = new Stream();
             stream.Write(Definition.id, 4);
             stream.Write(Timer, 4); //if you need more than 0xFFFF ticks, gtfo
+            //0xFFFFFFFF is a ridiculous limit, no single effect should
+            //live that long without resetting its own lifetime before that
+            stream.Write(LifeTime, 8);
             return stream;
         }
 
@@ -84,8 +90,8 @@ namespace ODB
             Stream stream = new Stream(s);
             Definition = TickingEffectDefinition.Definitions[stream.ReadHex(4)];
             Timer = stream.ReadHex(4);
+            LifeTime = stream.ReadHex(8);
             return stream;
         }
     }
-
 }

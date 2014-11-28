@@ -49,6 +49,9 @@ namespace ODB
         public List<Brain> Brains;
 
         public Actor player;
+        //for now, breaking on of the RL rules a bit,
+        //only the player actually has hunger.
+        public int Food; //not yet saved
 
         int camX, camY;
         int scrW, scrH;
@@ -62,6 +65,181 @@ namespace ODB
         public Stack<string> qpAnswerStack;
 
         public int standardActionLength = 10;
+
+        protected override void Initialize()
+        {
+            #region engineshit
+            //this is starting to look dumb
+            PlayerResponses.Game =
+            gObject.Game =
+            Player.Game =
+            Wizard.Game =
+            Brain.Game =
+            Util.Game =
+            IO.Game =
+            Game = this;
+
+            IsMouseVisible = true;
+            IsFixedTimeStep = false;
+
+            SadConsole.Engine.Initialize(GraphicsDevice);
+            SadConsole.Engine.UseMouse = false;
+            SadConsole.Engine.UseKeyboard = true;
+
+            using (var stream = System.IO.File.OpenRead("Fonts/IBM.font"))
+                SadConsole.Engine.DefaultFont =
+                    SadConsole.Serializer.Deserialize<Font>(stream);
+
+            SadConsole.Engine.DefaultFont.ResizeGraphicsDeviceManager(
+                graphics, 80, 25, 0, 0
+            );
+            #endregion
+
+            SetupConsoles();
+
+            camX = camY = 0;
+            scrW = 80; scrH = 25;
+
+            TileDefinition floor = new TileDefinition(
+                Color.Black, Color.LightGray, ".", false);
+            TileDefinition wall = new TileDefinition(
+                Color.Gray, Color.Gray, " ", true);
+
+            IO.WriteTileDefinitionsToFile("Data/tiles.def");
+
+            SetupMagic(); //essentially magic defs, but we hardcode magic
+            SetupTickingEffects(); //same as magic, cba to add scripting
+            IO.ReadActorDefinitionsFromFile("Data/actors.def");
+            IO.ReadItemDefinitionsFromFile("Data/items.def");
+
+            Seed = Guid.NewGuid().GetHashCode();
+            Util.SetSeed(Seed);
+
+            //IO.Load(); //load entire game (except definitions atm)
+            Game.Levels = new List<ODB.Level>();
+            Game.Level = new ODB.Level(80, 25);
+            Game.Levels.Add(Game.Level);
+
+            Game.Level.WorldActors.Add(
+                player = new Actor(
+                    new Point(13, 15),
+                    Util.ADefByName("Moribund")
+                )
+            );
+            Game.Food = 9000;
+
+            SetupBrains();
+
+            logSize = 3;
+            log = new List<string>();
+            Log("Welcome!");
+
+            qpAnswerStack = new Stack<string>();
+
+            //wiz
+            Wizard.wmCursor = Game.player.xy;
+            Wizard.wmHistory = new List<string>();
+
+            base.Initialize();
+        }
+
+        protected override void Update(GameTime gameTime)
+        {
+            SadConsole.Engine.Update(gameTime, this.IsActive);
+            IO.Update(false);
+
+            #region ui interaction
+            if (IO.KeyPressed(Keys.Escape))
+            {
+                if (wizMode) {
+                    wizMode = false; IO.IOState = InputType.PlayerInput; }
+                else if (IO.IOState != InputType.PlayerInput)
+                    IO.IOState = InputType.PlayerInput;
+                else if (inventoryConsole.IsVisible == true)
+                    inventoryConsole.IsVisible = false;
+                else this.Exit();
+            }
+
+            if (IO.KeyPressed(Keys.I) && !wizMode)
+                inventoryConsole.IsVisible =
+                    !inventoryConsole.IsVisible;
+
+            if (IO.KeyPressed((Keys)0x6B)) //np+
+                logSize = Math.Min(logConsole.ViewArea.Height, ++logSize);
+            if (IO.KeyPressed((Keys)0x6D)) //np-
+                logSize = Math.Max(0, --logSize);
+            logConsole.Position = new xnaPoint(
+                0, -logConsole.ViewArea.Height + logSize
+            );
+
+            //todo: edge scrolling
+            int scrollSpeed = 3;
+            if (IO.KeyPressed(Keys.Right)) camX += scrollSpeed;
+            if (IO.KeyPressed(Keys.Left)) camX -= scrollSpeed;
+            if (IO.KeyPressed(Keys.Up)) camY += scrollSpeed;
+            if (IO.KeyPressed(Keys.Down)) camY -= scrollSpeed;
+
+            camX = Math.Max(0, camX);
+            camX = Math.Min(Game.Level.LevelSize.x - scrW, camX);
+            camY = Math.Max(0, camY);
+            camY = Math.Min(Game.Level.LevelSize.y - scrH, camY);
+            #endregion camera
+
+            if (wizMode) Wizard.wmInput();
+            else
+            {
+                switch (IO.IOState)
+                {
+                    case InputType.QuestionPromptSingle:
+                    case InputType.QuestionPrompt:
+                        IO.QuestionPromptInput();
+                        break;
+                    case InputType.Targeting:
+                        IO.TargetInput();
+                        break;
+                    case InputType.PlayerInput:
+                        if (player.Cooldown == 0)
+                            Player.PlayerInput();
+                        else ProcessNPCs(); //mind: also ticks gameclock
+                        break;
+                    //if this happens,
+                    //you're breaking some kind of weird shit somehow
+                    default: throw new Exception("");
+                }
+            }
+
+            //should probably find a better place to tick this
+            foreach (Actor a in Game.Level.WorldActors)
+            {
+                a.ResetVision();
+                foreach (Room r in Util.GetRooms(a))
+                    a.AddRoomToVision(r);
+            }
+
+            #region f-keys //devstuff
+            if (IO.KeyPressed(Keys.F1))
+                IO.WriteActorDefinitionsToFile("Data/actors.def");
+            if (IO.KeyPressed(Keys.F2))
+                IO.WriteItemDefinitionsToFile("Data/items.def");
+
+            if (IO.KeyPressed(Keys.F5)) IO.Save();
+            if (IO.KeyPressed(Keys.F6)) IO.Load();
+
+            if (IO.KeyPressed(Keys.F9) || IO.KeyPressed(Keys.OemTilde))
+            {
+                if (wizMode)
+                {
+                    IO.Answer = "";
+                    IO.IOState = InputType.PlayerInput;
+                }
+                wizMode = !wizMode;
+            }
+            #endregion
+
+            RenderConsoles();
+            IO.Update(true);
+            base.Update(gameTime);
+        }
 
         public void SetupConsoles()
         {
@@ -218,82 +396,6 @@ namespace ODB
             );
         }
 
-        protected override void Initialize()
-        {
-            #region engineshit
-            //this is starting to look dumb
-            PlayerResponses.Game =
-            gObject.Game =
-            Player.Game =
-            Wizard.Game =
-            Brain.Game =
-            Util.Game =
-            IO.Game =
-            Game = this;
-
-            IsMouseVisible = true;
-            IsFixedTimeStep = false;
-
-            SadConsole.Engine.Initialize(GraphicsDevice);
-            SadConsole.Engine.UseMouse = false;
-            SadConsole.Engine.UseKeyboard = true;
-
-            using (var stream = System.IO.File.OpenRead("Fonts/IBM.font"))
-                SadConsole.Engine.DefaultFont =
-                    SadConsole.Serializer.Deserialize<Font>(stream);
-
-            SadConsole.Engine.DefaultFont.ResizeGraphicsDeviceManager(
-                graphics, 80, 25, 0, 0
-            );
-            #endregion
-
-            SetupConsoles();
-
-            camX = camY = 0;
-            scrW = 80; scrH = 25;
-
-            TileDefinition floor = new TileDefinition(
-                Color.Black, Color.LightGray, ".", false);
-            TileDefinition wall = new TileDefinition(
-                Color.Gray, Color.Gray, " ", true);
-
-            IO.WriteTileDefinitionsToFile("Data/tiles.def");
-
-            SetupMagic(); //essentially magic defs, but we hardcode magic
-            SetupTickingEffects(); //same as magic, cba to add scripting
-            IO.ReadActorDefinitionsFromFile("Data/actors.def");
-            IO.ReadItemDefinitionsFromFile("Data/items.def");
-
-            Seed = Guid.NewGuid().GetHashCode();
-            Util.SetSeed(Seed);
-
-            //IO.Load(); //load entire game (except definitions atm)
-            Game.Levels = new List<ODB.Level>();
-            Game.Level = new ODB.Level(80, 25);
-            Game.Levels.Add(Game.Level);
-
-            Game.Level.WorldActors.Add(
-                player = new Actor(
-                    new Point(13, 15),
-                    Util.ADefByName("Moribund")
-                )
-            );
-
-            SetupBrains();
-
-            logSize = 3;
-            log = new List<string>();
-            Log("Welcome!");
-
-            qpAnswerStack = new Stack<string>();
-
-            //wiz
-            Wizard.wmCursor = Game.player.xy;
-            Wizard.wmHistory = new List<string>();
-
-            base.Initialize();
-        }
-
         void DrawToScreen(Point xy, Color? bg, Color fg, String tile)
         {
             if (bg != null)
@@ -361,104 +463,6 @@ namespace ODB
             return p;
         }
 
-        protected override void Update(GameTime gameTime)
-        {
-            SadConsole.Engine.Update(gameTime, this.IsActive);
-            IO.Update(false);
-
-            #region ui interaction
-            if (IO.KeyPressed(Keys.Escape))
-            {
-                if (wizMode) {
-                    wizMode = false; IO.IOState = InputType.PlayerInput; }
-                else if (IO.IOState != InputType.PlayerInput)
-                    IO.IOState = InputType.PlayerInput;
-                else if (inventoryConsole.IsVisible == true)
-                    inventoryConsole.IsVisible = false;
-                else this.Exit();
-            }
-
-            if (IO.KeyPressed(Keys.I) && !wizMode)
-                inventoryConsole.IsVisible =
-                    !inventoryConsole.IsVisible;
-
-            if (IO.KeyPressed((Keys)0x6B)) //np+
-                logSize = Math.Min(logConsole.ViewArea.Height, ++logSize);
-            if (IO.KeyPressed((Keys)0x6D)) //np-
-                logSize = Math.Max(0, --logSize);
-            logConsole.Position = new xnaPoint(
-                0, -logConsole.ViewArea.Height + logSize
-            );
-
-            //todo: edge scrolling
-            int scrollSpeed = 3;
-            if (IO.KeyPressed(Keys.Right)) camX += scrollSpeed;
-            if (IO.KeyPressed(Keys.Left)) camX -= scrollSpeed;
-            if (IO.KeyPressed(Keys.Up)) camY += scrollSpeed;
-            if (IO.KeyPressed(Keys.Down)) camY -= scrollSpeed;
-
-            camX = Math.Max(0, camX);
-            camX = Math.Min(Game.Level.LevelSize.x - scrW, camX);
-            camY = Math.Max(0, camY);
-            camY = Math.Min(Game.Level.LevelSize.y - scrH, camY);
-            #endregion camera
-
-            if (wizMode) Wizard.wmInput();
-            else
-            {
-                switch (IO.IOState)
-                {
-                    case InputType.QuestionPromptSingle:
-                    case InputType.QuestionPrompt:
-                        IO.QuestionPromptInput();
-                        break;
-                    case InputType.Targeting:
-                        IO.TargetInput();
-                        break;
-                    case InputType.PlayerInput:
-                        if (player.Cooldown == 0)
-                            Player.PlayerInput();
-                        else ProcessNPCs(); //mind: also ticks gameclock
-                        break;
-                    //if this happens,
-                    //you're breaking some kind of weird shit somehow
-                    default: throw new Exception("");
-                }
-            }
-
-            //should probably find a better place to tick this
-            foreach (Actor a in Game.Level.WorldActors)
-            {
-                a.ResetVision();
-                foreach (Room r in Util.GetRooms(a))
-                    a.AddRoomToVision(r);
-            }
-
-            #region f-keys //devstuff
-            if (IO.KeyPressed(Keys.F1))
-                IO.WriteActorDefinitionsToFile("Data/actors.def");
-            if (IO.KeyPressed(Keys.F2))
-                IO.WriteItemDefinitionsToFile("Data/items.def");
-
-            if (IO.KeyPressed(Keys.F5)) IO.Save();
-            if (IO.KeyPressed(Keys.F6)) IO.Load();
-
-            if (IO.KeyPressed(Keys.F9) || IO.KeyPressed(Keys.OemTilde))
-            {
-                if (wizMode)
-                {
-                    IO.Answer = "";
-                    IO.IOState = InputType.PlayerInput;
-                }
-                wizMode = !wizMode;
-            }
-            #endregion
-
-            RenderConsoles();
-            IO.Update(true);
-            base.Update(gameTime);
-        }
-
         public void Log(string s)
         {
             List<string> rows = new List<string>();
@@ -487,6 +491,8 @@ namespace ODB
                 foreach (Brain b in Brains)
                     b.MeatPuppet.Cooldown--;
                 Game.player.Cooldown--;
+
+                Game.Food--;
 
                 GameTick++;
                 List<Actor> wa = new List<Actor>(Level.WorldActors);
@@ -756,6 +762,11 @@ namespace ODB
             namerow += "INT " + player.Get(Stat.Intelligence) + "  ";
             namerow += "AC " + player.GetAC();
 
+            if (Game.Food < 500)
+                namerow += "  Starving";
+            else if (Game.Food < 1500)
+                namerow += "  Hungry";
+
             string statrow = "";
             statrow += "[";
             statrow += player.hpCurrent.ToString().PadLeft(3, ' ');
@@ -828,6 +839,5 @@ namespace ODB
             base.Draw(gameTime);
         }
         #endregion
-
     }
 }

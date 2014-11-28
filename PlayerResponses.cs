@@ -533,5 +533,33 @@ namespace ODB
                 Game.Log(str);
         }
 
+        public static void Eat()
+        {
+            string answer = Game.qpAnswerStack.Pop();
+            int index = IO.indexes.IndexOf(answer[0]);
+
+            Item it = Game.player.inventory[index];
+
+            if (it.Definition.stacking)
+            {
+                Game.Log("You eat a " + it.GetName(false, true));
+                if (it.count > 1)
+                {
+                    Game.Food += it.Definition.Nutrition;
+                    it.count--;
+                }
+                else
+                {
+                    Game.player.inventory.RemoveAt(index);
+                    Game.Food += it.Definition.Nutrition;
+                }
+            }
+            else
+            {
+                Game.Log("You eat " + it.GetName());
+                Game.player.inventory.RemoveAt(index);
+                Game.Food += it.Definition.Nutrition;
+            }
+        }
     }
 }

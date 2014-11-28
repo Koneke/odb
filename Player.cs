@@ -44,6 +44,7 @@ namespace ODB
             CheckFire();
             CheckQuiver();
             CheckLook();
+            CheckEat();
         }
 
         //return whether we moved or not
@@ -428,11 +429,13 @@ namespace ODB
                 }
                 _q += "]";
 
-                IO.AskPlayer(
-                    _q,
-                    InputType.QuestionPromptSingle,
-                    PlayerResponses.Quiver
-                );
+                if (IO.AcceptedInput.Count > 0)
+                    IO.AskPlayer(
+                        _q,
+                        InputType.QuestionPromptSingle,
+                        PlayerResponses.Quiver
+                    );
+                else Game.Log("You have nothing to quiver.");
             }
         }
 
@@ -447,5 +450,34 @@ namespace ODB
                 );
             }
         }
+
+        static void CheckEat()
+        {
+            if (IO.KeyPressed(Keys.E) && !IO.shift)
+            {
+                string _q = "Eat what? [";
+                IO.AcceptedInput.Clear();
+                foreach(Item it in Game.player.inventory) {
+                    if (it.Definition.Nutrition > 0)
+                    {
+                        char index = IO.indexes[
+                            Game.player.inventory.IndexOf(it)
+                        ];
+                        _q += index;
+                        IO.AcceptedInput.Add(index);
+                    }
+                }
+                _q += "]";
+
+                if (IO.AcceptedInput.Count > 0)
+                    IO.AskPlayer(
+                        _q,
+                        InputType.QuestionPromptSingle,
+                        PlayerResponses.Eat
+                    );
+                else Game.Log("You have nothing to eat.");
+            }
+        }
+
     }
 }

@@ -32,6 +32,8 @@ namespace ODB
         //mainly, unidentified items of different defs take from the same
         //random appearance pool (but still only one appearance per def)
         public int Category;
+        public int Nutrition;
+
         //saved in game file, not idef file
         public bool Identified {
             get { return IdentifiedDefs.Contains(type); }
@@ -95,6 +97,8 @@ namespace ODB
 
             Category = stream.ReadHex(2);
 
+            Nutrition = stream.ReadHex(4);
+
             ItemDefinitions[type] = this;
             return stream;
         }
@@ -124,6 +128,8 @@ namespace ODB
             stream.Write(UseEffect, 4);
 
             stream.Write(Category, 2);
+
+            stream.Write(Nutrition, 4);
 
             return stream;
         }

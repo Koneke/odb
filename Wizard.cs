@@ -346,10 +346,26 @@ namespace ODB
                     break;
                     #endregion
                 case "printitem": case "pitem": case "pi":
-                    #region pa
+                    #region pi
                     foreach(Item item in Util.ItemsOnTile(Wizard.wmCursor))
                         Game.Log(
                             item.WriteItem().ToString()
+                        );
+                    break;
+                    #endregion
+                case "printactordef": case "pactordef": case "pad":
+                    #region pad
+                    Game.Log(
+                        Game.Level.ActorOnTile(wmCursor).Definition.
+                            WriteActorDefinition().ToString()
+                    );
+                    break;
+                    #endregion
+                case "printitemdef": case "pitemdef": case "pid":
+                    #region pid
+                    foreach(Item piditem in Util.ItemsOnTile(wmCursor))
+                        Game.Log(
+                            piditem.Definition.WriteItemDefinition().ToString()
                         );
                     break;
                     #endregion
@@ -373,6 +389,10 @@ namespace ODB
                     #endregion
                 case "teleport": case "tp":
                     Game.player.xy = wmCursor;
+                    break;
+                case "setnutrition": case "setnut": case "snut": case "sn":
+                    foreach (Item snitem in Util.ItemsOnTile(wmCursor))
+                        snitem.Definition.Nutrition = IO.ReadHex(args[0]);
                     break;
                 case "identify": case "id":
                     foreach (Item iditem in Util.ItemsOnTile(wmCursor))
