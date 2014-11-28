@@ -18,11 +18,6 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 //     but it /is/ fairly messy.
 // * Switch from numbers in actor def to die?
 
-//~~~ QUEST TRACKER for 28 nov ~~~
-// * Actor intrinsics
-//   * In essence, just rip the mods straight from the items.
-//     Hell, we don't even need new modtypes.
-
 namespace ODB
 {
     public class Game1 : Microsoft.Xna.Framework.Game
@@ -47,6 +42,7 @@ namespace ODB
         public bool wizMode;
 
         public int GameTick;
+        public int Seed;
 
         public List<Level> Levels;
         public Level Level;
@@ -267,7 +263,9 @@ namespace ODB
             SetupTickingEffects(); //same as magic, cba to add scripting
             IO.ReadActorDefinitionsFromFile("Data/actors.def");
             IO.ReadItemDefinitionsFromFile("Data/items.def");
-            ItemDefinition.ApperanceOffset = Util.Roll("1d100");
+
+            Seed = Guid.NewGuid().GetHashCode();
+            Util.SetSeed(Seed);
 
             //IO.Load(); //load entire game (except definitions atm)
             Game.Levels = new List<ODB.Level>();
@@ -752,7 +750,7 @@ namespace ODB
 
             //string namerow = player.Definition.name + " - Title";
             string namerow = player.Definition.name;
-            namerow += " ";
+            namerow += "  ";
             namerow += "STR " + player.Get(Stat.Strength) + "  ";
             namerow += "DEX " + player.Get(Stat.Dexterity) + "  ";
             namerow += "INT " + player.Get(Stat.Intelligence) + "  ";

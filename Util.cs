@@ -10,12 +10,37 @@ using Microsoft.Xna.Framework;
 
 namespace ODB
 {
+    public static class Extensions {
+        public static List<T> Shuffle<T>(this List<T> l) {
+            //we create a new one everytime so the shuffle returns
+            //the same result every time for the same input and gameseed
+            Random rng = new Random(Util.Game.Seed);
+            //so we only return a shuffled copy instead
+            List<T> list = new List<T>(l);
+            int n = list.Count;
+            while (n > 1)
+            {
+                n--;
+                int k = rng.Next(n + 1);
+                T value = list[k];
+                list[k] = list[n];
+                list[n] = value;
+            }
+            return list;
+        }
+    }
+
     public class Util
     {
         //todo: find the odd refs to this hanging around
         //      due to me being a lazy bum
         public static Game1 Game;
-        public static Random Random = new Random();
+        public static Random Random;
+
+        public static void SetSeed(int seed)
+        {
+            Random = new Random(seed);
+        }
 
         public static Item GetItemByID(int id)
         {
@@ -272,6 +297,15 @@ namespace ODB
                 foreach (Mod m in it.Mods)
                     if (m.Type == mt)
                         list.Add(m);
+            return list;
+        }
+
+        public static List<Mod> GetModsOfType(ModType mt, Actor a)
+        {
+            List<Mod> list = new List<Mod>();
+            foreach (Mod m in a.Intrinsics)
+                if (m.Type == mt)
+                    list.Add(m);
             return list;
         }
 

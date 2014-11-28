@@ -10,8 +10,6 @@ namespace ODB
         public static ItemDefinition[] ItemDefinitions =
             new ItemDefinition[0xFFFF];
 
-        //should be loaded on game load
-        public static int ApperanceOffset;
         public static Dictionary<int, List<string>> Appearances =
             new Dictionary<int, List<string>>()
             {
@@ -196,8 +194,11 @@ namespace ODB
             if (!Identified)
             {
                 name = ItemDefinition.Appearances
-                    [Definition.Category]
-                    [Definition.type % ItemDefinition.Appearances[0].Count];
+                    [Definition.Category].Shuffle()
+                    [
+                        (Definition.type + Math.Abs(Game.Seed))
+                        % ItemDefinition.Appearances[0].Count
+                    ];
             } else name = Definition.name;
 
             string article = Util.article(name);

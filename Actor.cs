@@ -21,13 +21,15 @@ namespace ODB
         public static ActorDefinition[] ActorDefinitions =
             new ActorDefinition[0xFFFF];
 
+        public bool Named; //for uniques and what not
         public int strength, dexterity, intelligence;
         public int hpMax, mpMax;
         public int speed, quickness;
         public List<DollSlot> BodyParts;
         public int CorpseType;
         public List<int> Spellbook;
-        public bool Named; //for uniques and what not
+        //intrinsics spawned with
+        public List<Mod> SpawnIntrinsics;
 
         public ActorDefinition(
             Color? bg, Color fg,
@@ -49,6 +51,7 @@ namespace ODB
             CorpseType = Corpse.type;
             this.Spellbook = Spellbook ?? new List<int>();
             this.Named = Named;
+            SpawnIntrinsics = new List<Mod>();
         }
 
         public ActorDefinition(string s) : base(s)
@@ -78,6 +81,15 @@ namespace ODB
             foreach (int spellId in Spellbook)
             {
                 stream.Write(spellId, 4);
+                stream.Write(",", false);
+            }
+            stream.Write(";", false);
+
+            foreach (Mod m in SpawnIntrinsics)
+            {
+                stream.Write((int)m.Type, 4);
+                stream.Write(":", false);
+                stream.Write(m.Value, 4);
                 stream.Write(",", false);
             }
             stream.Write(";", false);
@@ -118,6 +130,18 @@ namespace ODB
             foreach (string spell in spellbook.Split(','))
                 if (spell != "") Spellbook.Add(IO.ReadHex(spell));
 
+            SpawnIntrinsics = new List<Mod>();
+            string sintrinsics = stream.ReadString();
+            foreach (string mod in sintrinsics.Split(','))
+            {
+                if (mod == "") continue;
+                Mod m = new Mod(
+                    (ModType)IO.ReadHex(mod.Split(':')[0]),
+                             IO.ReadHex(mod.Split(':')[1])
+                );
+                SpawnIntrinsics.Add(m);
+            }
+
             ActorDefinitions[type] = this;
             return stream;
         }
@@ -137,9 +161,8 @@ namespace ODB
 
         public List<BodyPart> PaperDoll;
         public List<Item> inventory;
-
-        //not yet to save
         public List<TickingEffect> TickingEffects;
+        public List<Mod> Intrinsics;
         #endregion
 
         #region temporary/cached (nonwritten)
@@ -178,6 +201,7 @@ namespace ODB
                 PaperDoll.Add(new BodyPart(ds));
             inventory = new List<Item>();
             TickingEffects = new List<TickingEffect>();
+            Intrinsics = new List<Mod>(Definition.SpawnIntrinsics);
         }
 
         public Actor(string s)
@@ -295,12 +319,20 @@ namespace ODB
             }
 
             List<Item> worn = Util.GetWornItems(this);
-            if((int)addMod != 0xFF)
+            if ((int)addMod != 0xFF)
+            {
                 foreach (Mod m in Util.GetModsOfType(addMod, worn))
                     modifier += m.Value;
-            if((int)decMod != 0xFF)
+                foreach (Mod m in Util.GetModsOfType(addMod, this))
+                    modifier += m.Value;
+            }
+            if ((int)decMod != 0xFF)
+            {
                 foreach (Mod m in Util.GetModsOfType(decMod, worn))
                     modifier -= m.Value;
+                foreach (Mod m in Util.GetModsOfType(decMod, this))
+                    modifier -= m.Value;
+            }
 
             return modifier;
         }
@@ -427,7 +459,8 @@ namespace ODB
                 Item corpse = new Item(
                     xy,
                     ItemDefinition.ItemDefinitions[
-                        Definition.CorpseType]
+                        Definition.CorpseType],
+                    0, Intrinsics
                 );
                 Game.Level.WorldItems.Add(corpse);
                 Game.Level.AllItems.Add(corpse);
@@ -550,6 +583,12 @@ namespace ODB
             }
             stream.Write(";", false);
 
+            foreach (Mod m in Intrinsics)
+            {
+                stream.Write((int)m.Type + ":" + m.Value + ",");
+            }
+            stream.Write(";", false);
+
             return stream;
         }
         public Stream ReadActor(string s)
@@ -601,6 +640,17 @@ namespace ODB
                 TickingEffect te;
                 TickingEffects.Add(te = new TickingEffect(ticker));
                 te.Holder = this;
+            }
+
+            Intrinsics = new List<Mod>();
+            string intr = stream.ReadString();
+            foreach (string mod in intr.Split(','))
+            {
+                if (mod == "") continue;
+                Intrinsics.Add(new Mod(
+                    (ModType)IO.ReadHex(mod.Split(':')[0]),
+                             IO.ReadHex(mod.Split(':')[1]))
+                );
             }
 
             return stream;

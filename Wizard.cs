@@ -232,6 +232,15 @@ namespace ODB
                             )
                         );
                     }
+                    if (Game.Level.ActorOnTile(wmCursor) != null)
+                    {
+                        Game.Level.ActorOnTile(wmCursor).Intrinsics.Add(
+                            new Mod(
+                                (ModType)IO.ReadHex(args[0]),
+                                IO.ReadHex(args[1])
+                            )
+                        );
+                    }
                     break;
                     #endregion
                 case "rm": case "remmod": case "removemod":
@@ -246,6 +255,20 @@ namespace ODB
                                 (ModType)IO.ReadHex(args[0]))
                             {
                                 item.Mods.RemoveAt(i);
+                                removed = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (Game.Level.ActorOnTile(wmCursor) != null)
+                    {
+                        if (removed) break;
+                        Actor rmactor = Game.Level.ActorOnTile(wmCursor);
+                        for (int i = 0; i < rmactor.Intrinsics.Count; i++) {
+                            if (rmactor.Intrinsics[i].Type ==
+                                (ModType)IO.ReadHex(args[0])
+                            ) {
+                                rmactor.Intrinsics.RemoveAt(i);
                                 removed = true;
                                 break;
                             }
@@ -301,6 +324,9 @@ namespace ODB
                     }
                     break;
                     #endregion
+                case "cl": case "countlvl": case "countlevel":
+                    Game.Log(Game.Levels.Count+"");
+                    break;
                 //di/da are untested atm
                 case "da": case "defa": case "defactor": case "defineactor":
                     #region defactor
@@ -352,8 +378,24 @@ namespace ODB
                     foreach (Item iditem in Util.ItemsOnTile(wmCursor))
                         ItemDefinition.IdentifiedDefs.Add(iditem.type);
                     break;
+                case "unidentify": case "uid":
+                    foreach (Item iditem in Util.ItemsOnTile(wmCursor))
+                        ItemDefinition.IdentifiedDefs.Remove(iditem.type);
+                    break;
+                case "engrave": case "e":
+                    Game.Level.Map[wmCursor.x, wmCursor.y].Engraving = args[0];
+                    break;
+                case "printseed": case "prints": case "ps":
+                    Game.Log(Game.Seed+"");
+                    break;
                 case "name":
                     Game.Level.Name = args[0];
+                    break;
+                case "saveadefs": case "sad":
+                    IO.WriteActorDefinitionsToFile("Data/actors.def");
+                    break;
+                case "saveidefs": case "sid":
+                    IO.WriteItemDefinitionsToFile("Data/items.def");
                     break;
                 case "save":
                     IO.Save();
@@ -362,6 +404,7 @@ namespace ODB
                     IO.Load();
                     break;
                 default:
+                    Game.Seed++;
                     Game.Log("Unrecognized cmd " + cmd);
                     break;
             }
@@ -369,5 +412,6 @@ namespace ODB
 
             IO.Answer = "";
         }
+
     }
 }

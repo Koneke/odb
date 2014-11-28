@@ -166,18 +166,19 @@ namespace ODB
                 Game.Levels[i].WriteLevelSave("Save/level" + i + ".sv");
             }
 
-            stream.Write(ItemDefinition.ApperanceOffset, 4);
+            //okay, so I really don't think anyone's going to hit
+            //gametick 0xFFFFFFFF, that'd be ludicrous.
+            //but 0xFFFF might be hit, and 0xFFFFF looks ugly.
+            stream.Write(Game.GameTick, 8);
+            stream.Write(Game.Seed, 8);
 
-            for (int i = 0; i < ItemDefinition.ItemDefinitions.Length; i++)
+            foreach (int ided in ItemDefinition.IdentifiedDefs)
             {
-                if (ItemDefinition.IdentifiedDefs.Contains(i))
-                {
-                    stream.Write(i, 4);
-                    stream.Write(",", false);
-                }
-                stream.Write(";", false);
+                stream.Write(ided, 4);
+                stream.Write(",", false);
             }
-            //gametick
+            stream.Write(";", false);
+
             WriteToFile("Save/game.sv", stream.ToString());
         }
         public static void Load()
@@ -185,7 +186,6 @@ namespace ODB
             Stream stream = new Stream(ReadFromFile("Save/game.sv"));
             int levels = stream.ReadHex(2);
             int playerLocation = stream.ReadHex(2);
-            //int gametick
 
             if (Game.Levels != null)
             {
@@ -197,11 +197,15 @@ namespace ODB
             for (int i = 0; i < levels; i++)
                 Game.Levels.Add(new Level("Save/level" + i + ".sv"));
 
-            ItemDefinition.ApperanceOffset = stream.ReadHex(4);
+            Game.GameTick = stream.ReadHex(8);
+            Game.Seed = stream.ReadHex(8);
 
             string identifieds = stream.ReadString();
             foreach (string ided in identifieds.Split(','))
+            {
+                if (ided == "") continue;
                 ItemDefinition.IdentifiedDefs.Add(IO.ReadHex(ided));
+            }
 
             Game.Level = Game.Levels[playerLocation];
             Game.SetupBrains();
