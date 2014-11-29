@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Linq;
+using System.Collections.Generic;
 
 using Microsoft.Xna.Framework.Input;
 
@@ -100,6 +101,9 @@ namespace ODB
             if (offset.x != 0 || offset.y != 0)
                 moved = Game.player.TryMove(offset);
 
+            if (moved)
+                Game.Level.MakeNoise(0, Game.player.xy);
+
             return moved;
         }
 
@@ -109,7 +113,7 @@ namespace ODB
                 (IO.KeyPressed(Keys.G) && !IO.shift) ||
                 (IO.KeyPressed(Keys.OemComma) && !IO.shift)
             ) {
-                List<Item> onFloor = Util.ItemsOnTile(Game.player.xy);
+                List<Item> onFloor = Game.Level.ItemsOnTile(Game.player.xy);
                 if (onFloor.Count > 1)
                 {
                     string _q = "Pick up what? [";
@@ -143,7 +147,7 @@ namespace ODB
             {
                 string _q = "Drop what? [";
                 IO.AcceptedInput.Clear();
-                for (int i = 0; i < Game.player.inventory.Count; i++)
+                for (int i = 0; i < Game.player.Inventory.Count; i++)
                 {
                     char index = IO.indexes[i];
                     _q += index;
@@ -168,7 +172,7 @@ namespace ODB
             {
                 List<Item> equipables = new List<Item>();
 
-                foreach (Item it in Game.player.inventory)
+                foreach (Item it in Game.player.Inventory)
                 {
                     if (wield && it.equipSlots.Contains(DollSlot.Hand))
                         equipables.Add(it);
@@ -192,7 +196,7 @@ namespace ODB
                     foreach (Item it in equipables)
                     {
                         char index = IO.indexes[
-                            Game.player.inventory.IndexOf(it)
+                            Game.player.Inventory.IndexOf(it)
                         ];
                         _q += index;
                         IO.AcceptedInput.Add(index);
@@ -246,7 +250,7 @@ namespace ODB
                     foreach (Item it in equipped)
                     {
                         char index = IO.indexes[
-                            Game.player.inventory.IndexOf(it)
+                            Game.player.Inventory.IndexOf(it)
                         ];
                         if (!IO.AcceptedInput.Contains(index))
                         {
@@ -344,10 +348,10 @@ namespace ODB
             {
                 string _q = "Use what? [";
                 IO.AcceptedInput.Clear();
-                for (int i = 0; i < Game.player.inventory.Count; i++)
+                for (int i = 0; i < Game.player.Inventory.Count; i++)
                 {
                     if (
-                        Game.player.inventory[i].UseEffect != null
+                        Game.player.Inventory[i].UseEffect != null
                     ) {
                         char index = IO.indexes[i];
                         _q += index;
@@ -431,12 +435,12 @@ namespace ODB
                 string _q = "Quiver what? [";
                 
                 IO.AcceptedInput.Clear();
-                foreach (Item it in Game.player.inventory)
+                foreach (Item it in Game.player.Inventory)
                 {
                     if (it.Definition.equipSlots.Contains(DollSlot.Quiver))
                     {
                         char index = IO.indexes[
-                            Game.player.inventory.IndexOf(it)
+                            Game.player.Inventory.IndexOf(it)
                         ];
                         _q += index;
                         IO.AcceptedInput.Add(index);
@@ -472,11 +476,11 @@ namespace ODB
             {
                 string _q = "Eat what? [";
                 IO.AcceptedInput.Clear();
-                foreach(Item it in Game.player.inventory) {
+                foreach(Item it in Game.player.Inventory) {
                     if (it.Definition.Nutrition > 0)
                     {
                         char index = IO.indexes[
-                            Game.player.inventory.IndexOf(it)
+                            Game.player.Inventory.IndexOf(it)
                         ];
                         _q += index;
                         IO.AcceptedInput.Add(index);
@@ -493,6 +497,5 @@ namespace ODB
                 else Game.Log("You have nothing to eat.");
             }
         }
-
     }
 }

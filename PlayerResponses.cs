@@ -15,7 +15,7 @@ namespace ODB
 
             int i = IO.indexes.IndexOf(answer[0]);
             
-            List<Item> onTile = Util.ItemsOnTile(
+            List<Item> onTile = Game.Level.ItemsOnTile(
                 Game.player.xy
             );
 
@@ -27,7 +27,7 @@ namespace ODB
                 if (it.Definition.stacking)
                 {
                     bool alreadyHolding = false;
-                    foreach (Item item in Game.player.inventory)
+                    foreach (Item item in Game.player.Inventory)
                         if (item.Definition.type == it.Definition.type)
                         {
                             if(!Game.player.IsEquipped(item)) {
@@ -38,11 +38,11 @@ namespace ODB
                             }
                         }
                     if (!alreadyHolding)
-                        Game.player.inventory.Add(it);
+                        Game.player.Inventory.Add(it);
                 }
                 else
                 {
-                    Game.player.inventory.Add(it);
+                    Game.player.Inventory.Add(it);
                 }
                 Util.Game.Log("Picked up " + it.GetName() + ".");
                 Game.player.Pass();
@@ -66,15 +66,15 @@ namespace ODB
 
             int i = IO.indexes.IndexOf(answer[0]);
 
-            if (i >= Game.player.inventory.Count)
+            if (i >= Game.player.Inventory.Count)
             {
                 Game.Log("Invalid selection ("+answer[0]+").");
                 return;
             }
 
-            if (i < Game.player.inventory.Count)
+            if (i < Game.player.Inventory.Count)
             {
-                Item it = Game.player.inventory[i];
+                Item it = Game.player.Inventory[i];
 
                 if (it.Definition.stacking && it.count > 1)
                 {
@@ -106,9 +106,9 @@ namespace ODB
 
         static void drop(int index)
         {
-            Item it = Game.player.inventory[index];
+            Item it = Game.player.Inventory[index];
 
-            Game.player.inventory.Remove(it);
+            Game.player.Inventory.Remove(it);
             Game.Level.WorldItems.Add(it);
 
             it.xy = Game.player.xy;
@@ -124,7 +124,7 @@ namespace ODB
 
         static void drop(int index, int count)
         {
-            Item it = Game.player.inventory[index];
+            Item it = Game.player.Inventory[index];
             if (it.Definition.stacking && it.count > 1)
             {
                 if (count > it.count)
@@ -150,9 +150,10 @@ namespace ODB
                     it.count -= count;
                     Game.Level.WorldItems.Add(droppedStack);
                     Game.Level.AllItems.Add(droppedStack);
+                    droppedStack.xy = Game.player.xy;
 
                     Game.Log("Dropped "+// count + " " +
-                        it.GetName() + "."
+                        droppedStack.GetName() + "."
                     );
 
                     Game.player.Pass();
@@ -166,7 +167,7 @@ namespace ODB
             if (answer.Length <= 0) return;
 
             int i = IO.indexes.IndexOf(answer[0]);
-            Item it = Game.player.inventory[i];
+            Item it = Game.player.Inventory[i];
 
             if(!Game.player.CanEquip(it.equipSlots))
                 Game.Log("You need to remove something first.");
@@ -185,7 +186,7 @@ namespace ODB
             string answer = Game.qpAnswerStack.Pop();
 
             int i = IO.indexes.IndexOf(answer[0]);
-            Item it = Game.player.inventory[i];
+            Item it = Game.player.Inventory[i];
 
             bool canEquip = true;
             //should even show up as a choice though
@@ -207,7 +208,7 @@ namespace ODB
                     clone.id = Item.IDCounter++;
                     clone.count--;
                     it.count = 1;
-                    Game.player.inventory.Add(clone);
+                    Game.player.Inventory.Add(clone);
                     Game.Level.AllItems.Add(clone);
                 }
                 Game.player.Equip(it);
@@ -225,7 +226,7 @@ namespace ODB
 
             int i = IO.indexes.IndexOf(answer[0]);
 
-            Item selected = Game.player.inventory[i];
+            Item selected = Game.player.Inventory[i];
             foreach (BodyPart bp in Game.player.PaperDoll)
                 if (bp.Type == DollSlot.Quiver)
                     bp.Item = selected;
@@ -242,7 +243,7 @@ namespace ODB
             if (answer.Length <= 0) return;
 
             int i = IO.indexes.IndexOf(answer[0]);
-            if (i >= Game.player.inventory.Count)
+            if (i >= Game.player.Inventory.Count)
             {
                 Game.Log("Invalid selection (" + answer[0] + ").");
                 return;
@@ -251,7 +252,7 @@ namespace ODB
             Item it = null;
 
             foreach (BodyPart bp in Game.player.PaperDoll)
-                if (bp.Item == Game.player.inventory[i]) {
+                if (bp.Item == Game.player.Inventory[i]) {
                     it = bp.Item;
                 }
 
@@ -272,7 +273,7 @@ namespace ODB
             Item it = null;
 
             foreach (BodyPart bp in Game.player.PaperDoll)
-                if (bp.Item == Game.player.inventory[i])
+                if (bp.Item == Game.player.Inventory[i])
                     it = bp.Item;
 
             foreach (BodyPart bp in Game.player.PaperDoll)
@@ -282,7 +283,7 @@ namespace ODB
 
             Item stack = null;
             if (it.Definition.stacking)
-                foreach (Item item in Game.player.inventory)
+                foreach (Item item in Game.player.Inventory)
                     if (
                         item.Definition.type == it.Definition.type &&
                         item != it
@@ -291,7 +292,7 @@ namespace ODB
             if (stack != null)
             {
                 stack.count += it.count;
-                Game.player.inventory.Remove(it);
+                Game.player.Inventory.Remove(it);
                 Game.Level.AllItems.Remove(it);
             }
 
@@ -326,15 +327,15 @@ namespace ODB
             if (answer.Length <= 0) return;
 
             Point offset = Game.NumpadToDirection(answer[0]);
-            Tile t = 
-                Game.Level.Map[
-                    Game.player.xy.x + offset.x,
-                    Game.player.xy.y + offset.y
-                ];
+            Point p = new Point(
+                Game.player.xy.x + offset.x,
+                Game.player.xy.y + offset.y);
+            Tile t = Game.Level.Map[p.x, p.y];
+
             if (t.Door == Door.Open)
             {
                 //first check if something's in the way
-                if (Util.ItemsOnTile(t).Count <= 0)
+                if (Game.Level.ItemsOnTile(p).Count <= 0)
                 {
                     t.Door = Door.Closed;
                     Game.Log("You closed the door.");
@@ -379,7 +380,7 @@ namespace ODB
             string answer = Game.qpAnswerStack.Peek();
             if (answer.Length <= 0) return;
 
-            Item it = Game.player.inventory[
+            Item it = Game.player.Inventory[
                 IO.indexes.IndexOf(answer[0])
             ];
             if (it.count <= 0)
@@ -399,7 +400,7 @@ namespace ODB
                 it.count--;
                 if (it.count <= 0)
                 {
-                    Game.player.inventory.Remove(it);
+                    Game.player.Inventory.Remove(it);
                     Game.Level.AllItems.Remove(it);
                     Game.Log(it.GetName(true, false, true) + " is spent!");
                 }
@@ -435,7 +436,7 @@ namespace ODB
             if (Game.Level.Map[Game.Target.x, Game.Target.y] != null)
             {
                 int i = IO.indexes.IndexOf(Game.qpAnswerStack.Pop()[0]);
-                Item it = Game.player.inventory[i];
+                Item it = Game.player.Inventory[i];
                 Game.Log("You use " + it.GetName(true) + ".");
                 //Projectile pr = Game.TargetedSpell.Cast(Game.player, p);
                 Projectile pr = Game.TargetedSpell.Cast(
@@ -449,7 +450,7 @@ namespace ODB
                 //but that's a later issue
                 if (it.count <= 0)
                 {
-                    Game.player.inventory.Remove(it);
+                    Game.player.Inventory.Remove(it);
                     Game.Level.AllItems.Remove(it);
                     Game.Log(it.GetName(true, false, true) + " is spent!");
                 }
@@ -503,7 +504,7 @@ namespace ODB
                 return;
             }
 
-            List<Item> items = Util.ItemsOnTile(t);
+            List<Item> items = Game.Level.ItemsOnTile(Game.Target);
             string str = "";
 
             if (verbose)
@@ -540,7 +541,7 @@ namespace ODB
             string answer = Game.qpAnswerStack.Pop();
             int index = IO.indexes.IndexOf(answer[0]);
 
-            Item it = Game.player.inventory[index];
+            Item it = Game.player.Inventory[index];
 
             if (it.Definition.stacking)
             {
@@ -551,14 +552,14 @@ namespace ODB
                 }
                 else
                 {
-                    Game.player.inventory.RemoveAt(index);
+                    Game.player.Inventory.RemoveAt(index);
                     Game.player.Eat(it);
                 }
             }
             else
             {
                 Game.Log("You eat " + it.GetName());
-                Game.player.inventory.RemoveAt(index);
+                Game.player.Inventory.RemoveAt(index);
                 Game.player.Eat(it);
             }
 

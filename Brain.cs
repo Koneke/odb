@@ -21,6 +21,8 @@ namespace ODB
             if (!Game.Level.WorldActors.Contains(MeatPuppet))
                 return;
 
+            if (!MeatPuppet.Awake) return;
+
             List<Room> route = 
                 Util.FindRouteToPoint(
                     MeatPuppet.xy, Game.player.xy
@@ -96,7 +98,8 @@ namespace ODB
                     if (Game.Level.Map[
                         moveTo.x,
                         moveTo.y
-                    ].Door == Door.Closed) {
+                    ].Door == Door.Closed)
+                    {
                         Game.Level.Map[moveTo.x, moveTo.y].Door = Door.Open;
                         if (Game.player.Vision[moveTo.x, moveTo.y])
                         {
@@ -106,7 +109,11 @@ namespace ODB
                             );
                         }
                     }
-                    else MeatPuppet.xy = moveTo;
+                    else
+                    {
+                        MeatPuppet.xy = moveTo;
+                        Game.Level.CalculateActorPositions();
+                    }
                 }
 
                 MeatPuppet.Pass(true);

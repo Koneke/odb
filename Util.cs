@@ -109,21 +109,6 @@ namespace ODB
             return GetRooms(go.xy);
         }
 
-        public static List<Item> ItemsOnTile(Point xy)
-        {
-            return Game.Level.WorldItems.FindAll(x => x.xy == xy);
-        }
-
-        public static List<Item> ItemsOnTile(Tile t)
-        {
-            for (int x = 0; x < Game.Level.LevelSize.x; x++)
-                for (int y = 0; y < Game.Level.LevelSize.y; y++)
-                    if (Game.Level.Map[x, y] == t)
-                        return Game.Level.WorldItems.
-                            FindAll(z => z.xy == new Point(x, y));
-            return null;
-        }
-
         public static int Roll(string s, bool max = false)
         {
             if (s == "") return 0;

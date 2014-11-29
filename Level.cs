@@ -18,6 +18,10 @@ namespace ODB
         public List<Item> WorldItems;
         public List<Item> AllItems; //WorldItems + stuff in inventories
 
+        //should not be saved
+        public Dictionary<Room, List<Actor>> ActorPositions;
+        public Dictionary<Actor, List<Room>> ActorRooms;
+
         public Level(
             int LevelWidth, int LevelHeight
         ) {
@@ -25,11 +29,15 @@ namespace ODB
             this.LevelHeight = LevelHeight;
             this.LevelSize = new Point(LevelWidth, LevelHeight);
             Clear();
+            ActorPositions = new Dictionary<Room, List<Actor>>();
+            ActorRooms = new Dictionary<Actor, List<Room>>();
         }
 
         public Level(string s)
         {
             LoadLevelSave(s);
+            ActorPositions = new Dictionary<Room, List<Actor>>();
+            ActorRooms = new Dictionary<Actor, List<Room>>();
         }
 
         public void Clear()
@@ -69,6 +77,94 @@ namespace ODB
                 if (item.xy == xy)
                     items.Add(item);
             return items;
+        }
+
+        public List<Room> NeighbouringRooms(Room r)
+        {
+            List<Room> list = new List<Room>();
+            foreach (Rect rr in r.rects)
+                for (int x = 0; x < rr.wh.x; x++)
+                    for (int y = 0; y < rr.wh.y; y++)
+                        list.AddRange(
+                            Util.GetRooms(
+                                new Point(rr.xy.x + x, rr.xy.y + y)
+                            ).FindAll(
+                                z => z != r && !list.Contains(z)
+                            )
+                        );
+            return list;
+        }
+
+        public void CalculateRoomLinks()
+        {
+            foreach (Room r in Rooms)
+            {
+                r.Linked.Clear();
+                r.Linked.AddRange(NeighbouringRooms(r));
+            }
+        }
+
+        public void CalculateActorPositions()
+        {
+            ActorPositions.Clear();
+            ActorRooms.Clear();
+            foreach (Actor a in WorldActors)
+                ActorRooms.Add(a, new List<Room>());
+
+            foreach (Room r in Rooms)
+            {
+                ActorPositions.Add(r, new List<Actor>());
+                foreach (Actor a in WorldActors)
+                    if (r.ContainsPoint(a.xy))
+                    {
+                        ActorPositions[r].Add(a);
+                        ActorRooms[a] = new List<Room>();
+                        ActorRooms[a].Add(r);
+                    }
+            }
+        }
+
+        public void MakeNoise(int noisemod, Point p)
+        {
+            List<Room> closed = new List<Room>();
+            List<Room> open = new List<Room>();
+
+            closed = Util.GetRooms(p);
+            open = Util.GetRooms(p);
+            Dictionary<int, List<Room>> roomdistances =
+                new Dictionary<int,List<Room>>();
+            int dist = 0;
+            List<Room> newopen = new List<Room>();
+
+            int maxdist = 6 + noisemod - 1;
+            maxdist -= maxdist % 2;
+            maxdist /= 2;
+
+            while (dist <= maxdist)
+            {
+                newopen.Clear();
+                roomdistances[dist] = new List<Room>();
+                foreach (Room r in open)
+                {
+                    roomdistances[dist].Add(r);
+                    foreach (Room n in r.Linked)
+                        if (!closed.Contains(n) && !open.Contains(n))
+                            newopen.Add(n);
+                    closed.Add(r);
+                }
+                open.Clear();
+                open.AddRange(newopen);
+                dist++;
+            }
+
+            for (int i = 0; i <= maxdist; i++)
+                foreach (Room r in roomdistances[i])
+                    foreach (Actor a in ActorPositions[r])
+                    {
+                        if (a == Util.Game.player) continue;
+                        int roll = Util.Roll("1d6") + noisemod - i * 2;
+                        if (roll > 1) a.Awake = true;
+                    }
         }
 
         public Stream WriteLevelSave(string path)
@@ -226,7 +322,7 @@ namespace ODB
             {
                 Actor actor = new Actor(actorList[i]);
                 WorldActors.Add(actor);
-                foreach (Item item in actor.inventory)
+                foreach (Item item in actor.Inventory)
                     WorldItems.Remove(item);
             }
         }

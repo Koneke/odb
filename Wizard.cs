@@ -186,6 +186,7 @@ namespace ODB
                         );
                         Game.Level.WorldActors.Add(act);
                         Game.Brains.Add(new Brain(act));
+                        Game.Level.CalculateActorPositions();
                         break;
                         #endregion
                     case "si":
@@ -353,6 +354,7 @@ namespace ODB
                                 Util.TDef(IO.ReadHex(args[5])) :
                                 null
                         );
+                        Game.Level.CalculateRoomLinks();
                     }
                     break;
                     #endregion
@@ -487,7 +489,8 @@ namespace ODB
 
         static bool IDefCommands(string cmd, string[] args)
         {
-            ItemDefinition idef = Util.ItemsOnTile(wmCursor)[0].Definition;
+            ItemDefinition idef = Game.Level.ItemsOnTile(wmCursor)
+                [0].Definition;
 
             if (idef == null)
             {
@@ -499,6 +502,7 @@ namespace ODB
             {
                 case "id-is":
                 case "id-get":
+                    #region get
                     switch (args[0])
                     {
                         case "bg": Game.Log(IO.Write(idef.bg)); break;
@@ -530,6 +534,7 @@ namespace ODB
                             break;
                     }
                     break;
+                    #endregion
                 case "id-id":
                     ItemDefinition.IdentifiedDefs.Add(idef.type);
                     break;
@@ -594,7 +599,7 @@ namespace ODB
                 case "id-nutrition":
                 case "id-food":
                     #region setnut
-                    foreach (Item snitem in Util.ItemsOnTile(wmCursor))
+                    foreach (Item snitem in Game.Level.ItemsOnTile(wmCursor))
                         snitem.Definition.Nutrition = IO.ReadHex(args[0]);
                     break;
                     #endregion
@@ -687,6 +692,9 @@ namespace ODB
                     );
                     break;
                     #endregion
+                case "ai-awake":
+                    a.Awake = IO.ReadBool(args[0]);
+                    break;
                 default: return false;
             }
             return true;
@@ -694,7 +702,7 @@ namespace ODB
 
         static bool ItemCommands(string cmd, string[] args)
         {
-            if (Util.ItemsOnTile(wmCursor).Count <= 0) {
+            if (Game.Level.ItemsOnTile(wmCursor).Count <= 0) {
                 Game.Log("No item on tile.");
                 return true;
             }
@@ -703,16 +711,16 @@ namespace ODB
                 case "ii-p":
                 case "ii-print":
                     #region pi
-                    foreach(Item item in Util.ItemsOnTile(Wizard.wmCursor))
+                    foreach(Item it in Game.Level.ItemsOnTile(Wizard.wmCursor))
                         Game.Log(
-                            item.WriteItem().ToString()
+                            it.WriteItem().ToString()
                         );
                     break;
                     #endregion
                 case "ii-pd":
                 case "ii-pdef":
                     #region pid
-                    foreach(Item piditem in Util.ItemsOnTile(wmCursor))
+                    foreach(Item piditem in Game.Level.ItemsOnTile(wmCursor))
                         Game.Log(
                             piditem.Definition.WriteItemDefinition().ToString()
                         );
@@ -720,20 +728,20 @@ namespace ODB
                     #endregion
                 case "ii-id":
                     #region id
-                    foreach (Item iditem in Util.ItemsOnTile(wmCursor))
+                    foreach (Item iditem in Game.Level.ItemsOnTile(wmCursor))
                         iditem.Identify();
                     break;
                     #endregion
                 case "ii-unid":
                     #region unid
-                    foreach (Item iditem in Util.ItemsOnTile(wmCursor))
+                    foreach (Item iditem in Game.Level.ItemsOnTile(wmCursor))
                         ItemDefinition.IdentifiedDefs.Remove(iditem.type);
                     break;
                     #endregion
                 case "ii-am":
                 case "ii-addmod":
                     #region addmod
-                    foreach (Item item in Util.ItemsOnTile(wmCursor))
+                    foreach (Item item in Game.Level.ItemsOnTile(wmCursor))
                     {
                         item.Mods.Add(
                             new Mod(
@@ -750,7 +758,7 @@ namespace ODB
                 case "rm": case "remmod": case "removemod":
                     #region remove mod
                     bool removed = false;
-                    foreach (Item item in Util.ItemsOnTile(wmCursor))
+                    foreach (Item item in Game.Level.ItemsOnTile(wmCursor))
                     {
                         if (removed) break;
                         for (int i = 0; i < item.Mods.Count; i++)

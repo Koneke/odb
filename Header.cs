@@ -69,14 +69,19 @@ namespace ODB
     {
         public List<Rect> rects;
 
+        //should not be saved to file
+        public List<Room> Linked;
+
         public Room()
         {
             rects = new List<Rect>();
+            Linked = new List<Room>();
         }
 
         public Room(string s)
         {
             ReadRoom(s);
+            Linked = new List<Room>();
         }
 
         public bool ContainsPoint(Point p)

@@ -187,9 +187,11 @@ namespace ODB
         public int Cooldown;
 
         public List<BodyPart> PaperDoll;
-        public List<Item> inventory;
+        public List<Item> Inventory;
         public List<TickingEffect> TickingEffects;
         public List<Mod> Intrinsics;
+
+        public bool Awake;
         #endregion
 
         #region temporary/cached (nonwritten)
@@ -226,9 +228,10 @@ namespace ODB
             PaperDoll = new List<BodyPart>();
             foreach (DollSlot ds in def.BodyParts)
                 PaperDoll.Add(new BodyPart(ds));
-            inventory = new List<Item>();
+            Inventory = new List<Item>();
             TickingEffects = new List<TickingEffect>();
             Intrinsics = new List<Mod>(Definition.SpawnIntrinsics);
+            Awake = false;
         }
 
         public Actor(string s)
@@ -353,6 +356,11 @@ namespace ODB
             }
 
             List<Item> worn = Util.GetWornItems(this);
+            //no bonus from quivered itesm
+            foreach (BodyPart bp in GetSlots(DollSlot.Quiver))
+                if(bp.Item != null)
+                    worn.Remove(bp.Item);
+
             if ((int)addMod != 0xFF)
             {
                 foreach (Mod m in Util.GetModsOfType(addMod, worn))
@@ -477,7 +485,7 @@ namespace ODB
                     if(bp.Type == DollSlot.Quiver)
                         bp.Item = null;
                 Game.Level.AllItems.Remove(ammo);
-                Game.player.inventory.Remove(ammo);
+                Game.player.Inventory.Remove(ammo);
             }
 
             if(hitRoll >= dodgeRoll) {
@@ -519,6 +527,9 @@ namespace ODB
                         Definition.CorpseType],
                     0, Intrinsics
                 );
+                //should always be ided
+                //or maybe not..? could be a mechanic in and of itself
+                corpse.Identify();
                 Game.Level.WorldItems.Add(corpse);
                 Game.Level.AllItems.Add(corpse);
                 Game.Level.WorldActors.Remove(this);
@@ -553,8 +564,7 @@ namespace ODB
                 );
             else
                 Game.Log(GetName(false, true) + " ate " + it.GetName());
-            //if (Util.Roll("1d5") == 5)
-            if (Util.Roll("1d5") > 0)
+            if (Util.Roll("1d5") == 5)
             {
                 //idea here is that earlier intrinsics in the list are more
                 //"primary" attributes of the food (usually corpse if it has
@@ -634,6 +644,9 @@ namespace ODB
                     Game.player.Pass();
                 }
             }
+
+            if (moved) Game.Level.CalculateActorPositions();
+
             return moved;
         }
 
@@ -658,7 +671,7 @@ namespace ODB
             }
             stream.Write(";", false);
 
-            foreach (Item it in inventory)
+            foreach (Item it in Inventory)
             {
                 stream.Write(it.id, 4);
                 stream.Write(",", false);
@@ -677,6 +690,8 @@ namespace ODB
                 stream.Write((int)m.Type + ":" + m.Value + ",");
             }
             stream.Write(";", false);
+
+            stream.Write(Awake);
 
             return stream;
         }
@@ -709,14 +724,14 @@ namespace ODB
                 PaperDoll.Add(new BodyPart(type, item));
             }
 
-            inventory = new List<Item>();
+            Inventory = new List<Item>();
             foreach (string ss in
                 stream.ReadString().Split(
                     new string[] { "," },
                     StringSplitOptions.RemoveEmptyEntries
                 ).ToList()
             ) {
-                inventory.Add(
+                Inventory.Add(
                     Util.GetItemByID(IO.ReadHex(ss))
                 );
             }
@@ -741,6 +756,8 @@ namespace ODB
                              IO.ReadHex(mod.Split(':')[1]))
                 );
             }
+
+            Awake = stream.ReadBool();
 
             return stream;
         }

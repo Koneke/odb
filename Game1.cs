@@ -19,7 +19,6 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 
 //~~~ QUEST TRACKER for 29 nov ~~~
 // * Status effects
-// * Sleeping monsters / noise
 
 namespace ODB
 {
@@ -347,7 +346,9 @@ namespace ODB
                         a.Damage(Util.Roll("6d2"));
 
                         if(Util.Roll("1d6") >= 5) {
-                            Game.Log(a.GetName() + " starts bleeding!");
+                            Game.Log(
+                                a.GetName(false, true) + " starts bleeding!"
+                            );
                             TickingEffectDefinition bleed =
                                 Util.TEDefByName("bleed");
                             if (!a.HasEffect(bleed))
@@ -487,12 +488,15 @@ namespace ODB
                     if (
                         Game.Level.WorldActors.Contains(
                             b.MeatPuppet
-                        ) && b.MeatPuppet.Cooldown == 0
+                        ) &&
+                        b.MeatPuppet.Cooldown <= 0 &&
+                        b.MeatPuppet.Awake
                     )
                         b.Tick();
 
                 foreach (Brain b in Brains)
-                    b.MeatPuppet.Cooldown--;
+                    if(b.MeatPuppet.Awake)
+                        b.MeatPuppet.Cooldown--;
                 Game.player.Cooldown--;
 
                 Game.Food--;
@@ -701,9 +705,9 @@ namespace ODB
                     2, 0, player.Definition.name, Color.White);
             }
 
-            for (int i = 0; i < player.inventory.Count; i++)
+            for (int i = 0; i < player.Inventory.Count; i++)
             {
-                Item it = player.inventory[i];
+                Item it = player.Inventory[i];
 
                 bool equipped = Game.player.IsEquipped(it);
 
@@ -714,14 +718,14 @@ namespace ODB
                 if (it.Definition.stacking)
                     name += it.count + "x ";
 
-                if (player.inventory[i].mod != 0)
+                if (player.Inventory[i].mod != 0)
                 {
-                    name += player.inventory[i].mod >= 0 ? "+" : "-";
-                    name += Math.Abs(player.inventory[i].mod) + " ";
+                    name += player.Inventory[i].mod >= 0 ? "+" : "-";
+                    name += Math.Abs(player.Inventory[i].mod) + " ";
                 }
 
                 //name += player.inventory[i].Definition.name;
-                name += player.inventory[i].GetName(false, true, true);
+                name += player.Inventory[i].GetName(false, true, true);
                 if (it.Charged)
                 {
                     name += "["+it.count+"]";
