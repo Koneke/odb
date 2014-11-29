@@ -20,13 +20,22 @@ namespace ODB
             };
         public static List<int> IdentifiedDefs = new List<int>();
 
-        public int AC;
         public string Damage;
+        public int AC;
         public bool stacking;
         public List<DollSlot> equipSlots;
         //ranged _weapons_
         public bool Ranged;
         public List<int> AmmoTypes;
+        //addition of this, since some items can be used in both melee
+        //and at range, like spears
+        public string RangedDamage;
+        //should preferably be removed later?
+        //like, you should be able to throw anything
+        //somethings, i.e. those with rangeddamage, will just be a bit more
+        //suited for throwing
+        //keep it for now, since it's already in and working
+        public bool Throwable;
         public int UseEffect;
         //groups potions together and what not
         //mainly, unidentified items of different defs take from the same
@@ -93,6 +102,8 @@ namespace ODB
             foreach (string ss in ammos.Split(','))
                 if(ss != "") AmmoTypes.Add(IO.ReadHex(ss));
 
+            RangedDamage = stream.ReadString();
+
             UseEffect = stream.ReadHex(4);
 
             Category = stream.ReadHex(2);
@@ -124,6 +135,8 @@ namespace ODB
                     stream.Write(",", false);
                 }
             stream.Write(";", false);
+
+            stream.Write(RangedDamage);
 
             stream.Write(UseEffect, 4);
 

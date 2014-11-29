@@ -17,6 +17,12 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 //     but it /is/ fairly messy.
 // * Switch from numbers in actor def to die?
 
+//~~~ QUEST TRACKER for 29 nov ~~~
+// * Throwing weapons
+//   * Throwable-onlies
+// * Status effects
+// * Sleeping monsters / noise
+
 namespace ODB
 {
     public class Game1 : Microsoft.Xna.Framework.Game

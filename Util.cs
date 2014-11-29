@@ -126,6 +126,8 @@ namespace ODB
 
         public static int Roll(string s, bool max = false)
         {
+            if (s == "") return 0;
+
             s = s.ToLower();
             int number = int.Parse(s.Split('d')[0]);
             int sides = int.Parse(s.Split('d')[1]

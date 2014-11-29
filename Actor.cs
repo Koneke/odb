@@ -23,8 +23,8 @@ namespace ODB
 
         public bool Named; //for uniques and what not
         public int strength, dexterity, intelligence;
-        public int hpMax, mpMax;
         public int speed, quickness;
+        public int hpMax, mpMax;
         public List<DollSlot> BodyParts;
         public int CorpseType;
         public List<int> Spellbook;
@@ -44,7 +44,7 @@ namespace ODB
             this.dexterity = dexterity;
             this.intelligence = intelligence;
             this.hpMax = hp;
-            this.BodyParts = BodyParts;
+            this.BodyParts = BodyParts ?? new List<DollSlot>();
             ActorDefinitions[this.type] = this;
             ItemDefinition Corpse = new ItemDefinition(
                 null, Color.Red, "%", name + " corpse");
@@ -57,6 +57,33 @@ namespace ODB
         public ActorDefinition(string s) : base(s)
         {
             ReadActorDefinition(s);
+        }
+
+        public void Set(Stat stat, int value)
+        {
+            switch (stat)
+            {
+                case Stat.Strength:
+                    strength = value;
+                    break;
+                case Stat.Dexterity:
+                    dexterity = value;
+                    break;
+                case Stat.Intelligence:
+                    intelligence = value;
+                    break;
+                case Stat.Speed:
+                    speed = value;
+                    break;
+                case Stat.Quickness:
+                    quickness = value;
+                    break;
+                case Stat.PoisonRes:
+                    //teh pRes, it does nathing
+                default:
+                    Util.Game.Log("Bad stat.");
+                    break;
+            }
         }
 
         public Stream WriteActorDefinition()
@@ -441,8 +468,21 @@ namespace ODB
                         weapon = bp.Item;
                 }
 
-                damageRoll = Util.Roll(weapon.Definition.Damage);
-                damageRoll += Util.Roll(ammo.Definition.Damage);
+                bool throwing = ammo.Definition.Throwable;
+                if (weapon != null)
+                    if (weapon.Definition.AmmoTypes.Contains(ammo.type))
+                        throwing = false;
+
+                if (throwing)
+                {
+                    damageRoll = Util.Roll(ammo.Definition.RangedDamage);
+                }
+                else
+                {
+                    damageRoll = Util.Roll(weapon.Definition.Damage);
+                    damageRoll += Util.Roll(ammo.Definition.RangedDamage);
+                }
+
                 Game.Log(
                     target.Definition.name + " is hit! " +
                     "(" + hitRoll + " vs " + dodgeRoll + ")"

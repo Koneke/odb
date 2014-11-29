@@ -373,6 +373,40 @@ namespace ODB
         {
             return s.Substring(0, 1) == "1";
         }
+        public static string Write(Color? c)
+        {
+            string s = "";
+            if (c.HasValue) Write(c.Value);
+            else s += "XXXXXX";
+            return s;
+        }
+        public static Color? ReadNullableColor(string s)
+        {
+            if (s.Contains("X") || s.Contains("x"))
+                return null;
+            return ReadColor(s);
+        }
+        public static string Write(Color c)
+        {
+            string s = "";
+            s += String.Format("{0:X2}", c.R);
+            s += String.Format("{0:X2}", c.G);
+            s += String.Format("{0:X2}", c.B);
+            return s;
+        }
+        public static Color ReadColor(string s)
+        {
+            Color c = new Color(
+                Int32.Parse(s.Substring(0, 2),
+                    System.Globalization.NumberStyles.HexNumber),
+                Int32.Parse(s.Substring(2, 2),
+                    System.Globalization.NumberStyles.HexNumber),
+                Int32.Parse(s.Substring(4, 2),
+                    System.Globalization.NumberStyles.HexNumber)
+            );
+            return c;
+        }
+
         #endregion
     }
 }

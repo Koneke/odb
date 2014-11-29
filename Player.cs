@@ -369,29 +369,42 @@ namespace ODB
             if (IO.KeyPressed(Keys.F) && !IO.shift)
             {
                 Item weapon = null;
+                Item ammo = null;
 
                 foreach (Item it in Game.player.GetEquippedItems())
                     if (it.Definition.Ranged)
                         weapon = it;
 
-                if (weapon == null)
-                {
-                    Game.Log("You need something to fire with.");
-                    return;
-                }
-
-
-                bool canFire = false;
                 foreach (BodyPart bp in Game.player.GetSlots(DollSlot.Quiver))
                 {
                     if (bp.Item == null) continue;
-                    if (
-                        //these things are getting really hairy...
-                        weapon.Definition.AmmoTypes.Contains(
-                            bp.Item.type
-                        )
-                    )
-                        canFire = true;
+                    //for now, only allowing one item at a time in the quiver
+                    ammo = bp.Item; break;
+                }
+
+                bool canFire = false;
+
+                if (!(ammo == null))
+                {
+                    if (!ammo.Definition.Throwable)
+                    {
+                        if (weapon == null)
+                        {
+                            Game.Log("You need something to fire with.");
+                            return;
+                        }
+
+                        if (weapon.Definition.AmmoTypes.Contains(ammo.type))
+                        {
+                            canFire = true;
+                        }
+                        else
+                        {
+                            Game.Log("You need something to fire.");
+                            return;
+                        }
+                    }
+                    else { canFire = true; weapon = null; }
                 }
 
                 if (!canFire)
@@ -400,7 +413,12 @@ namespace ODB
                     return;
                 }
 
-                string _q = "Firing  your " + weapon.Definition.name;
+                string _q;
+                if(weapon == null)
+                    _q = "Throwing your " + ammo.Definition.name;
+                else
+                    _q = "Firing your " + weapon.Definition.name;
+
                 IO.AskPlayer(
                     _q,
                     InputType.Targeting,
