@@ -162,7 +162,10 @@ namespace ODB
 
         public Spell UseEffect
         {
-            get { return Spell.Spells[Definition.UseEffect]; }
+            get {
+                if (Definition.UseEffect == 0xFFFF) return null;
+                return Spell.Spells[Definition.UseEffect];
+            }
         }
 
         public bool Identified { get { return Definition.Identified; } }

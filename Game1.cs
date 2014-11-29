@@ -11,7 +11,6 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 
 //~~~ QUEST TRACKER for ?? nov ~~~
 // * Item value and paid-for status
-// * Eating
 // * Wizard mode area select
 // * Clean up wizard mode class a bit
 //   * Fairly low prio, since it's not part of the /game/ per se,

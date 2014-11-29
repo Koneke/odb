@@ -210,13 +210,20 @@ namespace ODB
             ReadActor(s);
         }
 
-        public string GetName(bool def = false)
+        public string GetName(bool def = false, bool capitalize = false)
         {
+            if (this == Game.player)
+                return capitalize ? "You" : "you";
+
             string name = (def ? "the" : Util.article(Definition.name));
             name += " ";
 
             if (Definition.Named) name = "";
             name += Definition.name;
+
+            if (capitalize)
+                name = name.Substring(0, 1).ToUpper() +
+                    name.Substring(1, name.Length - 1);
 
             return name;
         }
@@ -485,6 +492,38 @@ namespace ODB
         public bool HasEffect(TickingEffectDefinition def)
         {
             return TickingEffects.Any(x => x.Definition == def);
+        }
+
+        public void Eat(Item it)
+        {
+            if(it.count > 1)
+                Game.Log(GetName(false, true) + " ate " +
+                    Util.article(it.GetName(false, true)) + " " +
+                    it.GetName(false, true)
+                );
+            else
+                Game.Log(GetName(false, true) + " ate " + it.GetName());
+            //if (Util.Roll("1d5") == 5)
+            if (Util.Roll("1d5") > 0)
+            {
+                //idea here is that earlier intrinsics in the list are more
+                //"primary" attributes of the food (usually corpse if it has
+                //intrinsics), so the weighting is done so that the earlier
+                //intrinsics are a lot more likely, every intrinsic being double
+                //as likely as the next one in the list
+                //ex., 3 mods
+                //weight looks like
+                //2110000 (4 mods = 322111100000000 etc)
+                //(number being index in list)
+                //so bigger chance for mods earlier in the list
+                int count, n = count = it.Mods.Count;
+                //count = 3 => r = 1d7
+                int r = Util.Roll("1d" + (Math.Pow(2, count)-1));
+                //less than 2^n-1 = "loss", check later intrinsics
+                while (r < Math.Pow(2, n-1))
+                    n--;
+                Intrinsics.Add(it.Mods[count - n]);
+            }
         }
 
         //movement/standard action

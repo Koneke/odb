@@ -542,24 +542,24 @@ namespace ODB
 
             if (it.Definition.stacking)
             {
-                Game.Log("You eat a " + it.GetName(false, true));
                 if (it.count > 1)
                 {
-                    Game.Food += it.Definition.Nutrition;
                     it.count--;
+                    Game.player.Eat(it);
                 }
                 else
                 {
                     Game.player.inventory.RemoveAt(index);
-                    Game.Food += it.Definition.Nutrition;
+                    Game.player.Eat(it);
                 }
             }
             else
             {
                 Game.Log("You eat " + it.GetName());
                 Game.player.inventory.RemoveAt(index);
-                Game.Food += it.Definition.Nutrition;
+                Game.player.Eat(it);
             }
+
         }
     }
 }
