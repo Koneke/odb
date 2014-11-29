@@ -173,7 +173,7 @@ namespace ODB
             else {
                 Game.Log("Equipped "+it.GetName() + ".");
                 Game.player.Equip(it);
-
+                it.Identify();
                 Game.player.Pass();
             }
         }
@@ -211,6 +211,7 @@ namespace ODB
                     Game.Level.AllItems.Add(clone);
                 }
                 Game.player.Equip(it);
+                it.Identify();
                 Game.Log("Wore " + it.GetName() + ".");
 
                 Game.player.Pass();
@@ -229,6 +230,7 @@ namespace ODB
                 if (bp.Type == DollSlot.Quiver)
                     bp.Item = selected;
 
+            selected.Identify();
             Game.Log("Quivered "+ selected.GetName() + ".");
 
             Game.player.Pass();

@@ -30,12 +30,6 @@ namespace ODB
         //addition of this, since some items can be used in both melee
         //and at range, like spears
         public string RangedDamage;
-        //should preferably be removed later?
-        //like, you should be able to throw anything
-        //somethings, i.e. those with rangeddamage, will just be a bit more
-        //suited for throwing
-        //keep it for now, since it's already in and working
-        public bool Throwable;
         public int UseEffect;
         //groups potions together and what not
         //mainly, unidentified items of different defs take from the same
@@ -276,6 +270,14 @@ namespace ODB
                 s = s.Substring(0, 1).ToUpper() +
                     s.Substring(1, s.Length - 1);
             return s;
+        }
+
+        public void Identify(
+            //bool cursed,
+            //bool blessed,
+            //bool mods
+        ) {
+            ItemDefinition.IdentifiedDefs.Add(type);
         }
 
         public Stream WriteItem()

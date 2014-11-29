@@ -375,6 +375,8 @@ namespace ODB
                     if (it.Definition.Ranged)
                         weapon = it;
 
+                //future: if we pressed T instead, allow items in hands as
+                //ammo
                 foreach (BodyPart bp in Game.player.GetSlots(DollSlot.Quiver))
                 {
                     if (bp.Item == null) continue;
@@ -382,39 +384,34 @@ namespace ODB
                     ammo = bp.Item; break;
                 }
 
-                bool canFire = false;
-
-                if (!(ammo == null))
-                {
-                    if (!ammo.Definition.Throwable)
-                    {
-                        if (weapon == null)
-                        {
-                            Game.Log("You need something to fire with.");
-                            return;
-                        }
-
-                        if (weapon.Definition.AmmoTypes.Contains(ammo.type))
-                        {
-                            canFire = true;
-                        }
-                        else
-                        {
-                            Game.Log("You need something to fire.");
-                            return;
-                        }
-                    }
-                    else { canFire = true; weapon = null; }
-                }
-
-                if (!canFire)
+                if (ammo == null)
                 {
                     Game.Log("You need something to fire.");
                     return;
                 }
 
+                bool throwing = false;
+                if (!(ammo == null))
+                {
+                    //weapon and appropriate ammo
+                    if (weapon != null)
+                    {
+                        if (weapon.Definition.AmmoTypes.Contains(ammo.type))
+                            throwing = false;
+                        else throwing = true;
+                    }
+                    //ammo
+                    else throwing = true;
+                }
+
+                if (!throwing && weapon == null)
+                {
+                    Game.Log("You need something to fire with.");
+                    return;
+                }
+
                 string _q;
-                if(weapon == null)
+                if(throwing)
                     _q = "Throwing your " + ammo.Definition.name;
                 else
                     _q = "Firing your " + weapon.Definition.name;

@@ -522,7 +522,6 @@ namespace ODB
                             Game.Log(ss);
                             break;
                         case "rdmg": Game.Log(idef.RangedDamage); break;
-                        case "throw": Game.Log(idef.Throwable + ""); break;
                         case "use": Game.Log(IO.WriteHex(idef.UseEffect, 4));
                             break;
                         case "cat": Game.Log(IO.WriteHex(idef.Category, 4));
@@ -530,6 +529,9 @@ namespace ODB
                         case "nut": Game.Log(IO.WriteHex(idef.Nutrition, 4));
                             break;
                     }
+                    break;
+                case "id-id":
+                    ItemDefinition.IdentifiedDefs.Add(idef.type);
                     break;
                 case "id-p":
                     Game.Log(idef.WriteItemDefinition().ToString());
@@ -578,9 +580,6 @@ namespace ODB
                 case "id-rangeddmg":
                 case "id-rangeddamage":
                     idef.RangedDamage = args[0];
-                    break;
-                case "id-throwable":
-                    idef.Throwable = IO.ReadBool(args[0]);
                     break;
                 case "id-use":
                 case "id-useeffect":
@@ -722,7 +721,7 @@ namespace ODB
                 case "ii-id":
                     #region id
                     foreach (Item iditem in Util.ItemsOnTile(wmCursor))
-                        ItemDefinition.IdentifiedDefs.Add(iditem.type);
+                        iditem.Identify();
                     break;
                     #endregion
                 case "ii-unid":

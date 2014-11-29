@@ -18,8 +18,6 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 // * Switch from numbers in actor def to die?
 
 //~~~ QUEST TRACKER for 29 nov ~~~
-// * Throwing weapons
-//   * Throwable-onlies
 // * Status effects
 // * Sleeping monsters / noise
 

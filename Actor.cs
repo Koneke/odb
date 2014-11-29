@@ -443,10 +443,32 @@ namespace ODB
                 target.GetAC() + Util.Distance(xy, target.xy)
             ;
 
-            Item ammo = null;
+            Item weapon = null, ammo = null;
+
+            foreach (BodyPart bp in GetSlots(DollSlot.Hand))
+            {
+                if (bp.Item == null) continue;
+                if (bp.Item.Definition.Ranged)
+                    weapon = bp.Item;
+            }
+
             foreach(BodyPart bp in PaperDoll)
                 if(bp.Type == DollSlot.Quiver)
                     ammo = bp.Item;
+
+            bool throwing = false;
+            if (!(ammo == null))
+            {
+                //weapon and appropriate ammo
+                if (weapon != null)
+                {
+                    if (weapon.Definition.AmmoTypes.Contains(ammo.type))
+                        throwing = false;
+                    else throwing = true;
+                }
+                //ammo
+                else throwing = true;
+            }
 
             ammo.count--;
             if(ammo.count <= 0)
@@ -460,18 +482,6 @@ namespace ODB
 
             if(hitRoll >= dodgeRoll) {
                 int damageRoll = 0;
-                Item weapon = null;
-                foreach (BodyPart bp in GetSlots(DollSlot.Hand))
-                {
-                    if (bp.Item == null) continue;
-                    if (bp.Item.Definition.Ranged)
-                        weapon = bp.Item;
-                }
-
-                bool throwing = ammo.Definition.Throwable;
-                if (weapon != null)
-                    if (weapon.Definition.AmmoTypes.Contains(ammo.type))
-                        throwing = false;
 
                 if (throwing)
                 {
