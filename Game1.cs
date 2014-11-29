@@ -17,9 +17,6 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 //     but it /is/ fairly messy.
 // * Switch from numbers in actor def to die?
 
-//~~~ QUEST TRACKER for 29 nov ~~~
-// * Status effects
-
 namespace ODB
 {
     public class Game1 : Microsoft.Xna.Framework.Game
@@ -502,12 +499,20 @@ namespace ODB
                 Game.Food--;
 
                 GameTick++;
+
                 List<Actor> wa = new List<Actor>(Level.WorldActors);
                 foreach (Actor a in wa)
                 {
                     foreach (TickingEffect effect in a.TickingEffects)
                         effect.Tick();
                     a.TickingEffects.RemoveAll(x => x.Die);
+                }
+
+                foreach (Actor a in wa)
+                {
+                    foreach (LastingEffect effect in a.LastingEffects)
+                        effect.Tick();
+                    a.LastingEffects.RemoveAll(x => x.Life <= 0);
                 }
                 Level.WorldActors = wa;
             }
@@ -773,6 +778,9 @@ namespace ODB
                 namerow += "  Starving";
             else if (Game.Food < 1500)
                 namerow += "  Hungry";
+
+            foreach (LastingEffect le in Game.player.LastingEffects)
+                namerow += " " + LastingEffect.EffectNames[le.Type];
 
             string statrow = "";
             statrow += "[";

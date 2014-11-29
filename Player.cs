@@ -22,6 +22,8 @@ namespace ODB
         public static void PlayerInput()
         {
             if (Game.player.hpCurrent <= 0) return;
+            if (Game.player.HasEffect(StatusType.Stun))
+                Game.player.Pass(Game.standardActionLength);
 
             bool moved = MovementInput();
 

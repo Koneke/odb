@@ -695,6 +695,15 @@ namespace ODB
                 case "ai-awake":
                     a.Awake = IO.ReadBool(args[0]);
                     break;
+                case "ai-ale":
+                case "ai-addle":
+                    a.LastingEffects.Add(
+                        new LastingEffect(
+                            (StatusType)IO.ReadHex(args[0]),
+                            IO.ReadHex(args[1])
+                        )
+                    );
+                    break;
                 default: return false;
             }
             return true;

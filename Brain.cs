@@ -23,6 +23,12 @@ namespace ODB
 
             if (!MeatPuppet.Awake) return;
 
+            if (MeatPuppet.HasEffect(StatusType.Stun))
+            {
+                MeatPuppet.Pass(Game.standardActionLength);
+                return;
+            }
+
             List<Room> route = 
                 Util.FindRouteToPoint(
                     MeatPuppet.xy, Game.player.xy

@@ -189,6 +189,7 @@ namespace ODB
         public List<BodyPart> PaperDoll;
         public List<Item> Inventory;
         public List<TickingEffect> TickingEffects;
+        public List<LastingEffect> LastingEffects;
         public List<Mod> Intrinsics;
 
         public bool Awake;
@@ -232,6 +233,7 @@ namespace ODB
             TickingEffects = new List<TickingEffect>();
             Intrinsics = new List<Mod>(Definition.SpawnIntrinsics);
             Awake = false;
+            LastingEffects = new List<LastingEffect>();
         }
 
         public Actor(string s)
@@ -554,6 +556,12 @@ namespace ODB
         {
             return TickingEffects.Any(x => x.Definition == def);
         }
+        public bool HasEffect(StatusType type)
+        {
+            foreach (LastingEffect le in LastingEffects)
+                if (le.Type == type) return true;
+            return false;
+        }
 
         public void Eat(Item it)
         {
@@ -590,8 +598,13 @@ namespace ODB
         //standard is e.g. attacking, manipulating inventory, etc.
         public void Pass(bool movement = false)
         {
+            //switch this to +=? could mean setting cd to -10 = free action
             Cooldown = Game.standardActionLength -
                 (movement ? Get(Stat.Speed) : Get(Stat.Quickness));
+        }
+        public void Pass(int length)
+        {
+            Cooldown = length;
         }
 
         //will atm only be called by the player,
@@ -685,6 +698,13 @@ namespace ODB
             }
             stream.Write(";", false);
 
+            foreach (LastingEffect le in LastingEffects)
+            {
+                stream.Write(le.WriteLastingEffect().ToString(), false);
+                stream.Write(",", false);
+            }
+            stream.Write(";", false);
+
             foreach (Mod m in Intrinsics)
             {
                 stream.Write((int)m.Type + ":" + m.Value + ",");
@@ -744,6 +764,14 @@ namespace ODB
                 TickingEffect te;
                 TickingEffects.Add(te = new TickingEffect(ticker));
                 te.Holder = this;
+            }
+
+            LastingEffects = new List<LastingEffect>();
+            string lasting = stream.ReadString();
+            foreach (string effect in lasting.Split(','))
+            {
+                if (effect == "") continue;
+                LastingEffects.Add(new LastingEffect(effect));
             }
 
             Intrinsics = new List<Mod>();

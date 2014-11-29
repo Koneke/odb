@@ -336,4 +336,54 @@ namespace ODB
         }
     }
 
+    public enum StatusType
+    {
+        Stun
+    }
+
+    public class LastingEffect
+    {
+        public static Dictionary<StatusType, string> EffectNames =
+            new Dictionary<StatusType, string>
+        {
+            { StatusType.Stun, "Stun" }
+        };
+
+        public StatusType Type;
+        //public int Value;
+        public int Life;
+
+        public LastingEffect(
+            StatusType Type,
+            int Life
+        ) {
+            this.Type = Type;
+            this.Life = Life;
+        }
+
+        public LastingEffect(string s)
+        {
+            ReadLastingEffect(s);
+        }
+
+        public void Tick()
+        {
+            Life--;
+        }
+
+        public Stream WriteLastingEffect()
+        {
+            Stream stream = new Stream();
+            stream.Write((int)Type, 4);
+            stream.Write(Life, 4);
+            return stream;
+        }
+
+        public void ReadLastingEffect(string s)
+        {
+            Stream stream = new Stream(s);
+            Type = (StatusType)stream.ReadHex(4);
+            Life = stream.ReadHex(4);
+        }
+    }
 }
