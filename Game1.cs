@@ -444,6 +444,26 @@ namespace ODB
             inventoryConsole.CellData.Print(r.wh.x-1, r.wh.y-1, (char)188 + "");
         }
 
+        public Point NumpadToDirection(Keys k)
+        {
+            Point p;
+            switch (k)
+            {
+                case Keys.NumPad7: p = new Point(-1, -1); break;
+                case Keys.NumPad8: p = new Point(0, -1); break;
+                case Keys.NumPad9: p = new Point(1, -1); break;
+                case Keys.NumPad4: p = new Point(-1, 0); break;
+                case Keys.NumPad6: p = new Point(1, 0); break;
+                case Keys.NumPad1: p = new Point(-1, 1); break;
+                case Keys.NumPad2: p = new Point(0, 1); break;
+                case Keys.NumPad3: p = new Point(1, 1); break;
+                default: throw new Exception(
+                        "Bad input (expected numpad keycode, " +
+                        "got something weird instead).");
+            }
+            return p;
+        }
+
         public Point NumpadToDirection(char c)
         {
             Point p;

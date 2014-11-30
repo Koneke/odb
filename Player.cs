@@ -9,16 +9,6 @@ namespace ODB
     {
         public static Game1 Game;
 
-        public static int letterAnswerToIndex(char c)
-        {
-            int i;
-            if (c >= 97 && c <= 122) //lower case
-                i = c - 97;
-            else //upper case
-                i = c - 39;
-            return i; 
-        }
-
         public static void PlayerInput()
         {
             if (Game.player.hpCurrent <= 0) return;
@@ -81,32 +71,22 @@ namespace ODB
                 }
             #endregion
 
-            bool moved = false;
             Point offset = new Point(0, 0);
 
-            if (IO.KeyPressed(Keys.NumPad8)) offset.Nudge(0, -1);
-            if (IO.KeyPressed(Keys.NumPad9)) offset.Nudge(1, -1);
-            if (IO.KeyPressed(Keys.NumPad6)) offset.Nudge(1, 0);
-            if (IO.KeyPressed(Keys.NumPad3)) offset.Nudge(1, 1);
-            if (IO.KeyPressed(Keys.NumPad2)) offset.Nudge(0, 1);
-            if (IO.KeyPressed(Keys.NumPad1)) offset.Nudge(-1, 1);
-            if (IO.KeyPressed(Keys.NumPad4)) offset.Nudge(-1, 0);
-            if (IO.KeyPressed(Keys.NumPad7)) offset.Nudge(-1, -1);
+                 if (IO.KeyPressed(Keys.NumPad8)) offset.Nudge(0, -1);
+            else if (IO.KeyPressed(Keys.NumPad9)) offset.Nudge(1, -1);
+            else if (IO.KeyPressed(Keys.NumPad6)) offset.Nudge(1, 0);
+            else if (IO.KeyPressed(Keys.NumPad3)) offset.Nudge(1, 1);
+            else if (IO.KeyPressed(Keys.NumPad2)) offset.Nudge(0, 1);
+            else if (IO.KeyPressed(Keys.NumPad1)) offset.Nudge(-1, 1);
+            else if (IO.KeyPressed(Keys.NumPad4)) offset.Nudge(-1, 0);
+            else if (IO.KeyPressed(Keys.NumPad7)) offset.Nudge(-1, -1);
 
             if (IO.KeyPressed(Keys.NumPad5)) Game.player.Pass(true);
 
-            Tile target = Game.Level.Map[
-                Game.player.xy.x + offset.x,
-                Game.player.xy.y + offset.y
-            ];
+            if (offset.x == 0 && offset.y == 0) return false;
 
-            if (offset.x != 0 || offset.y != 0)
-                moved = Game.player.TryMove(offset);
-
-            if (moved)
-                Game.Level.MakeNoise(0, Game.player.xy);
-
-            return moved;
+            return Game.player.TryMove(offset);
         }
 
         static void CheckGet()
@@ -352,9 +332,8 @@ namespace ODB
                 IO.AcceptedInput.Clear();
                 for (int i = 0; i < Game.player.Inventory.Count; i++)
                 {
-                    if (
-                        Game.player.Inventory[i].UseEffect != null
-                    ) {
+                    if (Game.player.Inventory[i].UseEffect != null)
+                    {
                         char index = IO.indexes[i];
                         _q += index;
                         IO.AcceptedInput.Add(index);

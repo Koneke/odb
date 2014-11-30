@@ -70,6 +70,11 @@ namespace ODB
             return null;
         }
 
+        public Actor ActorOnTile(int x, int y)
+        {
+            return ActorOnTile(new Point(x, y));
+        }
+
         public List<Item> ItemsOnTile(Point xy)
         {
             List<Item> items = new List<Item>();

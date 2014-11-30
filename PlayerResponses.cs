@@ -380,9 +380,8 @@ namespace ODB
             string answer = Game.qpAnswerStack.Peek();
             if (answer.Length <= 0) return;
 
-            Item it = Game.player.Inventory[
-                IO.indexes.IndexOf(answer[0])
-            ];
+            Item it = Game.player.Inventory[IO.indexes.IndexOf(answer[0])];
+
             if (it.count <= 0)
             {
                 Game.Log(it.GetName(true, false, true) + " lacks charges.");

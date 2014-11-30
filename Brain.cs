@@ -74,38 +74,22 @@ namespace ODB
             {
                 Point moveTo = new Point(0, 0);
 
-                bool xy =
-                    Game.Level.Map[target.x, target.y].solid == false &&
-                    Game.Level.ActorOnTile(target) == null;
+                List<Point> possibleMoves = MeatPuppet.GetPossibleMoves(true);
 
-                bool x =
-                    Game.Level.Map[
-                        target.x,
-                        MeatPuppet.xy.y
-                    ].solid == false &&
-                    Game.Level.ActorOnTile(
-                        new Point(target.x, MeatPuppet.xy.y)) == null;
-
-                bool y =
-                    Game.Level.Map[
-                        MeatPuppet.xy.x,
-                        target.y
-                    ].solid == false &&
-                    Game.Level.ActorOnTile(
-                        new Point(MeatPuppet.xy.x, target.x)) == null;
+                bool xy = possibleMoves.Contains(new Point(offset.x, offset.y));
+                bool x = possibleMoves.Contains(new Point(offset.x, 0));
+                bool y = possibleMoves.Contains(new Point(0, offset.y));
 
                 if (xy)  moveTo = MeatPuppet.xy + offset; 
                 else if (x) moveTo = MeatPuppet.xy + new Point(offset.x, 0);
                 else if (y) moveTo = MeatPuppet.xy + new Point(0, offset.y);
                 
-
                 if (xy || x || y)
                 {
                     if (Game.Level.Map[
                         moveTo.x,
                         moveTo.y
-                    ].Door == Door.Closed)
-                    {
+                    ].Door == Door.Closed) {
                         Game.Level.Map[moveTo.x, moveTo.y].Door = Door.Open;
                         if (Game.player.Vision[moveTo.x, moveTo.y])
                         {
@@ -115,11 +99,7 @@ namespace ODB
                             );
                         }
                     }
-                    else
-                    {
-                        MeatPuppet.xy = moveTo;
-                        Game.Level.CalculateActorPositions();
-                    }
+                    else MeatPuppet.TryMove(offset);
                 }
 
                 MeatPuppet.Pass(true);

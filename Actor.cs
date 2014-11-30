@@ -607,10 +607,48 @@ namespace ODB
             Cooldown = length;
         }
 
+        public List<Point> GetPossibleMoves(bool disallowActorTiles = false)
+        {
+            List<Point> possibleMoves = new List<Point>();
+
+            for (int xx = -1; xx <= 1; xx++)
+            {
+                for (int yy = -1; yy <= 1; yy++)
+                {
+                    if(
+                        xy.x + xx < 0 ||
+                        xy.x + xx >= Game.Level.LevelSize.x ||
+                        xy.y + yy < 0 ||
+                        xy.y + yy >= Game.Level.LevelSize.y
+                    ) continue;
+
+                    bool legal = true;
+                    Tile t = Game.Level.Map[xy.x + xx, xy.y + yy];
+
+                    if (t == null) legal = false;
+                    else if (t.solid) legal = false;
+                    else if (t.Door == Door.Closed) legal = false;
+
+                    if(disallowActorTiles)
+                        if (Game.Level.ActorOnTile(t) != null) legal = false;
+
+                    if (legal) possibleMoves.Add(new Point(xx, yy));
+                }
+            }
+
+            return possibleMoves;
+        }
         //will atm only be called by the player,
         //but should, I guess, be called by monsters as well in the future
         public bool TryMove(Point offset)
         {
+            if (!GetPossibleMoves().Contains(offset))
+            {
+                if(this == Game.player) Game.Log("Bump!");
+                //else "... bumps into a wall..?"
+                return false;
+            }
+
             bool moved = false;
 
             Tile target = Game.Level.Map[
@@ -618,47 +656,26 @@ namespace ODB
                 Game.player.xy.y + offset.y
             ];
 
-            bool legalMove = true;
-
-            if (target == null)
-                legalMove = false;
-            else if (target.Door == Door.Closed || target.solid)
-                legalMove = false;
-
-            if (!legalMove)
+            if (Game.Level.ActorOnTile(target) == null)
             {
-                offset = new Point(0, 0);
-                if(this == Game.player)
-                    Game.Log("Bump!");
+                xy.Nudge(offset.x, offset.y);
+                moved = true;
+                Pass(true);
+
+                //walking noise
+                Game.Level.MakeNoise(0, xy);
             }
             else
             {
-                if (Game.Level.ActorOnTile(target) == null)
-                {
-                    int numberOfLegs = 0;
-                    int numberOfFreeHands = 0;
-                    foreach (BodyPart bp in PaperDoll)
-                    {
-                        if (bp.Type == DollSlot.Legs) numberOfLegs++;
-                        if (bp.Type == DollSlot.Hand && bp.Item == null)
-                            numberOfFreeHands++;
-                    }
-                    if (!(numberOfLegs >= 1 || numberOfFreeHands > 2))
-                        if(this == Game.player)
-                            Game.Log("You roll forwards!");
+                Attack(Game.Level.ActorOnTile(target));
+                Game.player.Pass();
 
-                    xy.Nudge(offset.x, offset.y);
-                    moved = true;
-                    Pass(true);
-                }
-                else
-                {
-                    Attack(Game.Level.ActorOnTile(target));
-                    Game.player.Pass();
-                }
+                //combat noise
+                Game.Level.MakeNoise(1, xy);
             }
 
-            if (moved) Game.Level.CalculateActorPositions();
+            if (moved)
+                Game.Level.CalculateActorPositions();
 
             return moved;
         }
