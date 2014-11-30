@@ -642,6 +642,18 @@ namespace ODB
         //but should, I guess, be called by monsters as well in the future
         public bool TryMove(Point offset)
         {
+            List<Point> possiblesMoves = GetPossibleMoves();
+
+            if(HasEffect(StatusType.Confusion))
+            {
+                if (Util.Roll("1d3") > 1)
+                {
+                    if (this == Game.player) Game.Log("You stumble...");
+                    offset = possiblesMoves
+                        [Util.Random.Next(0, possiblesMoves.Count)];
+                }
+            }
+
             if (!GetPossibleMoves().Contains(offset))
             {
                 if(this == Game.player) Game.Log("Bump!");
@@ -652,8 +664,8 @@ namespace ODB
             bool moved = false;
 
             Tile target = Game.Level.Map[
-                Game.player.xy.x + offset.x,
-                Game.player.xy.y + offset.y
+                xy.x + offset.x,
+                xy.y + offset.y
             ];
 
             if (Game.Level.ActorOnTile(target) == null)
@@ -663,19 +675,17 @@ namespace ODB
                 Pass(true);
 
                 //walking noise
+                Game.Level.CalculateActorPositions();
                 Game.Level.MakeNoise(0, xy);
             }
             else
             {
                 Attack(Game.Level.ActorOnTile(target));
-                Game.player.Pass();
+                Pass();
 
                 //combat noise
                 Game.Level.MakeNoise(1, xy);
             }
-
-            if (moved)
-                Game.Level.CalculateActorPositions();
 
             return moved;
         }

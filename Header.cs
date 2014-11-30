@@ -338,7 +338,8 @@ namespace ODB
 
     public enum StatusType
     {
-        Stun
+        Stun,
+        Confusion,
     }
 
     public class LastingEffect
@@ -346,7 +347,8 @@ namespace ODB
         public static Dictionary<StatusType, string> EffectNames =
             new Dictionary<StatusType, string>
         {
-            { StatusType.Stun, "Stun" }
+            { StatusType.Stun, "Stun" },
+            { StatusType.Confusion, "Confusion" }
         };
 
         public StatusType Type;

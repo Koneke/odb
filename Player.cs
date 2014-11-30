@@ -12,8 +12,13 @@ namespace ODB
         public static void PlayerInput()
         {
             if (Game.player.hpCurrent <= 0) return;
+            //should probably be moved into some 'input-preprocess',
+            //since we do the same thing for brains
             if (Game.player.HasEffect(StatusType.Stun))
+            {
                 Game.player.Pass(Game.standardActionLength);
+                return;
+            }
 
             bool moved = MovementInput();
 

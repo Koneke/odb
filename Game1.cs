@@ -17,6 +17,12 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 //     but it /is/ fairly messy.
 // * Switch from numbers in actor def to die?
 
+//~~~ QUEST TRACKER for 1 dec ~~~
+// * Fix player death bug (low prio) (#4 on github)
+// * Containers
+//   * No container-in-container for now
+//     * Unless I'm very clever sometime tomorrow
+
 namespace ODB
 {
     public class Game1 : Microsoft.Xna.Framework.Game
