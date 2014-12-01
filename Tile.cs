@@ -24,23 +24,23 @@ namespace ODB
 
         public int Type;
 
-        public Color bg, fg;
-        public string Tile;
+        public Color Background, Foreground;
+        public string Character;
         public bool Solid;
 
         public TileDefinition(
-            Color bg,
-            Color fg,
-            string Tile,
-            bool Solid
+            Color background,
+            Color foreground,
+            string character,
+            bool solid
         ) {
-            this.bg = bg;
-            this.fg = fg;
-            this.Tile = Tile;
-            this.Solid = Solid;
+            Background = background;
+            Foreground = foreground;
+            Character = character;
+            Solid = solid;
 
-            this.Type = TypeCounter++;
-            Definitions[this.Type] = this;
+            Type = TypeCounter++;
+            Definitions[Type] = this;
         }
 
         public TileDefinition(string s)
@@ -52,9 +52,9 @@ namespace ODB
         {
             Stream stream = new Stream();
             stream.Write(Type, 4);
-            stream.Write(bg);
-            stream.Write(fg);
-            stream.Write(Tile, false);
+            stream.Write(Background);
+            stream.Write(Foreground);
+            stream.Write(Character, false);
             stream.Write(Solid);
             return stream;
         }
@@ -63,10 +63,11 @@ namespace ODB
         {
             Stream stream = new Stream(s);
             Type = stream.ReadHex(4);
-            bg = stream.ReadColor();
-            fg = stream.ReadColor();
-            Tile = stream.ReadString(1);
+            Background = stream.ReadColor();
+            Foreground = stream.ReadColor();
+            Character = stream.ReadString(1);
             Solid = stream.ReadBool();
+            Definitions[Type] = this;
             return stream;
         }
     }
@@ -74,25 +75,25 @@ namespace ODB
     public class Tile
     {
         public TileDefinition Definition;
-        public Color bg { get { return Definition.bg; } }
-        public Color fg { get { return Definition.fg; } }
-        public string tile { get { return Definition.Tile; } }
-        public bool solid { get { return Definition.Solid; } }
+        public Color Background { get { return Definition.Background; } }
+        public Color Foreground { get { return Definition.Foreground; } }
+        public string Character { get { return Definition.Character; } }
+        public bool Solid { get { return Definition.Solid; } }
 
         public Door Door;
         public Stairs Stairs;
         public string Engraving;
 
         public Tile(
-            TileDefinition Definition,
+            TileDefinition definition,
             Door doors = Door.None,
             Stairs stairs = Stairs.None,
-            string Engraving = ""
+            string engraving = ""
         ) {
-            this.Definition = Definition;
-            this.Door = doors;
-            this.Stairs = stairs;
-            this.Engraving = Engraving;
+            Definition = definition;
+            Door = doors;
+            Stairs = stairs;
+            Engraving = engraving;
         }
 
         public Tile(string s)

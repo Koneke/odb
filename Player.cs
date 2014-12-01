@@ -28,7 +28,7 @@ namespace ODB
             if (moved)
             {
                 Game.Target = Game.Player.xy;
-                PlayerResponses.Examine(false);
+                PlayerResponses.Examine();
             }
             #endregion
 
@@ -439,7 +439,7 @@ namespace ODB
                 IO.AskPlayer(
                     "Examine what?",
                     InputType.Targeting,
-                    PlayerResponses.Examine
+                    PlayerResponses.Look
                 );
             }
         }

@@ -7,8 +7,31 @@ namespace ODB
     //definitions should not be saved per level, but are global, so to speak
     //instances, in contrast, is per level rather than global
 
+    //ReSharper disable once InconsistentNaming
     public class gObjectDefinition
     {
+        public bool Equals(gObjectDefinition other)
+        {
+            return
+                Background.Equals(other.Background) &&
+                Foreground.Equals(other.Foreground) &&
+                string.Equals(Tile, other.Tile) &&
+                string.Equals(Name, other.Name) &&
+                Type == other.Type;
+        }
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hashCode = Background.GetHashCode();
+                hashCode = (hashCode*397) ^ Foreground.GetHashCode();
+                hashCode = (hashCode*397) ^ (Tile != null ? Tile.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^ (Name != null ? Name.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^ Type;
+                return hashCode;
+            }
+        }
+
         //afaik, atm we won't have anything that's /just/
         // a game object, it'll always be an item/actor
         //but in case.
@@ -56,7 +79,6 @@ namespace ODB
             while (Definitions[TypeCounter++] != null) { }
             return stream;
         }
-
         public Stream WriteGObjectDefinition()
         {
             Stream stream = new Stream();
@@ -68,14 +90,16 @@ namespace ODB
             return stream;
         }
 
-        //ReSharper disable once InconsistentNaming
+        #region nameformatting stuff
         //LH-011214: yes, horrible crime against humanity to have it lowercase,
         //           but it makes sense together with A().
         //           In reality, I want it NetHack-style a(Item.Name),
         //           but we can't really have "global" functions like that,
         //           since C# apparently doesn't like that :(
         //           This is the second best.
+        //ReSharper disable InconsistentNaming
         public string a()
+        //ReSharper restore InconsistentNaming
         {
             return Util.Article(Name) + " " + Name;
         }
@@ -84,9 +108,10 @@ namespace ODB
             return Util.Capitalize(a());
         }
 
-        //ReSharper disable once InconsistentNaming
         //LH-011214: see above
+        //ReSharper disable InconsistentNaming
         public string the()
+        //ReSharper restore InconsistentNaming
         {
             return "the" + " " + Name;
         }
@@ -95,18 +120,20 @@ namespace ODB
             return Util.Capitalize(the());
         }
 
-        //ReSharper disable once InconsistentNaming
         //LH-011214: Simple way of pluralizing.
         //           In a method mainly if we have irregular plurals and such
         //           later on (learned my lesson of not futureproofing in
         //           roguelikeprojects before...).
+        //ReSharper disable InconsistentNaming
         public string s()
+        //ReSharper restore InconsistentNaming
         {
             return Name + "s";
         }
 
-        //ReSharper disable once InconsistentNaming
+        //ReSharper disable InconsistentNaming
         public string thes()
+        //ReSharper restore InconsistentNaming
         {
             return "the " + s();
         }
@@ -114,14 +141,37 @@ namespace ODB
         {
             return Util.Capitalize(thes());
         }
+        #endregion
     }
 
+    //ReSharper disable once InconsistentNaming
     public class gObject
     {
+        protected bool Equals(gObject other)
+        {
+            return
+                xy.Equals(other.xy) &&
+                Definition.Equals(other.Definition);
+        }
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != GetType()) return false;
+            return Equals((gObject)obj);
+        }
+        public override int GetHashCode()
+        {
+            int hashCode = xy.GetHashCode();
+            hashCode = (hashCode*397) ^ Definition.GetHashCode();
+            return hashCode;
+        }
+
         public static Game1 Game;
 
-        //ReSharper disable once InconsistentNaming
+        //ReSharper disable InconsistentNaming
         public Point xy;
+        //ReSharper restore InconsistentNaming
         public gObjectDefinition Definition;
 
         public gObject(
@@ -133,10 +183,10 @@ namespace ODB
 
         public gObject(string s)
         {
-            ReadGOBject(s);
+            ReadGObject(s);
         }
 
-        public Stream WriteGOBject()
+        public Stream WriteGObject()
         {
             Stream stream = new Stream();
             stream.Write(Definition.Type, 4);
@@ -144,7 +194,7 @@ namespace ODB
             return stream;
         }
 
-        public Stream ReadGOBject(string s)
+        public Stream ReadGObject(string s)
         {
             Stream stream = new Stream(s);
             Definition = gObjectDefinition.Definitions[

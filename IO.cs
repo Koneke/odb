@@ -17,7 +17,7 @@ namespace ODB
         PlayerInput
     }
 
-    class IO
+    public class IO
     {
         public static Game1 Game;
 

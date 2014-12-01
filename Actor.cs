@@ -18,6 +18,75 @@ namespace ODB
 
     public class ActorDefinition : gObjectDefinition
     {
+        //LH-01214: Note, the concept of equality here does not refer to
+        //          reference, but rather, actual values.
+        //          This means that if I were to theoretically create an
+        //          exact copy of another definition, they would and SHOULD
+        //          test equal.
+        protected bool Equals(ActorDefinition other)
+        {
+            bool bodyPartsEqual = (BodyParts.Count == other.BodyParts.Count);
+            if (!bodyPartsEqual) return false;
+            for (int i = 0; i < BodyParts.Count; i++)
+                if(BodyParts[i] != other.BodyParts[i]) return false;
+
+            bool spellbookEqual = (Spellbook.Count == other.Spellbook.Count);
+            if (!spellbookEqual) return false;
+            for (int i = 0; i < Spellbook.Count; i++)
+                if(Spellbook[i] != other.Spellbook[i]) return false;
+
+            bool spawnIntrinsicsEqual =
+                (SpawnIntrinsics.Count == other.SpawnIntrinsics.Count);
+            if (!spawnIntrinsicsEqual) return false;
+            for (int i = 0; i < SpawnIntrinsics.Count; i++)
+                if(SpawnIntrinsics[i] != other.SpawnIntrinsics[i]) return false;
+
+            return
+                base.Equals(other) &&
+                Named.Equals(other.Named) &&
+                Strength == other.Strength &&
+                Dexterity == other.Dexterity &&
+                Intelligence == other.Intelligence &&
+                Speed == other.Speed &&
+                Quickness == other.Quickness &&
+                HpMax == other.HpMax &&
+                MpMax == other.MpMax &&
+                CorpseType == other.CorpseType
+            ;
+        }
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                //todo: There is a risk of hashcollision.
+                //      We're not using BodyParts, SpawnIntrinsics,
+                //      or Spellbook here, simply because they still check
+                //      based on /REFERENCE/, and not value, and .Equals here
+                //      checks value-equivalence, not identity.
+                //      Really though, it should happen unless you define two
+                //      exactly identical ActorDefinitions and try to use them
+                //      as separate keys in a dict for some reason...
+                int hashCode = base.GetHashCode();
+                hashCode = (hashCode*397) ^ Named.GetHashCode();
+                hashCode = (hashCode*397) ^ Strength;
+                hashCode = (hashCode*397) ^ Dexterity;
+                hashCode = (hashCode*397) ^ Intelligence;
+                hashCode = (hashCode*397) ^ Speed;
+                hashCode = (hashCode*397) ^ Quickness;
+                hashCode = (hashCode*397) ^ HpMax;
+                hashCode = (hashCode*397) ^ MpMax;
+                hashCode = (hashCode*397) ^ CorpseType;
+                return hashCode;
+            }
+        }
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != GetType()) return false;
+            return Equals((ActorDefinition)obj);
+        }
+
         public static ActorDefinition[] ActorDefinitions =
             new ActorDefinition[0xFFFF];
 
@@ -80,10 +149,8 @@ namespace ODB
                 case Stat.Quickness:
                     Quickness = value;
                     break;
-                /*case Stat.PoisonRes:
-                    //teh pRes, it does nathing*/
                 default:
-                    Util.Game.Log("Bad stat.");
+                    Util.Game.Log("~ERROR~: Bad stat.");
                     break;
             }
         }
@@ -182,6 +249,87 @@ namespace ODB
 
     public class Actor : gObject
     {
+        //LH-011214: Likewise here as in the definition, equality means that
+        //           all the values contained are the same, not necessarily
+        //           that it is the same reference.
+        //           This might seem dumb, but, two actors should never have
+        //           the same ID anyways, so they should test non-equal.
+        protected bool Equals(Actor other)
+        {
+            bool paperDollEqual = PaperDoll.Count == other.PaperDoll.Count;
+            if (!paperDollEqual) return false;
+            for (int i = 0; i < PaperDoll.Count; i++)
+                if (!PaperDoll[i].Equals(other.PaperDoll[i]))
+                return false;
+
+            bool inventoryEqual = Inventory.Count == other.Inventory.Count;
+            if (!inventoryEqual) return false;
+            for (int i = 0; i < Inventory.Count; i++)
+                if (!Inventory[i].Equals(other.Inventory[i]))
+                return false;
+
+            bool tickingEffectsEqual =
+                TickingEffects.Count == other.TickingEffects.Count;
+            if (!tickingEffectsEqual) return false;
+            for (int i = 0; i < TickingEffects.Count; i++)
+                if (!TickingEffects[i].Equals(other.TickingEffects[i]))
+                return false;
+
+            bool lastingEffectsEqual =
+                LastingEffects.Count == other.LastingEffects.Count;
+            if (!lastingEffectsEqual) return false;
+            for (int i = 0; i < LastingEffects.Count; i++)
+                if (!LastingEffects[i].Equals(other.LastingEffects[i]))
+                return false;
+
+            bool intrinsicsEqual =
+                Intrinsics.Count == other.Intrinsics.Count;
+            if (!intrinsicsEqual) return false;
+            for (int i = 0; i < Intrinsics.Count; i++)
+                if (!Intrinsics[i].Equals(other.Intrinsics[i]))
+                return false;
+
+            return
+                base.Equals(other) &&
+                ID == other.ID &&
+                Equals(Definition, other.Definition) &&
+                HpCurrent == other.HpCurrent &&
+                MpCurrent == other.MpCurrent &&
+                Cooldown == other.Cooldown &&
+                //Equals(LastingEffects, other.LastingEffects) &&
+                //Equals(Intrinsics, other.Intrinsics) &&
+                Awake.Equals(other.Awake) &&
+                Equals(Quiver, other.Quiver)
+            ;
+        }
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hashCode = base.GetHashCode();
+                hashCode = (hashCode*397) ^ ID;
+                hashCode = (hashCode*397) ^ (Definition != null ? Definition.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^ HpCurrent;
+                hashCode = (hashCode*397) ^ MpCurrent;
+                hashCode = (hashCode*397) ^ Cooldown;
+                //hashCode = (hashCode*397) ^ (PaperDoll != null ? PaperDoll.GetHashCode() : 0);
+                //hashCode = (hashCode*397) ^ (Inventory != null ? Inventory.GetHashCode() : 0);
+                //hashCode = (hashCode*397) ^ (TickingEffects != null ? TickingEffects.GetHashCode() : 0);
+                //hashCode = (hashCode*397) ^ (LastingEffects != null ? LastingEffects.GetHashCode() : 0);
+                //hashCode = (hashCode*397) ^ (Intrinsics != null ? Intrinsics.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^ Awake.GetHashCode();
+                hashCode = (hashCode*397) ^ (Quiver != null ? Quiver.GetHashCode() : 0);
+                return hashCode;
+            }
+        }
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != GetType()) return false;
+            return Equals((Actor)obj);
+        }
+
         public static int IDCounter = 0;
 
         #region written to save
@@ -618,7 +766,7 @@ namespace ODB
                     Tile t = Game.Level.Map[xy.x + xx, xy.y + yy];
 
                     if (t == null) legal = false;
-                    else if (t.solid) legal = false;
+                    else if (t.Solid) legal = false;
                     else if (t.Door == Door.Closed) legal = false;
 
                     if(disallowActorTiles)
@@ -684,7 +832,7 @@ namespace ODB
 
         public Stream WriteActor()
         {
-            Stream stream = WriteGOBject();
+            Stream stream = WriteGObject();
             stream.Write(Definition.Type, 4);
             stream.Write(ID, 4);
             stream.Write(HpCurrent, 2);
@@ -732,11 +880,13 @@ namespace ODB
 
             stream.Write(Awake);
 
+            //todo: Write quiver to file
+
             return stream;
         }
         public Stream ReadActor(string s)
         {
-            Stream stream = ReadGOBject(s);
+            Stream stream = ReadGObject(s);
             Definition =
                 ActorDefinition.ActorDefinitions[
                     stream.ReadHex(4)
@@ -766,7 +916,7 @@ namespace ODB
             Inventory = new List<Item>();
             foreach (string ss in
                 stream.ReadString().Split(
-                    new string[] { "," },
+                    new[] { "," },
                     StringSplitOptions.RemoveEmptyEntries
                 ).ToList()
             ) {

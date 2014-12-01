@@ -7,6 +7,64 @@ namespace ODB
 {
     public class ItemDefinition : gObjectDefinition
     {
+        protected bool Equals(ItemDefinition other)
+        {
+            bool equipSlotsEqual = (EquipSlots.Count == other.EquipSlots.Count);
+            if (!equipSlotsEqual) return false;
+            for (int i = 0; i < EquipSlots.Count; i++)
+                if (EquipSlots[i] != other.EquipSlots[i])
+                    return false;
+
+            bool ammoTypesEqual = (AmmoTypes.Count == other.AmmoTypes.Count);
+            if (!ammoTypesEqual) return false;
+            for (int i = 0; i < AmmoTypes.Count; i++)
+                if (AmmoTypes[i] != other.AmmoTypes[i])
+                    return false;
+
+            return
+                base.Equals(other) &&
+                string.Equals(Damage, other.Damage) &&
+                ArmorClass == other.ArmorClass &&
+                Stacking.Equals(other.Stacking) &&
+                Ranged.Equals(other.Ranged) &&
+                string.Equals(RangedDamage, other.RangedDamage) &&
+                UseEffect == other.UseEffect &&
+                Category == other.Category &&
+                Nutrition == other.Nutrition;
+        }
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                //todo: There is a risk of hashcollision.
+                //      See comment in Actor.cs::GetHashCode().
+                //      tl;dr: Not using all fields since we are
+                //        1. Lazy IRL
+                //        2. Trying to check equivalence by value, and not by
+                //           reference.
+                //      This should only ever be a problem if you have two
+                //      in essence identical definitions though, and try to
+                //      use them as separate keys.
+                int hashCode = base.GetHashCode();
+                hashCode = (hashCode*397) ^ (Damage != null ? Damage.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^ ArmorClass;
+                hashCode = (hashCode*397) ^ Stacking.GetHashCode();
+                hashCode = (hashCode*397) ^ Ranged.GetHashCode();
+                hashCode = (hashCode*397) ^ (RangedDamage != null ? RangedDamage.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^ UseEffect;
+                hashCode = (hashCode*397) ^ Category;
+                hashCode = (hashCode*397) ^ Nutrition;
+                return hashCode;
+            }
+        }
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != GetType()) return false;
+            return Equals((ItemDefinition)obj);
+        }
+
         public static ItemDefinition[] ItemDefinitions =
             new ItemDefinition[0xFFFF];
 
@@ -148,6 +206,41 @@ namespace ODB
 
     public class Item : gObject
     {
+        protected bool Equals(Item other)
+        {
+            bool modsEqual = Mods.Count == other.Count;
+            if (!modsEqual) return false;
+            for (int i = 0; i < Mods.Count; i++)
+                if (Mods[i] != other.Mods[i]) return false;
+
+            return
+                base.Equals(other) &&
+                ID == other.ID &&
+                Mod == other.Mod &&
+                Count == other.Count &&
+                Equals(Definition, other.Definition);
+        }
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hashCode = base.GetHashCode();
+                hashCode = (hashCode*397) ^ ID;
+                hashCode = (hashCode*397) ^ Mod;
+                hashCode = (hashCode*397) ^ Count;
+                hashCode = (hashCode*397) ^ (Definition != null ? Definition.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^ (Mods != null ? Mods.GetHashCode() : 0);
+                return hashCode;
+            }
+        }
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != GetType()) return false;
+            return Equals((Item)obj);
+        }
+
         public static int IDCounter = 0;
 
         //instance specifics
@@ -291,7 +384,7 @@ namespace ODB
 
         public Stream WriteItem()
         {
-            Stream stream = WriteGOBject();
+            Stream stream = WriteGObject();
 
             stream.Write(Definition.Type, 4);
             stream.Write(ID, 4);
@@ -312,7 +405,7 @@ namespace ODB
 
         public Stream ReadItem(string s)
         {
-            Stream stream = ReadGOBject(s);
+            Stream stream = ReadGObject(s);
             Definition =
                 ItemDefinition.ItemDefinitions[
                     stream.ReadHex(4)

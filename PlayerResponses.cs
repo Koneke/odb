@@ -72,7 +72,7 @@ namespace ODB
                 );
             }
             //just do a full drop, no splitting necessary
-            else drop(i);
+            else DoDrop(i);
         }
 
         public static void DropCount()
@@ -81,10 +81,10 @@ namespace ODB
             string index = Game.QpAnswerStack.Pop();
             int i = IO.Indexes.IndexOf(index[0]);
             int c = int.Parse(count);
-            drop(i, c);
+            DoDrop(i, c);
         }
 
-        static void drop(int index)
+        static void DoDrop(int index)
         {
             Item it = Game.Player.Inventory[index];
 
@@ -106,7 +106,7 @@ namespace ODB
             Game.Player.Pass();
         }
 
-        static void drop(int index, int count)
+        static void DoDrop(int index, int count)
         {
             Item it = Game.Player.Inventory[index];
             if (!it.Definition.Stacking || it.Count <= 1) return;
@@ -118,7 +118,7 @@ namespace ODB
             else if (count == it.Count)
             {
                 //falling through to the normal itemdropping
-                drop(index);
+                DoDrop(index);
             }
             else
             {
@@ -434,6 +434,7 @@ namespace ODB
                 return;
             }
             Actor a = Game.Level.ActorOnTile(Game.Target);
+            //todo: allow firing anyways..?
             if (a == null)
             {
                 Game.Log("Nothing there to fire upon.");
@@ -443,7 +444,7 @@ namespace ODB
             Game.Player.Shoot(a);
         }
 
-        public static void Examine()
+        public static void Look()
         {
             Examine(true);
         }
@@ -463,7 +464,7 @@ namespace ODB
                 );
                 return;
             }
-            if (t.solid)
+            if (t.Solid)
             {
                 Game.Log("You see a dungeon wall" + distString);
                 return;

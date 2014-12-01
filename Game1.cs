@@ -6,7 +6,6 @@ using Console = SadConsole.Consoles.Console;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
-using Microsoft.Xna.Framework.Graphics;
 using xnaPoint = Microsoft.Xna.Framework.Point;
 
 //~~~ QUEST TRACKER for ?? nov ~~~
@@ -25,10 +24,9 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 
 namespace ODB
 {
-    public class Game1 : Microsoft.Xna.Framework.Game
+    public class Game1 : Game
     {
-        readonly GraphicsDeviceManager graphics;
-        SpriteBatch _spriteBatch;
+        readonly GraphicsDeviceManager _graphics;
 
         Console _dfc;
         Console _logConsole;
@@ -40,7 +38,7 @@ namespace ODB
 
         public Game1()
         {
-            graphics = new GraphicsDeviceManager(this);
+            _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
         }
 
@@ -87,16 +85,15 @@ namespace ODB
             IsMouseVisible = true;
             IsFixedTimeStep = false;
 
-            SadConsole.Engine.Initialize(GraphicsDevice);
-            SadConsole.Engine.UseMouse = false;
-            SadConsole.Engine.UseKeyboard = true;
+            Engine.Initialize(GraphicsDevice);
+            Engine.UseMouse = false;
+            Engine.UseKeyboard = true;
 
             using (var stream = System.IO.File.OpenRead("Fonts/IBM.font"))
-                SadConsole.Engine.DefaultFont =
-                    SadConsole.Serializer.Deserialize<Font>(stream);
+                Engine.DefaultFont = Serializer.Deserialize<Font>(stream);
 
-            SadConsole.Engine.DefaultFont.ResizeGraphicsDeviceManager(
-                graphics, 80, 25, 0, 0
+            Engine.DefaultFont.ResizeGraphicsDeviceManager(
+                _graphics, 80, 25, 0, 0
             );
             #endregion
 
@@ -105,24 +102,20 @@ namespace ODB
             _camX = _camY = 0;
             _scrW = 80; _scrH = 25;
 
-            TileDefinition floor = new TileDefinition(
-                Color.Black, Color.LightGray, ".", false);
-            TileDefinition wall = new TileDefinition(
-                Color.Gray, Color.Gray, " ", true);
-
-            IO.WriteTileDefinitionsToFile("Data/tiles.def");
-
             SetupMagic(); //essentially magic defs, but we hardcode magic
             SetupTickingEffects(); //same as magic, cba to add scripting
             IO.ReadActorDefinitionsFromFile("Data/actors.def");
             IO.ReadItemDefinitionsFromFile("Data/items.def");
+            IO.ReadTileDefinitionsFromFile("Data/tiles.def");
 
             Seed = Guid.NewGuid().GetHashCode();
             Util.SetSeed(Seed);
 
+            //todo: probably should go back to using this?
             //IO.Load(); //load entire game (except definitions atm)
-            Game.Levels = new List<ODB.Level>();
-            Game.Level = new ODB.Level(80, 25);
+
+            Game.Levels = new List<Level>();
+            Game.Level = new Level(80, 25);
             Game.Levels.Add(Game.Level);
 
             Game.Level.WorldActors.Add(
@@ -149,7 +142,7 @@ namespace ODB
 
         protected override void Update(GameTime gameTime)
         {
-            SadConsole.Engine.Update(gameTime, this.IsActive);
+            Engine.Update(gameTime, IsActive);
             IO.Update(false);
 
             #region ui interaction
@@ -159,9 +152,9 @@ namespace ODB
                     WizMode = false; IO.IOState = InputType.PlayerInput; }
                 else if (IO.IOState != InputType.PlayerInput)
                     IO.IOState = InputType.PlayerInput;
-                else if (_inventoryConsole.IsVisible == true)
+                else if (_inventoryConsole.IsVisible)
                     _inventoryConsole.IsVisible = false;
-                else this.Exit();
+                else Exit();
             }
 
             if (IO.KeyPressed(Keys.I) && !WizMode)
@@ -369,7 +362,8 @@ namespace ODB
             //LH-011214: registered to the spelldefinition list in constructor.
             new Spell(
                 "fiery touch",
-                new List<Action<Actor, Point>>() {
+                new List<Action<Actor, Point>>
+                {
                     delegate(Actor caster, Point p) {
                         Actor a = Game.Level.ActorOnTile(p);
                         Util.Game.Log(
@@ -379,24 +373,28 @@ namespace ODB
                         );
                         a.Damage(Util.Roll("6d2"));
 
-                        if(Util.Roll("1d6") >= 5) {
-                            Game.Log(
-                                a.GetName(false, true) + " starts bleeding!"
-                            );
-                            TickingEffectDefinition bleed =
-                                Util.TickingEffectDefinitionByName("bleed");
-                            if (!a.HasEffect(bleed))
-                                a.TickingEffects.Add(bleed.Instantiate(a));
-                        }
+                        if (Util.Roll("1d6") < 5) return;
+
+                        Game.Log(
+                            a.GetName(false, true) + " starts bleeding!"
+                        );
+
+                        TickingEffectDefinition bleed =
+                            Util.TickingEffectDefinitionByName("bleed");
+
+                        if (!a.HasEffect(bleed))
+                            a.TickingEffects.Add(bleed.Instantiate(a));
                     }
                 },
                 0, 1, 1
             );
         }
 
-        static void SetupTickingEffects()
+        public static void SetupTickingEffects()
         {
-            TickingEffectDefinition hpReg = new TickingEffectDefinition(
+            //ReSharper disable once ObjectCreationAsStatement
+            //LH-011214: Constructor registers the definition.
+            new TickingEffectDefinition(
                 "passive hp regeneration",
                 100, //trigger once every 100 ticks
                 delegate(Actor holder)
@@ -406,7 +404,8 @@ namespace ODB
                 }
             );
 
-            TickingEffectDefinition mpReg = new TickingEffectDefinition(
+            //ReSharper disable once ObjectCreationAsStatement
+            new TickingEffectDefinition(
                 "passive mp regeneration",
                 100, //trigger once every 100 ticks
                 delegate(Actor holder)
@@ -416,7 +415,8 @@ namespace ODB
                 }
             );
 
-            TickingEffectDefinition bleed = new TickingEffectDefinition(
+            //ReSharper disable once ObjectCreationAsStatement
+            new TickingEffectDefinition(
                 "bleed",
                 25,
                 delegate(Actor holder)
@@ -427,8 +427,8 @@ namespace ODB
                         Game.Log(
                             Util.Capitalize(
                                 holder.GetName(true)+"'s wound bleeds!"
-                            )
-                        );
+                                )
+                            );
                     holder.Damage(Util.Roll("2d3"));
                 }
             );
@@ -446,7 +446,7 @@ namespace ODB
                 if(bgtile != null)
                     _dfc.CellData.SetBackground(
                         xy.x, xy.y,
-                        bgtile.bg
+                        bgtile.Background
                     );
             }
 
@@ -459,21 +459,13 @@ namespace ODB
         {
             for (int x = 0; x < r.wh.x; x++)
             {
-                _inventoryConsole.CellData.Print(
-                    x, 0, (char)205+"", Color.DarkGray
-                );
-                _inventoryConsole.CellData.Print(
-                    x, r.wh.y-1, (char)205+"", Color.DarkGray
-                );
+                c.CellData.Print(x, 0, (char)205+"", fg, bg);
+                c.CellData.Print(x, r.wh.y-1, (char)205+"", fg, bg);
             }
             for (int y = 0; y < r.wh.y; y++)
             {
-                _inventoryConsole.CellData.Print(
-                    0, y, (char)186+"", Color.DarkGray
-                );
-                _inventoryConsole.CellData.Print(
-                    r.wh.x-1, y, (char)186+"", Color.DarkGray
-                );
+                c.CellData.Print(0, y, (char)186+"", fg, bg);
+                c.CellData.Print(r.wh.x-1, y, (char)186+"", fg, bg);
             }
             _inventoryConsole.CellData.Print(0, 0, (char)201 + "");
             _inventoryConsole.CellData.Print(r.wh.x-1, 0, (char)187 + "");
@@ -603,7 +595,7 @@ namespace ODB
                 bool inVision =
                     Game.Player.Vision[x + _camX, y + _camY] || WizMode;
 
-                string tileToDraw = t.tile;
+                string tileToDraw = t.Character;
                 //doors override the normal tile
                 //which shouldn't be a problem
                 //if it is a problem, it's not, it's something else
@@ -614,8 +606,8 @@ namespace ODB
 
                 DrawToScreen(
                     new Point(x, y),
-                    t.bg,
-                    t.fg * (inVision ? 1f : 0.6f),
+                    t.Background,
+                    t.Foreground * (inVision ? 1f : 0.6f),
                     tileToDraw
                 );
             }
@@ -727,11 +719,8 @@ namespace ODB
                 Color.DarkGray
             );
 
-            foreach (char t in Player.Definition.Name)
-            {
-                _inventoryConsole.CellData.Print(
-                    2, 0, Player.Definition.Name, Color.White);
-            }
+            _inventoryConsole.CellData.Print(
+                2, 0, Player.Definition.Name, Color.White);
 
             for (int i = 0; i < Player.Inventory.Count; i++)
             {
@@ -802,27 +791,29 @@ namespace ODB
             else if (Game.Food < 1500)
                 namerow += "  Hungry";
 
-            foreach (LastingEffect le in Game.Player.LastingEffects)
-                namerow += " " + LastingEffect.EffectNames[le.Type];
+            namerow = Game.Player.LastingEffects.Aggregate(
+                namerow,
+                (current, lastingEffect) => current +
+                (" " + LastingEffect.EffectNames[lastingEffect.Type]));
 
             string statrow = "";
             statrow += "[";
-            statrow += Player.HpCurrent.ToString().PadLeft(3, ' ');
+            statrow += ("" + Player.HpCurrent).PadLeft(3, ' ');
             statrow += "/";
-            statrow += Player.Definition.HpMax.ToString().PadLeft(3, ' ');
+            statrow += ("" + Player.HpMax).PadLeft(3, ' ');
             statrow += "]";
 
             statrow += " ";
 
             statrow += "[";
-            statrow += Player.MpCurrent.ToString().PadLeft(3, ' ');
+            statrow += ("" + Player.MpCurrent).PadLeft(3, ' ');
             statrow += "/";
-            statrow += Player.Definition.MpMax.ToString().PadLeft(3, ' ');
+            statrow += ("" + Player.MpMax).PadLeft(3, ' ');
             statrow += "]";
 
             statrow += " ";
             statrow += "T:";
-            statrow += string.Format("{0:F1}", (float)(GameTick / 10f));
+            statrow += string.Format("{0:F1}", GameTick / 10f);
 
             statrow += " ";
             statrow += "D:" + (Game.Levels.IndexOf(Game.Level) + 1) + "0M";
@@ -898,17 +889,10 @@ namespace ODB
         }
 
         #region engineshit
-        protected override void LoadContent()
-        {
-            _spriteBatch = new SpriteBatch(GraphicsDevice);
-        }
-
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.Black);
-
-            SadConsole.Engine.Draw(gameTime);
-
+            Engine.Draw(gameTime);
             base.Draw(gameTime);
         }
         #endregion

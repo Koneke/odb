@@ -162,24 +162,31 @@ namespace ODB
 
     public class BodyPart
     {
+        protected bool Equals(BodyPart other)
+        {
+            return Type == other.Type && Equals(Item, other.Item);
+        }
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return ((int)Type*397) ^ (Item != null ? Item.GetHashCode() : 0);
+            }
+        }
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != GetType()) return false;
+            return Equals((BodyPart)obj);
+        }
+
         public DollSlot Type;
         public Item Item;
         public BodyPart(DollSlot type, Item item = null)
         {
             Type = type;
             Item = item;
-        }
-    }
-
-    class Pair<T, TS>
-    {
-        T _first;
-        TS _second;
-
-        public Pair(T a, TS b)
-        {
-            _first = a;
-            _second = b;
         }
     }
 
@@ -361,7 +368,7 @@ namespace ODB
                 CalculatePosition();
                 Die = true;
             }
-            else if (Util.Game.Level.Map[xy.x, xy.y].solid)
+            else if (Util.Game.Level.Map[xy.x, xy.y].Solid)
             {
                 //unmove
                 Moved--;
