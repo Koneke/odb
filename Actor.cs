@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Collections.Generic;
-
 using Microsoft.Xna.Framework;
 
 namespace ODB
@@ -22,9 +22,9 @@ namespace ODB
             new ActorDefinition[0xFFFF];
 
         public bool Named; //for uniques and what not
-        public int strength, dexterity, intelligence;
-        public int speed, quickness;
-        public int hpMax, mpMax;
+        public int Strength, Dexterity, Intelligence;
+        public int Speed, Quickness;
+        public int HpMax, MpMax;
         public List<DollSlot> BodyParts;
         public int CorpseType;
         public List<int> Spellbook;
@@ -32,25 +32,27 @@ namespace ODB
         public List<Mod> SpawnIntrinsics;
 
         public ActorDefinition(
-            Color? bg, Color fg,
+            Color? background, Color foreground,
             string tile, string name,
             int strength, int dexterity, int intelligence, int hp,
-            List<DollSlot> BodyParts,
-            List<int> Spellbook,
-            bool Named
+            List<DollSlot> bodyParts,
+            List<int> spellbook,
+            bool named
         )
-        : base(bg, fg, tile, name) {
-            this.strength = strength;
-            this.dexterity = dexterity;
-            this.intelligence = intelligence;
-            this.hpMax = hp;
-            this.BodyParts = BodyParts ?? new List<DollSlot>();
-            ActorDefinitions[this.type] = this;
-            ItemDefinition Corpse = new ItemDefinition(
+        : base(background, foreground, tile, name) {
+            Strength = strength;
+            Dexterity = dexterity;
+            Intelligence = intelligence;
+            HpMax = hp;
+            BodyParts = bodyParts ?? new List<DollSlot>();
+            ActorDefinitions[Type] = this;
+
+            ItemDefinition corpse = new ItemDefinition(
                 null, Color.Red, "%", name + " corpse");
-            CorpseType = Corpse.type;
-            this.Spellbook = Spellbook ?? new List<int>();
-            this.Named = Named;
+            CorpseType = corpse.Type;
+
+            Spellbook = spellbook ?? new List<int>();
+            Named = named;
             SpawnIntrinsics = new List<Mod>();
         }
 
@@ -64,22 +66,22 @@ namespace ODB
             switch (stat)
             {
                 case Stat.Strength:
-                    strength = value;
+                    Strength = value;
                     break;
                 case Stat.Dexterity:
-                    dexterity = value;
+                    Dexterity = value;
                     break;
                 case Stat.Intelligence:
-                    intelligence = value;
+                    Intelligence = value;
                     break;
                 case Stat.Speed:
-                    speed = value;
+                    Speed = value;
                     break;
                 case Stat.Quickness:
-                    quickness = value;
+                    Quickness = value;
                     break;
-                case Stat.PoisonRes:
-                    //teh pRes, it does nathing
+                /*case Stat.PoisonRes:
+                    //teh pRes, it does nathing*/
                 default:
                     Util.Game.Log("Bad stat.");
                     break;
@@ -91,13 +93,13 @@ namespace ODB
             Stream stream = WriteGObjectDefinition();
 
             stream.Write(Named);
-            stream.Write(strength, 2);
-            stream.Write(dexterity, 2);
-            stream.Write(intelligence, 2);
-            stream.Write(hpMax, 2);
-            stream.Write(mpMax, 2);
-            stream.Write(speed, 2);
-            stream.Write(quickness, 2);
+            stream.Write(Strength, 2);
+            stream.Write(Dexterity, 2);
+            stream.Write(Intelligence, 2);
+            stream.Write(HpMax, 2);
+            stream.Write(MpMax, 2);
+            stream.Write(Speed, 2);
+            stream.Write(Quickness, 2);
 
             foreach (DollSlot ds in BodyParts)
                 stream.Write((int)ds + ",", false);
@@ -116,7 +118,7 @@ namespace ODB
             {
                 stream.Write((int)m.Type, 4);
                 stream.Write(":", false);
-                stream.Write(m.Value, 4);
+                stream.Write(m.RawValue, 4);
                 stream.Write(",", false);
             }
             stream.Write(";", false);
@@ -129,47 +131,51 @@ namespace ODB
             Stream stream = ReadGObjectDefinition(s);
 
             Named = stream.ReadBool();
-            strength = stream.ReadHex(2);
-            dexterity = stream.ReadHex(2);
-            intelligence = stream.ReadHex(2);
-            hpMax = stream.ReadHex(2);
-            mpMax = stream.ReadHex(2);
-            speed = stream.ReadHex(2);
-            quickness = stream.ReadHex(2);
+            Strength = stream.ReadHex(2);
+            Dexterity = stream.ReadHex(2);
+            Intelligence = stream.ReadHex(2);
+            HpMax = stream.ReadHex(2);
+            MpMax = stream.ReadHex(2);
+            Speed = stream.ReadHex(2);
+            Quickness = stream.ReadHex(2);
 
             BodyParts = new List<DollSlot>();
-            foreach (string ss in stream.ReadString().Split(','))
-                if(ss != "")
-                    BodyParts.Add((DollSlot)int.Parse(ss));
+            foreach (string ss in stream.ReadString().Split(',')
+                .Where(ss => ss != ""))
+                BodyParts.Add((DollSlot)int.Parse(ss));
 
             CorpseType = stream.ReadHex(4);
 
-            if (Util.IDefByName(name + " corpse") == null)
+            if (Util.ItemDefByName(Name + " corpse") == null)
             {
                 //should be put into a func of its own..?
-                ItemDefinition Corpse = new ItemDefinition(
-                    null, Color.Red, "%", name + " corpse");
-                CorpseType = Corpse.type;
+                ItemDefinition corpse = new ItemDefinition(
+                    null, Color.Red, "%", Name + " corpse");
+                CorpseType = corpse.Type;
             }
 
             Spellbook = new List<int>();
             string spellbook = stream.ReadString();
-            foreach (string spell in spellbook.Split(','))
-                if (spell != "") Spellbook.Add(IO.ReadHex(spell));
+            foreach (string spell in spellbook.Split(',')
+                .Where(spell => spell != ""))
+                Spellbook.Add(IO.ReadHex(spell));
 
             SpawnIntrinsics = new List<Mod>();
-            string sintrinsics = stream.ReadString();
-            foreach (string mod in sintrinsics.Split(','))
-            {
-                if (mod == "") continue;
-                Mod m = new Mod(
-                    (ModType)IO.ReadHex(mod.Split(':')[0]),
-                             IO.ReadHex(mod.Split(':')[1])
-                );
+            string readIntrinsics = stream.ReadString();
+            foreach (
+                Mod m in
+                from mod in readIntrinsics.Split(',')
+                where mod != ""
+                select new Mod(
+                    (ModType)
+                    IO.ReadHex(mod.Split(':')[0]),
+                    IO.ReadHex(mod.Split(':')[1])
+                )
+            ) {
                 SpawnIntrinsics.Add(m);
             }
 
-            ActorDefinitions[type] = this;
+            ActorDefinitions[Type] = this;
             return stream;
         }
     }
@@ -179,11 +185,11 @@ namespace ODB
         public static int IDCounter = 0;
 
         #region written to save
-        public int id;
+        public int ID;
 
         public new ActorDefinition Definition;
-        public int hpCurrent;
-        public int mpCurrent;
+        public int HpCurrent;
+        public int MpCurrent;
         public int Cooldown;
 
         public List<BodyPart> PaperDoll;
@@ -193,6 +199,7 @@ namespace ODB
         public List<Mod> Intrinsics;
 
         public bool Awake;
+        public Item Quiver;
         #endregion
 
         #region temporary/cached (nonwritten)
@@ -201,33 +208,33 @@ namespace ODB
 
         #region wraps
         public List<Spell> Spellbook {
-            get {
-                List<Spell> spells = new List<Spell>();
-                foreach(int spellId in Definition.Spellbook) {
-                    spells.Add(Spell.Spells[spellId]);
-                }
-                return spells;
+            get
+            {
+                return Definition.Spellbook.Select(
+                    spellId => Spell.Spells[spellId]
+                ).ToList();
             }
         }
 
-        public int hpMax { get { return Definition.hpMax; } }
-        public int mpMax { get { return Definition.mpMax; } }
+        public int HpMax { get { return Definition.HpMax; } }
+        public int MpMax { get { return Definition.MpMax; } }
+        public string Name { get { return Definition.Name; } }
         #endregion
 
         public Actor(
-            Point xy, ActorDefinition def
+            Point xy, ActorDefinition definition
         )
-            : base(xy, def)
+            : base(xy, definition)
         {
-            id = IDCounter++;
+            ID = IDCounter++;
 
-            Definition = def;
-            this.hpCurrent = def.hpMax;
-            this.mpCurrent = def.mpMax;
+            Definition = definition;
+            HpCurrent = definition.HpMax;
+            MpCurrent = definition.MpMax;
             Cooldown = 0;
 
             PaperDoll = new List<BodyPart>();
-            foreach (DollSlot ds in def.BodyParts)
+            foreach (DollSlot ds in definition.BodyParts)
                 PaperDoll.Add(new BodyPart(ds));
             Inventory = new List<Item>();
             TickingEffects = new List<TickingEffect>();
@@ -244,14 +251,14 @@ namespace ODB
 
         public string GetName(bool def = false, bool capitalize = false)
         {
-            if (this == Game.player)
+            if (this == Game.Player)
                 return capitalize ? "You" : "you";
 
-            string name = (def ? "the" : Util.article(Definition.name));
+            string name = (def ? "the" : Util.Article(Definition.Name));
             name += " ";
 
             if (Definition.Named) name = "";
-            name += Definition.name;
+            name += Definition.Name;
 
             if (capitalize)
                 name = name.Substring(0, 1).ToUpper() +
@@ -262,9 +269,11 @@ namespace ODB
 
         public bool CanEquip(List<DollSlot> slots)
         {
-            List<DollSlot> availableSlots = new List<DollSlot>();
-            foreach (BodyPart bp in PaperDoll)
-                if (bp.Item == null) availableSlots.Add(bp.Type);
+            List<DollSlot> availableSlots = (
+                    from bp in PaperDoll
+                    where bp.Item == null
+                    select bp.Type
+                ).ToList();
 
             bool canEquip = true;
             foreach (DollSlot ds in slots)
@@ -277,14 +286,16 @@ namespace ODB
         }
         public void Equip(Item it)
         {
-            foreach (DollSlot ds in it.Definition.equipSlots)
+            foreach (DollSlot ds in it.Definition.EquipSlots)
             {
-                foreach(BodyPart bp in PaperDoll)
-                    if (bp.Type == ds && bp.Item == null)
-                    {
-                        bp.Item = it;
-                        break;
-                    }
+                //ReSharper disable once AccessToForEachVariableInClosure
+                //LH-011214: only reading value
+                foreach (BodyPart bp in PaperDoll
+                    .Where(bp => bp.Type == ds && bp.Item == null))
+                {
+                    bp.Item = it;
+                    break;
+                }
             }
         }
         public bool IsEquipped(Item it)
@@ -294,20 +305,19 @@ namespace ODB
         public List<Item> GetEquippedItems()
         {
             List<Item> equipped = new List<Item>();
-            foreach (BodyPart bp in PaperDoll)
-                if (bp != null)
-                    if (bp.Item != null)
-                        if (!equipped.Contains(bp.Item))
-                            equipped.Add(bp.Item);
+            foreach (
+                BodyPart bp in
+                from bp in PaperDoll
+                    where bp != null
+                    where bp.Item != null
+                    where !equipped.Contains(bp.Item)
+                select bp)
+                equipped.Add(bp.Item);
             return equipped;
         }
         public List<BodyPart> GetSlots(DollSlot type)
         {
-            List<BodyPart> parts = new List<BodyPart>();
-            foreach (BodyPart bp in PaperDoll)
-                if (bp.Type == type)
-                    parts.Add(bp);
-            return parts;
+            return PaperDoll.Where(bp => bp.Type == type).ToList();
         }
 
         public int Get(Stat stat, bool modded = true)
@@ -315,19 +325,19 @@ namespace ODB
             switch (stat)
             {
                 case Stat.Strength:
-                    return Definition.strength +
+                    return Definition.Strength +
                         (modded ? GetMod(stat) : 0);
                 case Stat.Dexterity:
-                    return Definition.dexterity +
+                    return Definition.Dexterity +
                         (modded ? GetMod(stat) : 0);
                 case Stat.Intelligence:
-                    return Definition.intelligence +
+                    return Definition.Intelligence +
                         (modded ? GetMod(stat) : 0);
                 case Stat.Speed:
-                    return Definition.speed +
+                    return Definition.Speed +
                         (modded ? GetMod(stat) : 0);
                 case Stat.Quickness:
-                    return Definition.quickness +
+                    return Definition.Quickness +
                         (modded ? GetMod(stat) : 0);
                 case Stat.PoisonRes: return GetMod(stat);
                 default:
@@ -338,76 +348,62 @@ namespace ODB
         {
             int modifier = 0;
 
-            ModType addMod, decMod;
+            ModType mt;
             switch (stat)
             {
                 case Stat.Strength:
-                    addMod = ModType.AddStr; decMod = ModType.DecStr; break;
+                    mt = ModType.Strength; break;
                 case Stat.Dexterity:
-                    addMod = ModType.AddDex; decMod = ModType.DecDex; break;
+                    mt = ModType.Dexterity; break;
                 case Stat.Intelligence:
-                    addMod = ModType.AddInt; decMod = ModType.DecInt; break;
+                    mt = ModType.Intelligence; break;
                 case Stat.Speed:
-                    addMod = ModType.AddSpd; decMod = ModType.DecSpd; break;
+                    mt = ModType.Speed; break;
                 case Stat.Quickness:
-                    addMod = ModType.AddQck; decMod = ModType.DecQck; break;
+                    mt = ModType.Quickness; break;
                 case Stat.PoisonRes:
-                    addMod = ModType.PoisonRes; decMod = (ModType)0xFF; break;
+                    mt = ModType.PoisonRes; break;
                 default:
-                    return 0;
+                    throw new ArgumentException();
             }
 
             List<Item> worn = Util.GetWornItems(this);
-            //no bonus from quivered itesm
-            foreach (BodyPart bp in GetSlots(DollSlot.Quiver))
-                if(bp.Item != null)
-                    worn.Remove(bp.Item);
 
-            if ((int)addMod != 0xFF)
-            {
-                foreach (Mod m in Util.GetModsOfType(addMod, worn))
-                    modifier += m.Value;
-                foreach (Mod m in Util.GetModsOfType(addMod, this))
-                    modifier += m.Value;
-            }
-            if ((int)decMod != 0xFF)
-            {
-                foreach (Mod m in Util.GetModsOfType(decMod, worn))
-                    modifier -= m.Value;
-                foreach (Mod m in Util.GetModsOfType(decMod, this))
-                    modifier -= m.Value;
-            }
+            //itembonuses
+            modifier += Util.GetModsOfType(mt, worn).Sum(
+                m => m.GetValue()
+            );
+
+            //intrinsics
+            modifier += Util.GetModsOfType(mt, this).Sum(
+                m => m.GetValue()
+            );
 
             return modifier;
         }
-        public int GetAC()
+        public int GetArmor()
         {
-            int ac = 8;
             List<Item> equipped = new List<Item>();
-            foreach (
-                BodyPart bp in PaperDoll.FindAll(
-                    x =>
-                        //might seem dumb, but ds.Hand is currently for
-                        //eh, like, the grip, more than the hand itself
-                        //glove-hands currently do not exist..?
-                        //idk, we'll get to it
-                        x.Type != DollSlot.Hand &&
-                        x.Item != null
-                    )
-                )
-                if(!equipped.Contains(bp.Item))
-                    equipped.Add(bp.Item);
+            foreach (BodyPart bp in PaperDoll.FindAll(
+                x =>
+                    //might seem dumb, but ds.Hand is currently for
+                    //eh, like, the grip, more than the hand itself
+                    //glove-hands currently do not exist..?
+                    //idk, we'll get to it
+                    x.Type != DollSlot.Hand &&
+                    x.Item != null
+                ).Where(bp => !equipped.Contains(bp.Item)))
+                equipped.Add(bp.Item);
 
-            foreach(Item it in equipped)
-                ac += it.Definition.AC + it.mod;
-
-            return ac;
+            return 8 + equipped.Sum(
+                it => it.Definition.ArmorClass + it.Mod
+            );
         }
 
         public void Attack(Actor target)
         {
             int hitRoll = Util.Roll("1d6") + Get(Stat.Strength);
-            int dodgeRoll = target.GetAC();
+            int dodgeRoll = target.GetArmor();
             bool crit = Util.Roll("1d30") >= 30 -
                 Math.Max(
                     Get(Stat.Dexterity)-5,
@@ -435,63 +431,46 @@ namespace ODB
                         damageRoll += Util.Roll("1d4", crit);
 
                 Game.Log(
-                    Definition.name + " strikes " +
-                    target.Definition.name + (crit ? "!" : ".")
+                    Definition.Name + " strikes " +
+                    target.Definition.Name + (crit ? "!" : ".")
                 );
 
                 target.Damage(damageRoll);
             }
             else
             {
-                Game.Log(Definition.name + " swings in the air.");
+                Game.Log(Definition.Name + " swings in the air.");
             }
         }
         public void Shoot(Actor target)
         {
             int hitRoll = Util.Roll("1d6") + Get(Stat.Dexterity);
-            int dodgeRoll =
-                target.GetAC() + Util.Distance(xy, target.xy)
-            ;
+            int dodgeRoll = target.GetArmor() + Util.Distance(xy, target.xy);
 
-            Item weapon = null, ammo = null;
+            Item ammo = Quiver;
+            Debug.Assert(ammo != null, "ammo != null");
 
-            foreach (BodyPart bp in GetSlots(DollSlot.Hand))
+            Item weapon = Game.Player.GetEquippedItems()
+                .Find(item => item.AmmoTypes.Contains(ammo.Type));
+
+            bool throwing;
+
+            //weapon and appropriate ammo
+            if (weapon != null)
+                throwing = !weapon.Definition.AmmoTypes.Contains(ammo.Type);
+            //ammo
+            else throwing = true;
+
+            ammo.Count--;
+            if(ammo.Count <= 0)
             {
-                if (bp.Item == null) continue;
-                if (bp.Item.Definition.Ranged)
-                    weapon = bp.Item;
-            }
-
-            foreach(BodyPart bp in PaperDoll)
-                if(bp.Type == DollSlot.Quiver)
-                    ammo = bp.Item;
-
-            bool throwing = false;
-            if (!(ammo == null))
-            {
-                //weapon and appropriate ammo
-                if (weapon != null)
-                {
-                    if (weapon.Definition.AmmoTypes.Contains(ammo.type))
-                        throwing = false;
-                    else throwing = true;
-                }
-                //ammo
-                else throwing = true;
-            }
-
-            ammo.count--;
-            if(ammo.count <= 0)
-            {
-                foreach(BodyPart bp in PaperDoll)
-                    if(bp.Type == DollSlot.Quiver)
-                        bp.Item = null;
+                Quiver = null;
                 Game.Level.AllItems.Remove(ammo);
-                Game.player.Inventory.Remove(ammo);
+                Game.Player.Inventory.Remove(ammo);
             }
 
             if(hitRoll >= dodgeRoll) {
-                int damageRoll = 0;
+                int damageRoll;
 
                 if (throwing)
                 {
@@ -504,50 +483,55 @@ namespace ODB
                 }
 
                 Game.Log(
-                    target.Definition.name + " is hit! " +
+                    target.Definition.Name + " is hit! " +
                     "(" + hitRoll + " vs " + dodgeRoll + ")"
                 );
                 target.Damage(damageRoll);
             } else {
                 Game.Log(
-                    Definition.name + " misses " +
+                    Definition.Name + " misses " +
                     "(" + hitRoll + " vs " + dodgeRoll + ")"
                 );
             }
 
+            Game.Level.MakeNoise(1, target.xy);
             Pass();
         }
         public void Damage(int d)
         {
-            hpCurrent -= d;
-            if (hpCurrent <= 0)
-            {
-                Game.Log(Definition.name + " dies!");
-                Item corpse = new Item(
-                    xy,
-                    ItemDefinition.ItemDefinitions[
-                        Definition.CorpseType],
-                    0, Intrinsics
+            HpCurrent -= d;
+            if (HpCurrent > 0) return;
+
+            Game.Log(Definition.Name + " dies!");
+            Item corpse = new Item(
+                xy,
+                Util.ItemDefByName(Name + " corpse"),
+                //ItemDefinition.ItemDefinitions[
+                    //Definition.CorpseType],
+                0, Intrinsics
                 );
-                //should always be ided
-                //or maybe not..? could be a mechanic in and of itself
-                corpse.Identify();
-                Game.Level.WorldItems.Add(corpse);
-                Game.Level.AllItems.Add(corpse);
-                Game.Level.WorldActors.Remove(this);
-            }
+            //should always be ided
+            //or maybe not..? could be a mechanic in and of itself
+            corpse.Identify();
+            Game.Level.WorldItems.Add(corpse);
+            Game.Level.AllItems.Add(corpse);
+            Game.Level.WorldActors.Remove(this);
         }
 
+        //LH-011214: A bit lost on suppressMsg here? Atleast a couple of days
+        //           old. Guessing it has to do with not showing the fizzle
+        //           message for monsters or something?
+        //           Might want to do that though, will research it.
         public void Cast(Spell s, Point target, bool suppressMsg = false)
         {
             if(!suppressMsg)
-                Game.Log(Definition.name + " casts " + s.Name + ".");
+                Game.Log(Definition.Name + " casts " + s.Name + ".");
             if (Util.Roll("1d6") + Get(Stat.Intelligence) > s.CastDifficulty)
             {
                 Projectile p = s.Cast(this, target);
                 p.Move();
             }
-            else if(suppressMsg)
+            else if(!suppressMsg)
                 Game.Log("The spell fizzles.");
             Pass();
         }
@@ -558,40 +542,48 @@ namespace ODB
         }
         public bool HasEffect(StatusType type)
         {
-            foreach (LastingEffect le in LastingEffects)
-                if (le.Type == type) return true;
-            return false;
+            return LastingEffects.Any(le => le.Type == type);
+        }
+
+        public void RemoveEffect(StatusType type)
+        {
+            LastingEffects.Remove(
+                LastingEffects.Find(effect => effect.Type == type)
+            );
         }
 
         public void Eat(Item it)
         {
-            if(it.count > 1)
+            if(it.Count > 1)
                 Game.Log(GetName(false, true) + " ate " +
-                    Util.article(it.GetName(false, true)) + " " +
+                    Util.Article(it.GetName(false, true)) + " " +
                     it.GetName(false, true)
                 );
             else
                 Game.Log(GetName(false, true) + " ate " + it.GetName());
-            if (Util.Roll("1d5") == 5)
-            {
-                //idea here is that earlier intrinsics in the list are more
-                //"primary" attributes of the food (usually corpse if it has
-                //intrinsics), so the weighting is done so that the earlier
-                //intrinsics are a lot more likely, every intrinsic being double
-                //as likely as the next one in the list
-                //ex., 3 mods
-                //weight looks like
-                //2110000 (4 mods = 322111100000000 etc)
-                //(number being index in list)
-                //so bigger chance for mods earlier in the list
-                int count, n = count = it.Mods.Count;
-                //count = 3 => r = 1d7
-                int r = Util.Roll("1d" + (Math.Pow(2, count)-1));
-                //less than 2^n-1 = "loss", check later intrinsics
-                while (r < Math.Pow(2, n-1))
-                    n--;
-                Intrinsics.Add(it.Mods[count - n]);
-            }
+
+            if (Util.Roll("1d5") != 5) return;
+
+            //idea here is that earlier intrinsics in the list are more
+            //"primary" attributes of the food (usually corpse if it has
+            //intrinsics), so the weighting is done so that the earlier
+            //intrinsics are a lot more likely, every intrinsic being double
+            //as likely as the next one in the list
+            //ex., 3 mods
+            //weight looks like
+            //2110000 (4 mods = 322111100000000 etc)
+            //(number being index in list)
+            //so bigger chance for mods earlier in the list
+            int count, n = count = it.Mods.Count;
+            //count = 3 => r = 1d7
+            int r = Util.Roll("1d" + (Math.Pow(2, count)-1));
+            //less than 2^n-1 = "loss", check later intrinsics
+
+            //ReSharper disable once LoopVariableIsNeverChangedInsideLoop
+            //LH-011224: resharper stop being dumb pls
+            while (r < Math.Pow(2, n-1))
+                n--;
+            Intrinsics.Add(it.Mods[count - n]);
         }
 
         //movement/standard action
@@ -599,7 +591,7 @@ namespace ODB
         public void Pass(bool movement = false)
         {
             //switch this to +=? could mean setting cd to -10 = free action
-            Cooldown = Game.standardActionLength -
+            Cooldown = Game.StandardActionLength -
                 (movement ? Get(Stat.Speed) : Get(Stat.Quickness));
         }
         public void Pass(int length)
@@ -648,7 +640,7 @@ namespace ODB
             {
                 if (Util.Roll("1d3") > 1)
                 {
-                    if (this == Game.player) Game.Log("You stumble...");
+                    if (this == Game.Player) Game.Log("You stumble...");
                     offset = possiblesMoves
                         [Util.Random.Next(0, possiblesMoves.Count)];
                 }
@@ -656,7 +648,7 @@ namespace ODB
 
             if (!GetPossibleMoves().Contains(offset))
             {
-                if(this == Game.player) Game.Log("Bump!");
+                if(this == Game.Player) Game.Log("Bump!");
                 //else "... bumps into a wall..?"
                 return false;
             }
@@ -693,10 +685,10 @@ namespace ODB
         public Stream WriteActor()
         {
             Stream stream = WriteGOBject();
-            stream.Write(Definition.type, 4);
-            stream.Write(id, 4);
-            stream.Write(hpCurrent, 2);
-            stream.Write(mpCurrent, 2);
+            stream.Write(Definition.Type, 4);
+            stream.Write(ID, 4);
+            stream.Write(HpCurrent, 2);
+            stream.Write(MpCurrent, 2);
             stream.Write(Cooldown, 2);
 
             foreach (BodyPart bp in PaperDoll)
@@ -705,7 +697,7 @@ namespace ODB
                 stream.Write(":", false);
 
                 if (bp.Item == null) stream.Write("X", false);
-                else stream.Write(bp.Item.id, 4);
+                else stream.Write(bp.Item.ID, 4);
 
                 stream.Write(",", false);
             }
@@ -713,7 +705,7 @@ namespace ODB
 
             foreach (Item it in Inventory)
             {
-                stream.Write(it.id, 4);
+                stream.Write(it.ID, 4);
                 stream.Write(",", false);
             }
             stream.Write(";", false);
@@ -734,7 +726,7 @@ namespace ODB
 
             foreach (Mod m in Intrinsics)
             {
-                stream.Write((int)m.Type + ":" + m.Value + ",");
+                stream.Write((int)m.Type + ":" + m.RawValue + ",");
             }
             stream.Write(";", false);
 
@@ -750,15 +742,15 @@ namespace ODB
                     stream.ReadHex(4)
                 ];
 
-            id = stream.ReadHex(4);
-            hpCurrent = stream.ReadHex(2);
-            mpCurrent = stream.ReadHex(2);
+            ID = stream.ReadHex(4);
+            HpCurrent = stream.ReadHex(2);
+            MpCurrent = stream.ReadHex(2);
             Cooldown = stream.ReadHex(2);
 
             PaperDoll = new List<BodyPart>();
             foreach (string ss in
                 stream.ReadString().Split(
-                    new string[] { "," },
+                    new[] { "," },
                     StringSplitOptions.RemoveEmptyEntries
                 ).ToList()
             ) {
@@ -830,7 +822,7 @@ namespace ODB
         }
         public void AddRoomToVision(Room r)
         {
-            foreach (Rect rr in r.rects)
+            foreach (Rect rr in r.Rects)
                 for (int x = 0; x < rr.wh.x; x++)
                     for (int y = 0; y < rr.wh.y; y++)
                     {
@@ -839,7 +831,7 @@ namespace ODB
                             rr.xy.y + y
                         ] = true;
 
-                        if(this == Game.player)
+                        if(this == Game.Player)
                             Game.Level.Seen[
                                 rr.xy.x + x,
                                 rr.xy.y + y

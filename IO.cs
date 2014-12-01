@@ -21,30 +21,58 @@ namespace ODB
     {
         public static Game1 Game;
 
-        static KeyboardState ks, oks;
-        public static bool shift;
+        static KeyboardState _ks, _oks;
+        public static bool Shift;
 
-        public static string lowercase = "abcdefghijklmnopqrstuvwxyz";
-        public static string uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        public static string indexes = lowercase + uppercase;
+        private const string Lowercase = "abcdefghijklmnopqrstuvwxyz";
+        private const string Uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        public static string Indexes = Lowercase + Uppercase;
         public static List<char> AcceptedInput = new List<char>();
 
         public static void Update(bool final)
         {
-            shift =
-                (IO.ks.IsKeyDown(Keys.LeftShift) ||
-                IO.ks.IsKeyDown(Keys.RightShift));
+            Shift =
+                (_ks.IsKeyDown(Keys.LeftShift) ||
+                 _ks.IsKeyDown(Keys.RightShift));
 
             if (IOState != InputType.QuestionPrompt)
                 Answer = "";
 
-            if (!final) ks = Keyboard.GetState();
-            else oks = ks;
+            if (!final) _ks = Keyboard.GetState();
+            else _oks = _ks;
         }
 
         public static bool KeyPressed(Keys k)
         {
-            return ks.IsKeyDown(k) && !oks.IsKeyDown(k);
+            return _ks.IsKeyDown(k) && !_oks.IsKeyDown(k);
+        }
+
+        private static void SubmitAnswer()
+        {
+            if (IOState == InputType.PlayerInput)
+                throw new Exception("Submitted answer in playerinput mode");
+
+            //LH-011214: Note! We switch IOState /FIRST/, because some questions
+            //           are going to generate new ones.
+            //           Changing the IOState to PlayerInput after would then
+            //           suppress those questions.
+            //           In reality, maybe we should let the reactions
+            //           themselves switch IOState..? Might be too clumsy and
+            //           repetetive though, since most questions do /not/ chain.
+
+            switch (IOState)
+            {
+                case InputType.QuestionPrompt:
+                case InputType.QuestionPromptSingle:
+                    Game.QpAnswerStack.Push(Answer);
+                    IOState = InputType.PlayerInput;
+                    Game.QuestionReaction();
+                    break;
+                case InputType.Targeting:
+                    IOState = InputType.PlayerInput;
+                    Game.QuestionReaction();
+                    break;
+            }
         }
 
         public static void QuestionPromptInput()
@@ -52,57 +80,46 @@ namespace ODB
             //check every available key
             for (int i = 0; i < Enum.GetNames(typeof(Keys)).Length; i++)
             {
-                if (KeyPressed((Keys)i))
+                if (!KeyPressed((Keys)i)) continue;
+
+                //because sometimes, the key-char mapping isn't botched
+                char c = (char)i;
+
+                if (i >= (int)Keys.NumPad1 && i <= (int)Keys.NumPad9)
                 {
-                    //because sometimes, the key-char mapping isn't botched
-                    char c = (char)i;
-
-                    if (i >= (int)Keys.NumPad1 && i <= (int)Keys.NumPad9)
-                    {
-                        //mapping kp1-9 to chars 0-9
-                        //this means that you can't have a question which
-                        //treats 0-9 and kp0-9 differently,
-                        //but I don't see where that'd be a problem anyways
-                        c = (char)(48 + i - Keys.NumPad0);
-                    }
-
-                    if (i >= (int)Keys.A && i <= (int)Keys.Z)
-                    {
-                        //nudge it so we get either A or a, dep. on shiftstate
-                        c = (char)(i + (shift ? 0 : 32));
-                    }
-
-                    if (AcceptedInput.Contains(c))
-                    {
-                        Answer += c;
-
-                        if (IOState == InputType.QuestionPromptSingle)
-                        {
-                            IOState = InputType.PlayerInput;
-                            Game.qpAnswerStack.Push(Answer);
-                            Game.QuestionReaction();
-                        }
-                    }
+                    //mapping kp1-9 to chars 0-9
+                    //this means that you can't have a question which
+                    //treats 0-9 and kp0-9 differently,
+                    //but I don't see where that'd be a problem anyways
+                    c = (char)(48 + i - Keys.NumPad0);
                 }
+
+                if (i >= (int)Keys.A && i <= (int)Keys.Z)
+                {
+                    //nudge it so we get either A or a, dep. on shiftstate
+                    c = (char)(i + (Shift ? 0 : 32));
+                }
+
+                if (!AcceptedInput.Contains(c)) continue;
+
+                Answer += c;
+
+                if (IOState == InputType.QuestionPromptSingle)
+                    SubmitAnswer();
             }
 
-            if (IO.KeyPressed(Keys.Back))
+            if (KeyPressed(Keys.Back))
                 if (Answer.Length > 0)
                     Answer = Answer.Substring(0, Answer.Length - 1);
 
-            if (IO.KeyPressed(Keys.Enter))
+            if (!KeyPressed(Keys.Enter)) return;
+
+            if (!Game.WizMode)
+                SubmitAnswer();
+            else
             {
-                if (!Game.wizMode)
-                {
-                    IOState = InputType.PlayerInput;
-                    Game.qpAnswerStack.Push(Answer);
-                    Game.QuestionReaction();
-                }
-                else
-                {
-                    Wizard.wmHistory.Add(Answer);
-                    Wizard.wmCommand(Answer);
-                }
+                Wizard.WmHistory.Add(Answer);
+                Wizard.WmCommand(Answer);
             }
         }
 
@@ -120,31 +137,30 @@ namespace ODB
             Question = question;
             Game.QuestionReaction = reaction;
             if(type == InputType.Targeting)
-                Game.Target = Game.player.xy;
+                Game.Target = Game.Player.xy;
         }
 
         public static void TargetInput()
         {
             Point offset = new Point(0, 0);
 
-            if (IO.KeyPressed(Keys.NumPad8)) offset.Nudge(0, -1);
-            if (IO.KeyPressed(Keys.NumPad9)) offset.Nudge(1, -1);
-            if (IO.KeyPressed(Keys.NumPad6)) offset.Nudge(1, 0);
-            if (IO.KeyPressed(Keys.NumPad3)) offset.Nudge(1, 1);
-            if (IO.KeyPressed(Keys.NumPad2)) offset.Nudge(0, 1);
-            if (IO.KeyPressed(Keys.NumPad1)) offset.Nudge(-1, 1);
-            if (IO.KeyPressed(Keys.NumPad4)) offset.Nudge(-1, 0);
-            if (IO.KeyPressed(Keys.NumPad7)) offset.Nudge(-1, -1);
+            if (KeyPressed(Keys.NumPad8)) offset.Nudge(0, -1);
+            if (KeyPressed(Keys.NumPad9)) offset.Nudge(1, -1);
+            if (KeyPressed(Keys.NumPad6)) offset.Nudge(1, 0);
+            if (KeyPressed(Keys.NumPad3)) offset.Nudge(1, 1);
+            if (KeyPressed(Keys.NumPad2)) offset.Nudge(0, 1);
+            if (KeyPressed(Keys.NumPad1)) offset.Nudge(-1, 1);
+            if (KeyPressed(Keys.NumPad4)) offset.Nudge(-1, 0);
+            if (KeyPressed(Keys.NumPad7)) offset.Nudge(-1, -1);
 
             Game.Target.Nudge(offset);
 
             if (
-                IO.KeyPressed(Keys.NumPad5) ||
-                IO.KeyPressed(Keys.OemPeriod) ||
-                IO.KeyPressed(Keys.Enter)
+                KeyPressed(Keys.NumPad5) ||
+                KeyPressed(Keys.OemPeriod) ||
+                KeyPressed(Keys.Enter)
             ) {
-                IO.IOState = InputType.PlayerInput;
-                Game.QuestionReaction();
+                SubmitAnswer();
             }
         }
 
@@ -161,7 +177,7 @@ namespace ODB
             stream.Write(Game.Levels.Count, 2);
             for (int i = 0; i < Game.Levels.Count; i++)
             {
-                if (Game.Levels[i].WorldActors.Contains(Game.player))
+                if (Game.Levels[i].WorldActors.Contains(Game.Player))
                     stream.Write(i, 2);
                 Game.Levels[i].WriteLevelSave("Save/level" + i + ".sv");
             }
@@ -201,10 +217,10 @@ namespace ODB
             Game.Seed = stream.ReadHex(8);
 
             string identifieds = stream.ReadString();
-            foreach (string ided in identifieds.Split(','))
+            foreach (string ided in identifieds.Split(',')
+                .Where(ided => ided != ""))
             {
-                if (ided == "") continue;
-                ItemDefinition.IdentifiedDefs.Add(IO.ReadHex(ided));
+                ItemDefinition.IdentifiedDefs.Add(ReadHex(ided));
             }
 
             Game.Level = Game.Levels[playerLocation];
@@ -223,8 +239,13 @@ namespace ODB
                     Byte[] info = new UTF8Encoding(true).GetBytes(content);
                     fs.Write(info, 0, info.Length);
                 }
-            } catch (Exception ex)
+            }
+            catch (UnauthorizedAccessException)
             {
+                Game.Log(
+                    "~ERROR~: Could not write to file " +
+                    cwd + "/" + path + " (Unauthorized access)."
+                );
             }
         }
         public static string ReadFromFile(string path)
@@ -250,15 +271,16 @@ namespace ODB
         public static string WriteItemDefinitionsToFile(string path)
         {
             string output = "";
-            //for (int i = 0; i < ItemDefinition.TypeCounter; i++)
+            //todo: probably a better way to do this.
+            //      saving/loading is sort of assumed to be pretty slow anyways
+            //      so it's not a huge deal. this is actually not even slow atm.
             for (int i = 0; i < 0xFFFF; i++)
             {
-                if (ItemDefinition.ItemDefinitions[i] != null)
-                {
-                    output +=
-                        ItemDefinition.ItemDefinitions[i].WriteItemDefinition();
-                    output += "##";
-                }
+                if (ItemDefinition.ItemDefinitions[i] == null) continue;
+
+                output +=
+                    ItemDefinition.ItemDefinitions[i].WriteItemDefinition();
+                output += "##";
             }
             WriteToFile(path, output);
             return output;
@@ -266,35 +288,30 @@ namespace ODB
         public static void ReadItemDefinitionsFromFile(string path)
         {
             while (ItemDefinition.ItemDefinitions[
-                ItemDefinition.TypeCounter
+                gObjectDefinition.TypeCounter
             ] != null)
-                ItemDefinition.TypeCounter++;
+                gObjectDefinition.TypeCounter++;
 
             string content = ReadFromFile(path);
-            List<string> itemStrings = content.Split(
-                new string[]{ "##" },
+            List<string> definitions = content.Split(
+                new[] { "##" },
                 StringSplitOptions.RemoveEmptyEntries
             ).ToList();
 
-            foreach (string definition in itemStrings)
-            {
-                ItemDefinition idef = new ItemDefinition(definition);
-            }
+            definitions.ForEach(definition => new ItemDefinition(definition));
         }
 
         public static string WriteActorDefinitionsToFile(string path)
         {
             string output = "";
-            //for (int i = 0; i < ActorDefinition.TypeCounter; i++)
             for (int i = 0; i < 0xFFFF; i++)
             {
-                if (ActorDefinition.ActorDefinitions[i] != null)
-                {
-                    output +=
-                        ActorDefinition.ActorDefinitions[i].
+                if (ActorDefinition.ActorDefinitions[i] == null) continue;
+
+                output +=
+                    ActorDefinition.ActorDefinitions[i].
                         WriteActorDefinition();
-                    output += "##";
-                }
+                output += "##";
             }
             WriteToFile(path, output);
             return output;
@@ -304,15 +321,12 @@ namespace ODB
             ActorDefinition.ActorDefinitions = new ActorDefinition[0xFFFF];
 
             string content = ReadFromFile(path);
-            List<string> itemStrings = content.Split(
-                new string[]{ "##" },
+            List<string> definitions = content.Split(
+                new[] { "##" },
                 StringSplitOptions.RemoveEmptyEntries
             ).ToList();
 
-            foreach (string definition in itemStrings)
-            {
-                ActorDefinition idef = new ActorDefinition(definition);
-            }
+            definitions.ForEach(definition => new ActorDefinition(definition));
         }
 
         public static Stream WriteTileDefinitionsToFile(string path)
@@ -320,14 +334,12 @@ namespace ODB
             Stream stream = new Stream();
             for (int i = 0; i < 0xFFFF; i++)
             {
-                if (TileDefinition.Definitions[i] != null)
-                {
-                    stream.Write(
-                        TileDefinition.Definitions[i].WriteTileDefinition()
+                if (TileDefinition.Definitions[i] == null) continue;
+                stream.Write(
+                    TileDefinition.Definitions[i].WriteTileDefinition()
                         .ToString(), false
                     );
-                    stream.Write("##", false);
-                }
+                stream.Write("##", false);
             }
             WriteToFile(path, stream.ToString());
             return stream;
@@ -335,14 +347,12 @@ namespace ODB
         public static void ReadTileDefinitionsFromFile(string path)
         {
             string content = ReadFromFile(path);
-            string[] definitions = content.Split(
-                new string[] { "##" },
+            List<string> definitions = content.Split(
+                new[] { "##" },
                 StringSplitOptions.RemoveEmptyEntries
-            );
-            for (int i = 0; i < definitions.Length; i++)
-            {
-                TileDefinition tdef = new TileDefinition(definitions[i]);
-            }
+            ).ToList();
+
+            definitions.ForEach(definition => new TileDefinition(definition));
         }
 
         public static string Write(Point p)
@@ -359,8 +369,10 @@ namespace ODB
             );
             return p;
         }
-        public static string WriteHex(int i, int len) {
-            return String.Format("{0:X"+len+"}", i);
+        public static string WriteHex(int i, int len)
+        {
+            string format = "{0:X"+len+"}";
+            return String.Format(format, i);
         }
         public static int ReadHex(string s) {
             return Int32.Parse(s, System.Globalization.NumberStyles.HexNumber);

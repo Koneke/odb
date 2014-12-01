@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.Linq;
 using Microsoft.Xna.Framework;
 
 namespace ODB
@@ -11,7 +11,7 @@ namespace ODB
             new ItemDefinition[0xFFFF];
 
         public static Dictionary<int, List<string>> Appearances =
-            new Dictionary<int, List<string>>()
+            new Dictionary<int, List<string>>
             {
                 {0, new List<string>{
                     "violet potion",
@@ -21,9 +21,9 @@ namespace ODB
         public static List<int> IdentifiedDefs = new List<int>();
 
         public string Damage;
-        public int AC;
-        public bool stacking;
-        public List<DollSlot> equipSlots;
+        public int ArmorClass;
+        public bool Stacking;
+        public List<DollSlot> EquipSlots;
         //ranged _weapons_
         public bool Ranged;
         public List<int> AmmoTypes;
@@ -33,41 +33,42 @@ namespace ODB
         public int UseEffect;
         //groups potions together and what not
         //mainly, unidentified items of different defs take from the same
-        //random appearance pool (but still only one appearance per def)
+        //random appearance pool (but still only one appearance per definition)
         public int Category;
         public int Nutrition;
 
         //saved in game file, not idef file
         public bool Identified {
-            get { return IdentifiedDefs.Contains(type); }
+            get { return IdentifiedDefs.Contains(Type); }
         }
 
         //creating a NEW definition
         public ItemDefinition(
-            Color? bg, Color fg,
+            Color? background, Color foreground,
             string tile, string name,
 
-            //item def specific stuff
-            string Damage = "",
-            int AC = 0,
+            //item definition specific stuff
+            string damage = "",
+            int armorClass = 0,
             bool stacking = false,
 
             List<DollSlot> equipSlots = null,
-            bool Ranged = false,
-            List<int> AmmoTypes = null,
-            int UseEffect = 0xFFFF // SPELL ID
+            bool ranged = false,
+            List<int> ammoTypes = null,
+            int useEffect = 0xFFFF // SPELL ID
 
-        ) : base(bg, fg, tile, name) {
-            this.Damage = Damage;
-            this.AC = AC;
-            this.stacking = stacking;
+        ) : base(background, foreground, tile, name) {
+            Damage = damage;
+            ArmorClass = armorClass;
+            Stacking = stacking;
 
-            this.equipSlots = equipSlots ?? new List<DollSlot>();
-            this.Ranged = Ranged;
-            this.AmmoTypes = AmmoTypes;
-            this.UseEffect = UseEffect;
+            //todo: should we really be doing this ?? biz here?
+            EquipSlots = equipSlots ?? new List<DollSlot>();
+            Ranged = ranged;
+            AmmoTypes = ammoTypes;
+            UseEffect = useEffect;
 
-            ItemDefinitions[this.type] = this;
+            ItemDefinitions[Type] = this;
         }
 
         public ItemDefinition(string s) : base(s)
@@ -78,23 +79,26 @@ namespace ODB
         public Stream ReadItemDefinition(string s)
         {
             Stream stream = ReadGObjectDefinition(s);
-            
+
             Damage = stream.ReadString();
-            AC = stream.ReadHex(2);
-            stacking = stream.ReadBool();
+            ArmorClass = stream.ReadHex(2);
+            Stacking = stream.ReadBool();
 
             string slots = stream.ReadString();
-            equipSlots = new List<DollSlot>();
-            foreach (string ss in slots.Split(','))
-                if(ss != "")
-                    equipSlots.Add((DollSlot)int.Parse(ss));
+            EquipSlots = new List<DollSlot>();
+            foreach (
+                string slot in slots.Split(',')
+                    .Where(ss => ss != ""))
+                EquipSlots.Add((DollSlot) int.Parse(slot));
 
-            Ranged = stream.ReadBool();
+        Ranged = stream.ReadBool();
 
             string ammos = stream.ReadString();
             AmmoTypes = new List<int>();
-            foreach (string ss in ammos.Split(','))
-                if(ss != "") AmmoTypes.Add(IO.ReadHex(ss));
+            foreach (
+                string ss in ammos.Split(',')
+                    .Where(ss => ss != ""))
+                AmmoTypes.Add(IO.ReadHex(ss));
 
             RangedDamage = stream.ReadString();
 
@@ -104,7 +108,7 @@ namespace ODB
 
             Nutrition = stream.ReadHex(4);
 
-            ItemDefinitions[type] = this;
+            ItemDefinitions[Type] = this;
             return stream;
         }
 
@@ -113,19 +117,19 @@ namespace ODB
             Stream stream = WriteGObjectDefinition();
 
             stream.Write(Damage);
-            stream.Write(AC, 2);
-            stream.Write(stacking);
+            stream.Write(ArmorClass, 2);
+            stream.Write(Stacking);
 
-            foreach (DollSlot ds in equipSlots)
+            foreach (DollSlot ds in EquipSlots)
                 stream.Write((int)ds + ",", false);
             stream.Write(";", false);
 
             stream.Write(Ranged);
 
             if(AmmoTypes != null)
-                foreach (int type in AmmoTypes)
+                foreach (int ammoType in AmmoTypes)
                 {
-                    stream.Write(type, 4);
+                    stream.Write(ammoType, 4);
                     stream.Write(",", false);
                 }
             stream.Write(";", false);
@@ -147,24 +151,29 @@ namespace ODB
         public static int IDCounter = 0;
 
         //instance specifics
-        public int id;
-        public int mod;
+        public int ID;
+        public int Mod;
         //can be used as charges for non-stacking?
         //-1 should be inf. charges?
-        public int count;
+        public int Count;
         public new ItemDefinition Definition;
         public List<Mod> Mods;
 
         //not to file
         public bool Charged;
 
-        //wrapping directly to the def for ease
-        public List<DollSlot> equipSlots {
-            get { return Definition.equipSlots; }
+        //wrapping directly to the definition for ease
+        public List<DollSlot> EquipSlots {
+            get { return Definition.EquipSlots; }
         }
 
-        public int type {
-            get { return Definition.type; }
+        public List<int> AmmoTypes
+        {
+            get { return Definition.AmmoTypes; }
+        } 
+
+        public int Type {
+            get { return Definition.Type; }
         }
 
         public Spell UseEffect
@@ -180,25 +189,25 @@ namespace ODB
         //SPAWNING a NEW item
         public Item(
             Point xy,
-            ItemDefinition def,
+            ItemDefinition definition,
             //might not make 100% sense, but non-stacking items are 0
             //this so we can easily separate stacking, nonstacking and charged
             int count = 0,
-            List<Mod> Mods = null
-        ) : base(xy, def) {
-            id = IDCounter++;
-            this.count = count;
-            this.Definition = def;
-            this.Mods = new List<Mod>();
-            if (Mods != null) this.Mods.AddRange(Mods);
-            Charged = !Definition.stacking && count > 0;
+            IEnumerable<Mod> mods = null
+        ) : base(xy, definition) {
+            ID = IDCounter++;
+            Count = count;
+            Definition = definition;
+            Mods = new List<Mod>();
+            if (mods != null) Mods.AddRange(mods);
+            Charged = !Definition.Stacking && count > 0;
         }
 
         //LOADING an OLD item
         public Item(string s) : base(s)
         {
             ReadItem(s);
-            Charged = !Definition.stacking && count > 0;
+            Charged = !Definition.Stacking && Count > 0;
         }
 
         public string GetName(
@@ -212,20 +221,20 @@ namespace ODB
                 name = ItemDefinition.Appearances
                     [Definition.Category].Shuffle()
                     [
-                        (Definition.type + Math.Abs(Game.Seed))
+                        (Definition.Type + Math.Abs(Game.Seed))
                         % ItemDefinition.Appearances[0].Count
                     ];
-            } else name = Definition.name;
+            } else name = Definition.Name;
 
-            string article = Util.article(name);
+            string article = Util.Article(name);
             if (definite) article = "the";
-            if (Definition.stacking && count > 1)
-                article = count + "x";
+            if (Definition.Stacking && Count > 1)
+                article = Count + "x";
 
             string s = (noArt ? "" : (article + " "));
 
             #region mods
-            if (Mods.Count > 0 && Identified) {
+            /*if (Mods.Count > 0 && Identified) {
                 switch (Mods[0].Type)
                 {
                     case ModType.AddStr: s += "fierce"; break;
@@ -240,14 +249,14 @@ namespace ODB
                     case ModType.DecQck: s += "lazy"; break;
                 }
                 s += " ";
-            }
+            }*/
             #endregion
 
             //s += Definition.name;
             s += name;
 
             #region mods
-            if (Mods.Count > 1 && Identified) {
+            /*if (Mods.Count > 1 && Identified) {
                 s += " of ";
                 switch (Mods[1].Type)
                 {
@@ -262,7 +271,7 @@ namespace ODB
                     case ModType.AddQck: s += "lightning"; break;
                     case ModType.DecQck: s += "dallying"; break;
                 }
-            }
+            }*/
             #endregion
 
             s = s.ToLower();
@@ -277,23 +286,23 @@ namespace ODB
             //bool blessed,
             //bool mods
         ) {
-            ItemDefinition.IdentifiedDefs.Add(type);
+            ItemDefinition.IdentifiedDefs.Add(Type);
         }
 
         public Stream WriteItem()
         {
             Stream stream = WriteGOBject();
 
-            stream.Write(Definition.type, 4);
-            stream.Write(id, 4);
-            stream.Write(mod, 2);
-            stream.Write(count, 2);
+            stream.Write(Definition.Type, 4);
+            stream.Write(ID, 4);
+            stream.Write(Mod, 2);
+            stream.Write(Count, 2);
 
             foreach (Mod m in Mods)
             {
                 stream.Write((int)m.Type, 2);
                 stream.Write(":", false);
-                stream.Write((int)m.Value, 2);
+                stream.Write(m.RawValue, 2);
                 stream.Write(",", false);
             }
             stream.Write(";", false);
@@ -309,20 +318,23 @@ namespace ODB
                     stream.ReadHex(4)
                 ];
             //are we actually setting the IDef.ItemDefinitions when loading..?
-            id = stream.ReadHex(4);
-            mod = stream.ReadHex(2);
-            count = stream.ReadHex(2);
+            ID = stream.ReadHex(4);
+            Mod = stream.ReadHex(2);
+            Count = stream.ReadHex(2);
 
             Mods = new List<Mod>();
-            string mods = stream.ReadString();
-            foreach (string ss in mods.Split(
-                new char[]{','}, StringSplitOptions.RemoveEmptyEntries))
+            List<string> mods = stream.ReadString().Split(
+                new[] {','},
+                StringSplitOptions.RemoveEmptyEntries
+            ).ToList();
+
+            foreach (string[] ss in mods.Select(mod => mod.Split(':')))
             {
-                Mod m = new Mod(
-                    (ModType)IO.ReadHex(ss.Split(':')[0]),
-                             IO.ReadHex(ss.Split(':')[1])
-                );
-                Mods.Add(m);
+                Mods.Add(new Mod(
+                    (ModType)
+                    IO.ReadHex(ss[0]),
+                    IO.ReadHex(ss[1])
+                ));
             }
 
             return stream;

@@ -1,22 +1,45 @@
 ﻿using System;
-using Microsoft.Xna.Framework;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ODB
 {
     public struct Point
     {
-        public int x, y;
+        public bool Equals(Point other)
+        {
+            return x == other.x && y == other.y;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            return obj is Point && Equals((Point) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return (x*397) ^ y;
+            }
+        }
+
+        //Keeping these lowercase simply because they are used so frequently
+        //ReSharper disable once InconsistentNaming
+        public int x;
+        //ReSharper disable once InconsistentNaming
+        public int y;
         
         public Point(int x, int y) {
             this.x = x;
             this.y = y;
         }
 
-        public void Nudge(int x, int y)
+        public void Nudge(int offsetX, int offsetY)
         {
-            this.x += x;
-            this.y += y;
+            x += offsetX;
+            y += offsetY;
         }
 
         public void Nudge(Point p)
@@ -47,7 +70,11 @@ namespace ODB
 
     public struct Rect
     {
-        public Point xy, wh;
+        //disabled for same reason as in point, used so frequently
+        //ReSharper disable once InconsistentNaming
+        public Point xy;
+        //ReSharper disable once InconsistentNaming
+        public Point wh;
 
         public Rect(Point xy, Point wh)
         {
@@ -67,14 +94,14 @@ namespace ODB
 
     public class Room
     {
-        public List<Rect> rects;
+        public List<Rect> Rects;
 
         //should not be saved to file
         public List<Room> Linked;
 
         public Room()
         {
-            rects = new List<Rect>();
+            Rects = new List<Rect>();
             Linked = new List<Room>();
         }
 
@@ -86,19 +113,15 @@ namespace ODB
 
         public bool ContainsPoint(Point p)
         {
-            foreach (Rect r in rects)
-            {
-                if (r.ContainsPoint(p)) return true;
-            }
-            return false;
+            return Rects.Any(r => r.ContainsPoint(p));
         }
 
         //should probably switch to stream for ease
         public string WriteRoom()
         {
             string output = "";
-            output += IO.WriteHex(rects.Count, 2);
-            foreach (Rect r in rects)
+            output += IO.WriteHex(Rects.Count, 2);
+            foreach (Rect r in Rects)
             {
                 output += IO.Write(r.xy);
                 output += IO.Write(r.wh);
@@ -110,10 +133,10 @@ namespace ODB
         {
             Stream stream = new Stream(s);
             int numRects = stream.ReadHex(2);
-            rects = new List<Rect>();
+            Rects = new List<Rect>();
             for (int i = 0; i < numRects; i++)
             {
-                rects.Add(new Rect(
+                Rects.Add(new Rect(
                     stream.ReadPoint(),
                     stream.ReadPoint()
                     )
@@ -134,50 +157,58 @@ namespace ODB
         Hand,
         Legs,
         Feet,
-        Quiver
+        //Quiver
     }
 
     public class BodyPart
     {
         public DollSlot Type;
         public Item Item;
-        public BodyPart(DollSlot Type, Item Item = null)
+        public BodyPart(DollSlot type, Item item = null)
         {
-            this.Type = Type;
-            this.Item = Item;
+            Type = type;
+            Item = item;
         }
     }
 
-    class Pair<T, S>
+    class Pair<T, TS>
     {
-        T first;
-        S second;
+        T _first;
+        TS _second;
 
-        public Pair(T a, S b)
+        public Pair(T a, TS b)
         {
-            first = a;
-            second = b;
+            _first = a;
+            _second = b;
         }
     }
 
     public enum ModType
     {
-        AddStr, DecStr,
-        AddDex, DecDex,
-        AddInt, DecInt,
-        AddSpd, DecSpd,
-        AddQck, DecQck,
-        AddHPm, DecHPm,
+        Strength,
+        Dexterity,
+        Intelligence,
+        Speed,
+        Quickness,
+        HpMax,
         PoisonRes
     }
 
     public class Mod {
         public ModType Type;
-        public int Value;
-        public Mod(ModType Type, int Value)
+        public int RawValue;
+        public Mod(ModType type, int rawValue)
         {
-            this.Type = Type;
-            this.Value = Value;
+            Type = type;
+            RawValue = rawValue;
+        }
+
+        public int GetValue()
+        {
+            //decimal 64 = 0
+            //lower values are negative mods
+            //higher positive ones
+            return RawValue - 0x40;
         }
     }
 
@@ -185,7 +216,7 @@ namespace ODB
     {
         public static Spell[] Spells = new Spell[0xFFFF];
         public static int IDCounter = 0;
-        public int id;
+        public int ID;
 
         public string Name;
         //0 should mean self-cast..? (or just non-targetted)
@@ -195,21 +226,33 @@ namespace ODB
         public int CastDifficulty;
         public List<Action<Actor, Point>> Effects;
 
-        public Spell(
-            string Name,
-            List<Action<Actor, Point>> Effects,
-            int Cost = 0,
-            int CastDifficulty = 0,
-            int Range = 0
-        ) {
-            this.id = IDCounter++;
-            this.Name = Name;
-            this.Range = Range;
-            this.Cost = Cost;
-            this.CastDifficulty = CastDifficulty;
-            this.Effects = Effects;
+        //LH-011214: (Almost) empty constructor to be used with initalizer
+        //           blocks. Using them simply because it is easier to skim
+        //           quickly if you have both the value and what it actually is
+        //           (i.e. castcost or what not).
+        public Spell(string name)
+        {
+            Name = name;
 
-            Spells[id] = this;
+            ID = IDCounter++;
+            Spells[ID] = this;
+        }
+
+        public Spell(
+            string name,
+            List<Action<Actor, Point>> effects,
+            int cost = 0,
+            int castDifficulty = 0,
+            int range = 0
+        ) {
+            ID = IDCounter++;
+            Name = name;
+            Range = range;
+            Cost = cost;
+            CastDifficulty = castDifficulty;
+            Effects = effects;
+
+            Spells[ID] = this;
         }
 
         public Projectile Cast(Actor caster, Point target)
@@ -218,7 +261,7 @@ namespace ODB
             if(Effects != null)
                 p.Effects = new List<Action<Actor, Point>>(Effects);
             p.Caster = caster;
-            p.origin = caster.xy;
+            p.Origin = caster.xy;
             p.Delta = target - caster.xy;
             //don't try to go further than we targeted
             p.Range = Math.Max(
@@ -238,13 +281,14 @@ namespace ODB
         public int Range;
         public int Moved;
         public bool Die;
+        //ReSharper disable once InconsistentNaming
         public Point xy;
-        public Point origin;
+        public Point Origin;
         public Point Delta;
         public List<Action<Actor, Point>> Effects;
         public Actor Caster;
 
-        void calculatePosition()
+        private void CalculatePosition()
         {
             float deltaRatio;
             int offs;
@@ -253,15 +297,17 @@ namespace ODB
 
             if(Delta.x == 0) {
                 xy = new Point(
-                    origin.x,
-                    origin.y + Math.Sign(Delta.y) * Moved
+                    Origin.x,
+                    Origin.y + Math.Sign(Delta.y) * Moved
                 );
                 return;
             }
+            //ReSharper disable once RedundantIfElseBlock
+            //LH-01214: but it isn't redundant..?
             else if(Delta.y == 0) {
                 xy = new Point(
-                    origin.x + Math.Sign(Delta.x) * Moved,
-                    origin.y
+                    Origin.x + Math.Sign(Delta.x) * Moved,
+                    Origin.y
                 );
                 return;
             }
@@ -274,7 +320,7 @@ namespace ODB
                 x = Moved + offs;
                 y = (int)((x - (x % deltaRatio)) / deltaRatio);
 
-                xy = origin + new Point(
+                xy = Origin + new Point(
                     Math.Sign(Delta.x) * Moved,
                     Math.Sign(Delta.y) * y
                 );
@@ -287,14 +333,14 @@ namespace ODB
                 y = Moved + offs;
                 x = (int)((y - (y % deltaRatio)) / deltaRatio);
 
-                xy = origin + new Point(
+                xy = Origin + new Point(
                     Math.Sign(Delta.x) * x,
                     Math.Sign(Delta.y) * Moved
                 );
             }
             else
             {
-                xy = origin + new Point(
+                xy = Origin + new Point(
                     Math.Sign(Delta.x) * Moved,
                     Math.Sign(Delta.y) * Moved
                 );
@@ -303,23 +349,23 @@ namespace ODB
 
         public void Move()
         {
-            calculatePosition();
+            CalculatePosition();
 
             if (Moved < Range) {
                 Moved++;
-                calculatePosition();
+                CalculatePosition();
             }
             if (Util.Game.Level.Map[xy.x, xy.y] == null)
             {
                 Moved--;
-                calculatePosition();
+                CalculatePosition();
                 Die = true;
             }
             else if (Util.Game.Level.Map[xy.x, xy.y].solid)
             {
                 //unmove
                 Moved--;
-                calculatePosition();
+                CalculatePosition();
                 Die = true;
             }
             if (Moved >= Range) Die = true;
@@ -332,6 +378,10 @@ namespace ODB
                 foreach(Action<Actor, Point> effect in Effects)
                     effect(Caster, xy);
 
+            //LH-011214: Intended recursion. Kills itself when it either hits
+            //           a wall or an actor (or runs out of range).
+            //           Since we're not bothering with projectile speed atm,
+            //           we just go 'til we can't.
             if (!Die) Move();
         }
     }
@@ -340,6 +390,7 @@ namespace ODB
     {
         Stun,
         Confusion,
+        Sleep
     }
 
     public class LastingEffect
@@ -356,11 +407,11 @@ namespace ODB
         public int Life;
 
         public LastingEffect(
-            StatusType Type,
-            int Life
+            StatusType type,
+            int life
         ) {
-            this.Type = Type;
-            this.Life = Life;
+            Type = type;
+            Life = life;
         }
 
         public LastingEffect(string s)

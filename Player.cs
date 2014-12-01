@@ -1,6 +1,6 @@
-﻿using System.Linq;
+﻿using System;
 using System.Collections.Generic;
-
+using System.Linq;
 using Microsoft.Xna.Framework.Input;
 
 namespace ODB
@@ -11,12 +11,12 @@ namespace ODB
 
         public static void PlayerInput()
         {
-            if (Game.player.hpCurrent <= 0) return;
+            if (Game.Player.HpCurrent <= 0) return;
             //should probably be moved into some 'input-preprocess',
             //since we do the same thing for brains
-            if (Game.player.HasEffect(StatusType.Stun))
+            if (Game.Player.HasEffect(StatusType.Stun))
             {
-                Game.player.Pass(Game.standardActionLength);
+                Game.Player.Pass(Game.StandardActionLength);
                 return;
             }
 
@@ -27,7 +27,7 @@ namespace ODB
             #region looking at our new tile
             if (moved)
             {
-                Game.Target = Game.player.xy;
+                Game.Target = Game.Player.xy;
                 PlayerResponses.Examine(false);
             }
             #endregion
@@ -36,7 +36,8 @@ namespace ODB
             CheckDrop();
             CheckWieldWear();
             CheckSheathRemove();
-            CheckDoors();
+            CheckOpen();
+            CheckClose();
             CheckZap();
             CheckApply();
             CheckFire();
@@ -49,10 +50,10 @@ namespace ODB
         static bool MovementInput()
         {
             #region stairs
-            if (IO.KeyPressed(Keys.OemPeriod) && IO.shift)
+            if (IO.KeyPressed(Keys.OemPeriod) && IO.Shift)
                 if (Game.Level.Map[
-                    Game.player.xy.x,
-                    Game.player.xy.y].Stairs == Stairs.Down)
+                    Game.Player.xy.x,
+                    Game.Player.xy.y].Stairs == Stairs.Down)
                 {
                     int depth = Game.Levels.IndexOf(Game.Level);
                     if (depth + 1 <= Game.Levels.Count - 1)
@@ -62,10 +63,10 @@ namespace ODB
                     }
                 }
 
-            if (IO.KeyPressed(Keys.OemComma) && IO.shift)
+            if (IO.KeyPressed(Keys.OemComma) && IO.Shift)
                 if (Game.Level.Map[
-                    Game.player.xy.x,
-                    Game.player.xy.y].Stairs == Stairs.Up)
+                    Game.Player.xy.x,
+                    Game.Player.xy.y].Stairs == Stairs.Up)
                 {
                     int depth = Game.Levels.IndexOf(Game.Level);
                     if (depth - 1 >= 0)
@@ -87,366 +88,353 @@ namespace ODB
             else if (IO.KeyPressed(Keys.NumPad4)) offset.Nudge(-1, 0);
             else if (IO.KeyPressed(Keys.NumPad7)) offset.Nudge(-1, -1);
 
-            if (IO.KeyPressed(Keys.NumPad5)) Game.player.Pass(true);
+            if (IO.KeyPressed(Keys.NumPad5)) Game.Player.Pass(true);
 
             if (offset.x == 0 && offset.y == 0) return false;
 
-            return Game.player.TryMove(offset);
+            return Game.Player.TryMove(offset);
         }
 
         static void CheckGet()
         {
             if (
-                (IO.KeyPressed(Keys.G) && !IO.shift) ||
-                (IO.KeyPressed(Keys.OemComma) && !IO.shift)
-            ) {
-                List<Item> onFloor = Game.Level.ItemsOnTile(Game.player.xy);
-                if (onFloor.Count > 1)
-                {
-                    string _q = "Pick up what? [";
-                    IO.AcceptedInput.Clear();
-                    for (int i = 0; i < onFloor.Count; i++)
-                    {
-                        char index = IO.indexes[i];
-                        _q += index;
-                        IO.AcceptedInput.Add(IO.indexes[i]);
-                    }
-                    _q += "]";
+                (!IO.KeyPressed(Keys.G) || IO.Shift) &&
+                (!IO.KeyPressed(Keys.OemComma) || IO.Shift)
+            ) return;
 
-                    IO.AskPlayer(
-                        _q,
-                        InputType.QuestionPromptSingle,
-                        PlayerResponses.Get
-                    );
-                }
-                //just more convenient this way
-                else if (onFloor.Count > 0)
+            List<Item> onFloor = Game.Level.ItemsOnTile(Game.Player.xy);
+            if (onFloor.Count > 1)
+            {
+                string question = "Pick up what? [";
+                IO.AcceptedInput.Clear();
+                for (int i = 0; i < onFloor.Count; i++)
                 {
-                    Game.qpAnswerStack.Push("a");
-                    PlayerResponses.Get();
+                    char index = IO.Indexes[i];
+                    question += index;
+                    IO.AcceptedInput.Add(IO.Indexes[i]);
                 }
+                question += "]";
+
+                IO.AskPlayer(
+                    question,
+                    InputType.QuestionPromptSingle,
+                    PlayerResponses.Get
+                );
+            }
+            //just more convenient this way
+            else if (onFloor.Count > 0)
+            {
+                Game.QpAnswerStack.Push("a");
+                PlayerResponses.Get();
             }
         }
 
         static void CheckDrop()
         {
-            if (IO.KeyPressed(Keys.D) && !IO.shift)
-            {
-                string _q = "Drop what? [";
-                IO.AcceptedInput.Clear();
-                for (int i = 0; i < Game.player.Inventory.Count; i++)
-                {
-                    char index = IO.indexes[i];
-                    _q += index;
-                    IO.AcceptedInput.Add(IO.indexes[i]);
-                }
-                _q += "]";
+            if (!IO.KeyPressed(Keys.D) || IO.Shift) return;
 
-                IO.AskPlayer(
-                    _q,
-                    InputType.QuestionPromptSingle,
-                    PlayerResponses.Drop
-                );
+            string question = "Drop what? [";
+            IO.AcceptedInput.Clear();
+            for (int i = 0; i < Game.Player.Inventory.Count; i++)
+            {
+                char index = IO.Indexes[i];
+                question += index;
+                IO.AcceptedInput.Add(IO.Indexes[i]);
             }
+            question += "]";
+
+            IO.AskPlayer(
+                question,
+                InputType.QuestionPromptSingle,
+                PlayerResponses.Drop
+            );
         }
 
         static void CheckWieldWear()
         {
-            bool wield = IO.KeyPressed(Keys.W) && !IO.shift;
-            bool wear = IO.KeyPressed(Keys.W) && IO.shift;
+            //todo: in reality, shouldn't in essence everything be wieldable?
+            //      just like everything is quiverable? like, wielding just
+            //      requires you to hold the item in your hand really.
+            //      might want to make a strength/size check or something, but
+            //      that really should be about it.
+            bool wield = IO.KeyPressed(Keys.W) && !IO.Shift;
+            bool wear = IO.KeyPressed(Keys.W) && IO.Shift;
 
-            if (wield || wear)
+            if (!wield && !wear) return;
+
+            List<Item> equipables =
+                wield ?
+                    Game.Player.Inventory
+                        .FindAll(x => x.EquipSlots.Contains(DollSlot.Hand))
+                        .Where(x => x.EquipSlots.Count > 0)
+                        .ToList() :
+                    Game.Player.Inventory
+                        .FindAll(x => !x.EquipSlots.Contains(DollSlot.Hand))
+                        .Where(x => x.EquipSlots.Count > 0)
+                        .ToList();
+
+            //remove items we've already equipped from the
+            //list of potential items to equip
+            foreach (Item item in Game.Player.GetEquippedItems())
+                equipables.Remove(item);
+
+            if (equipables.Count > 0)
             {
-                List<Item> equipables = new List<Item>();
+                string question =
+                    (IO.Shift ? "Wear" : "Wield") + " what? [";
 
-                foreach (Item it in Game.player.Inventory)
-                {
-                    if (wield && it.equipSlots.Contains(DollSlot.Hand))
-                        equipables.Add(it);
-                    else if (
-                        wear &&
-                        !it.equipSlots.Contains(DollSlot.Hand) &&
-                        !it.equipSlots.Contains(DollSlot.Quiver)
-                    )
-                        equipables.Add(it);
-                }
-
-                //remove items we've already equipped from the
-                //list of potential items to equip
-                foreach (Item item in Game.player.GetEquippedItems())
-                    equipables.Remove(item);
-
-                if (equipables.Count > 0)
-                {
-                    string _q = (IO.shift ? "Wear" : "Wield") + " what? [";
-                    IO.AcceptedInput.Clear();
-                    foreach (Item it in equipables)
-                    {
-                        char index = IO.indexes[
-                            Game.player.Inventory.IndexOf(it)
-                        ];
-                        _q += index;
+                IO.AcceptedInput.Clear();
+                foreach (char index in equipables
+                        .Select(item => IO.Indexes
+                            [Game.Player.Inventory.IndexOf(item)])
+                    ) {
+                        question += index;
                         IO.AcceptedInput.Add(index);
                     }
-                    _q += "]";
 
-                    if(wield)
-                        IO.AskPlayer(
-                            _q,
-                            InputType.QuestionPromptSingle,
-                            PlayerResponses.Wield
-                        );
-                    else
-                        IO.AskPlayer(
-                            _q,
-                            InputType.QuestionPromptSingle,
-                            PlayerResponses.Wear
-                        );
-                }
+                question += "]";
+
+                if(wield)
+                    IO.AskPlayer(
+                        question,
+                        InputType.QuestionPromptSingle,
+                        PlayerResponses.Wield
+                    );
                 else
-                {
-                    Game.Log("Nothing to " +
-                        (wield ? "wield" : "wear") + ".");
-                }
+                    IO.AskPlayer(
+                        question,
+                        InputType.QuestionPromptSingle,
+                        PlayerResponses.Wear
+                    );
             }
-
+            else Game.Log("Nothing to " + (wield ? "wield" : "wear") + ".");
         }
 
         static void CheckSheathRemove()
         {
-            bool sheath = IO.KeyPressed(Keys.S) && IO.shift;
-            bool remove = IO.KeyPressed(Keys.R) && IO.shift;
-            if (sheath || remove)
+            bool sheath = IO.KeyPressed(Keys.S) && IO.Shift;
+            bool remove = IO.KeyPressed(Keys.R) && IO.Shift;
+            if (!sheath && !remove) return;
+
+            List<Item> equipped;
+
+            if(sheath)
+                equipped = (
+                    from bp in Game.Player.PaperDoll
+                    where bp.Item != null
+                    where bp.Item.EquipSlots.Contains(DollSlot.Hand)
+                    select bp.Item
+                ).ToList();
+            else
+                equipped = (
+                    from bp in Game.Player.PaperDoll
+                    where bp.Item != null
+                    where bp.Item.EquipSlots.All(x => x != DollSlot.Hand)
+                    select bp.Item
+                ).ToList();
+
+            if (equipped.Count > 0)
             {
-                List<Item> equipped = new List<Item>();
-                foreach (
-                    BodyPart bp in Game.player.PaperDoll.FindAll(
-                        x =>
-                            (x.Type == DollSlot.Hand && sheath) ||
-                            (x.Type != DollSlot.Hand && remove)
-                    )
+                string question = 
+                    (sheath ? "Sheath" : "Remove") + " what? [";
+                IO.AcceptedInput.Clear();
+
+                foreach (char index in equipped
+                    .Select(it => IO.Indexes[Game.Player.Inventory.IndexOf(it)])
+                    .Where(index => !IO.AcceptedInput.Contains(index))
                 ) {
-                    if (bp.Item != null)
-                        equipped.Add(bp.Item);
+                    question += index;
+                    IO.AcceptedInput.Add(index);
                 }
 
-                if (equipped.Count > 0)
-                {
-                    string _q = (sheath ? "Sheath" : "Remove")+" what? [";
-                    IO.AcceptedInput.Clear();
-                    foreach (Item it in equipped)
-                    {
-                        char index = IO.indexes[
-                            Game.player.Inventory.IndexOf(it)
-                        ];
-                        if (!IO.AcceptedInput.Contains(index))
-                        {
-                            _q += index;
-                            IO.AcceptedInput.Add(index);
-                        }
-                    }
-                    _q += "]";
+                question += "]";
 
-                    if(sheath)
-                        IO.AskPlayer(
-                            _q,
-                            InputType.QuestionPromptSingle,
-                            PlayerResponses.Sheath
-                        );
-                    else
-                        IO.AskPlayer(
-                            _q,
-                            InputType.QuestionPromptSingle,
-                            PlayerResponses.Remove
-                        );
-                }
+                if(sheath)
+                    IO.AskPlayer(
+                        question,
+                        InputType.QuestionPromptSingle,
+                        PlayerResponses.Sheath
+                    );
                 else
-                {
-                    Game.Log("Nothing to " +
-                        (sheath ? "sheath." : "remove.")
+                    IO.AskPlayer(
+                        question,
+                        InputType.QuestionPromptSingle,
+                        PlayerResponses.Remove
                     );
-                }
+            }
+            else
+            {
+                Game.Log("Nothing to " +
+                         (sheath ? "sheath." : "remove.")
+                    );
             }
         }
 
-        static void CheckDoors()
+        static void CheckOpen()
         {
-            #region open/close
-            if (IO.KeyPressed(Keys.O) && !IO.shift)
-            {
-                IO.AcceptedInput.Clear();
+            if (!IO.KeyPressed(Keys.O) || IO.Shift) return;
 
-                for(int i = (int)Keys.NumPad1; i <= (int)Keys.NumPad9; i++)
-                    IO.AcceptedInput.Add(
-                        (char)(48 + i - Keys.NumPad0)
-                    );
-                
-                IO.AskPlayer(
-                    "Open where?",
-                    InputType.QuestionPromptSingle,
-                    PlayerResponses.Open
+            IO.AcceptedInput.Clear();
+
+            for(int i = (int)Keys.NumPad1; i <= (int)Keys.NumPad9; i++)
+                IO.AcceptedInput.Add(
+                    (char)(48 + i - Keys.NumPad0)
                 );
-            }
-
-            if (IO.KeyPressed(Keys.C) && !IO.shift)
-            {
-                IO.AcceptedInput.Clear();
-
-                for(int i = (int)Keys.NumPad1; i <= (int)Keys.NumPad9; i++)
-                    IO.AcceptedInput.Add(
-                        (char)(48 + i - Keys.NumPad0)
-                    );
                 
-                IO.AskPlayer(
-                    "Close where?",
-                    InputType.QuestionPromptSingle,
-                    PlayerResponses.Close
-                );
-            }
-            #endregion
+            IO.AskPlayer(
+                "Open where?",
+                InputType.QuestionPromptSingle,
+                PlayerResponses.Open
+            );
+        }
+
+        private static void CheckClose()
+        {
+            if (!IO.KeyPressed(Keys.C) || IO.Shift) return;
+
+            IO.AcceptedInput.Clear();
+
+            for(int i = (int)Keys.NumPad1; i <= (int)Keys.NumPad9; i++)
+                IO.AcceptedInput.Add((char)(48 + i - Keys.NumPad0));
+                
+            IO.AskPlayer(
+                "Close where?",
+                InputType.QuestionPromptSingle,
+                PlayerResponses.Close
+            );
 
         }
+
 
         static void CheckZap()
         {
-            if (IO.KeyPressed(Keys.Z) && !IO.shift)
-            {
-                string _q = "Cast what? [";
-                IO.AcceptedInput.Clear();
-                for (int i = 0; i < Game.player.Spellbook.Count; i++)
-                {
-                    char index = IO.indexes[i];
-                    _q += index;
-                    IO.AcceptedInput.Add(index);
-                }
-                _q += "]";
+            if (!IO.KeyPressed(Keys.Z) || IO.Shift) return;
 
-                IO.AskPlayer(
-                    _q,
-                    InputType.QuestionPromptSingle,
-                    PlayerResponses.Zap
-                );
+            string question = "Cast what? [";
+            IO.AcceptedInput.Clear();
+
+            for (int i = 0; i < Game.Player.Spellbook.Count; i++)
+            {
+                char index = IO.Indexes[i];
+                question += index;
+                IO.AcceptedInput.Add(index);
             }
+
+            question += "]";
+
+            IO.AskPlayer(
+                question,
+                InputType.QuestionPromptSingle,
+                PlayerResponses.Zap
+            );
         }
 
         static void CheckApply()
         {
-            if (IO.KeyPressed(Keys.A) && !IO.shift)
-            {
-                string _q = "Use what? [";
-                IO.AcceptedInput.Clear();
-                for (int i = 0; i < Game.player.Inventory.Count; i++)
-                {
-                    if (Game.player.Inventory[i].UseEffect != null)
-                    {
-                        char index = IO.indexes[i];
-                        _q += index;
-                        IO.AcceptedInput.Add(index);
-                    }
-                }
-                _q += "]";
+            if (!IO.KeyPressed(Keys.A) || IO.Shift) return;
 
-                IO.AskPlayer(
-                    _q,
-                    InputType.QuestionPromptSingle,
-                    PlayerResponses.Use
-                );
+            string question = "Use what? [";
+
+            IO.AcceptedInput.Clear();
+            for (int i = 0; i < Game.Player.Inventory.Count; i++)
+            {
+                if (Game.Player.Inventory[i].UseEffect == null) continue;
+
+                char index = IO.Indexes[i];
+                question += index;
+                IO.AcceptedInput.Add(index);
             }
+
+            question += "]";
+
+            IO.AskPlayer(
+                question,
+                InputType.QuestionPromptSingle,
+                PlayerResponses.Use
+            );
         }
 
         static void CheckFire()
         {
-            if (IO.KeyPressed(Keys.F) && !IO.shift)
+            if (!IO.KeyPressed(Keys.F) || IO.Shift) return;
+
+            //todo: throwing
+            //      if we pressed T instead, allow items in hands as ammo
+            Item ammo = Game.Player.Quiver;
+
+            if (ammo == null)
             {
-                Item weapon = null;
-                Item ammo = null;
-
-                foreach (Item it in Game.player.GetEquippedItems())
-                    if (it.Definition.Ranged)
-                        weapon = it;
-
-                //future: if we pressed T instead, allow items in hands as
-                //ammo
-                foreach (BodyPart bp in Game.player.GetSlots(DollSlot.Quiver))
-                {
-                    if (bp.Item == null) continue;
-                    //for now, only allowing one item at a time in the quiver
-                    ammo = bp.Item; break;
-                }
-
-                if (ammo == null)
-                {
-                    Game.Log("You need something to fire.");
-                    return;
-                }
-
-                bool throwing = false;
-                if (!(ammo == null))
-                {
-                    //weapon and appropriate ammo
-                    if (weapon != null)
-                    {
-                        if (weapon.Definition.AmmoTypes.Contains(ammo.type))
-                            throwing = false;
-                        else throwing = true;
-                    }
-                    //ammo
-                    else throwing = true;
-                }
-
-                if (!throwing && weapon == null)
-                {
-                    Game.Log("You need something to fire with.");
-                    return;
-                }
-
-                string _q;
-                if(throwing)
-                    _q = "Throwing your " + ammo.Definition.name;
-                else
-                    _q = "Firing your " + weapon.Definition.name;
-
-                IO.AskPlayer(
-                    _q,
-                    InputType.Targeting,
-                    PlayerResponses.Fire
-                );
+                Game.Log("You need something to fire.");
+                return;
             }
+
+            //todo: notice! this only finds the FIRST weapon
+            //      with this type of ammo! theoretically, you CAN have
+            //      e.g. two bows wielded at once, if you have enough hands
+            //      (and considering the genre of game, "2" is not an obvious
+            //      answer to that question).
+            //      for now, just get first one, if it becomes an issue the
+            //      player will have to work around it.
+            Item weapon = Game.Player.GetEquippedItems()
+                .Find(item => item.AmmoTypes.Contains(ammo.Type));
+
+            bool throwing;
+
+            //weapon and appropriate ammo?
+            //todo: get all items in hands
+            //      check if any one of them has a matching ammo type to
+            //      quiver. that one is then our weapon used to fire.
+            if (weapon != null)
+                throwing = !weapon.Definition.AmmoTypes.Contains(ammo.Type);
+                //just some sort of ammo
+            else throwing = true;
+
+            string question = String.Format(
+                "{0} your {1}",
+                throwing ? "Throwing" : "Firing",
+                throwing ? ammo.Definition.Name : weapon.Definition.Name
+            );
+
+            IO.AskPlayer(
+                question,
+                InputType.Targeting,
+                PlayerResponses.Fire
+            );
         }
 
         static void CheckQuiver()
         {
-            if (IO.KeyPressed(Keys.Q) && IO.shift)
-            {
-                string _q = "Quiver what? [";
-                
-                IO.AcceptedInput.Clear();
-                foreach (Item it in Game.player.Inventory)
-                {
-                    if (it.Definition.equipSlots.Contains(DollSlot.Quiver))
-                    {
-                        char index = IO.indexes[
-                            Game.player.Inventory.IndexOf(it)
-                        ];
-                        _q += index;
-                        IO.AcceptedInput.Add(index);
-                    }
-                }
-                _q += "]";
+            //todo: like mentioned in the checkwield comment
+            //      might want to make a size check or something here.
+            //      quivering an orc corpse sounds a bit so-so...
+            if (!IO.KeyPressed(Keys.Q) || !IO.Shift) return;
 
-                if (IO.AcceptedInput.Count > 0)
-                    IO.AskPlayer(
-                        _q,
-                        InputType.QuestionPromptSingle,
-                        PlayerResponses.Quiver
-                    );
-                else Game.Log("You have nothing to quiver.");
-            }
+            string question = "Quiver what? [";
+                
+            IO.AcceptedInput.Clear();
+            foreach (
+                char index in Game.Player.Inventory
+                    .Where(it => !Game.Player.IsEquipped(it))
+                    .Select(it => IO.Indexes[Game.Player.Inventory.IndexOf(it)])
+                ) {
+                    question += index;
+                    IO.AcceptedInput.Add(index);
+                }
+
+            question += "]";
+
+            if (IO.AcceptedInput.Count > 0)
+                IO.AskPlayer(
+                    question,
+                    InputType.QuestionPromptSingle,
+                    PlayerResponses.Quiver
+                );
+            else Game.Log("You have nothing to quiver.");
         }
 
         static void CheckLook()
         {
-            if (IO.KeyPressed(Keys.OemSemicolon) && IO.shift)
+            if (IO.KeyPressed(Keys.OemSemicolon) && IO.Shift)
             {
                 IO.AskPlayer(
                     "Examine what?",
@@ -458,30 +446,28 @@ namespace ODB
 
         static void CheckEat()
         {
-            if (IO.KeyPressed(Keys.E) && !IO.shift)
-            {
-                string _q = "Eat what? [";
-                IO.AcceptedInput.Clear();
-                foreach(Item it in Game.player.Inventory) {
-                    if (it.Definition.Nutrition > 0)
-                    {
-                        char index = IO.indexes[
-                            Game.player.Inventory.IndexOf(it)
-                        ];
-                        _q += index;
-                        IO.AcceptedInput.Add(index);
-                    }
-                }
-                _q += "]";
+            if (!IO.KeyPressed(Keys.E) || IO.Shift) return;
 
-                if (IO.AcceptedInput.Count > 0)
-                    IO.AskPlayer(
-                        _q,
-                        InputType.QuestionPromptSingle,
-                        PlayerResponses.Eat
+            string question = "Eat what? [";
+            IO.AcceptedInput.Clear();
+            foreach (
+                char index in
+                    from item in Game.Player.Inventory
+                    where item.Definition.Nutrition > 0
+                select IO.Indexes[Game.Player.Inventory.IndexOf(item)]
+                ) {
+                    question += index;
+                    IO.AcceptedInput.Add(index);
+                }
+            question += "]";
+
+            if (IO.AcceptedInput.Count > 0)
+                IO.AskPlayer(
+                    question,
+                    InputType.QuestionPromptSingle,
+                    PlayerResponses.Eat
                     );
-                else Game.Log("You have nothing to eat.");
-            }
+            else Game.Log("You have nothing to eat.");
         }
     }
 }

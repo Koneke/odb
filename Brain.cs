@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace ODB
 {
@@ -13,7 +12,7 @@ namespace ODB
 
         public Brain(Actor meatPuppet)
         {
-            this.MeatPuppet = meatPuppet;
+            MeatPuppet = meatPuppet;
         }
 
         public void Tick()
@@ -25,19 +24,17 @@ namespace ODB
 
             if (MeatPuppet.HasEffect(StatusType.Stun))
             {
-                MeatPuppet.Pass(Game.standardActionLength);
+                MeatPuppet.Pass(Game.StandardActionLength);
                 return;
             }
 
             List<Room> route = 
                 Util.FindRouteToPoint(
-                    MeatPuppet.xy, Game.player.xy
+                    MeatPuppet.xy, Game.Player.xy
                 );
-            Point goal;
-            if (route != null)
-                goal = Util.NextGoalOnRoute(MeatPuppet.xy, route);
-            else
-                goal = Game.player.xy;
+            Point goal = route == null ?
+                Game.Player.xy :
+                Util.NextGoalOnRoute(MeatPuppet.xy, route);
 
             Point offset = new Point(
                 goal.x - MeatPuppet.xy.x,
@@ -51,23 +48,21 @@ namespace ODB
 
             Point target = offset + MeatPuppet.xy;
 
-            if (Game.Level.ActorOnTile(target) == Game.player)
+            if (Game.Level.ActorOnTile(target) == Game.Player)
             {
-                Spell touchAttack = null;
                 //if we have an available, guaranteed castable touch attack
                 //just use that instead
                 //in the future, consider using non guaranteed as well
                 //and actually use them at range at times
-                foreach (Spell spell in MeatPuppet.Spellbook)
-                    if (
+                Spell touchAttack = MeatPuppet.Spellbook.Find(
+                    spell =>
                         spell.CastDifficulty <=
-                        MeatPuppet.Get(Stat.Intelligence) + 1 &&
-                        spell.Range >= 1
-                    ) touchAttack = spell;
-                if (touchAttack == null)
-                    MeatPuppet.Attack(Game.player);
-                else
-                    MeatPuppet.Cast(touchAttack, Game.player.xy, true);
+                        MeatPuppet.Get(Stat.Intelligence) &&
+                        spell.Range >= 1);
+
+                if (touchAttack == null) MeatPuppet.Attack(Game.Player);
+                else MeatPuppet.Cast(touchAttack, Game.Player.xy, true);
+
                 MeatPuppet.Pass();
             }
             else
@@ -91,10 +86,10 @@ namespace ODB
                         moveTo.y
                     ].Door == Door.Closed) {
                         Game.Level.Map[moveTo.x, moveTo.y].Door = Door.Open;
-                        if (Game.player.Vision[moveTo.x, moveTo.y])
+                        if (Game.Player.Vision[moveTo.x, moveTo.y])
                         {
                             Game.Log(
-                                MeatPuppet.Definition.name +
+                                MeatPuppet.Definition.Name +
                                 " opens a door."
                             );
                         }

@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-
+using System.Linq;
 using SadConsole;
 using Console = SadConsole.Consoles.Console;
 
@@ -27,16 +27,16 @@ namespace ODB
 {
     public class Game1 : Microsoft.Xna.Framework.Game
     {
-        GraphicsDeviceManager graphics;
-        SpriteBatch spriteBatch;
+        readonly GraphicsDeviceManager graphics;
+        SpriteBatch _spriteBatch;
 
-        Console dfc;
-        Console logConsole;
-        Console inputRowConsole;
-        Console inventoryConsole;
-        Console statRowConsole;
+        Console _dfc;
+        Console _logConsole;
+        Console _inputRowConsole;
+        Console _inventoryConsole;
+        Console _statRowConsole;
 
-        Game1 Game;
+        public static Game1 Game;
 
         public Game1()
         {
@@ -44,7 +44,7 @@ namespace ODB
             Content.RootDirectory = "Content";
         }
 
-        public bool wizMode;
+        public bool WizMode;
 
         public int GameTick;
         public int Seed;
@@ -53,23 +53,23 @@ namespace ODB
         public Level Level;
         public List<Brain> Brains;
 
-        public Actor player;
+        public Actor Player;
         //for now, breaking on of the RL rules a bit,
         //only the player actually has hunger.
         public int Food; //not yet saved
 
-        int camX, camY;
-        int scrW, scrH;
+        int _camX, _camY;
+        int _scrW, _scrH;
 
-        int logSize;
-        List<string> log;
+        int _logSize;
+        List<string> _log;
 
         public Point Target;
         public Spell TargetedSpell;
         public Action QuestionReaction;
-        public Stack<string> qpAnswerStack;
+        public Stack<string> QpAnswerStack;
 
-        public int standardActionLength = 10;
+        public int StandardActionLength = 10;
 
         protected override void Initialize()
         {
@@ -77,7 +77,7 @@ namespace ODB
             //this is starting to look dumb
             PlayerResponses.Game =
             gObject.Game =
-            Player.Game =
+            ODB.Player.Game =
             Wizard.Game =
             Brain.Game =
             Util.Game =
@@ -102,8 +102,8 @@ namespace ODB
 
             SetupConsoles();
 
-            camX = camY = 0;
-            scrW = 80; scrH = 25;
+            _camX = _camY = 0;
+            _scrW = 80; _scrH = 25;
 
             TileDefinition floor = new TileDefinition(
                 Color.Black, Color.LightGray, ".", false);
@@ -126,7 +126,7 @@ namespace ODB
             Game.Levels.Add(Game.Level);
 
             Game.Level.WorldActors.Add(
-                player = new Actor(
+                Player = new Actor(
                     new Point(13, 15),
                     Util.ADefByName("Moribund")
                 )
@@ -135,15 +135,14 @@ namespace ODB
 
             SetupBrains();
 
-            logSize = 3;
-            log = new List<string>();
+            _logSize = 3;
+            _log = new List<string>();
             Log("Welcome!");
 
-            qpAnswerStack = new Stack<string>();
+            QpAnswerStack = new Stack<string>();
 
             //wiz
-            Wizard.wmCursor = Game.player.xy;
-            Wizard.wmHistory = new List<string>();
+            Wizard.WmCursor = Game.Player.xy;
 
             base.Initialize();
         }
@@ -156,41 +155,44 @@ namespace ODB
             #region ui interaction
             if (IO.KeyPressed(Keys.Escape))
             {
-                if (wizMode) {
-                    wizMode = false; IO.IOState = InputType.PlayerInput; }
+                if (WizMode) {
+                    WizMode = false; IO.IOState = InputType.PlayerInput; }
                 else if (IO.IOState != InputType.PlayerInput)
                     IO.IOState = InputType.PlayerInput;
-                else if (inventoryConsole.IsVisible == true)
-                    inventoryConsole.IsVisible = false;
+                else if (_inventoryConsole.IsVisible == true)
+                    _inventoryConsole.IsVisible = false;
                 else this.Exit();
             }
 
-            if (IO.KeyPressed(Keys.I) && !wizMode)
-                inventoryConsole.IsVisible =
-                    !inventoryConsole.IsVisible;
+            if (IO.KeyPressed(Keys.I) && !WizMode)
+                _inventoryConsole.IsVisible =
+                    !_inventoryConsole.IsVisible;
 
             if (IO.KeyPressed((Keys)0x6B)) //np+
-                logSize = Math.Min(logConsole.ViewArea.Height, ++logSize);
+                _logSize = Math.Min(_logConsole.ViewArea.Height, ++_logSize);
             if (IO.KeyPressed((Keys)0x6D)) //np-
-                logSize = Math.Max(0, --logSize);
-            logConsole.Position = new xnaPoint(
-                0, -logConsole.ViewArea.Height + logSize
+                _logSize = Math.Max(0, --_logSize);
+            _logConsole.Position = new xnaPoint(
+                0, -_logConsole.ViewArea.Height + _logSize
             );
 
             //todo: edge scrolling
+            //ReSharper disable once ConvertToConstant.Local
+            //LH-011214: Not consting this since it will be adjustable in the
+            //           future, the const is only here as a placeholder really.
             int scrollSpeed = 3;
-            if (IO.KeyPressed(Keys.Right)) camX += scrollSpeed;
-            if (IO.KeyPressed(Keys.Left)) camX -= scrollSpeed;
-            if (IO.KeyPressed(Keys.Up)) camY += scrollSpeed;
-            if (IO.KeyPressed(Keys.Down)) camY -= scrollSpeed;
+            if (IO.KeyPressed(Keys.Right)) _camX += scrollSpeed;
+            if (IO.KeyPressed(Keys.Left)) _camX -= scrollSpeed;
+            if (IO.KeyPressed(Keys.Up)) _camY += scrollSpeed;
+            if (IO.KeyPressed(Keys.Down)) _camY -= scrollSpeed;
 
-            camX = Math.Max(0, camX);
-            camX = Math.Min(Game.Level.LevelSize.x - scrW, camX);
-            camY = Math.Max(0, camY);
-            camY = Math.Min(Game.Level.LevelSize.y - scrH, camY);
+            _camX = Math.Max(0, _camX);
+            _camX = Math.Min(Game.Level.LevelSize.x - _scrW, _camX);
+            _camY = Math.Max(0, _camY);
+            _camY = Math.Min(Game.Level.LevelSize.y - _scrH, _camY);
             #endregion camera
 
-            if (wizMode) Wizard.wmInput();
+            if (WizMode) Wizard.WmInput();
             else
             {
                 switch (IO.IOState)
@@ -203,8 +205,8 @@ namespace ODB
                         IO.TargetInput();
                         break;
                     case InputType.PlayerInput:
-                        if (player.Cooldown == 0)
-                            Player.PlayerInput();
+                        if (Player.Cooldown == 0)
+                            ODB.Player.PlayerInput();
                         else ProcessNPCs(); //mind: also ticks gameclock
                         break;
                     //if this happens,
@@ -232,12 +234,12 @@ namespace ODB
 
             if (IO.KeyPressed(Keys.F9) || IO.KeyPressed(Keys.OemTilde))
             {
-                if (wizMode)
+                if (WizMode)
                 {
                     IO.Answer = "";
                     IO.IOState = InputType.PlayerInput;
                 }
-                wizMode = !wizMode;
+                WizMode = !WizMode;
             }
             #endregion
 
@@ -248,35 +250,38 @@ namespace ODB
 
         public void SetupConsoles()
         {
-            dfc = new Console(80, 25);
-            SadConsole.Engine.ActiveConsole = dfc;
+            _dfc = new Console(80, 25);
+            Engine.ActiveConsole = _dfc;
 
             //22 instead of 25 so inputRow and statRows fit.
-            logConsole = new Console(80, 22);
+            _logConsole = new Console(80, 22) {
+                Position = new xnaPoint(0, -19)
+            };
             //part of the console is offscreen, so we can resize it downwards
-            logConsole.Position = new xnaPoint(0, -19);
 
-            inputRowConsole = new Console(80, 1);
-            inputRowConsole.Position = new xnaPoint(0, 3);
-            inputRowConsole.VirtualCursor.IsVisible = true;
+            _inputRowConsole = new Console(80, 1) {
+                Position = new xnaPoint(0, 3),
+                VirtualCursor = { IsVisible = true }
+            };
 
-            inventoryConsole = new Console(80, 25);
-            inventoryConsole.Position =
+            _inventoryConsole = new Console(80, 25);
+            _inventoryConsole.Position =
                 new xnaPoint(
-                    dfc.ViewArea.Width - inventoryConsole.ViewArea.Width,
+                    _dfc.ViewArea.Width - _inventoryConsole.ViewArea.Width,
                     0
                 );
-            inventoryConsole.IsVisible = false;
+            _inventoryConsole.IsVisible = false;
 
-            statRowConsole = new Console(80, 2);
-            statRowConsole.Position = new xnaPoint(0, 23);
+            _statRowConsole = new Console(80, 2) {
+                Position = new xnaPoint(0, 23)
+            };
 
             //draw order
-            SadConsole.Engine.ConsoleRenderStack.Add(dfc);
-            SadConsole.Engine.ConsoleRenderStack.Add(logConsole);
-            SadConsole.Engine.ConsoleRenderStack.Add(inputRowConsole);
-            SadConsole.Engine.ConsoleRenderStack.Add(statRowConsole);
-            SadConsole.Engine.ConsoleRenderStack.Add(inventoryConsole);
+            Engine.ConsoleRenderStack.Add(_dfc);
+            Engine.ConsoleRenderStack.Add(_logConsole);
+            Engine.ConsoleRenderStack.Add(_inputRowConsole);
+            Engine.ConsoleRenderStack.Add(_statRowConsole);
+            Engine.ConsoleRenderStack.Add(_inventoryConsole);
         }
 
         public void SetupBrains() {
@@ -285,7 +290,7 @@ namespace ODB
             foreach (Actor actor in Level.WorldActors)
                 //shouldn't be needed, but
                 //what did i even mean with that comment
-                if (actor.id == 0) Game.player = actor;
+                if (actor.ID == 0) Game.Player = actor;
                 else Brains.Add(new Brain(actor));
         }
 
@@ -293,9 +298,9 @@ namespace ODB
         {
             bool downwards =
                 Game.Levels.IndexOf(newLevel) > Game.Levels.IndexOf(Level);
-            Level.WorldActors.Remove(player);
+            Level.WorldActors.Remove(Player);
             Level = newLevel;
-            Level.WorldActors.Add(player);
+            Level.WorldActors.Add(Player);
             foreach (Actor a in Level.WorldActors)
                 //reset vision, incase the level we moved to is a different size
                 a.Vision = null;
@@ -315,36 +320,62 @@ namespace ODB
                             (Level.Map[x, y].Stairs == Stairs.Down &&
                                 !downwards)
                         )
-                            player.xy = new Point(x, y);
+                            Player.xy = new Point(x, y);
                     }
         }
 
-        void SetupMagic()
+        static void SetupMagic()
         {
-            Spell Forcebolt = new Spell(
+            //ReSharper disable once ObjectCreationAsStatement
+            //LH-011214: registered to the spelldefinition list in constructor.
+            /*new Spell(
                 "forcebolt",
                 new List<Action<Actor, Point>>() {
                     delegate(Actor caster, Point p) {
                         Actor a = Game.Level.ActorOnTile(p);
-                        if(a != null) {
-                            Util.Game.Log(a.Definition.name +
-                                " is hit by the bolt!"
-                            );
-                            a.Damage(Util.Roll("1d4"));
-                        }
+                        if (a == null) return;
+
+                        Util.Game.Log(
+                            a.Definition.Name + " is hit by the bolt!"
+                        );
+                        a.Damage(Util.Roll("1d4"));
                     }
                 }, 3, 7, 3
-            );
+            );*/
 
-            Spell FieryTouch = new Spell(
+            //ReSharper disable once ObjectCreationAsStatement
+            //LH-011214: Not sure whether this or the above format is better,
+            //           this is mainly here to sort of showcase to myself that
+            //           you can define spells like this.
+            new Spell("forcebolt")
+            {
+                Effects = new List<Action<Actor, Point>> {
+                    delegate(Actor caster, Point p) {
+                        Actor a = Game.Level.ActorOnTile(p);
+                        if (a == null) return;
+
+                        Util.Game.Log(
+                            a.Definition.Name + " is hit by the bolt!"
+                        );
+                        a.Damage(Util.Roll("1d4"));
+                    }
+                },
+                CastDifficulty = 7,
+                Cost = 3,
+                Range = 3
+            };
+
+            //ReSharper disable once ObjectCreationAsStatement
+            //LH-011214: registered to the spelldefinition list in constructor.
+            new Spell(
                 "fiery touch",
                 new List<Action<Actor, Point>>() {
                     delegate(Actor caster, Point p) {
                         Actor a = Game.Level.ActorOnTile(p);
                         Util.Game.Log(
-                            a.Definition.name +
+                            a.Definition.Name +
                             " is burned by " +
-                            caster.Definition.name + "'s touch!"
+                            caster.Definition.Name + "'s touch!"
                         );
                         a.Damage(Util.Roll("6d2"));
 
@@ -353,7 +384,7 @@ namespace ODB
                                 a.GetName(false, true) + " starts bleeding!"
                             );
                             TickingEffectDefinition bleed =
-                                Util.TEDefByName("bleed");
+                                Util.TickingEffectDefinitionByName("bleed");
                             if (!a.HasEffect(bleed))
                                 a.TickingEffects.Add(bleed.Instantiate(a));
                         }
@@ -363,15 +394,15 @@ namespace ODB
             );
         }
 
-        void SetupTickingEffects()
+        static void SetupTickingEffects()
         {
             TickingEffectDefinition hpReg = new TickingEffectDefinition(
                 "passive hp regeneration",
                 100, //trigger once every 100 ticks
                 delegate(Actor holder)
                 {
-                    if (holder.hpCurrent < holder.hpMax)
-                        holder.hpCurrent++;
+                    if (holder.HpCurrent < holder.HpMax)
+                        holder.HpCurrent++;
                 }
             );
 
@@ -380,8 +411,8 @@ namespace ODB
                 100, //trigger once every 100 ticks
                 delegate(Actor holder)
                 {
-                    if (holder.mpCurrent < holder.mpMax)
-                        holder.mpCurrent++;
+                    if (holder.MpCurrent < holder.MpMax)
+                        holder.MpCurrent++;
                 }
             );
 
@@ -390,7 +421,7 @@ namespace ODB
                 25,
                 delegate(Actor holder)
                 {
-                    if(holder == Game.player)
+                    if(holder == Game.Player)
                         Game.Log("Your wound bleeds!");
                     else
                         Game.Log(
@@ -406,48 +437,48 @@ namespace ODB
         void DrawToScreen(Point xy, Color? bg, Color fg, String tile)
         {
             if (bg != null)
-                dfc.CellData.SetBackground(
+                _dfc.CellData.SetBackground(
                     xy.x, xy.y, bg.Value
                 );
             else
             {
                 Tile bgtile = Game.Level.Map[xy.x, xy.y];
                 if(bgtile != null)
-                    dfc.CellData.SetBackground(
+                    _dfc.CellData.SetBackground(
                         xy.x, xy.y,
                         bgtile.bg
                     );
             }
 
-            dfc.CellData.SetForeground(xy.x, xy.y, fg);
+            _dfc.CellData.SetForeground(xy.x, xy.y, fg);
 
-            dfc.CellData.Print(xy.x, xy.y, tile);
+            _dfc.CellData.Print(xy.x, xy.y, tile);
         }
 
         void DrawBorder(Console c, Rect r, Color bg, Color fg)
         {
             for (int x = 0; x < r.wh.x; x++)
             {
-                inventoryConsole.CellData.Print(
+                _inventoryConsole.CellData.Print(
                     x, 0, (char)205+"", Color.DarkGray
                 );
-                inventoryConsole.CellData.Print(
+                _inventoryConsole.CellData.Print(
                     x, r.wh.y-1, (char)205+"", Color.DarkGray
                 );
             }
             for (int y = 0; y < r.wh.y; y++)
             {
-                inventoryConsole.CellData.Print(
+                _inventoryConsole.CellData.Print(
                     0, y, (char)186+"", Color.DarkGray
                 );
-                inventoryConsole.CellData.Print(
+                _inventoryConsole.CellData.Print(
                     r.wh.x-1, y, (char)186+"", Color.DarkGray
                 );
             }
-            inventoryConsole.CellData.Print(0, 0, (char)201 + "");
-            inventoryConsole.CellData.Print(r.wh.x-1, 0, (char)187 + "");
-            inventoryConsole.CellData.Print(0, r.wh.y-1, (char)200 + "");
-            inventoryConsole.CellData.Print(r.wh.x-1, r.wh.y-1, (char)188 + "");
+            _inventoryConsole.CellData.Print(0, 0, (char)201 + "");
+            _inventoryConsole.CellData.Print(r.wh.x-1, 0, (char)187 + "");
+            _inventoryConsole.CellData.Print(0, r.wh.y-1, (char)200 + "");
+            _inventoryConsole.CellData.Print(r.wh.x-1, r.wh.y-1, (char)188 + "");
         }
 
         public Point NumpadToDirection(Keys k)
@@ -500,27 +531,24 @@ namespace ODB
             }
             rows.Add(s);
             foreach (string ss in rows)
-                log.Add(ss);
+                _log.Add(ss);
         }
 
+        //ReSharper disable once InconsistentNaming
+        //LH-011214: NPC is a perfectly fine acronym thank you
         public void ProcessNPCs()
         {
-            while(Game.player.Cooldown > 0)
+            while(Game.Player.Cooldown > 0)
             {
-                foreach (Brain b in Brains)
-                    if (
-                        Game.Level.WorldActors.Contains(
-                            b.MeatPuppet
-                        ) &&
-                        b.MeatPuppet.Cooldown <= 0 &&
-                        b.MeatPuppet.Awake
-                    )
-                        b.Tick();
+                foreach (Brain b in Brains
+                    .Where(
+                        b => Game.Level.WorldActors.Contains(b.MeatPuppet) &&
+                        b.MeatPuppet.Cooldown <= 0 && b.MeatPuppet.Awake))
+                    b.Tick();
 
-                foreach (Brain b in Brains)
-                    if(b.MeatPuppet.Awake)
-                        b.MeatPuppet.Cooldown--;
-                Game.player.Cooldown--;
+                foreach (Brain b in Brains.Where(b => b.MeatPuppet.Awake))
+                    b.MeatPuppet.Cooldown--;
+                Game.Player.Cooldown--;
 
                 Game.Food--;
 
@@ -555,50 +583,25 @@ namespace ODB
             RenderInventory();
             RenderStatus();
 
-            #region reticule
-            if (IO.IOState == InputType.Targeting)
-            {
-                Cell cs = dfc.CellData[Target.x, Target.y];
-
-                bool blink = (DateTime.Now.Millisecond % 500 > 250);
-
-                cs.Background = blink ?
-                    Util.InvertColor(cs.Background) : Color.White;
-
-                cs.Foreground = blink ?
-                    Util.InvertColor(cs.Foreground) : Color.White;
-            }
-            if (wizMode)
-            {
-                Cell cs = dfc.CellData[
-                    Wizard.wmCursor.x, Wizard.wmCursor.y];
-
-                bool blink = (DateTime.Now.Millisecond % 500 > 250);
-
-                cs.Background = blink ?
-                    Util.InvertColor(cs.Background) : Color.White;
-
-                cs.Foreground = blink ?
-                    Util.InvertColor(cs.Foreground) : Color.White;
-            }
-            #endregion
+            RenderTarget();
+            RenderWmCursor();
         }
 
-        public void RenderMap()
+        private void RenderMap()
         {
-            dfc.CellData.Clear();
+            _dfc.CellData.Clear();
 
-            for (int x = 0; x < scrW; x++) for (int y = 0; y < scrH; y++)
+            for (int x = 0; x < _scrW; x++) for (int y = 0; y < _scrH; y++)
             {
-                Tile t = Game.Level.Map[x + camX, y + camY];
+                Tile t = Game.Level.Map[x + _camX, y + _camY];
 
                 if (t == null) continue;
                 if (
-                    !(Game.Level.Seen[x + camX, y + camY] || wizMode)
+                    !(Game.Level.Seen[x + _camX, y + _camY] || WizMode)
                 ) continue;
 
                 bool inVision =
-                    Game.player.Vision[x + camX, y + camY] || wizMode;
+                    Game.Player.Vision[x + _camX, y + _camY] || WizMode;
 
                 string tileToDraw = t.tile;
                 //doors override the normal tile
@@ -618,9 +621,9 @@ namespace ODB
             }
         }
 
-        public void RenderItems()
+        private void RenderItems()
         {
-            Rect screen = new Rect(new Point(camX, camY), new Point(80, 25));
+            Rect screen = new Rect(new Point(_camX, _camY), new Point(80, 25));
 
             int[,] itemCount = new int[
                 Game.Level.LevelSize.x,
@@ -629,28 +632,26 @@ namespace ODB
 
             foreach (Item i in Game.Level.WorldItems)
                 itemCount[i.xy.x, i.xy.y]++;
-            foreach (Item i in Game.Level.WorldItems)
-            {
-                if (
-                    !(Game.player.Vision[i.xy.x, i.xy.y] || wizMode)
-                ) continue;
-                if (!screen.ContainsPoint(i.xy)) continue;
 
+            foreach (Item i in Game.Level.WorldItems
+                .Where(i => Game.Player.Vision[i.xy.x, i.xy.y] || WizMode)
+                .Where(i => screen.ContainsPoint(i.xy)))
+            {
                 if (itemCount[i.xy.x, i.xy.y] == 1)
                     DrawToScreen(
                         i.xy,
-                        i.Identified ? i.Definition.bg : null,
-                        i.Identified ? i.Definition.fg : Color.Gray,
-                        i.Definition.tile
-                    );
-                //not sure I like the + for pile, since doors are +
+                        i.Identified ? i.Definition.Background : null,
+                        i.Identified ? i.Definition.Foreground : Color.Gray,
+                        i.Definition.Tile
+                        );
+                    //not sure I like the + for pile, since doors are +
                 else DrawToScreen(i.xy, null, Color.White, "+");
             }
         }
 
-        public void RenderActors()
+        private void RenderActors()
         {
-            Rect screen = new Rect(new Point(camX, camY), new Point(80, 25));
+            Rect screen = new Rect(new Point(_camX, _camY), new Point(80, 25));
 
             int[,] actorCount = new int[
                 Game.Level.LevelSize.x,
@@ -660,69 +661,65 @@ namespace ODB
             foreach (Actor a in Game.Level.WorldActors)
                 actorCount[a.xy.x, a.xy.y]++;
 
-            foreach (Actor a in Game.Level.WorldActors)
+            foreach (Actor a in Game.Level.WorldActors
+                .Where(a => Game.Player.Vision[a.xy.x, a.xy.y] || WizMode)
+                .Where(a => screen.ContainsPoint(a.xy)))
             {
-                if (
-                    !(Game.player.Vision[a.xy.x, a.xy.y] || wizMode)
-                ) continue;
-                if (!screen.ContainsPoint(a.xy)) continue;
-
                 if (actorCount[a.xy.x, a.xy.y] == 1)
                     DrawToScreen(
-                        a.xy, a.Definition.bg,
-                        a.Definition.fg, a.Definition.tile
-                    );
-                //draw a "pile" (shouldn't happen at all atm
+                        a.xy, a.Definition.Background,
+                        a.Definition.Foreground, a.Definition.Tile
+                        );
+                    //draw a "pile" (shouldn't happen at all atm
                 else DrawToScreen(a.xy, null, Color.White, "*");
             }
         }
 
-        public void RenderLog()
+        private void RenderLog()
         {
-            logConsole.CellData.Clear();
-            logConsole.CellData.Fill(Color.White, Color.Black, ' ', null);
+            _logConsole.CellData.Clear();
+            _logConsole.CellData.Fill(Color.White, Color.Black, ' ', null);
             for (
-                int i = log.Count, n = 0;
-                i > 0 && n < logConsole.ViewArea.Height;
+                int i = _log.Count, n = 0;
+                i > 0 && n < _logConsole.ViewArea.Height;
                 i--, n++
             ) {
-                logConsole.CellData.Print(
-                    0, logConsole.ViewArea.Height - (n + 1),
-                    log[i - 1]
+                _logConsole.CellData.Print(
+                    0, _logConsole.ViewArea.Height - (n + 1),
+                    _log[i - 1]
                 );
             }
         }
 
-        public void RenderPrompt()
+        private void RenderPrompt()
         {
-            inputRowConsole.IsVisible =
-                (IO.IOState != InputType.PlayerInput) || wizMode;
-            if (inputRowConsole.IsVisible)
-            {
-                inputRowConsole.Position = new xnaPoint(0, logSize);
-                inputRowConsole.CellData.Fill(
-                    Color.Black,
-                    Color.WhiteSmoke,
-                    ' ',
-                    null
-                );
-                inputRowConsole.CellData.Print(
-                    0, 0,
-                    (wizMode ? "" : IO.Question + " ") + IO.Answer
-                );
-            }
+            _inputRowConsole.IsVisible =
+                (IO.IOState != InputType.PlayerInput) || WizMode;
+
+            if (!_inputRowConsole.IsVisible) return;
+
+            _inputRowConsole.Position = new xnaPoint(0, _logSize);
+            _inputRowConsole.CellData.Fill(
+                Color.Black,
+                Color.WhiteSmoke,
+                ' ',
+                null
+            );
+
+            _inputRowConsole.CellData.Print(
+                0, 0, (WizMode ? "" : IO.Question + " ") + IO.Answer);
         }
 
-        public void RenderInventory()
+        private void RenderInventory()
         {
-            int inventoryW = inventoryConsole.ViewArea.Width;
-            int inventoryH = inventoryConsole.ViewArea.Height;
+            int inventoryW = _inventoryConsole.ViewArea.Width;
+            int inventoryH = _inventoryConsole.ViewArea.Height;
 
-            inventoryConsole.CellData.Clear();
-            inventoryConsole.CellData.Fill(Color.White, Color.Black, ' ', null);
+            _inventoryConsole.CellData.Clear();
+            _inventoryConsole.CellData.Fill(Color.White, Color.Black, ' ', null);
 
             DrawBorder(
-                inventoryConsole,
+                _inventoryConsole,
                 new Rect(
                     new Point(0, 0),
                     new Point(inventoryW, inventoryH)),
@@ -730,97 +727,97 @@ namespace ODB
                 Color.DarkGray
             );
 
-            for (int i = 0; i < player.Definition.name.Length; i++)
+            foreach (char t in Player.Definition.Name)
             {
-                inventoryConsole.CellData.Print(
-                    2, 0, player.Definition.name, Color.White);
+                _inventoryConsole.CellData.Print(
+                    2, 0, Player.Definition.Name, Color.White);
             }
 
-            for (int i = 0; i < player.Inventory.Count; i++)
+            for (int i = 0; i < Player.Inventory.Count; i++)
             {
-                Item it = player.Inventory[i];
+                Item it = Player.Inventory[i];
 
-                bool equipped = Game.player.IsEquipped(it);
+                bool equipped = Game.Player.IsEquipped(it);
 
                 string name = "" + ((char)(97 + i));
                 name += " - ";
 
 
-                if (it.Definition.stacking)
-                    name += it.count + "x ";
+                if (it.Definition.Stacking)
+                    name += it.Count + "x ";
 
-                if (player.Inventory[i].mod != 0)
+                if (Player.Inventory[i].Mod != 0)
                 {
-                    name += player.Inventory[i].mod >= 0 ? "+" : "-";
-                    name += Math.Abs(player.Inventory[i].mod) + " ";
+                    name += Player.Inventory[i].Mod >= 0 ? "+" : "-";
+                    name += Math.Abs(Player.Inventory[i].Mod) + " ";
                 }
 
                 //name += player.inventory[i].Definition.name;
-                name += player.Inventory[i].GetName(false, true, true);
+                name += Player.Inventory[i].GetName(false, true, true);
                 if (it.Charged)
                 {
-                    name += "["+it.count+"]";
+                    name += "["+it.Count+"]";
                 }
                 if (equipped) name += " (eq)";
 
-                inventoryConsole.CellData.Print(
+                _inventoryConsole.CellData.Print(
                     2, i + 1, name
                 );
             }
         }
 
-        public void RenderStatus()
+        private void RenderStatus()
         {
-            statRowConsole.CellData.Clear();
-            statRowConsole.CellData.Fill(Color.White, Color.Black, ' ', null);
+            _statRowConsole.CellData.Clear();
+            _statRowConsole.CellData.Fill(Color.White, Color.Black, ' ', null);
 
-            if (wizMode)
+            if (WizMode)
             {
                 string str = "W I Z A R D";
-                str += " (" + String.Format("{0:X2}", Wizard.wmCursor.x);
+                str += " (" + String.Format("{0:X2}", Wizard.WmCursor.x);
                 str += " ; ";
-                str += String.Format("{0:X2}", Wizard.wmCursor.y) + ")";
-                str += " (" + Wizard.wmCursor.x + " ; " +
-                    Wizard.wmCursor.y + ") ";
+                str += String.Format("{0:X2}", Wizard.WmCursor.y) + ")";
+                str += " (" + Wizard.WmCursor.x + " ; " +
+                    Wizard.WmCursor.y + ") ";
 
                 str += "D:" + (Game.Levels.IndexOf(Game.Level) + 1) + "0M";
                 str += " (" + Game.Level.Name + ")";
 
-                statRowConsole.CellData.Print(
+                _statRowConsole.CellData.Print(
                     0, 0, str 
                 );
                 return;
             }
 
             //string namerow = player.Definition.name + " - Title";
-            string namerow = player.Definition.name;
+            string namerow = Player.Definition.Name;
             namerow += "  ";
-            namerow += "STR " + player.Get(Stat.Strength) + "  ";
-            namerow += "DEX " + player.Get(Stat.Dexterity) + "  ";
-            namerow += "INT " + player.Get(Stat.Intelligence) + "  ";
-            namerow += "AC " + player.GetAC();
+            namerow += "STR " + Player.Get(Stat.Strength) + "  ";
+            namerow += "DEX " + Player.Get(Stat.Dexterity) + "  ";
+            namerow += "INT " + Player.Get(Stat.Intelligence) + "  ";
+            namerow += "AC " + Player.GetArmor();
 
             if (Game.Food < 500)
                 namerow += "  Starving";
             else if (Game.Food < 1500)
                 namerow += "  Hungry";
 
-            foreach (LastingEffect le in Game.player.LastingEffects)
+            foreach (LastingEffect le in Game.Player.LastingEffects)
                 namerow += " " + LastingEffect.EffectNames[le.Type];
 
             string statrow = "";
             statrow += "[";
-            statrow += player.hpCurrent.ToString().PadLeft(3, ' ');
+            statrow += Player.HpCurrent.ToString().PadLeft(3, ' ');
             statrow += "/";
-            statrow += player.Definition.hpMax.ToString().PadLeft(3, ' ');
+            statrow += Player.Definition.HpMax.ToString().PadLeft(3, ' ');
             statrow += "]";
 
             statrow += " ";
 
             statrow += "[";
-            statrow += player.mpCurrent.ToString().PadLeft(3, ' ');
+            statrow += Player.MpCurrent.ToString().PadLeft(3, ' ');
             statrow += "/";
-            statrow += player.Definition.mpMax.ToString().PadLeft(3, ' ');
+            statrow += Player.Definition.MpMax.ToString().PadLeft(3, ' ');
             statrow += "]";
 
             statrow += " ";
@@ -833,18 +830,18 @@ namespace ODB
             statrow += " (" + Game.Level.Name + ")";
 
             float playerHealthPcnt =
-                player.hpCurrent /
-                (float)player.hpMax
+                Player.HpCurrent /
+                (float)Player.HpMax
             ;
             float playerManaPcnt =
-                player.mpCurrent /
-                (float)player.mpMax
+                Player.MpCurrent /
+                (float)Player.MpMax
             ;
             float colorStrength = 0.6f + 0.4f - (0.4f * playerHealthPcnt);
             float manaColorStrength = 0.6f + 0.4f - (0.4f * playerManaPcnt);
 
             for (int x = 0; x < 9; x++)
-                statRowConsole.CellData.SetBackground(
+                _statRowConsole.CellData.SetBackground(
                     x, 1, new Color(
                         colorStrength - colorStrength * playerHealthPcnt,
                         colorStrength * playerHealthPcnt,
@@ -853,7 +850,7 @@ namespace ODB
                 );
 
             for (int x = 10; x < 19; x++)
-                statRowConsole.CellData.SetBackground(
+                _statRowConsole.CellData.SetBackground(
                     x, 1, new Color(
                         manaColorStrength - manaColorStrength * playerManaPcnt,
                         manaColorStrength * playerManaPcnt / 2,
@@ -861,14 +858,49 @@ namespace ODB
                     )
                 );
 
-            statRowConsole.CellData.Print(0, 0, namerow);
-            statRowConsole.CellData.Print(0, 1, statrow);
+            _statRowConsole.CellData.Print(0, 0, namerow);
+            _statRowConsole.CellData.Print(0, 1, statrow);
+        }
+
+        private void RenderTarget()
+        {
+            if (IO.IOState != InputType.Targeting) return;
+
+            Cell cs = _dfc.CellData[Target.x, Target.y];
+
+            bool blink = (DateTime.Now.Millisecond%500 > 250);
+
+            cs.Background = blink
+                ? Util.InvertColor(cs.Background)
+                : Color.White;
+
+            cs.Foreground = blink
+                ? Util.InvertColor(cs.Foreground)
+                : Color.White;
+        }
+
+        private void RenderWmCursor()
+        {
+            if (!WizMode) return;
+
+            Cell cs = _dfc.CellData[
+                Wizard.WmCursor.x, Wizard.WmCursor.y];
+
+            bool blink = (DateTime.Now.Millisecond%500 > 250);
+
+            cs.Background = blink
+                ? Util.InvertColor(cs.Background)
+                : Color.White;
+
+            cs.Foreground = blink
+                ? Util.InvertColor(cs.Foreground)
+                : Color.White;
         }
 
         #region engineshit
         protected override void LoadContent()
         {
-            spriteBatch = new SpriteBatch(GraphicsDevice);
+            _spriteBatch = new SpriteBatch(GraphicsDevice);
         }
 
         protected override void Draw(GameTime gameTime)

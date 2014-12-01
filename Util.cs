@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.Linq;
 using Microsoft.Xna.Framework;
 
 /*
@@ -44,20 +44,20 @@ namespace ODB
 
         public static Item GetItemByID(int id)
         {
-            return Game.Level.AllItems.Find(x => x.id == id);
+            return Game.Level.AllItems.Find(x => x.ID == id);
         }
 
         public static Actor GetActorByID(int id)
         {
-            return Game.Level.WorldActors.Find(x => x.id == id);
+            return Game.Level.WorldActors.Find(x => x.ID == id);
         }
 
-        public static ItemDefinition IDefByName(string name)
+        public static ItemDefinition ItemDefByName(string name)
         {
             for (int i = 0; i < 0xFFFF; i++)
                 if (ItemDefinition.ItemDefinitions[i] != null)
                     if (ItemDefinition.
-                        ItemDefinitions[i].name.ToLower() == name.ToLower())
+                        ItemDefinitions[i].Name.ToLower() == name.ToLower())
                         return ItemDefinition.ItemDefinitions[i];
             return null;
         }
@@ -67,7 +67,7 @@ namespace ODB
             for (int i = 0; i < 0xFFFF; i++)
                 if (ActorDefinition.ActorDefinitions[i] != null)
                     if (ActorDefinition.
-                        ActorDefinitions[i].name.ToLower() == name.ToLower())
+                        ActorDefinitions[i].Name.ToLower() == name.ToLower())
                         return ActorDefinition.ActorDefinitions[i];
             return null;
         }
@@ -81,7 +81,8 @@ namespace ODB
             return null;
         }
 
-        public static TickingEffectDefinition TEDefByName(string name)
+        public static TickingEffectDefinition
+            TickingEffectDefinitionByName(string name)
         {
             for (int i = 0; i < 0xFFFF; i++)
                 if (TickingEffectDefinition.Definitions[i] != null)
@@ -91,17 +92,17 @@ namespace ODB
         }
 
         //just terser this way
-        public static TileDefinition TDef(int id)
+        public static TileDefinition TileDefinitionByName(int id)
         {
             return TileDefinition.Definitions[id];
         }
 
         public static List<Room> GetRooms(Point xy)
         {
-            List<Room> roomList = new List<Room>();
-            foreach (Room r in Game.Level.Rooms)
-                if (r.ContainsPoint(xy)) roomList.Add(r);
-            return roomList;
+            return
+                Game.Level.Rooms.Where(
+                    r => r.ContainsPoint(xy)
+                ).ToList();
         }
 
         public static List<Room> GetRooms(gObject go)
@@ -116,7 +117,7 @@ namespace ODB
             s = s.ToLower();
             int number = int.Parse(s.Split('d')[0]);
             int sides = int.Parse(s.Split('d')[1]
-                .Split(new char[]{'-', '+'})[0]
+                .Split(new[]{'-', '+'})[0]
             );
             int mod = 0;
             if(s.Contains("+") || s.Contains("-"))
@@ -146,49 +147,43 @@ namespace ODB
             return sum + mod;
         }
 
-        class node
+        class Node
         {
-            public node parent;
-            public List<node> children;
-            public node(node parent)
+            public readonly Node Parent;
+            public Node(Node parent)
             {
-                this.parent = parent;
-                children = new List<node>();
+                Parent = parent;
             }
         }
 
-        public static Point NextGoalOnRoute(Point xy, List<Room> Route)
+        public static Point NextGoalOnRoute(Point xy, List<Room> route)
         {
-            if (Route == null) //honey, I'm home!
+            if (route == null) //honey, I'm home!
                 return xy;
             int n = 0;
+            //todo: euuh, this looks n_a_s_t_y...
+            //      but it hasn't crashed yet...
             while (true)
             {
-                foreach (Room r in GetRooms(xy))
+                foreach (Rect rr in GetRooms(xy).SelectMany(r => r.Rects))
                 {
-                    foreach (Rect rr in r.rects)
+                    for (int x = 0; x < rr.wh.x; x++)
                     {
-                        for (int x = 0; x < rr.wh.x; x++)
+                        for (int y = 0; y < rr.wh.y; y++)
                         {
-                            for (int y = 0; y < rr.wh.y; y++)
-                            {
-                                Point np = new Point(
-                                    rr.xy.x + x,
-                                    rr.xy.y + y
+                            Point np = new Point(
+                                rr.xy.x + x,
+                                rr.xy.y + y
                                 );
-                                if (Route[n].ContainsPoint(np))
-                                {
-                                    //if we're actually going anywhere...
-                                    if (np != xy) return np;
-                                    else { n++; break; };
-                                }
-                            }
+                            if (!route[n].ContainsPoint(np)) continue;
+
+                            //if we're actually going anywhere...
+                            if (np != xy) return np;
+                            n++; break;
                         }
                     }
                 }
             }
-            //if this every happens, you've been given a bad map son
-            throw new Exception("Bad route, dying.");
         }
 
         public static List<Room> FindRouteToPoint(
@@ -203,18 +198,15 @@ namespace ODB
             //find a path through the tile we're already standing on lol
             open.Add(GetRooms(source)[0]);
 
-            foreach (Room r in GetRooms(source))
-                if (GetRooms(destination).Contains(r))
-                    //already in the right room
-                    //obviously not all we need to do,
-                    //but enough for now
-                    return null;
+            if (GetRooms(source).Any(
+                    room => GetRooms(destination).Contains(room)))
+                return null;
 
-            Dictionary<node, Room> path = new Dictionary<node, Room>();
-            Dictionary<Room, node> htap = new Dictionary<Room, node>();
+            Dictionary<Node, Room> path = new Dictionary<Node, Room>();
+            Dictionary<Room, Node> htap = new Dictionary<Room, Node>();
 
-            node head = new node(null);
-            node current = head;
+            Node head = new Node(null);
+            Node current = head;
             htap[open[0]] = head;
             path[head] = open[0];
 
@@ -229,7 +221,7 @@ namespace ODB
                     foundTarget = true;
                 else
                 {
-                    foreach (Rect rr in r.rects)
+                    foreach (Rect rr in r.Rects)
                         for (int x = 0; x < rr.wh.x; x++)
                             for (int y = 0; y < rr.wh.y; y++)
                             {
@@ -242,7 +234,7 @@ namespace ODB
                                 );
                                 foreach (Room c in rooms)
                                 {
-                                    node n = new node(current);
+                                    Node n = new Node(current);
                                     path[n] = c;
                                     htap[c] = n;
                                 }
@@ -252,15 +244,15 @@ namespace ODB
                 }
 
                 open.AddRange(sharingTiles);
-                open.RemoveAll(x => closed.Contains(x));
+                open.RemoveAll(closed.Contains);
                 //in the future, sort the open list so we actually find
                 //the fastest path, not just /any/ path ;)
             }
 
-            while (current.parent != null)
+            while (current.Parent != null)
             {
                 route.Add(path[current]);
-                current = current.parent;
+                current = current.Parent;
             }
             route.Reverse();
 
@@ -270,46 +262,46 @@ namespace ODB
         public static List<Item> GetWornItems(Actor a)
         {
             List<Item> list = new List<Item>();
-            foreach(BodyPart bp in a.PaperDoll)
-                if (bp.Item != null)
-                    if (!list.Contains(bp.Item))
-                        list.Add(bp.Item);
+            foreach (
+                BodyPart bp in
+                    a.PaperDoll
+                    .Where(bp => bp.Item != null)
+                    .Where(bp => !list.Contains(bp.Item)))
+                list.Add(bp.Item);
             return list;
         }
 
         public static List<Mod> GetModsOfType(ModType mt, List<Item> items)
         {
-            List<Mod> list = new List<Mod>();
-            foreach (Item it in items)
-                foreach (Mod m in it.Mods)
-                    if (m.Type == mt)
-                        list.Add(m);
-            return list;
+            return (
+                from it in items
+                from m in it.Mods
+                where m.Type == mt
+                select m
+            ).ToList();
         }
 
         public static List<Mod> GetModsOfType(ModType mt, Actor a)
         {
-            List<Mod> list = new List<Mod>();
-            foreach (Mod m in a.Intrinsics)
-                if (m.Type == mt)
-                    list.Add(m);
-            return list;
+            return a.Intrinsics
+                .Where(m => m.Type == mt)
+                .ToList();
         }
 
         public static Color InvertColor(Color c) {
             return new Color(
-                (byte)255 - c.R,
-                (byte)255 - c.G,
-                (byte)255 - c.B
+                255 - c.R,
+                255 - c.G,
+                255 - c.B
             );
         }
 
-        public static string article(string name)
+        public static string Article(string name)
         {
             //not ENTIRELY correct, whatwith exceptions,
             //but close enough.
             return
-                new List<char>() { 'a', 'e', 'i', 'o', 'u' }
+                new List<char> { 'a', 'e', 'i', 'o', 'u' }
                     .Contains(name.ToLower()[0]) ?
                 "an" : "a";
         }

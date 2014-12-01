@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ODB
 {
@@ -7,7 +8,6 @@ namespace ODB
     {
         public string Name;
 
-        public int LevelWidth, LevelHeight;
         public Point LevelSize;
 
         public Tile[,] Map;
@@ -23,11 +23,9 @@ namespace ODB
         public Dictionary<Actor, List<Room>> ActorRooms;
 
         public Level(
-            int LevelWidth, int LevelHeight
+            int levelWidth, int levelHeight
         ) {
-            this.LevelWidth = LevelWidth;
-            this.LevelHeight = LevelHeight;
-            this.LevelSize = new Point(LevelWidth, LevelHeight);
+            LevelSize = new Point(levelWidth, levelHeight);
             Clear();
             ActorPositions = new Dictionary<Room, List<Actor>>();
             ActorRooms = new Dictionary<Actor, List<Room>>();
@@ -42,8 +40,8 @@ namespace ODB
 
         public void Clear()
         {
-            Map = new Tile[LevelWidth, LevelHeight];
-            Seen = new bool[LevelWidth, LevelHeight];
+            Map = new Tile[LevelSize.x, LevelSize.y];
+            Seen = new bool[LevelSize.x, LevelSize.y];
             Rooms = new List<Room>();
 
             WorldActors = new List<Actor>();
@@ -53,9 +51,11 @@ namespace ODB
 
         public Actor ActorOnTile(Tile t)
         {
-            for(int x = 0; x < LevelWidth; x++)
-                for (int y = 0; y < LevelHeight; y++)
+            for(int x = 0; x < LevelSize.x; x++)
+                for (int y = 0; y < LevelSize.y; y++)
                     //do like this while migrating
+                    //LH-011214: wtf? ^
+                    //           migrating what?
                     if (Map[x, y] == t) return ActorOnTile(
                         new Point(x, y)
                     );
@@ -64,10 +64,8 @@ namespace ODB
 
         public Actor ActorOnTile(Point xy)
         {
-            foreach (Actor actor in WorldActors)
-                if (actor.xy == xy)
-                    return actor;
-            return null;
+            return WorldActors.
+                FirstOrDefault(actor => actor.xy == xy);
         }
 
         public Actor ActorOnTile(int x, int y)
@@ -77,17 +75,13 @@ namespace ODB
 
         public List<Item> ItemsOnTile(Point xy)
         {
-            List<Item> items = new List<Item>();
-            foreach (Item item in WorldItems)
-                if (item.xy == xy)
-                    items.Add(item);
-            return items;
+            return WorldItems.Where(item => item.xy == xy).ToList();
         }
 
         public List<Room> NeighbouringRooms(Room r)
         {
             List<Room> list = new List<Room>();
-            foreach (Rect rr in r.rects)
+            foreach (Rect rr in r.Rects)
                 for (int x = 0; x < rr.wh.x; x++)
                     for (int y = 0; y < rr.wh.y; y++)
                         list.AddRange(
@@ -116,45 +110,45 @@ namespace ODB
             foreach (Actor a in WorldActors)
                 ActorRooms.Add(a, new List<Room>());
 
-            foreach (Room r in Rooms)
+            foreach (Room r in Rooms.Where(r => r != null))
             {
                 ActorPositions.Add(r, new List<Actor>());
-                foreach (Actor a in WorldActors)
-                    if (r.ContainsPoint(a.xy))
-                    {
-                        ActorPositions[r].Add(a);
-                        ActorRooms[a] = new List<Room>();
-                        ActorRooms[a].Add(r);
-                    }
+                foreach (Actor a in WorldActors
+                //ReSharper disable once AccessToForEachVariableInClosure
+                //LH-011214: we're only /using/ the value here, so it's ok
+                    .Where(a => r.ContainsPoint(a.xy)))
+                {
+                    ActorPositions[r].Add(a);
+                    ActorRooms[a] = new List<Room> {r};
+                }
             }
         }
 
         public void MakeNoise(int noisemod, Point p)
         {
-            List<Room> closed = new List<Room>();
-            List<Room> open = new List<Room>();
+            List<Room> closed = Util.GetRooms(p);
+            List<Room> open = Util.GetRooms(p);
 
-            closed = Util.GetRooms(p);
-            open = Util.GetRooms(p);
             Dictionary<int, List<Room>> roomdistances =
                 new Dictionary<int,List<Room>>();
             int dist = 0;
             List<Room> newopen = new List<Room>();
 
-            int maxdist = 6 + noisemod - 1;
-            maxdist -= maxdist % 2;
-            maxdist /= 2;
+            int maxDistance = 6 + noisemod - 1;
+            maxDistance -= maxDistance % 2;
+            maxDistance /= 2;
 
-            while (dist <= maxdist)
+            while (dist <= maxDistance)
             {
                 newopen.Clear();
                 roomdistances[dist] = new List<Room>();
                 foreach (Room r in open)
                 {
                     roomdistances[dist].Add(r);
-                    foreach (Room n in r.Linked)
-                        if (!closed.Contains(n) && !open.Contains(n))
-                            newopen.Add(n);
+                    newopen.AddRange(
+                        r.Linked.Where(
+                            n => !closed.Contains(n) && !open.Contains(n))
+                        );
                     closed.Add(r);
                 }
                 open.Clear();
@@ -162,14 +156,21 @@ namespace ODB
                 dist++;
             }
 
-            for (int i = 0; i <= maxdist; i++)
-                foreach (Room r in roomdistances[i])
-                    foreach (Actor a in ActorPositions[r])
-                    {
-                        if (a == Util.Game.player) continue;
-                        int roll = Util.Roll("1d6") + noisemod - i * 2;
-                        if (roll > 1) a.Awake = true;
-                    }
+            for (int distance = 0; distance <= maxDistance; distance++)
+                foreach (
+                    Actor actor in
+                    from actor in (
+                        from room in roomdistances[distance]
+                        from actor in ActorPositions[room]
+                        where actor != Util.Game.Player
+                        select actor)
+                    //ReSharper disable once AccessToModifiedClosure
+                    //LH-011214: only reading the value (i), not changing it
+                    let roll = Util.Roll("1d6") + noisemod - distance * 2 > 1
+                    select actor
+                ) {
+                    actor.Awake = true;
+                }
         }
 
         public Stream WriteLevelSave(string path)
@@ -189,15 +190,12 @@ namespace ODB
 
             Stream stream = new Stream();
 
-            //should probably be a point not only here really
-            Point levelSize = new Point(LevelWidth, LevelHeight);
-
-            stream.Write(levelSize);
+            stream.Write(LevelSize);
             stream.Write(Name);
             stream.Write("</HEADER>", false);
 
-            for (int y = 0; y < levelSize.y; y++)
-                for (int x = 0; x < levelSize.x; x++)
+            for (int y = 0; y < LevelSize.y; y++)
+                for (int x = 0; x < LevelSize.x; x++)
                 {
                     if (Map[x, y] != null)
                     {
@@ -216,14 +214,14 @@ namespace ODB
 
             foreach (Item item in AllItems)
             {
-                stream.Write(item.WriteItem().ToString() + "##", false);
+                stream.Write(item.WriteItem() + "##", false);
             }
             stream.Write("</ITEMS>", false);
 
             foreach (Actor actor in WorldActors)
             {
                 stream.Write(
-                    actor.WriteActor().ToString() + "##", false);
+                    actor.WriteActor() + "##", false);
             }
             stream.Write("</ACTORS>", false);
 
@@ -238,38 +236,34 @@ namespace ODB
 
             string dimensions =
                 content.Substring(read, content.Length - read).Split(
-                    new string[] { "</HEADER>" },
+                    new[] { "</HEADER>" },
                     StringSplitOptions.None
                 )[0];
             read += dimensions.Length + "</HEADER>".Length;
 
             Stream stream = new Stream(dimensions);
 
-            //Point levelSize = IO.ReadPoint(dimensions);
-            Point levelSize = stream.ReadPoint();
-            LevelWidth = levelSize.x;
-            LevelHeight = levelSize.y;
-            LevelSize = new Point(LevelWidth, LevelHeight);
+            LevelSize = stream.ReadPoint();
             Clear();
 
             Name = stream.ReadString();
 
             string levelSection =
                 content.Substring(read, content.Length - read).Split(
-                    new string[] { "</LEVEL>" },
+                    new[] { "</LEVEL>" },
                     StringSplitOptions.None
                 )[0];
             read += levelSection.Length + "</LEVEL>".Length;
 
             string[] tiles = levelSection.Split(
                 //do NOT remove empty entries, they are null tiles!
-                new string[]{"##"}, StringSplitOptions.None
+                new[]{"##"}, StringSplitOptions.None
             );
 
-            for (int i = 0; i < levelSize.x * levelSize.y; i++)
+            for (int i = 0; i < LevelSize.x * LevelSize.y; i++)
             {
-                int x = i % levelSize.x;
-                int y = (i - (i % levelSize.x)) / levelSize.x;
+                int x = i % LevelSize.x;
+                int y = (i - (i % LevelSize.x)) / LevelSize.x;
                 if(tiles[i] == "")
                     Map[x, y] = null;
                 else {
@@ -282,50 +276,54 @@ namespace ODB
 
             string roomSection = 
                 content.Substring(read, content.Length - read).Split(
-                    new string[] { "</ROOMS>" },
+                    new[] { "</ROOMS>" },
                     StringSplitOptions.RemoveEmptyEntries
                 )[0];
             read += roomSection.Length + "</ROOMS>".Length;
 
             string[] rooms = roomSection.Split(
-                new string[] { "##" },
+                new[] { "##" },
                 StringSplitOptions.RemoveEmptyEntries
             );
 
-            for (int i = 0; i < rooms.Length; i++)
-                Rooms.Add(new Room(rooms[i]));
+            foreach (string room in rooms)
+                Rooms.Add(new Room(room));
 
             string itemSection =
                 content.Substring(read, content.Length - read).Split(
-                    new string[] { "</ITEMS>" },
+                    new[] { "</ITEMS>" },
                     StringSplitOptions.None
                 )[0];
             read += itemSection.Length + "</ITEMS>".Length;
 
             string[] items = itemSection.Split(
-                new string[] { "##" },
+                new[] { "##" },
                 StringSplitOptions.RemoveEmptyEntries
             );
 
-            for (int i = 0; i < items.Length; i++)
-                AllItems.Add(new Item(items[i]));
+            foreach (string item in items)
+                AllItems.Add(new Item(item));
             WorldItems.AddRange(AllItems);
 
             string actorSection =
                 content.Substring(read, content.Length - read).Split(
-                    new string[] { "</ACTORS>" },
+                    new[] { "</ACTORS>" },
                     StringSplitOptions.None
                 )[0];
+            //LH-011214: it makes sense to keep this here even if "read"
+            //           is not actually used after this point, since we might
+            //           add on more sections later, and it'd be a dumb miss
+            //           to miss on updating it when it then turns relevant ;)
+            //ReSharper disable once RedundantAssignment
             read += actorSection.Length + "</ACTORS>".Length;
 
             string[] actorList = actorSection.Split(
-                new string[] { "##" },
+                new[] { "##" },
                 StringSplitOptions.RemoveEmptyEntries
             );
 
-            for (int i = 0; i < actorList.Length; i++)
+            foreach (Actor actor in actorList.Select(a => new Actor(a)))
             {
-                Actor actor = new Actor(actorList[i]);
                 WorldActors.Add(actor);
                 foreach (Item item in actor.Inventory)
                     WorldItems.Remove(item);
@@ -351,19 +349,19 @@ namespace ODB
             TileDefinition floor,
             TileDefinition walls = null
         ) {
-            Room R = new Room();
-            R.rects.AddRange(rects);
-            Rooms.Add(R);
+            Room room = new Room();
+            room.Rects.AddRange(rects);
+            Rooms.Add(room);
 
             bool[,] drawn = new bool[LevelSize.x, LevelSize.y];
-            foreach (Rect r in rects)
+            foreach (Rect rect in rects)
             {
-                for (int x = 0; x < r.wh.x; x++)
+                for (int x = 0; x < rect.wh.x; x++)
                 {
-                    for (int y = 0; y < r.wh.y; y++)
+                    for (int y = 0; y < rect.wh.y; y++)
                     {
-                        Map[r.xy.x + x, r.xy.y + y] = new Tile(floor);
-                        drawn[r.xy.x + x, r.xy.y + y] = true;
+                        Map[rect.xy.x + x, rect.xy.y + y] = new Tile(floor);
+                        drawn[rect.xy.x + x, rect.xy.y + y] = true;
                     }
                 }
             }
@@ -374,21 +372,12 @@ namespace ODB
             {
                 for (int y = 1; y < LevelSize.y-1; y++)
                 {
-                    bool border = false;
-                    if(
+                    bool border =
                         drawn[x, y] &&
                         (
-                            !drawn[x-1, y] ||
-                            !drawn[x+1, y] ||
-                            !drawn[x, y-1] ||
-                            !drawn[x, y+1]
-                        )
-                    ) {
-                        //do overlap check here like old wall rendering
-                        //so we can draw a room on top of a corridor
-                        //without closing the corridor
-                        border = true;
-                    }
+                            !drawn[x-1, y] || !drawn[x+1, y] ||
+                            !drawn[x, y-1] || !drawn[x, y+1]
+                        );
 
                     if(border) Map[x, y].Definition = walls;
                 }

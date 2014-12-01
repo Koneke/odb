@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-
+using System.Linq;
 using Microsoft.Xna.Framework.Input;
 
 namespace ODB
@@ -10,48 +10,39 @@ namespace ODB
 
         public static void Get()
         {
-            string answer = Game.qpAnswerStack.Pop();
+            string answer = Game.QpAnswerStack.Pop();
             if (answer.Length <= 0) return;
 
-            int i = IO.indexes.IndexOf(answer[0]);
+            int i = IO.Indexes.IndexOf(answer[0]);
             
             List<Item> onTile = Game.Level.ItemsOnTile(
-                Game.player.xy
+                Game.Player.xy
             );
 
-            if (i < onTile.Count)
-            {
-                Item it = onTile[i];
-                Game.Level.WorldItems.Remove(it);
+            Item it = onTile[i];
+            Game.Level.WorldItems.Remove(it);
 
-                if (it.Definition.stacking)
-                {
-                    bool alreadyHolding = false;
-                    foreach (Item item in Game.player.Inventory)
-                        if (item.Definition.type == it.Definition.type)
-                        {
-                            if(!Game.player.IsEquipped(item)) {
-                                alreadyHolding = true;
-                                item.count+=it.count;
-                                //merging into the already held item
-                                Game.Level.AllItems.Remove(it);
-                            }
-                        }
-                    if (!alreadyHolding)
-                        Game.player.Inventory.Add(it);
+            if (it.Definition.Stacking)
+            {
+                bool alreadyHolding = false;
+                foreach (Item item in Game.Player.Inventory
+                    .Where(item => item.Definition.Type == it.Definition.Type)
+                    .Where(item => !Game.Player.IsEquipped(item))
+                ) {
+                    alreadyHolding = true;
+                    item.Count+=it.Count;
+                    //merging into the already held item
+                    Game.Level.AllItems.Remove(it);
                 }
-                else
-                {
-                    Game.player.Inventory.Add(it);
-                }
-                Util.Game.Log("Picked up " + it.GetName() + ".");
-                Game.player.Pass();
+                if (!alreadyHolding)
+                    Game.Player.Inventory.Add(it);
             }
             else
             {
-                Util.Game.Log("Invalid selection ("+answer[0]+").");
-                return;
+                Game.Player.Inventory.Add(it);
             }
+            Util.Game.Log("Picked up " + it.GetName() + ".");
+            Game.Player.Pass();
         }
 
         public static void Drop()
@@ -61,121 +52,114 @@ namespace ODB
             //not actually using the stack here yet, but we want
             //to drop the string answer bit in the sign later...
             //I think.
-            string answer = Game.qpAnswerStack.Peek();
+            string answer = Game.QpAnswerStack.Peek();
             if (answer.Length <= 0) return;
 
-            int i = IO.indexes.IndexOf(answer[0]);
+            int i = IO.Indexes.IndexOf(answer[0]);
 
-            if (i >= Game.player.Inventory.Count)
+            Item it = Game.Player.Inventory[i];
+
+            if (it.Definition.Stacking && it.Count > 1)
             {
-                Game.Log("Invalid selection ("+answer[0]+").");
-                return;
+                IO.AcceptedInput.Clear();
+                for (Keys k = Keys.D0; k <= Keys.D9; k++)
+                    IO.AcceptedInput.Add((char)k);
+
+                IO.AskPlayer(
+                    "How many?",
+                    InputType.QuestionPrompt,
+                    DropCount
+                );
             }
-
-            if (i < Game.player.Inventory.Count)
-            {
-                Item it = Game.player.Inventory[i];
-
-                if (it.Definition.stacking && it.count > 1)
-                {
-                    IO.AcceptedInput.Clear();
-                    for (Keys k = Keys.D0; k <= Keys.D9; k++)
-                        IO.AcceptedInput.Add((char)k);
-
-                    IO.AskPlayer(
-                        "How many?",
-                        InputType.QuestionPrompt,
-                        PlayerResponses.DropCount
-                    );
-                }
-                else
-                {
-                    drop(i);
-                }
-            }
+            //just do a full drop, no splitting necessary
+            else drop(i);
         }
 
         public static void DropCount()
         {
-            string count = Game.qpAnswerStack.Pop();
-            string index = Game.qpAnswerStack.Pop();
-            int i = IO.indexes.IndexOf(index[0]);
+            string count = Game.QpAnswerStack.Pop();
+            string index = Game.QpAnswerStack.Pop();
+            int i = IO.Indexes.IndexOf(index[0]);
             int c = int.Parse(count);
             drop(i, c);
         }
 
         static void drop(int index)
         {
-            Item it = Game.player.Inventory[index];
+            Item it = Game.Player.Inventory[index];
 
-            Game.player.Inventory.Remove(it);
+            Game.Player.Inventory.Remove(it);
             Game.Level.WorldItems.Add(it);
 
-            it.xy = Game.player.xy;
+            it.xy = Game.Player.xy;
 
             //actually make sure to unwield/unwear as well
-            foreach (BodyPart bp in Game.player.PaperDoll)
-                if (bp.Item == it) bp.Item = null;
+            foreach (BodyPart bp in Game.Player.PaperDoll
+                .Where(bp => bp.Item == it))
+                bp.Item = null;
+
+            if (Game.Player.Quiver == it)
+                Game.Player.Quiver = null;
 
             Game.Log("Dropped " + it.GetName() + ".");
 
-            Game.player.Pass();
+            Game.Player.Pass();
         }
 
         static void drop(int index, int count)
         {
-            Item it = Game.player.Inventory[index];
-            if (it.Definition.stacking && it.count > 1)
+            Item it = Game.Player.Inventory[index];
+            if (!it.Definition.Stacking || it.Count <= 1) return;
+
+            if (count > it.Count)
             {
-                if (count > it.count)
-                {
-                    Game.Log("You don't have that many.");
-                    return;
-                }
-                else if (count == it.count)
-                {
-                    //falling through to the normal itemdropping
-                    drop(index);
-                }
-                else
-                {
-                    //copy the item
-                    Item droppedStack =
-                        new Item(
-                            it.WriteItem().ToString()
-                        );
-                    //change id
-                    droppedStack.id = Item.IDCounter++;
-                    droppedStack.count = count;
-                    it.count -= count;
-                    Game.Level.WorldItems.Add(droppedStack);
-                    Game.Level.AllItems.Add(droppedStack);
-                    droppedStack.xy = Game.player.xy;
+                Game.Log("You don't have that many.");
+            }
+            else if (count == it.Count)
+            {
+                //falling through to the normal itemdropping
+                drop(index);
+            }
+            else
+            {
+                //copy the item
+                Item droppedStack =
+                    new Item(
+                        //clone item
+                        it.WriteItem().ToString()
+                    ) {
+                        //mod essential stuff
+                        ID = Item.IDCounter++,
+                        Count = count
+                    };
 
-                    Game.Log("Dropped "+// count + " " +
-                        droppedStack.GetName() + "."
-                    );
+                it.Count -= count;
+                Game.Level.Spawn(droppedStack);
+                droppedStack.xy = Game.Player.xy;
 
-                    Game.player.Pass();
-                }
+                Game.Log("Dropped " +
+                    droppedStack.GetName() + "."
+                );
+
+                Game.Player.Pass();
             }
         }
 
         public static void Wield()
         {
-            string answer = Game.qpAnswerStack.Pop();
+            string answer = Game.QpAnswerStack.Pop();
             if (answer.Length <= 0) return;
 
-            int i = IO.indexes.IndexOf(answer[0]);
-            Item it = Game.player.Inventory[i];
+            int i = IO.Indexes.IndexOf(answer[0]);
+            Item it = Game.Player.Inventory[i];
 
-            if(!Game.player.CanEquip(it.equipSlots))
+            if(!Game.Player.CanEquip(it.EquipSlots))
                 Game.Log("You need to remove something first.");
             else {
                 Game.Log("Equipped "+it.GetName() + ".");
-                Game.player.Equip(it);
+                Game.Player.Equip(it);
                 it.Identify();
-                Game.player.Pass();
+                Game.Player.Pass();
             }
         }
 
@@ -183,131 +167,119 @@ namespace ODB
         {
             //make sure we start using this instead
             //so we can phase the argument out
-            string answer = Game.qpAnswerStack.Pop();
+            string answer = Game.QpAnswerStack.Pop();
 
-            int i = IO.indexes.IndexOf(answer[0]);
-            Item it = Game.player.Inventory[i];
+            int i = IO.Indexes.IndexOf(answer[0]);
+            Item it = Game.Player.Inventory[i];
 
             bool canEquip = true;
-            //should even show up as a choice though
-            if (it.equipSlots.Contains(DollSlot.Quiver))
-                canEquip = false;
 
-            if (!Game.player.CanEquip(it.equipSlots))
+            if (!Game.Player.CanEquip(it.EquipSlots))
             {
                 canEquip = false;
                 Game.Log("You need to remove something first.");
             }
 
-            if (canEquip)
-            {
-                //make sure we're not equipping "2x ..."
-                if (it.Definition.stacking && it.count > 1)
-                {
-                    Item clone = new Item(it.WriteItem().ToString());
-                    clone.id = Item.IDCounter++;
-                    clone.count--;
-                    it.count = 1;
-                    Game.player.Inventory.Add(clone);
-                    Game.Level.AllItems.Add(clone);
-                }
-                Game.player.Equip(it);
-                it.Identify();
-                Game.Log("Wore " + it.GetName() + ".");
+            if (!canEquip) return;
 
-                Game.player.Pass();
+            //make sure we're not equipping "2x ..."
+            if (it.Definition.Stacking && it.Count > 1)
+            {
+                Item clone = new Item(
+                    //clone
+                    it.WriteItem().ToString()
+                ) {
+                    //no dupe ids pls
+                    ID = Item.IDCounter++
+                };
+
+                clone.Count--;
+                it.Count = 1;
+                Game.Player.Inventory.Add(clone);
+                Game.Level.AllItems.Add(clone);
             }
+            Game.Player.Equip(it);
+            it.Identify();
+            Game.Log("Wore " + it.GetName() + ".");
+
+            Game.Player.Pass();
         }
 
         public static void Quiver()
         {
-            string answer = Game.qpAnswerStack.Pop();
+            string answer = Game.QpAnswerStack.Pop();
             if (answer.Length <= 0) return;
 
-            int i = IO.indexes.IndexOf(answer[0]);
+            int i = IO.Indexes.IndexOf(answer[0]);
 
-            Item selected = Game.player.Inventory[i];
-            foreach (BodyPart bp in Game.player.PaperDoll)
-                if (bp.Type == DollSlot.Quiver)
-                    bp.Item = selected;
+            Item selected = Game.Player.Inventory[i];
+            Game.Player.Quiver = selected;
 
+            //todo: should we really identify on quiver?
+            //      or should we rather do it on fire?
             selected.Identify();
             Game.Log("Quivered "+ selected.GetName() + ".");
 
-            Game.player.Pass();
+            Game.Player.Pass();
         }
 
         public static void Sheath()
         {
-            string answer = Game.qpAnswerStack.Pop();
+            string answer = Game.QpAnswerStack.Pop();
             if (answer.Length <= 0) return;
 
-            int i = IO.indexes.IndexOf(answer[0]);
-            if (i >= Game.player.Inventory.Count)
+            int i = IO.Indexes.IndexOf(answer[0]);
+            if (i >= Game.Player.Inventory.Count)
             {
                 Game.Log("Invalid selection (" + answer[0] + ").");
                 return;
             }
 
-            Item it = null;
+            Item it = Game.Player.Inventory[i];
 
-            foreach (BodyPart bp in Game.player.PaperDoll)
-                if (bp.Item == Game.player.Inventory[i]) {
-                    it = bp.Item;
-                }
-
-            foreach (BodyPart bp in Game.player.PaperDoll)
-                if (bp.Item == it) bp.Item = null;
+            foreach (BodyPart bp in Game.Player.PaperDoll
+                .Where(bp => bp.Item == it))
+                bp.Item = null;
 
             Util.Game.Log("Unequipped " + it.GetName() + ".");
 
-            Game.player.Pass();
+            Game.Player.Pass();
         }
 
         public static void Remove()
         {
-            string answer = Game.qpAnswerStack.Pop();
+            string answer = Game.QpAnswerStack.Pop();
             if (answer.Length <= 0) return;
 
-            int i = IO.indexes.IndexOf(answer[0]);
-            Item it = null;
+            int i = IO.Indexes.IndexOf(answer[0]);
+            Item it = Game.Player.Inventory[i];
 
-            foreach (BodyPart bp in Game.player.PaperDoll)
-                if (bp.Item == Game.player.Inventory[i])
-                    it = bp.Item;
-
-            foreach (BodyPart bp in Game.player.PaperDoll)
-                if (bp.Item == it) bp.Item = null;
+            foreach (BodyPart bp in Game.Player.PaperDoll
+                .Where(bp => bp.Item == it))
+                bp.Item = null;
 
             Game.Log("Removed " + it.GetName());
 
-            Item stack = null;
-            if (it.Definition.stacking)
-                foreach (Item item in Game.player.Inventory)
-                    if (
-                        item.Definition.type == it.Definition.type &&
-                        item != it
-                    ) stack = item;
+            Item stack =  Game.Player.Inventory.Find(
+                item => item != it && item.Type == it.Type);
 
-            if (stack != null)
-            {
-                stack.count += it.count;
-                Game.player.Inventory.Remove(it);
-                Game.Level.AllItems.Remove(it);
-            }
+            if (stack == null) return;
 
+            stack.Count += it.Count;
+            Game.Player.Inventory.Remove(it);
+            Game.Level.AllItems.Remove(it);
         }
 
         public static void Open()
         {
-            string answer = Game.qpAnswerStack.Pop();
+            string answer = Game.QpAnswerStack.Pop();
             if (answer.Length <= 0) return;
 
             Point offset = Game.NumpadToDirection(answer[0]);
             Tile t = 
                 Game.Level.Map[
-                    Game.player.xy.x + offset.x,
-                    Game.player.xy.y + offset.y
+                    Game.Player.xy.x + offset.x,
+                    Game.Player.xy.y + offset.y
                 ];
             if (t.Door == Door.Closed)
             {
@@ -316,20 +288,20 @@ namespace ODB
 
                 //counted as a movement action at the moment, based
                 //on the dnd rules.
-                Game.player.Pass(true);
+                Game.Player.Pass(true);
             }
             else Game.Log("There's no closed door there.");
         }
 
         public static void Close()
         {
-            string answer = Game.qpAnswerStack.Pop();
+            string answer = Game.QpAnswerStack.Pop();
             if (answer.Length <= 0) return;
 
             Point offset = Game.NumpadToDirection(answer[0]);
             Point p = new Point(
-                Game.player.xy.x + offset.x,
-                Game.player.xy.y + offset.y);
+                Game.Player.xy.x + offset.x,
+                Game.Player.xy.y + offset.y);
             Tile t = Game.Level.Map[p.x, p.y];
 
             if (t.Door == Door.Open)
@@ -342,7 +314,7 @@ namespace ODB
 
                     //counted as a movement action at the moment, based
                     //on the dnd rules.
-                    Game.player.Pass(true);
+                    Game.Player.Pass(true);
                 }
                 else Game.Log("There's something in the way.");
             }
@@ -351,38 +323,32 @@ namespace ODB
 
         public static void Zap()
         {
-            string answer = Game.qpAnswerStack.Peek();
+            string answer = Game.QpAnswerStack.Peek();
             if (answer.Length <= 0) return;
-            int i = IO.indexes.IndexOf(answer[0]);
-            if (i >= Game.player.Spellbook.Count)
-            {
+            int i = IO.Indexes.IndexOf(answer[0]);
+            if (i >= Game.Player.Spellbook.Count)
                 Game.Log("Invalid selection (" + answer[0] + ").");
-                return;
-            }
-            else if (Game.player.mpCurrent < Game.player.Spellbook[i].Cost)
-            {
+            else if (Game.Player.MpCurrent < Game.Player.Spellbook[i].Cost)
                 Game.Log("You lack the energy.");
-                return;
-            }
             else
             {
-                Game.TargetedSpell = Game.player.Spellbook[i];
+                Game.TargetedSpell = Game.Player.Spellbook[i];
                 IO.AskPlayer(
-                    "Casting " + Game.player.Spellbook[i].Name,
+                    "Casting " + Game.Player.Spellbook[i].Name,
                     InputType.Targeting,
-                    PlayerResponses.Cast
+                    Cast
                 );
             }
         }
 
         public static void Use()
         {
-            string answer = Game.qpAnswerStack.Peek();
+            string answer = Game.QpAnswerStack.Peek();
             if (answer.Length <= 0) return;
 
-            Item it = Game.player.Inventory[IO.indexes.IndexOf(answer[0])];
+            Item it = Game.Player.Inventory[IO.Indexes.IndexOf(answer[0])];
 
-            if (it.count <= 0)
+            if (it.Count <= 0)
             {
                 Game.Log(it.GetName(true, false, true) + " lacks charges.");
                 return;
@@ -392,18 +358,18 @@ namespace ODB
             if (it.UseEffect.Range <= 0)
             {
                 Projectile pr = it.UseEffect.Cast(
-                    Game.player,
-                    Game.player.xy
+                    Game.Player,
+                    Game.Player.xy
                 );
                 pr.Move();
-                it.count--;
-                if (it.count <= 0)
+                it.Count--;
+                if (it.Count <= 0)
                 {
-                    Game.player.Inventory.Remove(it);
+                    Game.Player.Inventory.Remove(it);
                     Game.Level.AllItems.Remove(it);
                     Game.Log(it.GetName(true, false, true) + " is spent!");
                 }
-                Game.player.Pass();
+                Game.Player.Pass();
             }
             //targeted
             else
@@ -412,19 +378,19 @@ namespace ODB
                 IO.AskPlayer(
                     "Using " + it.GetName(true),
                     InputType.Targeting,
-                    PlayerResponses.UseCast
+                    UseCast
                 );
             }
         }
 
         public static void Cast()
         {
-            int index = IO.indexes.IndexOf(Game.qpAnswerStack.Pop()[0]);
+            int index = IO.Indexes.IndexOf(Game.QpAnswerStack.Pop()[0]);
             if (Game.Level.Map[Game.Target.x, Game.Target.y] != null) {
-                Game.player.Cast(
+                Game.Player.Cast(
                     Game.TargetedSpell, Game.Target
                 );
-                Game.player.mpCurrent -= Game.player.Spellbook[index].Cost;
+                Game.Player.MpCurrent -= Game.Player.Spellbook[index].Cost;
             }
             else
                 Game.Log("Invalid target.");
@@ -434,26 +400,26 @@ namespace ODB
         {
             if (Game.Level.Map[Game.Target.x, Game.Target.y] != null)
             {
-                int i = IO.indexes.IndexOf(Game.qpAnswerStack.Pop()[0]);
-                Item it = Game.player.Inventory[i];
+                int i = IO.Indexes.IndexOf(Game.QpAnswerStack.Pop()[0]);
+                Item it = Game.Player.Inventory[i];
                 Game.Log("You use " + it.GetName(true) + ".");
                 //Projectile pr = Game.TargetedSpell.Cast(Game.player, p);
                 Projectile pr = Game.TargetedSpell.Cast(
-                    Game.player,
+                    Game.Player,
                     Game.Target
                 );
                 pr.Move();
                 //spend charge
-                it.count--;
+                it.Count--;
                 //rechargin items should probably not trigger this
                 //but that's a later issue
-                if (it.count <= 0)
+                if (it.Count <= 0)
                 {
-                    Game.player.Inventory.Remove(it);
+                    Game.Player.Inventory.Remove(it);
                     Game.Level.AllItems.Remove(it);
                     Game.Log(it.GetName(true, false, true) + " is spent!");
                 }
-                Game.player.Pass();
+                Game.Player.Pass();
             }
             else
                 Game.Log("Invalid target.");
@@ -461,7 +427,7 @@ namespace ODB
 
         public static void Fire()
         {
-            if (!Game.player.Vision[
+            if (!Game.Player.Vision[
                 Game.Target.x, Game.Target.y
             ]) {
                 Game.Log("You can't see that place.");
@@ -474,7 +440,7 @@ namespace ODB
                 return;
             }
 
-            Game.player.Shoot(a);
+            Game.Player.Shoot(a);
         }
 
         public static void Examine()
@@ -487,7 +453,7 @@ namespace ODB
             Tile t = Game.Level.Map[Game.Target.x, Game.Target.y];
 
             string distString =
-                (Util.Distance(Game.player.xy, Game.Target) > 0 ?
+                (Util.Distance(Game.Player.xy, Game.Target) > 0 ?
                     " there. " : " here. ");
 
             if (t == null || !Game.Level.Seen[Game.Target.x, Game.Target.y])
@@ -515,7 +481,7 @@ namespace ODB
             }
 
 
-            if (Game.player.Vision[Game.Target.x, Game.Target.y])
+            if (Game.Player.Vision[Game.Target.x, Game.Target.y])
             {
                 if (t.Engraving != "")
                     str += "\"" + t.Engraving + "\" is written on the floor" +
@@ -523,7 +489,7 @@ namespace ODB
 
                 Actor a;
                 if ((a = Game.Level.ActorOnTile(t)) != null)
-                    if(a != Game.player)
+                    if(a != Game.Player)
                         str += "You see " + a.GetName() + distString;
                 if (items.Count > 0)
                     str += "There's " + items[0].GetName() + distString;
@@ -537,29 +503,29 @@ namespace ODB
 
         public static void Eat()
         {
-            string answer = Game.qpAnswerStack.Pop();
-            int index = IO.indexes.IndexOf(answer[0]);
+            string answer = Game.QpAnswerStack.Pop();
+            int index = IO.Indexes.IndexOf(answer[0]);
 
-            Item it = Game.player.Inventory[index];
+            Item it = Game.Player.Inventory[index];
 
-            if (it.Definition.stacking)
+            if (it.Definition.Stacking)
             {
-                if (it.count > 1)
+                if (it.Count > 1)
                 {
-                    it.count--;
-                    Game.player.Eat(it);
+                    it.Count--;
+                    Game.Player.Eat(it);
                 }
                 else
                 {
-                    Game.player.Inventory.RemoveAt(index);
-                    Game.player.Eat(it);
+                    Game.Player.Inventory.RemoveAt(index);
+                    Game.Player.Eat(it);
                 }
             }
             else
             {
                 Game.Log("You eat " + it.GetName());
-                Game.player.Inventory.RemoveAt(index);
-                Game.player.Eat(it);
+                Game.Player.Inventory.RemoveAt(index);
+                Game.Player.Eat(it);
             }
 
         }
