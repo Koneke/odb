@@ -226,15 +226,19 @@ namespace ODB
                     where bp.Item != null
                     where bp.Type == DollSlot.Hand
                     select bp.Item
-                ).ToList();
+                ).Distinct().ToList();
 
-            if (wielded.Count > 0)
+            if (wielded.Count > 0 || Game.Player.Quiver != null)
             {
                 IO.AcceptedInput.Clear();
                 foreach (Item item in wielded)
                     IO.AcceptedInput.Add(
                         IO.Indexes[Game.Player.Inventory.IndexOf(item)]
                     );
+                IO.AcceptedInput.Add(
+                    IO.Indexes
+                    [Game.Player.Inventory.IndexOf(Game.Player.Quiver)]
+                );
                 string question = "Sheath what? [";
                 question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
                 question += "] ";
@@ -247,7 +251,7 @@ namespace ODB
             }
             else
             {
-                Game.Log("You don't have anything wielded!");
+                Game.Log("You don't have anything quivered or wielded!");
             }
         }
 
@@ -433,18 +437,18 @@ namespace ODB
             //      quivering an orc corpse sounds a bit so-so...
             if (!IO.KeyPressed(Keys.Q) || !IO.Shift) return;
 
-            string question = "Quiver what? [";
-                
             IO.AcceptedInput.Clear();
-            foreach (
-                char index in Game.Player.Inventory
-                    .Where(it => !Game.Player.IsEquipped(it))
-                    .Select(it => IO.Indexes[Game.Player.Inventory.IndexOf(it)])
-                ) {
-                    question += index;
-                    IO.AcceptedInput.Add(index);
-                }
+            foreach (int index in Game.Player.Inventory
+                .Where(it => !Game.Player.IsEquipped(it))
+                .Where(it => it != Game.Player.Quiver)
+                .Select(it => Game.Player.Inventory.IndexOf(it))
+            ) {
+                IO.AcceptedInput.Add(IO.Indexes[index]);
+            }
 
+            string question = "Quiver what? [";
+            question += IO.AcceptedInput.Aggregate(
+                "", (c, n) => c + n);
             question += "]";
 
             if (IO.AcceptedInput.Count > 0)
@@ -477,7 +481,7 @@ namespace ODB
             foreach (
                 char index in
                     from item in Game.Player.Inventory
-                    where item.Definition.Nutrition > 0
+                    where item.HasComponent("cEdible")
                 select IO.Indexes[Game.Player.Inventory.IndexOf(item)]
                 ) {
                     question += index;
@@ -490,7 +494,7 @@ namespace ODB
                     question,
                     InputType.QuestionPromptSingle,
                     PlayerResponses.Eat
-                    );
+                );
             else Game.Log("You have nothing to eat.");
         }
     }

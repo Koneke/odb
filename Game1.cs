@@ -15,6 +15,7 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 //   * Fairly low prio, since it's not part of the /game/ per se,
 //     but it /is/ fairly messy.
 // * Switch from numbers in actor def to die?
+// * Inventory stuff currently doesn't make noise.
 
 //~~~ QUEST TRACKER for 2 dec ~~~
 // * Containers
@@ -57,6 +58,9 @@ namespace ODB
         public List<Level> Levels;
         public Level Level;
         public List<Brain> Brains;
+
+        public Dictionary<int, List<int>> Containers;
+        public int CurrentContainer;
 
         public Actor Player;
         //for now, breaking on of the RL rules a bit,
@@ -140,6 +144,9 @@ namespace ODB
             Game.Food = 9000;
 
             SetupBrains();
+
+            Containers = new Dictionary<int, List<int>>();
+            CurrentContainer = -1;
 
             _logSize = 3;
             _log = new List<string>();
@@ -753,38 +760,55 @@ namespace ODB
                 Color.DarkGray
             );
 
-            _inventoryConsole.CellData.Print(
-                2, 0, Player.Definition.Name, Color.White);
+            if (CurrentContainer == -1)
+                _inventoryConsole.CellData.Print(
+                    2, 0, Player.Definition.Name, Color.White);
+            else
+                _inventoryConsole.CellData.Print(
+                    2, 0,
+                    Util.GetItemByID(CurrentContainer).GetName("Name"),
+                    Color.White);
 
-            for (int i = 0; i < Player.Inventory.Count; i++)
+            List<Item> items = new List<Item>();
+            if (CurrentContainer != -1)
+                items.AddRange(
+                    Game.Level.AllItems
+                    .Where(
+                        item => Containers
+                        [CurrentContainer]
+                        .Contains(item.ID)
+                    )
+                );
+            else items.AddRange(Player.Inventory);
+
+            int y = 1;
+            foreach (Item item in items)
             {
-                Item it = Player.Inventory[i];
+                string name = "";
 
-                bool equipped = Game.Player.IsEquipped(it);
-
-                string name = "" + ((char)(97 + i));
+                name += IO.Indexes[items.IndexOf(item)];
                 name += " - ";
 
+                name += item.Mod.ToString("+#;-#;+0");
+                name += " ";
 
-                if (it.Definition.Stacking)
-                    name += it.Count + "x ";
+                if (item.Stacking)
+                    name += item.Count + "x ";
+                name += item.GetName("Name");
 
-                if (Player.Inventory[i].Mod != 0)
-                {
-                    name += Player.Inventory[i].Mod >= 0 ? "+" : "-";
-                    name += Math.Abs(Player.Inventory[i].Mod) + " ";
-                }
-
-                name += Player.Inventory[i].GetName("Name");
                 //LH-021214: We might actually not know the number of charges..?
-                if (it.Charged)
+                if (item.Charged) name += "[" + item.Count + "]";
+
+                if (item.HasComponent("cContainer"))
                 {
-                    name += "["+it.Count+"]";
+                    name += " (holding ";
+                    name += Containers[item.ID].Count + " items)";
                 }
-                if (equipped) name += " (eq)";
+
+                if (Game.Player.IsEquipped(item)) name += " (eq)";
 
                 _inventoryConsole.CellData.Print(
-                    2, i + 1, name
+                    2, y++, name
                 );
             }
         }

@@ -14,9 +14,8 @@ namespace ODB
             return
                 base.Equals(other) &&
                 Stacking.Equals(other.Stacking) &&
-                Ranged.Equals(other.Ranged) &&
-                Category == other.Category &&
-                Nutrition == other.Nutrition;
+                Category == other.Category
+            ;
         }
         public override int GetHashCode()
         {
@@ -33,9 +32,7 @@ namespace ODB
                 //      use them as separate keys.
                 int hashCode = base.GetHashCode();
                 hashCode = (hashCode*397) ^ Stacking.GetHashCode();
-                hashCode = (hashCode*397) ^ Ranged.GetHashCode();
                 hashCode = (hashCode*397) ^ Category;
-                hashCode = (hashCode*397) ^ Nutrition;
                 return hashCode;
             }
         }
@@ -61,16 +58,10 @@ namespace ODB
         public static List<int> IdentifiedDefs = new List<int>();
 
         public bool Stacking;
-        public bool Ranged;
-        //todo: RangedDamage should not be used anymore
-        //public string RangedDamage;
-        //todo: Phasing out this as well. In fact, it doesn't even work now.
-        //public int UseEffect;
         //groups potions together and what not
         //mainly, unidentified items of different defs take from the same
         //random appearance pool (but still only one appearance per definition)
         public int Category;
-        public int Nutrition;
 
         public List<Component> Components; 
 
@@ -83,11 +74,9 @@ namespace ODB
         public ItemDefinition(
             Color? background, Color foreground,
             string tile, string name,
-            bool stacking = false,
-            bool ranged = false
+            bool stacking = false
             ) : base(background, foreground, tile, name) {
             Stacking = stacking;
-            Ranged = ranged;
             Components = new List<Component>();
             ItemDefinitions[Type] = this;
         }
@@ -121,11 +110,7 @@ namespace ODB
 
             Stacking = stream.ReadBool();
 
-            Ranged = stream.ReadBool();
-
             Category = stream.ReadHex(2);
-
-            Nutrition = stream.ReadHex(4);
 
             ItemDefinitions[Type] = this;
 
@@ -146,11 +131,7 @@ namespace ODB
 
             stream.Write(Stacking);
 
-            stream.Write(Ranged);
-
             stream.Write(Category, 2);
-
-            stream.Write(Nutrition, 4);
 
             foreach (Component c in Components)
                 stream.Write(c.WriteComponent(), false);

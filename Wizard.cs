@@ -157,6 +157,11 @@ namespace ODB
         {
             switch (cmd)
             {
+                //current container, until we get proper inventory code
+                case "curcont":
+                    if (args[0] == "FFFF") Game.CurrentContainer = -1;
+                    else Game.CurrentContainer = IO.ReadHex(args[0]);
+                    break;
                 //get item definition (id) (by name)
                 case "gid":
                     Game.Log(IO.WriteHex(Util.ItemDefByName(args[0]).Type, 4));
@@ -501,10 +506,7 @@ namespace ODB
                         case "tile": Game.Log(idef.Tile); break;
                         case "name": Game.Log(idef.Name); break;
                         case "stacking": Game.Log(idef.Stacking+""); break;
-                        case "ranged": Game.Log(idef.Ranged+""); break;
                         case "cat": Game.Log(IO.WriteHex(idef.Category, 4));
-                            break;
-                        case "nut": Game.Log(IO.WriteHex(idef.Nutrition, 4));
                             break;
                     }
                     break;
@@ -531,23 +533,11 @@ namespace ODB
                 case "id-stacking":
                     idef.Stacking = IO.ReadBool(args[0]);
                     break;
-                case "id-ranged":
-                    idef.Ranged = IO.ReadBool(args[0]);
-                    break;
                 case "id-use":
                 case "id-cat":
                 case "id-category":
                     idef.Category = IO.ReadHex(args[0]);
                     break;
-                case "id-n":
-                case "id-nut":
-                case "id-nutrition":
-                case "id-food":
-                    #region setnut
-                    foreach (Item snitem in Game.Level.ItemsOnTile(WmCursor))
-                        snitem.Definition.Nutrition = IO.ReadHex(args[0]);
-                    break;
-                    #endregion
                 default: return false;
             }
             return true;
@@ -657,12 +647,25 @@ namespace ODB
 
         private static bool ItemInstanceCommands(string cmd, string[] args)
         {
-            if (Game.Level.ItemsOnTile(WmCursor).Count <= 0) {
+            List<Item> items = Game.Level.ItemsOnTile(WmCursor);
+
+            if (items.Count <= 0) {
                 Game.Log("No item on tile.");
                 return true;
             }
 
             switch (cmd) {
+                case "ii-setmod":
+                    foreach (Item it in items)
+                        it.Mod = IO.ReadHex(args[0]);
+                    break;
+                case "ii-putinto":
+                    foreach (Item it in Game.Level.ItemsOnTile(WmCursor))
+                    {
+                        Game.Level.WorldItems.Remove(it);
+                        Game.Containers[IO.ReadHex(args[0])].Add(it.ID);
+                    }
+                    break;
                 case "ii-sdef":
                 case "ii-setdef":
                     foreach (Item it in Game.Level.ItemsOnTile(WmCursor))

@@ -51,14 +51,15 @@ namespace ODB
 
         public Actor ActorOnTile(Tile t)
         {
-            for(int x = 0; x < LevelSize.x; x++)
+            for (int x = 0; x < LevelSize.x; x++)
                 for (int y = 0; y < LevelSize.y; y++)
                     //do like this while migrating
                     //LH-011214: wtf? ^
                     //           migrating what?
-                    if (Map[x, y] == t) return ActorOnTile(
-                        new Point(x, y)
-                    );
+                    if (Map[x, y] == t)
+                        return ActorOnTile(
+                            new Point(x, y)
+                            );
             return null;
         }
 
@@ -114,8 +115,8 @@ namespace ODB
             {
                 ActorPositions.Add(r, new List<Actor>());
                 foreach (Actor a in WorldActors
-                //ReSharper disable once AccessToForEachVariableInClosure
-                //LH-011214: we're only /using/ the value here, so it's ok
+                    //ReSharper disable once AccessToForEachVariableInClosure
+                    //LH-011214: we're only /using/ the value here, so it's ok
                     .Where(a => r.ContainsPoint(a.xy)))
                 {
                     ActorPositions[r].Add(a);
@@ -130,7 +131,7 @@ namespace ODB
             List<Room> open = Util.GetRooms(p);
 
             Dictionary<int, List<Room>> roomdistances =
-                new Dictionary<int,List<Room>>();
+                new Dictionary<int, List<Room>>();
             int dist = 0;
             List<Room> newopen = new List<Room>();
 
@@ -168,9 +169,10 @@ namespace ODB
                     //LH-011214: only reading the value (i), not changing it
                     let roll = Util.Roll("1d6") + noisemod - distance * 2 > 1
                     select actor
-                ) {
-                    actor.Awake = true;
-                }
+                )
+            {
+                actor.Awake = true;
+            }
         }
 
         public Stream WriteLevelSave(string path)
@@ -236,7 +238,7 @@ namespace ODB
 
             string dimensions =
                 content.Substring(read, content.Length - read).Split(
-                    new[] { "</HEADER>" },
+                    new[] {"</HEADER>"},
                     StringSplitOptions.None
                 )[0];
             read += dimensions.Length + "</HEADER>".Length;
@@ -250,23 +252,24 @@ namespace ODB
 
             string levelSection =
                 content.Substring(read, content.Length - read).Split(
-                    new[] { "</LEVEL>" },
+                    new[] {"</LEVEL>"},
                     StringSplitOptions.None
                 )[0];
             read += levelSection.Length + "</LEVEL>".Length;
 
             string[] tiles = levelSection.Split(
                 //do NOT remove empty entries, they are null tiles!
-                new[]{"##"}, StringSplitOptions.None
+                new[] {"##"}, StringSplitOptions.None
             );
 
             for (int i = 0; i < LevelSize.x * LevelSize.y; i++)
             {
                 int x = i % LevelSize.x;
                 int y = (i - (i % LevelSize.x)) / LevelSize.x;
-                if(tiles[i] == "")
+                if (tiles[i] == "")
                     Map[x, y] = null;
-                else {
+                else
+                {
                     Tile t = new Tile();
                     Stream s = t.ReadTile(tiles[i]);
                     Seen[x, y] = s.ReadBool();
@@ -274,30 +277,30 @@ namespace ODB
                 }
             }
 
-            string roomSection = 
+            string roomSection =
                 content.Substring(read, content.Length - read).Split(
-                    new[] { "</ROOMS>" },
+                    new[] {"</ROOMS>"},
                     StringSplitOptions.RemoveEmptyEntries
                 )[0];
             read += roomSection.Length + "</ROOMS>".Length;
 
             string[] rooms = roomSection.Split(
-                new[] { "##" },
+                new[] {"##"},
                 StringSplitOptions.RemoveEmptyEntries
-            );
+                );
 
             foreach (string room in rooms)
                 Rooms.Add(new Room(room));
 
             string itemSection =
                 content.Substring(read, content.Length - read).Split(
-                    new[] { "</ITEMS>" },
+                    new[] {"</ITEMS>"},
                     StringSplitOptions.None
                 )[0];
             read += itemSection.Length + "</ITEMS>".Length;
 
             string[] items = itemSection.Split(
-                new[] { "##" },
+                new[] {"##"},
                 StringSplitOptions.RemoveEmptyEntries
             );
 
@@ -307,7 +310,7 @@ namespace ODB
 
             string actorSection =
                 content.Substring(read, content.Length - read).Split(
-                    new[] { "</ACTORS>" },
+                    new[] {"</ACTORS>"},
                     StringSplitOptions.None
                 )[0];
             //LH-011214: it makes sense to keep this here even if "read"
@@ -318,7 +321,7 @@ namespace ODB
             read += actorSection.Length + "</ACTORS>".Length;
 
             string[] actorList = actorSection.Split(
-                new[] { "##" },
+                new[] {"##"},
                 StringSplitOptions.RemoveEmptyEntries
             );
 
@@ -334,6 +337,12 @@ namespace ODB
         {
             WorldItems.Add(item);
             AllItems.Add(item);
+        }
+
+        public void Despawn(Item item)
+        {
+            WorldItems.Remove(item);
+            AllItems.Remove(item);
         }
 
         public void CreateRoom(

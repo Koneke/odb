@@ -248,11 +248,21 @@ namespace ODB
 
             Item it = Game.Player.Inventory[i];
 
-            foreach (BodyPart bp in Game.Player.PaperDoll
-                .Where(bp => bp.Item == it))
-                bp.Item = null;
+            if (Game.Player.PaperDoll.Any(
+                x => x.Item == it))
+            {
+                foreach (BodyPart bp in Game.Player.PaperDoll
+                    .Where(bp => bp.Item == it))
+                    bp.Item = null;
 
-            Util.Game.Log("Sheathed " + it.GetName("a") + ".");
+                Util.Game.Log("Sheathed " + it.GetName("a") + ".");
+            }
+            //it's our quivered item
+            else
+            {
+                Game.Player.Quiver = null;
+                Util.Game.Log("Unreadied " + it.GetName("count") + ".");
+            }
 
             Game.Player.Pass();
         }
@@ -465,6 +475,7 @@ namespace ODB
 
         public static void Look()
         {
+            Game.Target = Game.Player.xy;
             Examine(true);
         }
 
@@ -512,9 +523,14 @@ namespace ODB
                     if(a != Game.Player)
                         str += "You see " + a.GetName("a") + distString;
                 if (items.Count > 0)
-                    str += "There's " + items[0].GetName("count") + distString;
-                else if (items.Count > 1)
-                    str += "There's several items " + distString;
+                {
+                    if (items.Count == 1)
+                        str +=
+                            "There's " + items[0].GetName("count") +
+                            distString;
+                    else
+                        str += "There's several items" + distString;
+                }
             }
 
             if(str != "")
@@ -543,7 +559,6 @@ namespace ODB
             }
             else
             {
-                Game.Log("You eat " + it.GetName("a"));
                 Game.Player.Inventory.RemoveAt(index);
                 Game.Player.Eat(it);
             }

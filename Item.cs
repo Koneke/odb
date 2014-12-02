@@ -54,6 +54,12 @@ namespace ODB
         public new ItemDefinition Definition;
         public List<Mod> Mods;
 
+        /*
+         * bool BucKnown;
+         * bool NameKnown; 
+         * bool ModKnown;
+         */
+
         //not to file
         public bool Charged;
 
@@ -86,14 +92,20 @@ namespace ODB
             Definition = definition;
             Mods = new List<Mod>();
             if (mods != null) Mods.AddRange(mods);
+
             Charged = !Definition.Stacking && count > 0;
+            if (Definition.HasComponent("cContainer"))
+                Game.Containers.Add(ID, new List<int>());
         }
 
         //LOADING an OLD item
         public Item(string s) : base(s)
         {
             ReadItem(s);
+
             Charged = !Definition.Stacking && Count > 0;
+            if (Definition.HasComponent("cContainer"))
+                Game.Containers.Add(ID, new List<int>());
         }
 
         public bool Known
@@ -119,7 +131,7 @@ namespace ODB
             }
         }
 
-        public string GetName(string prefix)
+        public string GetName(string format)
         {
             string apperance =
                 Known
@@ -129,12 +141,12 @@ namespace ODB
             string result;
 
             //Stacking item, but only one of it
-            if (prefix == "count")
-                if (Count < 2 || !Stacking) prefix = "a";
-            if (prefix == "Count")
-                if (Count < 2 || !Stacking) prefix = "A";
+            if (format == "count")
+                if (Count < 2 || !Stacking) format = "a";
+            if (format == "Count")
+                if (Count < 2 || !Stacking) format = "A";
 
-            switch (prefix.ToLower())
+            switch (format.ToLower())
             {
                 case "name":
                     result = apperance;
@@ -162,7 +174,7 @@ namespace ODB
                     throw new ArgumentException();
             }
 
-            if (prefix[0] >= 'A' && prefix[0] <= 'Z')
+            if (format[0] >= 'A' && format[0] <= 'Z')
                 result = Util.Capitalize(result);
 
             return result;
@@ -201,7 +213,6 @@ namespace ODB
         {
             Stream stream = WriteGObject();
 
-            stream.Write(Definition.Type, 4);
             stream.Write(ID, 4);
             stream.Write(Mod, 2);
             stream.Write(Count, 2);
@@ -225,7 +236,7 @@ namespace ODB
                 ItemDefinition.ItemDefinitions[
                     stream.ReadHex(4)
                 ];
-            //are we actually setting the IDef.ItemDefinitions when loading..?
+
             ID = stream.ReadHex(4);
             Mod = stream.ReadHex(2);
             Count = stream.ReadHex(2);

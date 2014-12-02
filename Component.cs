@@ -28,6 +28,10 @@ namespace ODB
                     return ProjectileComponent.Create(content);
                 case "cLauncher":
                     return LauncherComponent.Create(content);
+                case "cEdible":
+                    return EdibleComponent.Create(content);
+                case "cContainer":
+                    return ContainerComponent.Create(content);
                 default:
                     throw new ArgumentException();
             }
@@ -214,6 +218,69 @@ namespace ODB
                 "", (current, next) => current + IO.WriteHex(next, 4) + ",");
             stream.Write(ammoTypes);
             stream.Write(Damage);
+            stream.Write("}", false);
+            return stream;
+        }
+    }
+
+    public class EdibleComponent : Component
+    {
+        public override string GetComponentType() { return "cEdible"; }
+
+        public int Nutrition;
+
+        public static EdibleComponent Create(string content)
+        {
+            Stream stream = new Stream(content);
+
+            int nutrition = stream.ReadHex(4);
+
+            return new EdibleComponent {
+                Nutrition =  nutrition,
+            };
+        }
+
+        public override Stream WriteComponent()
+        {
+            Stream stream = new Stream();
+            stream.Write(GetComponentType());
+            stream.Write("{", false);
+            stream.Write(Nutrition, 4);
+            stream.Write("}", false);
+            return stream;
+        }
+    }
+
+    public class ContainerComponent : Component
+    {
+        public override string GetComponentType() { return "cContainer"; }
+
+        public List<int> Contained; 
+
+        public static ContainerComponent Create(string content)
+        {
+            Stream stream = new Stream(content);
+
+            List<int> contained = new List<int>();
+            int count = content.Length / 4;
+            for (int i = 0; i < count; i++)
+                contained.Add(stream.ReadHex(4));
+
+            return new ContainerComponent {
+                Contained = contained,
+            };
+        }
+
+        public override Stream WriteComponent()
+        {
+            Stream stream = new Stream();
+            stream.Write(GetComponentType());
+            stream.Write("{", false);
+            stream.Write(
+                Contained.Aggregate(
+                    "", (c, n) => c + IO.WriteHex(n, 4)
+                ), false
+            );
             stream.Write("}", false);
             return stream;
         }

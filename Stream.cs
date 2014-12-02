@@ -159,8 +159,6 @@ namespace ODB
                 ss = s.Substring(1, i - 1);
             }
 
-            if(ss == "") throw new ArgumentException();
-
             Read += ss.Length + 2;
 
             return ss;

@@ -524,13 +524,26 @@ namespace ODB
             );
         }
 
-        public void Eat(Item it)
+        public void Eat(Item item)
         {
-            if(it.Count > 1)
-                Game.Log(GetName("Name") + " ate " +
-                    it.GetName("a") + "."
-                );
+            if (item.Stacking) item.SpendCharge();
+            else
+            {
+                Inventory.Remove(item);
+                Game.Level.Despawn(item);
+            }
 
+            Game.Log(GetName("Name") + " ate " +
+                item.GetName("a") + "."
+            );
+
+            EdibleComponent ec =
+                (EdibleComponent)
+                item.GetComponent("cEdible");
+
+            Game.Food += ec.Nutrition;
+
+            if (item.Mods.Count <= 0) return;
             if (Util.Roll("1d5") != 5) return;
 
             //idea here is that earlier intrinsics in the list are more
@@ -543,7 +556,7 @@ namespace ODB
             //2110000 (4 mods = 322111100000000 etc)
             //(number being index in list)
             //so bigger chance for mods earlier in the list
-            int count, n = count = it.Mods.Count;
+            int count, n = count = item.Mods.Count;
             //count = 3 => r = 1d7
             int r = Util.Roll("1d" + (Math.Pow(2, count)-1));
             //less than 2^n-1 = "loss", check later intrinsics
@@ -552,7 +565,7 @@ namespace ODB
             //LH-011214: resharper stop being dumb pls
             while (r < Math.Pow(2, n-1))
                 n--;
-            Intrinsics.Add(it.Mods[count - n]);
+            Intrinsics.Add(item.Mods[count - n]);
         }
 
         //movement/standard action

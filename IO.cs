@@ -11,6 +11,7 @@ namespace ODB
 {
     public enum InputType
     {
+        Inventory,
         QuestionPrompt,
         QuestionPromptSingle,
         Targeting,
@@ -228,6 +229,7 @@ namespace ODB
 
             Game.Level = Game.Levels[playerLocation];
             Game.SetupBrains();
+            Game.Containers = new Dictionary<int, List<int>>();
         }
 
         public static void WriteToFile(string path, string content)
