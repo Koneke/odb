@@ -16,11 +16,12 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 //     but it /is/ fairly messy.
 // * Switch from numbers in actor def to die?
 
-//~~~ QUEST TRACKER for 1 dec ~~~
-// * Fix player death bug (low prio) (#4 on github)
+//~~~ QUEST TRACKER for 2 dec ~~~
 // * Containers
-//   * No container-in-container for now
-//     * Unless I'm very clever sometime tomorrow
+//   * Originally planned for 1 dec, but bumped forward.
+//   * Should be doable with the new component system though,
+//     including container in container, using the magic of
+//     blocks :~)
 
 namespace ODB
 {

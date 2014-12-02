@@ -368,6 +368,7 @@ namespace ODB
                     #region load
                     Game.Level.LoadLevelSave("Save/" + args[0]);
                     Game.SetupBrains();
+                    Game.Level.CalculateActorPositions();
                     break;
                     #endregion
                 case "lv-rl":
@@ -499,6 +500,27 @@ namespace ODB
 
             switch (cmd)
             {
+                case "id-foo":
+                    Game.Log(idef.WriteItemDefinition().ToString());
+                    idef.AddComponent(
+                        Component.CreateComponent("cUsable", "0000")
+                    );
+                    idef.AddComponent(
+                        Component.CreateComponent("cWeapon", "1d4")
+                    );
+                    idef.AddComponent(
+                        Component.CreateComponent("cWearable", "3,3,;10")
+                    );
+                    idef.AddComponent(
+                        Component.CreateComponent("cProjectile", "1d2")
+                    );
+                    idef.AddComponent(
+                        Component.CreateComponent("cLauncher", "0001")
+                    );
+                    Game.Log(idef.WriteItemDefinition().ToString());
+                    idef.ReadItemDefinition(
+                        idef.WriteItemDefinition().ToString());
+                    break;
                 case "id-is":
                 case "id-get":
                     #region get

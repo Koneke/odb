@@ -19,6 +19,11 @@ namespace ODB
             Read = 0;
         }
 
+        public bool AtFinish()
+        {
+            return Read == _stream.Length;
+        }
+
         public override string ToString()
         {
             return _stream;
@@ -69,6 +74,11 @@ namespace ODB
             string s = IO.Write(b);
             Read += s.Length;
             _stream += s;
+        }
+
+        public void Write(Stream s, bool delimit = true)
+        {
+            Write(s.ToString(), delimit);
         }
 
         public Color ReadColor()
@@ -132,6 +142,28 @@ namespace ODB
         public bool ReadBool()
         {
             return _stream.Substring(Read++, 1) == "1";
+        }
+
+        public string ReadBlock(
+            char opener = '{', char closer = '}'
+        ) {
+            string s = _stream.Substring(Read, _stream.Length - Read);
+
+            if(s[0] != opener) throw new ArgumentException();
+
+            string ss = "";
+
+            for (int i = s.Length-1; i >= 0; i--)
+            {
+                if (s[i] != closer) continue;
+                ss = s.Substring(1, i - 1);
+            }
+
+            if(ss == "") throw new ArgumentException();
+
+            Read += ss.Length + 2;
+
+            return ss;
         }
     }
 }

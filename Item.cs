@@ -11,15 +11,17 @@ namespace ODB
         {
             bool equipSlotsEqual = (EquipSlots.Count == other.EquipSlots.Count);
             if (!equipSlotsEqual) return false;
-            for (int i = 0; i < EquipSlots.Count; i++)
-                if (EquipSlots[i] != other.EquipSlots[i])
-                    return false;
+            if (EquipSlots.Where(
+                (t, i) => t != other.EquipSlots[i]).Any())
+                return false;
 
             bool ammoTypesEqual = (AmmoTypes.Count == other.AmmoTypes.Count);
             if (!ammoTypesEqual) return false;
-            for (int i = 0; i < AmmoTypes.Count; i++)
-                if (AmmoTypes[i] != other.AmmoTypes[i])
-                    return false;
+            if (AmmoTypes.Where(
+                (t, i) => t != other.AmmoTypes[i]).Any())
+                return false;
+
+            //todo: Check components
 
             return
                 base.Equals(other) &&
@@ -95,6 +97,8 @@ namespace ODB
         public int Category;
         public int Nutrition;
 
+        public List<Component> Components; 
+
         //saved in game file, not idef file
         public bool Identified {
             get { return IdentifiedDefs.Contains(Type); }
@@ -126,6 +130,8 @@ namespace ODB
             AmmoTypes = ammoTypes;
             UseEffect = useEffect;
 
+            Components = new List<Component>();
+
             ItemDefinitions[Type] = this;
         }
 
@@ -144,12 +150,11 @@ namespace ODB
 
             string slots = stream.ReadString();
             EquipSlots = new List<DollSlot>();
-            foreach (
-                string slot in slots.Split(',')
+            foreach (string slot in slots.Split(',')
                     .Where(ss => ss != ""))
                 EquipSlots.Add((DollSlot) int.Parse(slot));
 
-        Ranged = stream.ReadBool();
+            Ranged = stream.ReadBool();
 
             string ammos = stream.ReadString();
             AmmoTypes = new List<int>();
@@ -167,7 +172,32 @@ namespace ODB
             Nutrition = stream.ReadHex(4);
 
             ItemDefinitions[Type] = this;
+
+            Components = new List<Component>();
+            while (!stream.AtFinish())
+                AddComponent(
+                    Component.CreateComponent(
+                        stream.ReadString(),
+                        stream.ReadBlock()
+                    )
+                );
+
             return stream;
+        }
+
+        public void AddComponent(Component component)
+        {
+            //Only one of each kind of component, please and thanks
+            if(GetComponent(component.GetComponentType()) != null)
+                throw new InvalidOperationException();
+
+            Components.Add(component);
+        }
+
+        public Component GetComponent(string type)
+        {
+            return Components.FirstOrDefault(
+                x => x.GetComponentType() == type);
         }
 
         public Stream WriteItemDefinition()
@@ -199,6 +229,9 @@ namespace ODB
             stream.Write(Category, 2);
 
             stream.Write(Nutrition, 4);
+
+            foreach (Component c in Components)
+                stream.Write(c.WriteComponent(), false);
 
             return stream;
         }

@@ -27,19 +27,22 @@ namespace ODB
         {
             bool bodyPartsEqual = (BodyParts.Count == other.BodyParts.Count);
             if (!bodyPartsEqual) return false;
-            for (int i = 0; i < BodyParts.Count; i++)
-                if(BodyParts[i] != other.BodyParts[i]) return false;
+            if (BodyParts.Where(
+                (t, i) => t != other.BodyParts[i]).Any())
+                return false;
 
             bool spellbookEqual = (Spellbook.Count == other.Spellbook.Count);
             if (!spellbookEqual) return false;
-            for (int i = 0; i < Spellbook.Count; i++)
-                if(Spellbook[i] != other.Spellbook[i]) return false;
+            if (Spellbook.Where(
+                (t, i) => t != other.Spellbook[i]).Any())
+                return false;
 
             bool spawnIntrinsicsEqual =
                 (SpawnIntrinsics.Count == other.SpawnIntrinsics.Count);
             if (!spawnIntrinsicsEqual) return false;
-            for (int i = 0; i < SpawnIntrinsics.Count; i++)
-                if(SpawnIntrinsics[i] != other.SpawnIntrinsics[i]) return false;
+            if (SpawnIntrinsics.Where(
+                (t, i) => t != other.SpawnIntrinsics[i]).Any())
+                return false;
 
             return
                 base.Equals(other) &&
@@ -258,35 +261,35 @@ namespace ODB
         {
             bool paperDollEqual = PaperDoll.Count == other.PaperDoll.Count;
             if (!paperDollEqual) return false;
-            for (int i = 0; i < PaperDoll.Count; i++)
-                if (!PaperDoll[i].Equals(other.PaperDoll[i]))
+            if (PaperDoll.Where(
+                (t, i) => !t.Equals(other.PaperDoll[i])).Any())
                 return false;
 
             bool inventoryEqual = Inventory.Count == other.Inventory.Count;
             if (!inventoryEqual) return false;
-            for (int i = 0; i < Inventory.Count; i++)
-                if (!Inventory[i].Equals(other.Inventory[i]))
+            if (Inventory.Where(
+                (t, i) => !t.Equals(other.Inventory[i])).Any())
                 return false;
 
             bool tickingEffectsEqual =
                 TickingEffects.Count == other.TickingEffects.Count;
             if (!tickingEffectsEqual) return false;
-            for (int i = 0; i < TickingEffects.Count; i++)
-                if (!TickingEffects[i].Equals(other.TickingEffects[i]))
+            if (TickingEffects.Where(
+                (t, i) => !t.Equals(other.TickingEffects[i])).Any())
                 return false;
 
             bool lastingEffectsEqual =
                 LastingEffects.Count == other.LastingEffects.Count;
             if (!lastingEffectsEqual) return false;
-            for (int i = 0; i < LastingEffects.Count; i++)
-                if (!LastingEffects[i].Equals(other.LastingEffects[i]))
+            if (LastingEffects.Where(
+                (t, i) => !t.Equals(other.LastingEffects[i])).Any())
                 return false;
 
             bool intrinsicsEqual =
                 Intrinsics.Count == other.Intrinsics.Count;
             if (!intrinsicsEqual) return false;
-            for (int i = 0; i < Intrinsics.Count; i++)
-                if (!Intrinsics[i].Equals(other.Intrinsics[i]))
+            if (Intrinsics.Where(
+                (t, i) => !t.Equals(other.Intrinsics[i])).Any())
                 return false;
 
             return
@@ -728,7 +731,7 @@ namespace ODB
             //less than 2^n-1 = "loss", check later intrinsics
 
             //ReSharper disable once LoopVariableIsNeverChangedInsideLoop
-            //LH-011224: resharper stop being dumb pls
+            //LH-011214: resharper stop being dumb pls
             while (r < Math.Pow(2, n-1))
                 n--;
             Intrinsics.Add(it.Mods[count - n]);
@@ -927,9 +930,9 @@ namespace ODB
 
             TickingEffects = new List<TickingEffect>();
             string tickers = stream.ReadString();
-            foreach (string ticker in tickers.Split(','))
+            foreach (string ticker in tickers.Split(',')
+                .Where(ticker => ticker != ""))
             {
-                if (ticker == "") continue;
                 TickingEffect te;
                 TickingEffects.Add(te = new TickingEffect(ticker));
                 te.Holder = this;
@@ -937,21 +940,21 @@ namespace ODB
 
             LastingEffects = new List<LastingEffect>();
             string lasting = stream.ReadString();
-            foreach (string effect in lasting.Split(','))
+            foreach (string effect in lasting.Split(',')
+                .Where(effect => effect != ""))
             {
-                if (effect == "") continue;
                 LastingEffects.Add(new LastingEffect(effect));
             }
 
             Intrinsics = new List<Mod>();
             string intr = stream.ReadString();
-            foreach (string mod in intr.Split(','))
+            foreach (string mod in intr.Split(',')
+                .Where(mod => mod != ""))
             {
-                if (mod == "") continue;
                 Intrinsics.Add(new Mod(
                     (ModType)IO.ReadHex(mod.Split(':')[0]),
-                             IO.ReadHex(mod.Split(':')[1]))
-                );
+                    IO.ReadHex(mod.Split(':')[1]))
+                    );
             }
 
             Awake = stream.ReadBool();
