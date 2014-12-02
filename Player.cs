@@ -34,8 +34,10 @@ namespace ODB
 
             CheckGet();
             CheckDrop();
-            CheckWieldWear();
-            CheckSheathRemove();
+            CheckWield();
+            CheckWear();
+            CheckSheath();
+            CheckRemove();
             CheckOpen();
             CheckClose();
             CheckZap();
@@ -47,7 +49,7 @@ namespace ODB
         }
 
         //return whether we moved or not
-        static bool MovementInput()
+        private static bool MovementInput()
         {
             #region stairs
             if (IO.KeyPressed(Keys.OemPeriod) && IO.Shift)
@@ -95,7 +97,7 @@ namespace ODB
             return Game.Player.TryMove(offset);
         }
 
-        static void CheckGet()
+        private static void CheckGet()
         {
             if (
                 (!IO.KeyPressed(Keys.G) || IO.Shift) &&
@@ -129,7 +131,7 @@ namespace ODB
             }
         }
 
-        static void CheckDrop()
+        private static void CheckDrop()
         {
             if (!IO.KeyPressed(Keys.D) || IO.Shift) return;
 
@@ -150,127 +152,142 @@ namespace ODB
             );
         }
 
-        static void CheckWieldWear()
+        private static void CheckWield()
         {
-            //todo: in reality, shouldn't in essence everything be wieldable?
-            //      just like everything is quiverable? like, wielding just
-            //      requires you to hold the item in your hand really.
-            //      might want to make a strength/size check or something, but
-            //      that really should be about it.
-            bool wield = IO.KeyPressed(Keys.W) && !IO.Shift;
-            bool wear = IO.KeyPressed(Keys.W) && IO.Shift;
+            if (!(IO.KeyPressed(Keys.W) && !IO.Shift)) return;
 
-            if (!wield && !wear) return;
+            List<Item> wieldable = Game.Player.Inventory
+                .Where(x => !Game.Player.GetEquippedItems().Contains(x))
+                .ToList();
 
-            List<Item> equipables =
-                wield ?
-                    Game.Player.Inventory
-                        .FindAll(x => x.EquipSlots.Contains(DollSlot.Hand))
-                        .Where(x => x.EquipSlots.Count > 0)
-                        .ToList() :
-                    Game.Player.Inventory
-                        .FindAll(x => !x.EquipSlots.Contains(DollSlot.Hand))
-                        .Where(x => x.EquipSlots.Count > 0)
-                        .ToList();
-
-            //remove items we've already equipped from the
-            //list of potential items to equip
-            foreach (Item item in Game.Player.GetEquippedItems())
-                equipables.Remove(item);
-
-            if (equipables.Count > 0)
+            if(wieldable.Count <= 0)
             {
-                string question =
-                    (IO.Shift ? "Wear" : "Wield") + " what? [";
-
-                IO.AcceptedInput.Clear();
-                foreach (char index in equipables
-                        .Select(item => IO.Indexes
-                            [Game.Player.Inventory.IndexOf(item)])
-                    ) {
-                        question += index;
-                        IO.AcceptedInput.Add(index);
-                    }
-
-                question += "]";
-
-                if(wield)
-                    IO.AskPlayer(
-                        question,
-                        InputType.QuestionPromptSingle,
-                        PlayerResponses.Wield
-                    );
-                else
-                    IO.AskPlayer(
-                        question,
-                        InputType.QuestionPromptSingle,
-                        PlayerResponses.Wear
-                    );
+                Game.Log("You have nothing to wield.");
+                return;
             }
-            else Game.Log("Nothing to " + (wield ? "wield" : "wear") + ".");
+
+            string question = "Wield what? [";
+            IO.AcceptedInput.Clear();
+            foreach (Item item in wieldable)
+            {
+                int index = Game.Player.Inventory.IndexOf(item);
+                question += IO.Indexes[index];
+                IO.AcceptedInput.Add(IO.Indexes[index]);
+            }
+            question += "]";
+
+            IO.AskPlayer(
+                question,
+                InputType.QuestionPromptSingle,
+                PlayerResponses.Wield
+            );
         }
 
-        static void CheckSheathRemove()
+        private static void CheckWear()
         {
-            bool sheath = IO.KeyPressed(Keys.S) && IO.Shift;
-            bool remove = IO.KeyPressed(Keys.R) && IO.Shift;
-            if (!sheath && !remove) return;
+            if (!(IO.KeyPressed(Keys.W) && IO.Shift)) return;
 
-            List<Item> equipped;
+            List<Item> wearable = Game.Player.Inventory
+                .Where(x => !Game.Player.GetEquippedItems().Contains(x))
+                .Where(item => item.Definition.HasComponent("cWearable"))
+                .ToList();
 
-            if(sheath)
-                equipped = (
+            if (wearable.Count <= 0)
+            {
+                Game.Log("You have nothing to wear.");
+                return;
+            }
+
+            string question = "Wear what? [";
+            IO.AcceptedInput.Clear();
+            foreach (Item item in wearable)
+            {
+                int index = Game.Player.Inventory.IndexOf(item);
+                question += IO.Indexes[index];
+                IO.AcceptedInput.Add(IO.Indexes[index]);
+            }
+            question += "]";
+
+            IO.AskPlayer(
+                question,
+                InputType.QuestionPromptSingle,
+                PlayerResponses.Wear
+            );
+        }
+
+        private static void CheckSheath()
+        {
+            if (!(IO.KeyPressed(Keys.S) && IO.Shift)) return;
+
+            //LH-021214: Since we can (soon) wield anything, anything in your
+            //           hands should be sheathable.
+            List<Item> wielded = (
                     from bp in Game.Player.PaperDoll
                     where bp.Item != null
-                    where bp.Item.EquipSlots.Contains(DollSlot.Hand)
-                    select bp.Item
-                ).ToList();
-            else
-                equipped = (
-                    from bp in Game.Player.PaperDoll
-                    where bp.Item != null
-                    where bp.Item.EquipSlots.All(x => x != DollSlot.Hand)
+                    where bp.Type == DollSlot.Hand
                     select bp.Item
                 ).ToList();
 
-            if (equipped.Count > 0)
+            if (wielded.Count > 0)
             {
-                string question = 
-                    (sheath ? "Sheath" : "Remove") + " what? [";
                 IO.AcceptedInput.Clear();
-
-                foreach (char index in equipped
-                    .Select(it => IO.Indexes[Game.Player.Inventory.IndexOf(it)])
-                    .Where(index => !IO.AcceptedInput.Contains(index))
-                ) {
-                    question += index;
-                    IO.AcceptedInput.Add(index);
-                }
-
-                question += "]";
-
-                if(sheath)
-                    IO.AskPlayer(
-                        question,
-                        InputType.QuestionPromptSingle,
-                        PlayerResponses.Sheath
+                foreach (Item item in wielded)
+                    IO.AcceptedInput.Add(
+                        IO.Indexes[Game.Player.Inventory.IndexOf(item)]
                     );
-                else
-                    IO.AskPlayer(
-                        question,
-                        InputType.QuestionPromptSingle,
-                        PlayerResponses.Remove
-                    );
+                string question = "Sheath what? [";
+                question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
+                question += "] ";
+
+                IO.AskPlayer(
+                    question,
+                    InputType.QuestionPromptSingle,
+                    PlayerResponses.Sheath
+                );
             }
             else
             {
-                Game.Log("Nothing to " +
-                         (sheath ? "sheath." : "remove.")
-                    );
+                Game.Log("You don't have anything wielded!");
             }
         }
 
-        static void CheckOpen()
+        private static void CheckRemove()
+        {
+            if (!(IO.KeyPressed(Keys.R) && IO.Shift)) return;
+
+            //LH-021214: Since we can (soon) wield anything, anything in your
+            //           hands should be sheathable.
+            List<Item> worn = (
+                    from bp in Game.Player.PaperDoll
+                    where bp.Item != null
+                    where bp.Item.HasComponent("cWearable")
+                    select bp.Item
+                ).ToList();
+
+            if (worn.Count > 0)
+            {
+                IO.AcceptedInput.Clear();
+                foreach (Item item in worn)
+                    IO.AcceptedInput.Add(
+                        IO.Indexes[Game.Player.Inventory.IndexOf(item)]
+                    );
+                string question = "Remove what? [";
+                question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
+                question += "] ";
+
+                IO.AskPlayer(
+                    question,
+                    InputType.QuestionPromptSingle,
+                    PlayerResponses.Remove
+                );
+            }
+            else
+            {
+                Game.Log("You have nothing to remove, you shameless beast!");
+            }
+        }
+
+        private static void CheckOpen()
         {
             if (!IO.KeyPressed(Keys.O) || IO.Shift) return;
 
@@ -305,8 +322,7 @@ namespace ODB
 
         }
 
-
-        static void CheckZap()
+        private static void CheckZap()
         {
             if (!IO.KeyPressed(Keys.Z) || IO.Shift) return;
 
@@ -329,22 +345,19 @@ namespace ODB
             );
         }
 
-        static void CheckApply()
+        private static void CheckApply()
         {
             if (!IO.KeyPressed(Keys.A) || IO.Shift) return;
 
             string question = "Use what? [";
-
             IO.AcceptedInput.Clear();
-            for (int i = 0; i < Game.Player.Inventory.Count; i++)
+            foreach (Item item in Game.Player.Inventory
+                .Where(x => x.HasComponent("cUsable")))
             {
-                if (Game.Player.Inventory[i].UseEffect == null) continue;
-
-                char index = IO.Indexes[i];
-                question += index;
-                IO.AcceptedInput.Add(index);
+                int index = Game.Player.Inventory.IndexOf(item);
+                question += IO.Indexes[index];
+                IO.AcceptedInput.Add(IO.Indexes[index]);
             }
-
             question += "]";
 
             IO.AskPlayer(
@@ -354,7 +367,7 @@ namespace ODB
             );
         }
 
-        static void CheckFire()
+        private static void CheckFire()
         {
             if (!IO.KeyPressed(Keys.F) || IO.Shift) return;
 
@@ -375,8 +388,19 @@ namespace ODB
             //      answer to that question).
             //      for now, just get first one, if it becomes an issue the
             //      player will have to work around it.
-            Item weapon = Game.Player.GetEquippedItems()
-                .Find(item => item.AmmoTypes.Contains(ammo.Type));
+
+            Item weapon = null;
+            LauncherComponent lc = null;
+
+            if (Game.Player.GetEquippedItems().Any(
+                x => x.HasComponent("cLauncher")))
+            {
+                weapon = Game.Player.GetEquippedItems()
+                    .Where(x => x.HasComponent("cLauncher"))
+                    .ToList()[0];
+                lc = (LauncherComponent)
+                    weapon.GetComponent("cLauncher");
+            }
 
             bool throwing;
 
@@ -384,8 +408,8 @@ namespace ODB
             //todo: get all items in hands
             //      check if any one of them has a matching ammo type to
             //      quiver. that one is then our weapon used to fire.
-            if (weapon != null)
-                throwing = !weapon.Definition.AmmoTypes.Contains(ammo.Type);
+            if (weapon != null && lc != null)
+                throwing = !lc.AmmoTypes.Contains(ammo.Type);
                 //just some sort of ammo
             else throwing = true;
 
@@ -402,7 +426,7 @@ namespace ODB
             );
         }
 
-        static void CheckQuiver()
+        private static void CheckQuiver()
         {
             //todo: like mentioned in the checkwield comment
             //      might want to make a size check or something here.
@@ -432,7 +456,7 @@ namespace ODB
             else Game.Log("You have nothing to quiver.");
         }
 
-        static void CheckLook()
+        private static void CheckLook()
         {
             if (IO.KeyPressed(Keys.OemSemicolon) && IO.Shift)
             {
@@ -444,7 +468,7 @@ namespace ODB
             }
         }
 
-        static void CheckEat()
+        private static void CheckEat()
         {
             if (!IO.KeyPressed(Keys.E) || IO.Shift) return;
 

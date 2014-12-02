@@ -14,7 +14,10 @@ namespace ODB
         QuestionPrompt,
         QuestionPromptSingle,
         Targeting,
-        PlayerInput
+        PlayerInput,
+        //LH-021214: Should essentially only be used for spells,
+        //           where it means "none-targeted", pretty much.
+        None
     }
 
     public class IO
@@ -264,6 +267,14 @@ namespace ODB
                 while ((line = reader.ReadLine()) != null)
                     content += line;
             }
+
+            //LH-021214: Notice! Stripping tabs out of the file, atleast for
+            //           now, since the primary use of this is reading data
+            //           files from disk, and it's a whole lot more human
+            //           readable if we're allowed to use tabs in it, so
+            //           stripping those to make sure we don't mess with the
+            //           actual content.
+            content = content.Replace("\t", "");
 
             return content;
         }

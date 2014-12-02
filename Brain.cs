@@ -61,7 +61,12 @@ namespace ODB
                         spell.Range >= 1);
 
                 if (touchAttack == null) MeatPuppet.Attack(Game.Player);
-                else MeatPuppet.Cast(touchAttack, Game.Player.xy, true);
+                else
+                {
+                    Game.Caster = MeatPuppet;
+                    Game.QpAnswerStack.Push(IO.Write(Game.Player.xy));
+                    touchAttack.Cast();
+                }
 
                 MeatPuppet.Pass();
             }

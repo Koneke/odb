@@ -117,12 +117,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Actor.cs" />
+    <Compile Include="ActorDefinition.cs" />
     <Compile Include="Brain.cs" />
     <Compile Include="Component.cs" />
     <Compile Include="gObject.cs" />
     <Compile Include="Header.cs" />
     <Compile Include="IO.cs" />
     <Compile Include="Item.cs" />
+    <Compile Include="ItemDefinition.cs" />
     <Compile Include="Level.cs" />
     <Compile Include="Player.cs" />
     <Compile Include="PlayerResponses.cs" />

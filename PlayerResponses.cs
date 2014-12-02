@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Xna.Framework.Input;
 
@@ -41,7 +42,7 @@ namespace ODB
             {
                 Game.Player.Inventory.Add(it);
             }
-            Util.Game.Log("Picked up " + it.GetName() + ".");
+            Util.Game.Log("Picked up " + it.GetName("count") + ".");
             Game.Player.Pass();
         }
 
@@ -101,7 +102,7 @@ namespace ODB
             if (Game.Player.Quiver == it)
                 Game.Player.Quiver = null;
 
-            Game.Log("Dropped " + it.GetName() + ".");
+            Game.Log("Dropped " + it.GetName("count") + ".");
 
             Game.Player.Pass();
         }
@@ -138,7 +139,7 @@ namespace ODB
                 droppedStack.xy = Game.Player.xy;
 
                 Game.Log("Dropped " +
-                    droppedStack.GetName() + "."
+                    droppedStack.GetName("count") + "."
                 );
 
                 Game.Player.Pass();
@@ -151,14 +152,25 @@ namespace ODB
             if (answer.Length <= 0) return;
 
             int i = IO.Indexes.IndexOf(answer[0]);
-            Item it = Game.Player.Inventory[i];
+            Item item = Game.Player.Inventory[i];
 
-            if(!Game.Player.CanEquip(it.EquipSlots))
-                Game.Log("You need to remove something first.");
-            else {
-                Game.Log("Equipped "+it.GetName() + ".");
-                Game.Player.Equip(it);
-                it.Identify();
+            WeaponComponent wc =
+                (WeaponComponent)
+                item.Definition.GetComponent("cWeapon");
+
+            List<DollSlot> equipSlots;
+            if (wc != null) equipSlots = wc.EquipSlots;
+            else equipSlots =
+                //it.weight > ... ? 2 hands : 1 hand
+                new List<DollSlot> { DollSlot.Hand, DollSlot.Hand };
+
+            if (!Game.Player.CanEquip(equipSlots))
+                Game.Log("You'd need more hands to do that!");
+            else
+            {
+                Game.Log("Wielded " + item.GetName("a") + ".");
+                Game.Player.Wield(item);
+                item.Identify();
                 Game.Player.Pass();
             }
         }
@@ -174,7 +186,11 @@ namespace ODB
 
             bool canEquip = true;
 
-            if (!Game.Player.CanEquip(it.EquipSlots))
+            WearableComponent wc =
+                (WearableComponent)
+                it.Definition.GetComponent("cWearable");
+
+            if (!Game.Player.CanEquip(wc.EquipSlots))
             {
                 canEquip = false;
                 Game.Log("You need to remove something first.");
@@ -198,9 +214,9 @@ namespace ODB
                 Game.Player.Inventory.Add(clone);
                 Game.Level.AllItems.Add(clone);
             }
-            Game.Player.Equip(it);
+            Game.Player.Wear(it);
             it.Identify();
-            Game.Log("Wore " + it.GetName() + ".");
+            Game.Log("Wore " + it.GetName("a") + ".");
 
             Game.Player.Pass();
         }
@@ -218,7 +234,7 @@ namespace ODB
             //todo: should we really identify on quiver?
             //      or should we rather do it on fire?
             selected.Identify();
-            Game.Log("Quivered "+ selected.GetName() + ".");
+            Game.Log("Quivered "+ selected.GetName("count") + ".");
 
             Game.Player.Pass();
         }
@@ -229,11 +245,6 @@ namespace ODB
             if (answer.Length <= 0) return;
 
             int i = IO.Indexes.IndexOf(answer[0]);
-            if (i >= Game.Player.Inventory.Count)
-            {
-                Game.Log("Invalid selection (" + answer[0] + ").");
-                return;
-            }
 
             Item it = Game.Player.Inventory[i];
 
@@ -241,7 +252,7 @@ namespace ODB
                 .Where(bp => bp.Item == it))
                 bp.Item = null;
 
-            Util.Game.Log("Unequipped " + it.GetName() + ".");
+            Util.Game.Log("Sheathed " + it.GetName("a") + ".");
 
             Game.Player.Pass();
         }
@@ -258,7 +269,7 @@ namespace ODB
                 .Where(bp => bp.Item == it))
                 bp.Item = null;
 
-            Game.Log("Removed " + it.GetName());
+            Game.Log("Removed " + it.GetName("a") + ".");
 
             Item stack =  Game.Player.Inventory.Find(
                 item => item != it && item.Type == it.Type);
@@ -325,18 +336,47 @@ namespace ODB
         {
             string answer = Game.QpAnswerStack.Peek();
             if (answer.Length <= 0) return;
-            int i = IO.Indexes.IndexOf(answer[0]);
-            if (i >= Game.Player.Spellbook.Count)
-                Game.Log("Invalid selection (" + answer[0] + ").");
-            else if (Game.Player.MpCurrent < Game.Player.Spellbook[i].Cost)
-                Game.Log("You lack the energy.");
+
+            int index = IO.Indexes.IndexOf(answer[0]);
+
+            //LH-021214: If the spells is nontargetted, just trigger the effect
+            //           instantly.
+            if (Spell.Spells[index].CastType == InputType.None)
+            {
+                Spell.Spells[index].Cast();
+            }
+            //LH-021214: Otherwise, ask a player of the spell's kind.
+            //           Flexible, fancy, and reuses code! Woo!
             else
             {
-                Game.TargetedSpell = Game.Player.Spellbook[i];
+                Game.Caster = Game.Player;
+                Spell.Spells[index].SetupAcceptedInput();
+
+                if (IO.AcceptedInput.Count <= 0)
+                {
+                    Game.Log("You have nothing to cast that on.");
+                    return;
+                }
+
+                string question = "Cast " + Spell.Spells[index].Name;
+                switch (Spell.Spells[index].CastType)
+                {
+                    case InputType.QuestionPrompt:
+                    case InputType.QuestionPromptSingle:
+                        question += " on what? ";
+                        break;
+                    case InputType.Targeting:
+                        question += " where? ";
+                        break;
+                }
+                question += "[";
+                question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
+                question += "]";
+
                 IO.AskPlayer(
-                    "Casting " + Game.Player.Spellbook[i].Name,
-                    InputType.Targeting,
-                    Cast
+                    question,
+                    Spell.Spells[index].CastType,
+                    Spell.Spells[index].Cast
                 );
             }
         }
@@ -346,83 +386,62 @@ namespace ODB
             string answer = Game.QpAnswerStack.Peek();
             if (answer.Length <= 0) return;
 
-            Item it = Game.Player.Inventory[IO.Indexes.IndexOf(answer[0])];
+            Item item = Game.Player.Inventory[IO.Indexes.IndexOf(answer[0])];
 
-            if (it.Count <= 0)
+            if (item.Count <= 0)
             {
-                Game.Log(it.GetName(true, false, true) + " lacks charges.");
+                //Note: This can never happen with stacking items, since there
+                //      wouldn't be any of them to select.
+                Game.Log(item.GetName("The") + " lacks charges.");
                 return;
             }
 
-            //nontargeted
-            if (it.UseEffect.Range <= 0)
-            {
-                Projectile pr = it.UseEffect.Cast(
-                    Game.Player,
-                    Game.Player.xy
-                );
-                pr.Move();
-                it.Count--;
-                if (it.Count <= 0)
-                {
-                    Game.Player.Inventory.Remove(it);
-                    Game.Level.AllItems.Remove(it);
-                    Game.Log(it.GetName(true, false, true) + " is spent!");
-                }
-                Game.Player.Pass();
-            }
-            //targeted
+            //LH-021214: Note! Because we're spending a charge here, I've set it
+            //           up so that we can't actually cancel the question we
+            //           set up (unless the effect has InputType.None).
+            //           This mainly so you don't cancel and lose out on a
+            //           charge. /Might/ be wanted behaviour, we'll see.
+            item.SpendCharge();
+
+            UsableComponent uc =
+                (UsableComponent)
+                item.GetComponent("cUsable");
+
+            //LH-021214: if uc is null here, we failed an earlier check.
+            Debug.Assert(uc != null);
+
+            //LH-021214: If the spells is nontargetted, just trigger the effect
+            //           instantly.
+            if (Spell.Spells[uc.UseEffect].CastType == InputType.None)
+                Spell.Spells[uc.UseEffect].Cast();
+            //LH-021214: Otherwise, ask a player of the spell's kind.
+            //           Flexible, fancy, and reuses code! Woo!
             else
             {
-                Game.TargetedSpell = it.UseEffect;
+                Game.Caster = Game.Player;
+                Spell.Spells[uc.UseEffect].SetupAcceptedInput();
+
+                string question = "Use " + item.GetName("the");
+                switch (Spell.Spells[uc.UseEffect].CastType)
+                {
+                    case InputType.QuestionPrompt:
+                    case InputType.QuestionPromptSingle:
+                        question += " on what? ";
+                        break;
+                    case InputType.Targeting:
+                        question += " where? ";
+                        break;
+                }
+                question += "[";
+                question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
+                question += "]";
+
                 IO.AskPlayer(
-                    "Using " + it.GetName(true),
-                    InputType.Targeting,
-                    UseCast
+                    question,
+                    Spell.Spells[uc.UseEffect].CastType,
+                    Spell.Spells[uc.UseEffect].Cast
                 );
             }
-        }
-
-        public static void Cast()
-        {
-            int index = IO.Indexes.IndexOf(Game.QpAnswerStack.Pop()[0]);
-            if (Game.Level.Map[Game.Target.x, Game.Target.y] != null) {
-                Game.Player.Cast(
-                    Game.TargetedSpell, Game.Target
-                );
-                Game.Player.MpCurrent -= Game.Player.Spellbook[index].Cost;
-            }
-            else
-                Game.Log("Invalid target.");
-        }
-
-        public static void UseCast()
-        {
-            if (Game.Level.Map[Game.Target.x, Game.Target.y] != null)
-            {
-                int i = IO.Indexes.IndexOf(Game.QpAnswerStack.Pop()[0]);
-                Item it = Game.Player.Inventory[i];
-                Game.Log("You use " + it.GetName(true) + ".");
-                //Projectile pr = Game.TargetedSpell.Cast(Game.player, p);
-                Projectile pr = Game.TargetedSpell.Cast(
-                    Game.Player,
-                    Game.Target
-                );
-                pr.Move();
-                //spend charge
-                it.Count--;
-                //rechargin items should probably not trigger this
-                //but that's a later issue
-                if (it.Count <= 0)
-                {
-                    Game.Player.Inventory.Remove(it);
-                    Game.Level.AllItems.Remove(it);
-                    Game.Log(it.GetName(true, false, true) + " is spent!");
-                }
-                Game.Player.Pass();
-            }
-            else
-                Game.Log("Invalid target.");
         }
 
         public static void Fire()
@@ -491,9 +510,9 @@ namespace ODB
                 Actor a;
                 if ((a = Game.Level.ActorOnTile(t)) != null)
                     if(a != Game.Player)
-                        str += "You see " + a.GetName() + distString;
+                        str += "You see " + a.GetName("a") + distString;
                 if (items.Count > 0)
-                    str += "There's " + items[0].GetName() + distString;
+                    str += "There's " + items[0].GetName("count") + distString;
                 else if (items.Count > 1)
                     str += "There's several items " + distString;
             }
@@ -524,7 +543,7 @@ namespace ODB
             }
             else
             {
-                Game.Log("You eat " + it.GetName());
+                Game.Log("You eat " + it.GetName("a"));
                 Game.Player.Inventory.RemoveAt(index);
                 Game.Player.Eat(it);
             }

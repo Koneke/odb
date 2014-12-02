@@ -242,15 +242,6 @@ namespace ODB
                         new Point(WmCursor.x, WmCursor.y));
                     break;
                     #endregion
-                //di/da are untested atm
-                case "cast":
-                    #region cast
-                    Spell.Spells[IO.ReadHex(args[0])].Cast(
-                        Game.Player,
-                        WmCursor
-                    ).Move();
-                    break;
-                    #endregion
                 case "teleport":
                 case "tp":
                     Game.Player.xy = WmCursor;
@@ -500,27 +491,6 @@ namespace ODB
 
             switch (cmd)
             {
-                case "id-foo":
-                    Game.Log(idef.WriteItemDefinition().ToString());
-                    idef.AddComponent(
-                        Component.CreateComponent("cUsable", "0000")
-                    );
-                    idef.AddComponent(
-                        Component.CreateComponent("cWeapon", "1d4")
-                    );
-                    idef.AddComponent(
-                        Component.CreateComponent("cWearable", "3,3,;10")
-                    );
-                    idef.AddComponent(
-                        Component.CreateComponent("cProjectile", "1d2")
-                    );
-                    idef.AddComponent(
-                        Component.CreateComponent("cLauncher", "0001")
-                    );
-                    Game.Log(idef.WriteItemDefinition().ToString());
-                    idef.ReadItemDefinition(
-                        idef.WriteItemDefinition().ToString());
-                    break;
                 case "id-is":
                 case "id-get":
                     #region get
@@ -530,27 +500,8 @@ namespace ODB
                         case "fg": Game.Log(IO.Write(idef.Background)); break;
                         case "tile": Game.Log(idef.Tile); break;
                         case "name": Game.Log(idef.Name); break;
-                        case "dmg": Game.Log(idef.Damage); break;
-                        case "ac": Game.Log(idef.ArmorClass+""); break;
                         case "stacking": Game.Log(idef.Stacking+""); break;
-                        case "equip":
-                            string s = idef.EquipSlots.Aggregate(
-                                "", (current, ds) =>
-                                    current + (IO.WriteHex((int) ds, 2) + ", ")
-                                );
-                            Game.Log(s);
-                            break;
                         case "ranged": Game.Log(idef.Ranged+""); break;
-                        case "ammo":
-                            string ss = idef.AmmoTypes.Aggregate(
-                                "", (current, id) =>
-                                    current + (IO.WriteHex(id, 4) + ", ")
-                                );
-                            Game.Log(ss);
-                            break;
-                        case "rdmg": Game.Log(idef.RangedDamage); break;
-                        case "use": Game.Log(IO.WriteHex(idef.UseEffect, 4));
-                            break;
                         case "cat": Game.Log(IO.WriteHex(idef.Category, 4));
                             break;
                         case "nut": Game.Log(IO.WriteHex(idef.Nutrition, 4));
@@ -576,43 +527,14 @@ namespace ODB
                 case "id-name":
                     idef.Name = args[0];
                     break;
-                case "id-dmg":
-                case "id-damage":
-                    idef.Damage = args[0];
-                    break;
-                case "id-ac":
-                    idef.ArmorClass = IO.ReadHex(args[0]);
-                    break;
                 case "id-stack":
                 case "id-stacking":
                     idef.Stacking = IO.ReadBool(args[0]);
                     break;
-                case "id-addequip":
-                    idef.EquipSlots.Add((DollSlot)IO.ReadHex(args[0]));
-                    break;
-                case "id-remequip":
-                case "id-delequip":
-                    idef.EquipSlots.Remove((DollSlot)IO.ReadHex(args[0]));
-                    break;
                 case "id-ranged":
                     idef.Ranged = IO.ReadBool(args[0]);
                     break;
-                case "id-addammo":
-                    idef.AmmoTypes.Add(IO.ReadHex(args[0]));
-                    break;
-                case "id-remammo":
-                case "id-delammo":
-                    idef.AmmoTypes.Remove(IO.ReadHex(args[0]));
-                    break;
-                case "id-rdmg":
-                case "id-rangeddmg":
-                case "id-rangeddamage":
-                    idef.RangedDamage = args[0];
-                    break;
                 case "id-use":
-                case "id-useeffect":
-                    idef.UseEffect = IO.ReadHex(args[0]);
-                    break;
                 case "id-cat":
                 case "id-category":
                     idef.Category = IO.ReadHex(args[0]);
@@ -724,12 +646,9 @@ namespace ODB
                     break;
                 case "ai-ale":
                 case "ai-addle":
-                    a.LastingEffects.Add(
-                        new LastingEffect(
-                            (StatusType)IO.ReadHex(args[0]),
-                            IO.ReadHex(args[1])
-                        )
-                    );
+                    a.AddEffect(
+                        (StatusType)IO.ReadHex(args[0]),
+                        IO.ReadHex(args[1]));
                     break;
                 default: return false;
             }

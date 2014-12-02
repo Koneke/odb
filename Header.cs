@@ -231,7 +231,23 @@ namespace ODB
         public int Range;
         public int Cost;
         public int CastDifficulty;
-        public List<Action<Actor, Point>> Effects;
+
+        //LH-021214: Spelleffects use the QpStack like other question-reactions.
+        //           Also means that we can have spells going through several
+        //           questions, like multi-targetting and similar, the same way
+        //           dropping a certain number of things works right now.
+        public Action Effect;
+
+        //LH-021214: Since we're using the standard question system we will at
+        //           times need to populate the accepted input, so we need an
+        //           action for that as well.
+
+        public Action SetupAcceptedInput;
+
+        //LH-021214: Add variable to keep the questio string as well?
+        //           Like, identify might have "Identify what?", instead of
+        //           the automatic "Casting identify".
+        public InputType CastType;
 
         //LH-011214: (Almost) empty constructor to be used with initalizer
         //           blocks. Using them simply because it is easier to skim
@@ -245,40 +261,11 @@ namespace ODB
             Spells[ID] = this;
         }
 
-        public Spell(
-            string name,
-            List<Action<Actor, Point>> effects,
-            int cost = 0,
-            int castDifficulty = 0,
-            int range = 0
-        ) {
-            ID = IDCounter++;
-            Name = name;
-            Range = range;
-            Cost = cost;
-            CastDifficulty = castDifficulty;
-            Effects = effects;
-
-            Spells[ID] = this;
-        }
-
-        public Projectile Cast(Actor caster, Point target)
+        public void Cast()
         {
-            Projectile p = new Projectile();
-            if(Effects != null)
-                p.Effects = new List<Action<Actor, Point>>(Effects);
-            p.Caster = caster;
-            p.Origin = caster.xy;
-            p.Delta = target - caster.xy;
-            //don't try to go further than we targeted
-            p.Range = Math.Max(
-                Math.Abs(p.Delta.x),
-                Math.Abs(p.Delta.y)
-            );
-            //and don't go longer than allowed
-            //that should probably be handled somewhere else though
-            if (p.Range > Range) p.Range = Range;
-            return p;
+            //todo: Difficulty check here
+            Effect();
+            Util.Game.Caster.Pass();
         }
     }
 

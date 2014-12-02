@@ -89,59 +89,6 @@ namespace ODB
             stream.Write(Name);
             return stream;
         }
-
-        #region nameformatting stuff
-        //LH-011214: yes, horrible crime against humanity to have it lowercase,
-        //           but it makes sense together with A().
-        //           In reality, I want it NetHack-style a(Item.Name),
-        //           but we can't really have "global" functions like that,
-        //           since C# apparently doesn't like that :(
-        //           This is the second best.
-        //ReSharper disable InconsistentNaming
-        public string a()
-        //ReSharper restore InconsistentNaming
-        {
-            return Util.Article(Name) + " " + Name;
-        }
-        public string A()
-        {
-            return Util.Capitalize(a());
-        }
-
-        //LH-011214: see above
-        //ReSharper disable InconsistentNaming
-        public string the()
-        //ReSharper restore InconsistentNaming
-        {
-            return "the" + " " + Name;
-        }
-        public string The()
-        {
-            return Util.Capitalize(the());
-        }
-
-        //LH-011214: Simple way of pluralizing.
-        //           In a method mainly if we have irregular plurals and such
-        //           later on (learned my lesson of not futureproofing in
-        //           roguelikeprojects before...).
-        //ReSharper disable InconsistentNaming
-        public string s()
-        //ReSharper restore InconsistentNaming
-        {
-            return Name + "s";
-        }
-
-        //ReSharper disable InconsistentNaming
-        public string thes()
-        //ReSharper restore InconsistentNaming
-        {
-            return "the " + s();
-        }
-        public string Thes()
-        {
-            return Util.Capitalize(thes());
-        }
-        #endregion
     }
 
     //ReSharper disable once InconsistentNaming
@@ -205,5 +152,4 @@ namespace ODB
             return stream;
         }
     }
-
 }

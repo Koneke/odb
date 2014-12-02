@@ -23,6 +23,12 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 //     including container in container, using the magic of
 //     blocks :~)
 
+//General note:
+// * Currently, items need cWeapon to be wieldable. This is /not/ the way it
+//   is supposed to. We need a GenerateHands(int count) or something, so we can
+//   generate an equip set on the fly depending on number of hands item needs
+//   so we can check them against Actor.CanEquip();
+
 namespace ODB
 {
     public class Game1 : Game
@@ -63,6 +69,12 @@ namespace ODB
         int _logSize;
         List<string> _log;
 
+        //LH-021214: Currently casting actor (so that our spell casting system
+        //           can use the same Question-system as other commands.
+        //           Since there should never possibly pass a tick between an
+        //           actor casting and targetting a spell, we shouldn't need to
+        //           worry about this being rewritten as we do stuff.
+        public Actor Caster;
         public Point Target;
         public Spell TargetedSpell;
         public Action QuestionReaction;
@@ -152,7 +164,17 @@ namespace ODB
                 if (WizMode) {
                     WizMode = false; IO.IOState = InputType.PlayerInput; }
                 else if (IO.IOState != InputType.PlayerInput)
-                    IO.IOState = InputType.PlayerInput;
+                {
+                    //LH-021214: Temporary hack to make sure you can't cancel
+                    //           using an item or casting a spell without
+                    //           targeting. This is, well, okay-ish for now,
+                    //           if slightly annoying. This is mainly because
+                    //           a cancelled item use would otherwise spend a
+                    //           charge without doing anything.
+                    //           We'll see which way turns out the best.
+                    if(Caster == null)
+                        IO.IOState = InputType.PlayerInput;
+                }
                 else if (_inventoryConsole.IsVisible)
                     _inventoryConsole.IsVisible = false;
                 else Exit();
@@ -293,11 +315,16 @@ namespace ODB
             bool downwards =
                 Game.Levels.IndexOf(newLevel) > Game.Levels.IndexOf(Level);
             Level.WorldActors.Remove(Player);
+            foreach (Item it in Player.Inventory) Level.WorldItems.Remove(it);
+
             Level = newLevel;
             Level.WorldActors.Add(Player);
+            foreach (Item it in Player.Inventory) Level.WorldItems.Add(it);
+
             foreach (Actor a in Level.WorldActors)
                 //reset vision, incase the level we moved to is a different size
                 a.Vision = null;
+
             SetupBrains();
 
             if (!gotoStairs) return;
@@ -307,7 +334,6 @@ namespace ODB
             for (int x = 0; x < Level.LevelSize.x; x++)
                 for (int y = 0; y < Level.LevelSize.y; y++)
                     if (Level.Map[x, y] != null)
-                    {
                         if (
                             (Level.Map[x, y].Stairs == Stairs.Up &&
                                 downwards) ||
@@ -315,80 +341,89 @@ namespace ODB
                                 !downwards)
                         )
                             Player.xy = new Point(x, y);
-                    }
         }
 
-        static void SetupMagic()
+        private static void SetupMagic()
         {
             //ReSharper disable once ObjectCreationAsStatement
-            //LH-011214: registered to the spelldefinition list in constructor.
-            /*new Spell(
-                "forcebolt",
-                new List<Action<Actor, Point>>() {
-                    delegate(Actor caster, Point p) {
-                        Actor a = Game.Level.ActorOnTile(p);
-                        if (a == null) return;
-
-                        Util.Game.Log(
-                            a.Definition.Name + " is hit by the bolt!"
-                        );
-                        a.Damage(Util.Roll("1d4"));
-                    }
-                }, 3, 7, 3
-            );*/
-
-            //ReSharper disable once ObjectCreationAsStatement
-            //LH-011214: Not sure whether this or the above format is better,
-            //           this is mainly here to sort of showcase to myself that
-            //           you can define spells like this.
-            new Spell("forcebolt")
+            new Spell("foo bar")
             {
-                Effects = new List<Action<Actor, Point>> {
-                    delegate(Actor caster, Point p) {
-                        Actor a = Game.Level.ActorOnTile(p);
-                        if (a == null) return;
+                CastType = InputType.QuestionPromptSingle,
+                Effect = () =>
+                {
+                    string answer = Game.QpAnswerStack.Pop();
+                    Item it = Game.Player.Inventory
+                        [IO.Indexes.IndexOf(answer[0])];
 
-                        Util.Game.Log(
-                            a.Definition.Name + " is hit by the bolt!"
-                        );
-                        a.Damage(Util.Roll("1d4"));
+                    Game.Log("You suddenly feel very dizzy...");
+                    Game.Player.DropItem(it);
+                    Game.Log("You drop your " + it.GetName("name") + ".");
+                    Game.Player.AddEffect(StatusType.Confusion, 100);
+                },
+                SetupAcceptedInput = () =>
+                {
+                    IO.AcceptedInput.Clear();
+                    foreach (Item item in Game.Player.Inventory)
+                    {
+                        IO.AcceptedInput.Add(
+                            IO.Indexes[Game.Player.Inventory.IndexOf(item)]
+                            );
                     }
                 },
-                CastDifficulty = 7,
-                Cost = 3,
-                Range = 3
+                CastDifficulty = 0,
+                Cost = 1,
+                Range = 0
             };
 
             //ReSharper disable once ObjectCreationAsStatement
             //LH-011214: registered to the spelldefinition list in constructor.
-            new Spell(
-                "fiery touch",
-                new List<Action<Actor, Point>>
-                {
-                    delegate(Actor caster, Point p) {
-                        Actor a = Game.Level.ActorOnTile(p);
-                        Util.Game.Log(
-                            a.Definition.Name +
-                            " is burned by " +
-                            caster.Definition.Name + "'s touch!"
-                        );
-                        a.Damage(Util.Roll("6d2"));
+            new Spell("fiery touch")
+            {
+                CastType = InputType.None,
+                Effect = () => {
+                    //I'm guessing monsters will have to use the qpstack as
+                    //well as the player, atleast for now?
+                    //Shouldn't be a problem as long as we're responsibly
+                    //pushing and popping right everywhere.
 
-                        if (Util.Roll("1d6") < 5) return;
+                    //Should be the /point/ we're doing this attack on,
+                    //alternaticely target ID (that's actually a pretty good
+                    //idea, huh).
+                    //Currently not doing anything with it since we know that
+                    //this is a monster attack, so it's always targetting
+                    //the player. Game.Caster still refers to the right caster
+                    //though, so that's neat.
+                    //ReSharper disable once UnusedVariable
+                    string answer = Util.Game.QpAnswerStack.Pop();
+                    Util.Game.Log(
+                        Game.Player.GetName("Name") +
+                        " " +
+                        Game.Player.Is() +
+                        " burned by " +
+                        Game.Caster.Definition.Name + "'s touch!"
+                    );
+                    Game.Player.Damage(Util.Roll("6d2"));
 
-                        Game.Log(
-                            a.GetName(false, true) + " starts bleeding!"
-                        );
+                    if (!Game.Player.IsAlive) return;
+                    if (Util.Roll("1d6") < 5) return;
 
-                        TickingEffectDefinition bleed =
-                            Util.TickingEffectDefinitionByName("bleed");
+                    TickingEffectDefinition bleed =
+                        Util.TickingEffectDefinitionByName("bleed");
 
-                        if (!a.HasEffect(bleed))
-                            a.TickingEffects.Add(bleed.Instantiate(a));
-                    }
+                    if (Game.Player.HasEffect(bleed)) return;
+                    Game.Log(
+                        //todo: Note, should be startS for everyone except you
+                        Game.Player.GetName("Name") +
+                        " start bleeding!"
+                    );
+                    Game.Player.AddEffect(
+                        Util.TickingEffectDefinitionByName("bleed")
+                    );
                 },
-                0, 1, 1
-            );
+                CastDifficulty = 0,
+                Range = 1,
+                Cost = 0
+            };
         }
 
         public static void SetupTickingEffects()
@@ -426,10 +461,8 @@ namespace ODB
                         Game.Log("Your wound bleeds!");
                     else
                         Game.Log(
-                            Util.Capitalize(
-                                holder.GetName(true)+"'s wound bleeds!"
-                                )
-                            );
+                            holder.GetName("Name")+"'s wound bleeds!"
+                        );
                     holder.Damage(Util.Roll("2d3"));
                 }
             );
@@ -742,8 +775,8 @@ namespace ODB
                     name += Math.Abs(Player.Inventory[i].Mod) + " ";
                 }
 
-                //name += player.inventory[i].Definition.name;
-                name += Player.Inventory[i].GetName(false, true, true);
+                name += Player.Inventory[i].GetName("Name");
+                //LH-021214: We might actually not know the number of charges..?
                 if (it.Charged)
                 {
                     name += "["+it.Count+"]";
@@ -779,7 +812,6 @@ namespace ODB
                 return;
             }
 
-            //string namerow = player.Definition.name + " - Title";
             string namerow = Player.Definition.Name;
             namerow += "  ";
             namerow += "STR " + Player.Get(Stat.Strength) + "  ";

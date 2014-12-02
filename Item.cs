@@ -1,250 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Xna.Framework;
 
 namespace ODB
 {
-    public class ItemDefinition : gObjectDefinition
-    {
-        protected bool Equals(ItemDefinition other)
-        {
-            bool equipSlotsEqual = (EquipSlots.Count == other.EquipSlots.Count);
-            if (!equipSlotsEqual) return false;
-            if (EquipSlots.Where(
-                (t, i) => t != other.EquipSlots[i]).Any())
-                return false;
-
-            bool ammoTypesEqual = (AmmoTypes.Count == other.AmmoTypes.Count);
-            if (!ammoTypesEqual) return false;
-            if (AmmoTypes.Where(
-                (t, i) => t != other.AmmoTypes[i]).Any())
-                return false;
-
-            //todo: Check components
-
-            return
-                base.Equals(other) &&
-                string.Equals(Damage, other.Damage) &&
-                ArmorClass == other.ArmorClass &&
-                Stacking.Equals(other.Stacking) &&
-                Ranged.Equals(other.Ranged) &&
-                string.Equals(RangedDamage, other.RangedDamage) &&
-                UseEffect == other.UseEffect &&
-                Category == other.Category &&
-                Nutrition == other.Nutrition;
-        }
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                //todo: There is a risk of hashcollision.
-                //      See comment in Actor.cs::GetHashCode().
-                //      tl;dr: Not using all fields since we are
-                //        1. Lazy IRL
-                //        2. Trying to check equivalence by value, and not by
-                //           reference.
-                //      This should only ever be a problem if you have two
-                //      in essence identical definitions though, and try to
-                //      use them as separate keys.
-                int hashCode = base.GetHashCode();
-                hashCode = (hashCode*397) ^ (Damage != null ? Damage.GetHashCode() : 0);
-                hashCode = (hashCode*397) ^ ArmorClass;
-                hashCode = (hashCode*397) ^ Stacking.GetHashCode();
-                hashCode = (hashCode*397) ^ Ranged.GetHashCode();
-                hashCode = (hashCode*397) ^ (RangedDamage != null ? RangedDamage.GetHashCode() : 0);
-                hashCode = (hashCode*397) ^ UseEffect;
-                hashCode = (hashCode*397) ^ Category;
-                hashCode = (hashCode*397) ^ Nutrition;
-                return hashCode;
-            }
-        }
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != GetType()) return false;
-            return Equals((ItemDefinition)obj);
-        }
-
-        public static ItemDefinition[] ItemDefinitions =
-            new ItemDefinition[0xFFFF];
-
-        public static Dictionary<int, List<string>> Appearances =
-            new Dictionary<int, List<string>>
-            {
-                {0, new List<string>{
-                    "violet potion",
-                    "turqoise potion"
-                }}
-            };
-        public static List<int> IdentifiedDefs = new List<int>();
-
-        public string Damage;
-        public int ArmorClass;
-        public bool Stacking;
-        public List<DollSlot> EquipSlots;
-        //ranged _weapons_
-        public bool Ranged;
-        public List<int> AmmoTypes;
-        //addition of this, since some items can be used in both melee
-        //and at range, like spears
-        public string RangedDamage;
-        public int UseEffect;
-        //groups potions together and what not
-        //mainly, unidentified items of different defs take from the same
-        //random appearance pool (but still only one appearance per definition)
-        public int Category;
-        public int Nutrition;
-
-        public List<Component> Components; 
-
-        //saved in game file, not idef file
-        public bool Identified {
-            get { return IdentifiedDefs.Contains(Type); }
-        }
-
-        //creating a NEW definition
-        public ItemDefinition(
-            Color? background, Color foreground,
-            string tile, string name,
-
-            //item definition specific stuff
-            string damage = "",
-            int armorClass = 0,
-            bool stacking = false,
-
-            List<DollSlot> equipSlots = null,
-            bool ranged = false,
-            List<int> ammoTypes = null,
-            int useEffect = 0xFFFF // SPELL ID
-
-        ) : base(background, foreground, tile, name) {
-            Damage = damage;
-            ArmorClass = armorClass;
-            Stacking = stacking;
-
-            //todo: should we really be doing this ?? biz here?
-            EquipSlots = equipSlots ?? new List<DollSlot>();
-            Ranged = ranged;
-            AmmoTypes = ammoTypes;
-            UseEffect = useEffect;
-
-            Components = new List<Component>();
-
-            ItemDefinitions[Type] = this;
-        }
-
-        public ItemDefinition(string s) : base(s)
-        {
-            ReadItemDefinition(s);
-        }
-
-        public Stream ReadItemDefinition(string s)
-        {
-            Stream stream = ReadGObjectDefinition(s);
-
-            Damage = stream.ReadString();
-            ArmorClass = stream.ReadHex(2);
-            Stacking = stream.ReadBool();
-
-            string slots = stream.ReadString();
-            EquipSlots = new List<DollSlot>();
-            foreach (string slot in slots.Split(',')
-                    .Where(ss => ss != ""))
-                EquipSlots.Add((DollSlot) int.Parse(slot));
-
-            Ranged = stream.ReadBool();
-
-            string ammos = stream.ReadString();
-            AmmoTypes = new List<int>();
-            foreach (
-                string ss in ammos.Split(',')
-                    .Where(ss => ss != ""))
-                AmmoTypes.Add(IO.ReadHex(ss));
-
-            RangedDamage = stream.ReadString();
-
-            UseEffect = stream.ReadHex(4);
-
-            Category = stream.ReadHex(2);
-
-            Nutrition = stream.ReadHex(4);
-
-            ItemDefinitions[Type] = this;
-
-            Components = new List<Component>();
-            while (!stream.AtFinish())
-                AddComponent(
-                    Component.CreateComponent(
-                        stream.ReadString(),
-                        stream.ReadBlock()
-                    )
-                );
-
-            return stream;
-        }
-
-        public void AddComponent(Component component)
-        {
-            //Only one of each kind of component, please and thanks
-            if(GetComponent(component.GetComponentType()) != null)
-                throw new InvalidOperationException();
-
-            Components.Add(component);
-        }
-
-        public Component GetComponent(string type)
-        {
-            return Components.FirstOrDefault(
-                x => x.GetComponentType() == type);
-        }
-
-        public Stream WriteItemDefinition()
-        {
-            Stream stream = WriteGObjectDefinition();
-
-            stream.Write(Damage);
-            stream.Write(ArmorClass, 2);
-            stream.Write(Stacking);
-
-            foreach (DollSlot ds in EquipSlots)
-                stream.Write((int)ds + ",", false);
-            stream.Write(";", false);
-
-            stream.Write(Ranged);
-
-            if(AmmoTypes != null)
-                foreach (int ammoType in AmmoTypes)
-                {
-                    stream.Write(ammoType, 4);
-                    stream.Write(",", false);
-                }
-            stream.Write(";", false);
-
-            stream.Write(RangedDamage);
-
-            stream.Write(UseEffect, 4);
-
-            stream.Write(Category, 2);
-
-            stream.Write(Nutrition, 4);
-
-            foreach (Component c in Components)
-                stream.Write(c.WriteComponent(), false);
-
-            return stream;
-        }
-    }
-
     public class Item : gObject
     {
         protected bool Equals(Item other)
         {
             bool modsEqual = Mods.Count == other.Count;
             if (!modsEqual) return false;
-            for (int i = 0; i < Mods.Count; i++)
-                if (Mods[i] != other.Mods[i]) return false;
+            if (Mods.Where((t, i) => t != other.Mods[i]).Any())
+            {
+                return false;
+            }
 
             return
                 base.Equals(other) &&
@@ -288,28 +57,19 @@ namespace ODB
         //not to file
         public bool Charged;
 
-        //wrapping directly to the definition for ease
-        public List<DollSlot> EquipSlots {
-            get { return Definition.EquipSlots; }
-        }
-
-        public List<int> AmmoTypes
-        {
-            get { return Definition.AmmoTypes; }
-        } 
-
+        //wraps
+        public bool Stacking { get { return Definition.Stacking; } }
         public int Type {
             get { return Definition.Type; }
         }
-
-        public Spell UseEffect
+        public bool HasComponent(string s)
         {
-            get {
-                if (Definition.UseEffect == 0xFFFF) return null;
-                return Spell.Spells[Definition.UseEffect];
-            }
+            return Definition.HasComponent(s);
         }
-
+        public Component GetComponent(string s)
+        {
+            return Definition.GetComponent(s);
+        }
         public bool Identified { get { return Definition.Identified; } }
 
         //SPAWNING a NEW item
@@ -336,75 +96,76 @@ namespace ODB
             Charged = !Definition.Stacking && Count > 0;
         }
 
-        public string GetName(
-            bool definite = false,
-            bool noArt = false,
-            bool capitalized = false
-        ) {
-            string name;
-            if (!Identified)
+        public bool Known
+        {
+            get
             {
-                name = ItemDefinition.Appearances
+                return ItemDefinition.IdentifiedDefs.Contains(Definition.Type);
+            }
+        }
+
+        private string UnknownApperance
+        {
+            get
+            {
+                return ItemDefinition.Appearances
                     [Definition.Category].Shuffle()
                     [
                         (Definition.Type + Math.Abs(Game.Seed))
-                        % ItemDefinition.Appearances[0].Count
+                            %
+                            ItemDefinition.Appearances[Definition.Category]
+                                .Count
                     ];
-            } else name = Definition.Name;
+            }
+        }
 
-            string article = Util.Article(name);
-            if (definite) article = "the";
-            if (Definition.Stacking && Count > 1)
-                article = Count + "x";
+        public string GetName(string prefix)
+        {
+            string apperance =
+                Known
+                    ? Definition.Name
+                    : UnknownApperance;
 
-            string s = (noArt ? "" : (article + " "));
+            string result;
 
-            #region mods
-            /*if (Mods.Count > 0 && Identified) {
-                switch (Mods[0].Type)
-                {
-                    case ModType.AddStr: s += "fierce"; break;
-                    case ModType.DecStr: s += "frail"; break;
-                    case ModType.AddDex: s += "vile"; break;
-                    case ModType.DecDex: s += "dull"; break;
-                    case ModType.AddInt: s += "clever"; break;
-                    case ModType.DecInt: s += "clouded"; break;
-                    case ModType.AddSpd: s += "fast"; break;
-                    case ModType.DecSpd: s += "trudging"; break;
-                    case ModType.AddQck: s += "eager"; break;
-                    case ModType.DecQck: s += "lazy"; break;
-                }
-                s += " ";
-            }*/
-            #endregion
+            //Stacking item, but only one of it
+            if (prefix == "count")
+                if (Count < 2 || !Stacking) prefix = "a";
+            if (prefix == "Count")
+                if (Count < 2 || !Stacking) prefix = "A";
 
-            //s += Definition.name;
-            s += name;
+            switch (prefix.ToLower())
+            {
+                case "name":
+                    result = apperance;
+                    break;
+                case "a":
+                    result =
+                        Util.Article(apperance) +
+                        " " +
+                        apperance;
+                    break;
+                case "the":
+                    result =
+                        "the" +
+                        " " +
+                        apperance;
+                    break;
+                case "count":
+                    result =
+                        Count +
+                        "x " +
+                        apperance +
+                        "s"; //Handled the single, stacking item above
+                    break;
+                default:
+                    throw new ArgumentException();
+            }
 
-            #region mods
-            /*if (Mods.Count > 1 && Identified) {
-                s += " of ";
-                switch (Mods[1].Type)
-                {
-                    case ModType.AddStr: s += "might"; break;
-                    case ModType.DecStr: s += "twigs"; break;
-                    case ModType.AddDex: s += "wounding"; break;
-                    case ModType.DecDex: s += "bumbling"; break;
-                    case ModType.AddInt: s += "clarity"; break;
-                    case ModType.DecInt: s += "shrouds"; break;
-                    case ModType.AddSpd: s += "wind"; break;
-                    case ModType.DecSpd: s += "dawdling"; break;
-                    case ModType.AddQck: s += "lightning"; break;
-                    case ModType.DecQck: s += "dallying"; break;
-                }
-            }*/
-            #endregion
+            if (prefix[0] >= 'A' && prefix[0] <= 'Z')
+                result = Util.Capitalize(result);
 
-            s = s.ToLower();
-            if (capitalized)
-                s = s.Substring(0, 1).ToUpper() +
-                    s.Substring(1, s.Length - 1);
-            return s;
+            return result;
         }
 
         public void Identify(
@@ -413,6 +174,27 @@ namespace ODB
             //bool mods
         ) {
             ItemDefinition.IdentifiedDefs.Add(Type);
+        }
+
+        public void SpendCharge()
+        {
+            if (Stacking)
+            {
+                Count--;
+                if (Count > 0) return;
+
+                //LH-021214: Spent last of stacking item -> Remove it.
+                Game.Player.Inventory.Remove(this);
+                Game.Level.AllItems.Remove(this);
+                Game.Level.WorldItems.Remove(this);
+            }
+            else
+            {
+                //LH-021214: Charging items are not removed when they hit 0
+                //           charges, they remain, but uncharged (so they can
+                //           potentially be recharged later).
+                Count--;
+            }
         }
 
         public Stream WriteItem()

@@ -64,12 +64,23 @@ namespace ODB
         public override string GetComponentType() { return "cWeapon"; }
 
         public string Damage;
+        //todo: future: Have handedness depend on weight?
+        public int Hands;
+        public List<DollSlot> EquipSlots {
+            get {
+                List<DollSlot> slots = new List<DollSlot>();
+                for(int i = 0; i < Hands; i++)
+                    slots.Add(DollSlot.Hand);
+                return slots;
+            }
+        }
 
         public static WeaponComponent Create(string content)
         {
             Stream stream = new Stream(content);
             return new WeaponComponent {
-                Damage = stream.ReadString()
+                Damage = stream.ReadString(),
+                Hands = stream.ReadHex(2)
             };
         }
 
@@ -79,6 +90,7 @@ namespace ODB
             stream.Write(GetComponentType());
             stream.Write("{", false);
             stream.Write(Damage);
+            stream.Write(Hands, 2);
             stream.Write("}", false);
             return stream;
         }
@@ -160,7 +172,17 @@ namespace ODB
     {
         public override string GetComponentType() { return "cLauncher"; }
 
-        public List<int> AmmoTypes; 
+        public List<int> AmmoTypes;
+        public string Damage;
+        public int Hands;
+        public List<DollSlot> EquipSlots {
+            get {
+                List<DollSlot> slots = new List<DollSlot>();
+                for(int i = 0; i < Hands; i++)
+                    slots.Add(DollSlot.Hand);
+                return slots;
+            }
+        }
 
         public static LauncherComponent Create(string content)
         {
@@ -172,8 +194,14 @@ namespace ODB
                     .Select(IO.ReadHex)
             .ToList();
 
+            string damage = stream.ReadString();
+
+            int hands = stream.ReadHex(2);
+
             return new LauncherComponent {
-                AmmoTypes = ammoTypes
+                AmmoTypes = ammoTypes,
+                Damage = damage,
+                Hands = hands
             };
         }
 
@@ -185,6 +213,7 @@ namespace ODB
             string ammoTypes = AmmoTypes.Aggregate(
                 "", (current, next) => current + IO.WriteHex(next, 4) + ",");
             stream.Write(ammoTypes);
+            stream.Write(Damage);
             stream.Write("}", false);
             return stream;
         }
