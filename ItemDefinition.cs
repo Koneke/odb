@@ -120,8 +120,8 @@ namespace ODB
                     Component.CreateComponent(
                         stream.ReadString(),
                         stream.ReadBlock()
-                        )
-                    );
+                    )
+                );
 
             return stream;
         }

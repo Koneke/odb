@@ -182,14 +182,8 @@ namespace ODB
                     if(Caster == null)
                         IO.IOState = InputType.PlayerInput;
                 }
-                else if (_inventoryConsole.IsVisible)
-                    _inventoryConsole.IsVisible = false;
                 else Exit();
             }
-
-            if (IO.KeyPressed(Keys.I) && !WizMode)
-                _inventoryConsole.IsVisible =
-                    !_inventoryConsole.IsVisible;
 
             if (IO.KeyPressed((Keys)0x6B)) //np+
                 _logSize = Math.Min(_logConsole.ViewArea.Height, ++_logSize);
@@ -228,9 +222,14 @@ namespace ODB
                         IO.TargetInput();
                         break;
                     case InputType.PlayerInput:
+                        if (IO.KeyPressed(Keys.I) && !WizMode)
+                            IO.IOState = InputType.Inventory;
                         if (Player.Cooldown == 0)
                             ODB.Player.PlayerInput();
                         else ProcessNPCs(); //mind: also ticks gameclock
+                        break;
+                    case InputType.Inventory:
+                        InventoryInput();
                         break;
                     //if this happens,
                     //you're breaking some kind of weird shit somehow
@@ -271,6 +270,117 @@ namespace ODB
             base.Update(gameTime);
         }
 
+        private int _selection;
+        private bool _inserting = false;
+        private int _insertedItem;
+        private void InventoryInput()
+        {
+            if (IO.KeyPressed(Keys.I))
+                IO.IOState = InputType.PlayerInput;
+
+            int parentContainer = -1;
+            if (CurrentContainer != -1)
+            {
+                foreach (int id in Containers.Keys
+                    .Where(id => Containers[id]
+                    .Contains(CurrentContainer)))
+                {
+                    parentContainer = id;
+                    break;
+                }
+            }
+
+            if (Game.Player.Inventory.Count > 0)
+            {
+                for (int i = 0; i < Player.Inventory.Count; i++)
+                    if (IO.KeyPressed(i + Keys.A))
+                        _selection = i;
+
+                if (IO.KeyPressed(Keys.Down) ||
+                    IO.KeyPressed(Keys.NumPad2)) _selection++;
+
+                if (IO.KeyPressed(Keys.Up) ||
+                    IO.KeyPressed(Keys.NumPad8)) _selection--;
+
+                if (_selection < 0) _selection += Game.Player.Inventory.Count;
+                _selection = _selection % Game.Player.Inventory.Count;
+            }
+
+            if (IO.KeyPressed(Keys.Back) ||
+                IO.KeyPressed(Keys.NumPad4))
+            {
+                if (CurrentContainer == -1)
+                {
+                    IO.IOState = InputType.PlayerInput;
+                    return;
+                }
+
+                if(!_inserting)
+                    CurrentContainer = parentContainer;
+                else
+                    _inserting = false;
+            }
+
+            int count =
+                CurrentContainer == -1
+                    ? Player.Inventory.Count
+                    : Containers[CurrentContainer].Count;
+
+            if (count <= 0) return;
+
+            Item item =
+                Util.GetItemByID(
+                    CurrentContainer == -1
+                        ? Player.Inventory[_selection].ID
+                        : Containers[CurrentContainer][_selection]
+                    );
+
+            if (_inserting)
+            {
+                if (IO.KeyPressed(Keys.Enter) ||
+                    IO.KeyPressed(Keys.NumPad6))
+                    if (item.HasComponent("cContainer"))
+                    {
+                        if (CurrentContainer == -1)
+                            Game.Player.Inventory.Remove(
+                                Util.GetItemByID(_insertedItem));
+                        else
+                            Containers[CurrentContainer].Remove(_insertedItem);
+                        Containers[item.ID].Add(_insertedItem);
+                        _inserting = false;
+                        _insertedItem = -1;
+                    }
+            }
+            else
+            {
+                if (IO.KeyPressed(Keys.Enter) ||
+                    IO.KeyPressed(Keys.NumPad6))
+                    if (item.HasComponent("cContainer"))
+                    {
+                        CurrentContainer = item.ID;
+                        _selection = 0;
+                    }
+
+                if (IO.KeyPressed(Keys.T) && CurrentContainer != -1)
+                {
+                    Containers[CurrentContainer].Remove(item.ID);
+                    if (parentContainer == -1)
+                        Game.Player.Inventory.Add(item);
+                    else
+                        Containers[parentContainer].Add(item.ID);
+
+                    /*if (Containers[CurrentContainer].Count == 0)
+                    CurrentContainer = parentContainer;*/
+                }
+
+                if (IO.KeyPressed(Keys.P))
+                {
+                    _insertedItem = item.ID;
+                    _inserting = true;
+                }
+            }
+        }
+
         public void SetupConsoles()
         {
             _dfc = new Console(80, 25);
@@ -293,7 +403,6 @@ namespace ODB
                     _dfc.ViewArea.Width - _inventoryConsole.ViewArea.Width,
                     0
                 );
-            _inventoryConsole.IsVisible = false;
 
             _statRowConsole = new Console(80, 2) {
                 Position = new xnaPoint(0, 23)
@@ -745,11 +854,15 @@ namespace ODB
 
         private void RenderInventory()
         {
+            _inventoryConsole.IsVisible = IO.IOState == InputType.Inventory;
+            if (IO.IOState != InputType.Inventory) return;
+
             int inventoryW = _inventoryConsole.ViewArea.Width;
             int inventoryH = _inventoryConsole.ViewArea.Height;
 
             _inventoryConsole.CellData.Clear();
-            _inventoryConsole.CellData.Fill(Color.White, Color.Black, ' ', null);
+            _inventoryConsole.CellData.Fill(
+                Color.White, Color.Black, ' ', null);
 
             DrawBorder(
                 _inventoryConsole,
@@ -807,9 +920,14 @@ namespace ODB
 
                 if (Game.Player.IsEquipped(item)) name += " (eq)";
 
-                _inventoryConsole.CellData.Print(
-                    2, y++, name
-                );
+                if(y == _selection + 1)
+                    _inventoryConsole.CellData.Print(
+                        2, y++, name, Color.White, Color.DarkGray
+                    );
+                else
+                    _inventoryConsole.CellData.Print(
+                        2, y++, name, Color.White
+                    );
             }
         }
 
@@ -945,13 +1063,11 @@ namespace ODB
                 : Color.White;
         }
 
-        #region engineshit
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.Black);
             Engine.Draw(gameTime);
             base.Draw(gameTime);
         }
-        #endregion
     }
 }
