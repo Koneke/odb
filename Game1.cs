@@ -290,7 +290,7 @@ namespace ODB
                 ? Game.Player.Inventory
                 : Containers[CurrentContainer];
 
-            for (int i = 0; i < Player.Inventory.Count; i++)
+            for (int i = 0; i < currentContainer.Count; i++)
                 if (IO.KeyPressed(i + Keys.A)) _selection = i;
 
             if (IO.KeyPressed(IO.Key.South)) _selection++;
@@ -302,13 +302,17 @@ namespace ODB
             if (currentContainer.Count > 0)
                 _selection = _selection % currentContainer.Count;
 
-
             if(IO.KeyPressed(IO.Key.West))
             {
                 if (CurrentContainer == -1)
                 {
-                    IO.IOState = InputType.PlayerInput;
-                    _inserting = false;
+                    if (_inserting)
+                    {
+                        _inserting = false;
+                        Game.Log("Nevermind.");
+                    }
+                    else
+                        IO.IOState = InputType.PlayerInput;
                     return;
                 }
 
@@ -318,18 +322,11 @@ namespace ODB
                     _inserting = false;
             }
 
-            int count =
-                CurrentContainer == -1
-                    ? Player.Inventory.Count
-                    : Containers[CurrentContainer].Count;
+            int count = currentContainer.Count;
 
             if (count <= 0) return;
 
-            Item item =
-                CurrentContainer == -1
-                    ? Player.Inventory[_selection]
-                    : Containers[CurrentContainer][_selection]
-                ;
+            Item item = currentContainer[_selection];
 
             if (_inserting)
             {
@@ -337,6 +334,12 @@ namespace ODB
                     IO.KeyPressed(IO.Key.Enter))
                     if (item.HasComponent("cContainer"))
                     {
+                        Game.Log(
+                            "Put " + 
+                            Util.GetItemByID(_insertedItem)
+                            .GetName("name") + " into " +
+                            item.GetName("name") + ".");
+
                         if (CurrentContainer == -1)
                             Game.Player.Inventory.Remove(
                                 Util.GetItemByID(_insertedItem));
@@ -345,6 +348,7 @@ namespace ODB
                                 Util.GetItemByID(_insertedItem));
                         Containers[item.ID].Add(
                             Util.GetItemByID(_insertedItem));
+
                         _inserting = false;
                         _insertedItem = -1;
                     }
@@ -376,6 +380,7 @@ namespace ODB
                 {
                     _insertedItem = item.ID;
                     _inserting = true;
+                    Game.Log("Put " + item.GetName("name") + " into what?");
                 }
 
                 if (CurrentContainer != -1) return;
@@ -466,16 +471,16 @@ namespace ODB
                 else Brains.Add(new Brain(actor));
         }
 
-        public void SwitchLevel(Level newLevel, bool gotoStairs = true)
+        public void SwitchLevel(Level newLevel, bool gotoStairs = false)
         {
             bool downwards =
                 Game.Levels.IndexOf(newLevel) > Game.Levels.IndexOf(Level);
             Level.WorldActors.Remove(Player);
-            foreach (Item it in Player.Inventory) Level.WorldItems.Remove(it);
+            foreach (Item it in Player.Inventory) Level.Despawn(it);
 
             Level = newLevel;
             Level.WorldActors.Add(Player);
-            foreach (Item it in Player.Inventory) Level.WorldItems.Add(it);
+            foreach (Item it in Player.Inventory) Level.AllItems.Add(it);
 
             foreach (Actor a in Level.WorldActors)
                 //reset vision, incase the level we moved to is a different size
@@ -688,13 +693,21 @@ namespace ODB
             Point p;
             switch (c)
             {
+                case 'y':
                 case (char)Keys.D7: p = new Point(-1, -1); break;
+                case 'k':
                 case (char)Keys.D8: p = new Point(0, -1); break;
+                case 'u':
                 case (char)Keys.D9: p = new Point(1, -1); break;
+                case 'h':
                 case (char)Keys.D4: p = new Point(-1, 0); break;
+                case 'l':
                 case (char)Keys.D6: p = new Point(1, 0); break;
+                case 'b':
                 case (char)Keys.D1: p = new Point(-1, 1); break;
+                case 'j':
                 case (char)Keys.D2: p = new Point(0, 1); break;
+                case 'n':
                 case (char)Keys.D3: p = new Point(1, 1); break;
                 default: throw new Exception(
                         "Bad input (expected numpad keycode, " +
@@ -921,6 +934,10 @@ namespace ODB
                     2, 0,
                     Util.GetItemByID(CurrentContainer).GetName("Name"),
                     Color.White);
+            _inventoryConsole.CellData.Print(
+                2, _inventoryConsole.ViewArea.Height-1,
+                _log[_log.Count-1],
+                Color.White);
 
             List<Item> items = new List<Item>();
             if (CurrentContainer != -1)

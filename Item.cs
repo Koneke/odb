@@ -198,7 +198,7 @@ namespace ODB
         //           (or removes strength) via mods, since if you can one-hand
         //           a two-hander with the strength that two-hander gives, you
         //           should only need one hand.
-        public List<DollSlot> GetHands()
+        public List<DollSlot> GetHands(Actor a)
         {
             int hands;
 

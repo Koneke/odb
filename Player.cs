@@ -81,14 +81,14 @@ namespace ODB
 
             Point offset = new Point(0, 0);
 
-                 if (IO.KeyPressed(Keys.NumPad8)) offset.Nudge(0, -1);
-            else if (IO.KeyPressed(Keys.NumPad9)) offset.Nudge(1, -1);
-            else if (IO.KeyPressed(Keys.NumPad6)) offset.Nudge(1, 0);
-            else if (IO.KeyPressed(Keys.NumPad3)) offset.Nudge(1, 1);
-            else if (IO.KeyPressed(Keys.NumPad2)) offset.Nudge(0, 1);
-            else if (IO.KeyPressed(Keys.NumPad1)) offset.Nudge(-1, 1);
-            else if (IO.KeyPressed(Keys.NumPad4)) offset.Nudge(-1, 0);
-            else if (IO.KeyPressed(Keys.NumPad7)) offset.Nudge(-1, -1);
+                 if (IO.KeyPressed(IO.Key.North)) offset.Nudge(0, -1);
+            else if (IO.KeyPressed(IO.Key.NorthEast)) offset.Nudge(1, -1);
+            else if (IO.KeyPressed(IO.Key.East)) offset.Nudge(1, 0);
+            else if (IO.KeyPressed(IO.Key.SouthEast)) offset.Nudge(1, 1);
+            else if (IO.KeyPressed(IO.Key.South)) offset.Nudge(0, 1);
+            else if (IO.KeyPressed(IO.Key.SouthWest)) offset.Nudge(-1, 1);
+            else if (IO.KeyPressed(IO.Key.West)) offset.Nudge(-1, 0);
+            else if (IO.KeyPressed(IO.Key.NorthWest)) offset.Nudge(-1, -1);
 
             if (IO.KeyPressed(Keys.NumPad5)) Game.Player.Pass(true);
 
@@ -107,14 +107,13 @@ namespace ODB
             List<Item> onFloor = Game.Level.ItemsOnTile(Game.Player.xy);
             if (onFloor.Count > 1)
             {
-                string question = "Pick up what? [";
                 IO.AcceptedInput.Clear();
                 for (int i = 0; i < onFloor.Count; i++)
-                {
-                    char index = IO.Indexes[i];
-                    question += index;
                     IO.AcceptedInput.Add(IO.Indexes[i]);
-                }
+
+                string question = "Pick up what? [";
+                question += IO.AcceptedInput.Aggregate(
+                    "", (c, n) => c + n);
                 question += "]";
 
                 IO.AskPlayer(
@@ -135,14 +134,13 @@ namespace ODB
         {
             if (!IO.KeyPressed(Keys.D) || IO.Shift) return;
 
-            string question = "Drop what? [";
             IO.AcceptedInput.Clear();
             for (int i = 0; i < Game.Player.Inventory.Count; i++)
-            {
-                char index = IO.Indexes[i];
-                question += index;
                 IO.AcceptedInput.Add(IO.Indexes[i]);
-            }
+
+            string question = "Drop what? [";
+            question += IO.AcceptedInput.Aggregate(
+                "", (c, n) => c + n);
             question += "]";
 
             IO.AskPlayer(
@@ -166,14 +164,13 @@ namespace ODB
                 return;
             }
 
-            string question = "Wield what? [";
             IO.AcceptedInput.Clear();
-            foreach (Item item in wieldable)
-            {
-                int index = Game.Player.Inventory.IndexOf(item);
-                question += IO.Indexes[index];
-                IO.AcceptedInput.Add(IO.Indexes[index]);
-            }
+            for (int i = 0; i < wieldable.Count; i++)
+                IO.AcceptedInput.Add(IO.Indexes[i]);
+
+            string question = "Wield what? [";
+            question += IO.AcceptedInput.Aggregate(
+                "", (c, n) => c + n);
             question += "]";
 
             IO.AskPlayer(
@@ -198,14 +195,13 @@ namespace ODB
                 return;
             }
 
-            string question = "Wear what? [";
             IO.AcceptedInput.Clear();
-            foreach (Item item in wearable)
-            {
-                int index = Game.Player.Inventory.IndexOf(item);
-                question += IO.Indexes[index];
-                IO.AcceptedInput.Add(IO.Indexes[index]);
-            }
+            for (int i = 0; i < wearable.Count; i++)
+                IO.AcceptedInput.Add(IO.Indexes[i]);
+
+            string question = "Wear what? [";
+            question += IO.AcceptedInput.Aggregate(
+                "", (c, n) => c + n);
             question += "]";
 
             IO.AskPlayer(
@@ -231,15 +227,15 @@ namespace ODB
             if (wielded.Count > 0 || Game.Player.Quiver != null)
             {
                 IO.AcceptedInput.Clear();
-                foreach (Item item in wielded)
-                    IO.AcceptedInput.Add(
-                        IO.Indexes[Game.Player.Inventory.IndexOf(item)]
-                    );
+                for(int i = 0; i < wielded.Count; i++)
+                    IO.AcceptedInput.Add(IO.Indexes[i]);
+
                 if(Game.Player.Quiver != null)
                     IO.AcceptedInput.Add(
                         IO.Indexes
                         [Game.Player.Inventory.IndexOf(Game.Player.Quiver)]
                     );
+
                 string question = "Sheath what? [";
                 question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
                 question += "] ";
@@ -272,10 +268,9 @@ namespace ODB
             if (worn.Count > 0)
             {
                 IO.AcceptedInput.Clear();
-                foreach (Item item in worn)
-                    IO.AcceptedInput.Add(
-                        IO.Indexes[Game.Player.Inventory.IndexOf(item)]
-                    );
+                for (int i = 0; i < worn.Count; i ++)
+                    IO.AcceptedInput.Add(IO.Indexes[i]);
+
                 string question = "Remove what? [";
                 question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
                 question += "] ";
@@ -299,9 +294,8 @@ namespace ODB
             IO.AcceptedInput.Clear();
 
             for(int i = (int)Keys.NumPad1; i <= (int)Keys.NumPad9; i++)
-                IO.AcceptedInput.Add(
-                    (char)(48 + i - Keys.NumPad0)
-                );
+                IO.AcceptedInput.Add((char)(48 + i - Keys.NumPad0));
+            IO.AcceptedInput.AddRange(IO.ViKeys.ToCharArray());
                 
             IO.AskPlayer(
                 "Open where?",
@@ -318,29 +312,26 @@ namespace ODB
 
             for(int i = (int)Keys.NumPad1; i <= (int)Keys.NumPad9; i++)
                 IO.AcceptedInput.Add((char)(48 + i - Keys.NumPad0));
+            IO.AcceptedInput.AddRange(IO.ViKeys.ToCharArray());
                 
             IO.AskPlayer(
                 "Close where?",
                 InputType.QuestionPromptSingle,
                 PlayerResponses.Close
             );
-
         }
 
         private static void CheckZap()
         {
             if (!IO.KeyPressed(Keys.Z) || IO.Shift) return;
 
-            string question = "Cast what? [";
             IO.AcceptedInput.Clear();
-
             for (int i = 0; i < Game.Player.Spellbook.Count; i++)
-            {
-                char index = IO.Indexes[i];
-                question += index;
-                IO.AcceptedInput.Add(index);
-            }
+                IO.AcceptedInput.Add(IO.Indexes[i]);
 
+            string question = "Cast what? [";
+            question += IO.AcceptedInput.Aggregate(
+                "", (c, n) => c + n);
             question += "]";
 
             IO.AskPlayer(

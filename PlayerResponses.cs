@@ -163,9 +163,7 @@ namespace ODB
 
             List<DollSlot> equipSlots;
             if (wc != null) equipSlots = wc.EquipSlots;
-            else equipSlots =
-                //it.weight > ... ? 2 hands : 1 hand
-                new List<DollSlot> { DollSlot.Hand, DollSlot.Hand };
+            else equipSlots = item.GetHands(Game.Player);
 
             if (!Game.Player.CanEquip(equipSlots))
                 Game.Log("You'd need more hands to do that!");
@@ -305,16 +303,19 @@ namespace ODB
                     Game.Player.xy.x + offset.x,
                     Game.Player.xy.y + offset.y
                 ];
-            if (t.Door == Door.Closed)
-            {
-                t.Door = Door.Open;
-                Game.Log("You opened the door.");
 
-                //counted as a movement action at the moment, based
-                //on the dnd rules.
-                Game.Player.Pass(true);
-            }
-            else Game.Log("There's no closed door there.");
+            if(t != null)
+                if (t.Door == Door.Closed)
+                {
+                    t.Door = Door.Open;
+                    Game.Log("You opened the door.");
+
+                    //counted as a movement action at the moment, based
+                    //on the dnd rules.
+                    Game.Player.Pass(true);
+                    return;
+                }
+            Game.Log("There's no closed door there.");
         }
 
         public static void Close()
@@ -328,21 +329,25 @@ namespace ODB
                 Game.Player.xy.y + offset.y);
             Tile t = Game.Level.Map[p.x, p.y];
 
-            if (t.Door == Door.Open)
-            {
-                //first check if something's in the way
-                if (Game.Level.ItemsOnTile(p).Count <= 0)
+            if(t != null)
+                if (t.Door == Door.Open)
                 {
-                    t.Door = Door.Closed;
-                    Game.Log("You closed the door.");
+                    //first check if something's in the way
+                    if (Game.Level.ItemsOnTile(p).Count <= 0)
+                    {
+                        t.Door = Door.Closed;
+                        Game.Log("You closed the door.");
 
-                    //counted as a movement action at the moment, based
-                    //on the dnd rules.
-                    Game.Player.Pass(true);
+                        //counted as a movement action at the moment, based
+                        //on the dnd rules.
+                        Game.Player.Pass(true);
+                        return;
+                    }
+
+                    Game.Log("There's something in the way.");
+                    return;
                 }
-                else Game.Log("There's something in the way.");
-            }
-            else Game.Log("There's no open door there.");
+            Game.Log("There's no open door there.");
         }
 
         public static void Zap()

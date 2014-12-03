@@ -225,7 +225,7 @@ namespace ODB
         }
         public void Wield(Item item)
         {
-            List<DollSlot> slots = item.GetHands();
+            List<DollSlot> slots = item.GetHands(this);
 
             foreach (DollSlot ds in slots)
             {
@@ -269,6 +269,35 @@ namespace ODB
                 from bp in PaperDoll
                     where bp != null
                     where bp.Item != null
+                    where !equipped.Contains(bp.Item)
+                select bp)
+                equipped.Add(bp.Item);
+            return equipped;
+        }
+        public List<Item> GetWornItems()
+        {
+            List<Item> equipped = new List<Item>();
+            foreach (
+                BodyPart bp in
+                from bp in PaperDoll
+                    where bp != null
+                    where bp.Item != null
+                    where bp.Type != DollSlot.Hand
+                    where !equipped.Contains(bp.Item)
+                    where bp.Item.HasComponent("cWearable")
+                select bp)
+                equipped.Add(bp.Item);
+            return equipped;
+        }
+        public List<Item> GetWieldedItems()
+        {
+            List<Item> equipped = new List<Item>();
+            foreach (
+                BodyPart bp in
+                from bp in PaperDoll
+                    where bp != null
+                    where bp.Item != null
+                    where bp.Type == DollSlot.Hand
                     where !equipped.Contains(bp.Item)
                 select bp)
                 equipped.Add(bp.Item);

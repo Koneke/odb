@@ -329,7 +329,7 @@ namespace ODB
                     break;
                     #endregion
                 case "lv-cr":
-                case "createroom":
+                case "lv-createroom":
                     #region createroom
                     if (args.Length >= 5)
                     {
@@ -353,6 +353,21 @@ namespace ODB
                     }
                     break;
                     #endregion
+                case "lv-mr":
+                case "lv-mergerooms":
+                    Room a = Util.Game.Level.Rooms[IO.ReadHex(args[0])];
+                    Room b = Util.Game.Level.Rooms[IO.ReadHex(args[1])];
+                    a.Rects.AddRange(b.Rects);
+                    Game.Level.Rooms.Remove(b);
+                    Game.Level.CalculateRoomLinks();
+                    Game.Level.CalculateActorPositions();
+                    break;
+                case "lv-rid":
+                    Game.Log(Util.GetRooms(WmCursor).Aggregate(
+                        "Rooms at cursor:",
+                        (c, n) => c + " " + Game.Level.Rooms.IndexOf(n))
+                    );
+                    break;
                 case "lv-savelvl":
                 case "lv-sl":
                     #region save

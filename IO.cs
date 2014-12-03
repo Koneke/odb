@@ -31,6 +31,7 @@ namespace ODB
         private const string Lowercase = "abcdefghijklmnopqrstuvwxyz";
         private const string Uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         public static string Indexes = Lowercase + Uppercase;
+        public static string ViKeys = "hjklyubn";
         public static List<char> AcceptedInput = new List<char>();
 
         public enum Key
@@ -44,15 +45,15 @@ namespace ODB
         public static Dictionary<Key, List<Keys>> KeyBindings =
             new Dictionary<Key, List<Keys>>
         {
-            {Key.North, new List<Keys>{Keys.Up, Keys.NumPad8, Keys.K}},
-            {Key.South, new List<Keys>{Keys.Down, Keys.NumPad2, Keys.J}},
-            {Key.West, new List<Keys>{Keys.Left, Keys.NumPad4, Keys.H}},
-            {Key.East, new List<Keys>{Keys.Right, Keys.NumPad6, Keys.L}},
+            {Key.North,     new List<Keys>{Keys.Up, Keys.NumPad8, Keys.K}},
+            {Key.South,     new List<Keys>{Keys.Down, Keys.NumPad2, Keys.J}},
+            {Key.West,      new List<Keys>{Keys.Left, Keys.NumPad4, Keys.H}},
+            {Key.East,      new List<Keys>{Keys.Right, Keys.NumPad6, Keys.L}},
             {Key.NorthEast, new List<Keys>{Keys.NumPad9, Keys.U}},
             {Key.NorthWest, new List<Keys>{Keys.NumPad7, Keys.Y}},
-            {Key.SouthEast, new List<Keys>{Keys.NumPad3, Keys.B}},
-            {Key.SouthWest, new List<Keys>{Keys.NumPad1, Keys.N}},
-            {Key.Enter, new List<Keys>{Keys.NumPad5, Keys.Enter}},
+            {Key.SouthEast, new List<Keys>{Keys.NumPad3, Keys.N}},
+            {Key.SouthWest, new List<Keys>{Keys.NumPad1, Keys.B}},
+            {Key.Enter,     new List<Keys>{Keys.NumPad5, Keys.Enter}},
         };
 
         public static void Update(bool final)
