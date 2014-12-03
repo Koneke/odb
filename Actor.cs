@@ -223,20 +223,18 @@ namespace ODB
             }
             return canEquip;
         }
-        public void Wield(Item it)
+        public void Wield(Item item)
         {
-            WeaponComponent wc = 
-                (WeaponComponent)
-                it.Definition.GetComponent("cWeapon");
+            List<DollSlot> slots = item.GetHands();
 
-            foreach (DollSlot ds in wc.EquipSlots)
+            foreach (DollSlot ds in slots)
             {
                 //ReSharper disable once AccessToForEachVariableInClosure
                 //LH-011214: only reading value
                 foreach (BodyPart bp in PaperDoll
                     .Where(bp => bp.Type == ds && bp.Item == null))
                 {
-                    bp.Item = it;
+                    bp.Item = item;
                     break;
                 }
             }
@@ -261,7 +259,7 @@ namespace ODB
         }
         public bool IsEquipped(Item it)
         {
-            return PaperDoll.Any(x => x.Item == it);
+            return PaperDoll.Any(x => x.Item == it) || Quiver == it;
         }
         public List<Item> GetEquippedItems()
         {

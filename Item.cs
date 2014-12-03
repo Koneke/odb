@@ -53,6 +53,7 @@ namespace ODB
         public int Count;
         public new ItemDefinition Definition;
         public List<Mod> Mods;
+        public int Weight;
 
         /*
          * bool BucKnown;
@@ -95,7 +96,8 @@ namespace ODB
 
             Charged = !Definition.Stacking && count > 0;
             if (Definition.HasComponent("cContainer"))
-                Game.Containers.Add(ID, new List<int>());
+                Game.Containers.Add(ID, new List<Item>());
+            Weight = 1;
         }
 
         //LOADING an OLD item
@@ -105,7 +107,8 @@ namespace ODB
 
             Charged = !Definition.Stacking && Count > 0;
             if (Definition.HasComponent("cContainer"))
-                Game.Containers.Add(ID, new List<int>());
+                Game.Containers.Add(ID, new List<Item>());
+            Weight = 1;
         }
 
         public bool Known
@@ -188,6 +191,31 @@ namespace ODB
             ItemDefinition.IdentifiedDefs.Add(Type);
         }
 
+        //LH-031214: We want to switch this to depend on the actor strength
+        //           as well later, since a strong dude could probably one-hand
+        //           an orc corpse or whatever.
+        //           We probably also want to check if the item gives strength
+        //           (or removes strength) via mods, since if you can one-hand
+        //           a two-hander with the strength that two-hander gives, you
+        //           should only need one hand.
+        public List<DollSlot> GetHands()
+        {
+            int hands;
+
+            WeaponComponent wc = (WeaponComponent)GetComponent("cWeapon");
+            LauncherComponent lc = (LauncherComponent)GetComponent("cLauncher");
+
+            if(wc != null) hands = wc.Hands;
+            else if (lc != null) hands = lc.Hands;
+            else hands = Weight > 1 ? 2 : 1;
+
+            List<DollSlot> slots = new List<DollSlot>();
+            for (int i = 0; i < hands; i++)
+                slots.Add(DollSlot.Hand);
+
+            return slots;
+        }
+
         public void SpendCharge()
         {
             if (Stacking)
@@ -213,6 +241,7 @@ namespace ODB
         {
             Stream stream = WriteGObject();
 
+            stream.Write(Definition.Type, 4);
             stream.Write(ID, 4);
             stream.Write(Mod, 2);
             stream.Write(Count, 2);

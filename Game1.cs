@@ -16,13 +16,7 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 //     but it /is/ fairly messy.
 // * Switch from numbers in actor def to die?
 // * Inventory stuff currently doesn't make noise.
-
-//~~~ QUEST TRACKER for 2 dec ~~~
-// * Containers
-//   * Originally planned for 1 dec, but bumped forward.
-//   * Should be doable with the new component system though,
-//     including container in container, using the magic of
-//     blocks :~)
+// * nor take time (new parts atleast).
 
 //General note:
 // * Currently, items need cWeapon to be wieldable. This is /not/ the way it
@@ -59,7 +53,7 @@ namespace ODB
         public Level Level;
         public List<Brain> Brains;
 
-        public Dictionary<int, List<int>> Containers;
+        public Dictionary<int, List<Item>> Containers;
         public int CurrentContainer;
 
         public Actor Player;
@@ -145,7 +139,7 @@ namespace ODB
 
             SetupBrains();
 
-            Containers = new Dictionary<int, List<int>>();
+            Containers = new Dictionary<int, List<Item>>();
             CurrentContainer = -1;
 
             _logSize = 3;
@@ -271,7 +265,7 @@ namespace ODB
         }
 
         private int _selection;
-        private bool _inserting = false;
+        private bool _inserting;
         private int _insertedItem;
         private void InventoryInput()
         {
@@ -281,37 +275,40 @@ namespace ODB
             int parentContainer = -1;
             if (CurrentContainer != -1)
             {
-                foreach (int id in Containers.Keys
+                foreach (int id in
+                    Containers.Keys
                     .Where(id => Containers[id]
-                    .Contains(CurrentContainer)))
+                        .Any(x => x.ID == CurrentContainer)))
                 {
                     parentContainer = id;
                     break;
                 }
             }
 
-            if (Game.Player.Inventory.Count > 0)
-            {
-                for (int i = 0; i < Player.Inventory.Count; i++)
-                    if (IO.KeyPressed(i + Keys.A))
-                        _selection = i;
+            List<Item> currentContainer =
+                CurrentContainer == -1
+                ? Game.Player.Inventory
+                : Containers[CurrentContainer];
 
-                if (IO.KeyPressed(Keys.Down) ||
-                    IO.KeyPressed(Keys.NumPad2)) _selection++;
+            for (int i = 0; i < Player.Inventory.Count; i++)
+                if (IO.KeyPressed(i + Keys.A)) _selection = i;
 
-                if (IO.KeyPressed(Keys.Up) ||
-                    IO.KeyPressed(Keys.NumPad8)) _selection--;
+            if (IO.KeyPressed(IO.Key.South)) _selection++;
 
-                if (_selection < 0) _selection += Game.Player.Inventory.Count;
-                _selection = _selection % Game.Player.Inventory.Count;
-            }
+            if (IO.KeyPressed(IO.Key.North)) _selection--;
 
-            if (IO.KeyPressed(Keys.Back) ||
-                IO.KeyPressed(Keys.NumPad4))
+            if (_selection < 0)
+                _selection += currentContainer.Count;
+            if (currentContainer.Count > 0)
+                _selection = _selection % currentContainer.Count;
+
+
+            if(IO.KeyPressed(IO.Key.West))
             {
                 if (CurrentContainer == -1)
                 {
                     IO.IOState = InputType.PlayerInput;
+                    _inserting = false;
                     return;
                 }
 
@@ -329,54 +326,97 @@ namespace ODB
             if (count <= 0) return;
 
             Item item =
-                Util.GetItemByID(
-                    CurrentContainer == -1
-                        ? Player.Inventory[_selection].ID
-                        : Containers[CurrentContainer][_selection]
-                    );
+                CurrentContainer == -1
+                    ? Player.Inventory[_selection]
+                    : Containers[CurrentContainer][_selection]
+                ;
 
             if (_inserting)
             {
-                if (IO.KeyPressed(Keys.Enter) ||
-                    IO.KeyPressed(Keys.NumPad6))
+                if (IO.KeyPressed(IO.Key.East) ||
+                    IO.KeyPressed(IO.Key.Enter))
                     if (item.HasComponent("cContainer"))
                     {
                         if (CurrentContainer == -1)
                             Game.Player.Inventory.Remove(
                                 Util.GetItemByID(_insertedItem));
                         else
-                            Containers[CurrentContainer].Remove(_insertedItem);
-                        Containers[item.ID].Add(_insertedItem);
+                            Containers[CurrentContainer].Remove(
+                                Util.GetItemByID(_insertedItem));
+                        Containers[item.ID].Add(
+                            Util.GetItemByID(_insertedItem));
                         _inserting = false;
                         _insertedItem = -1;
                     }
             }
             else
             {
-                if (IO.KeyPressed(Keys.Enter) ||
-                    IO.KeyPressed(Keys.NumPad6))
+                if (IO.KeyPressed(IO.Key.East) ||
+                    IO.KeyPressed(IO.Key.Enter))
                     if (item.HasComponent("cContainer"))
                     {
                         CurrentContainer = item.ID;
                         _selection = 0;
+                        return;
                     }
 
                 if (IO.KeyPressed(Keys.T) && CurrentContainer != -1)
                 {
-                    Containers[CurrentContainer].Remove(item.ID);
+                    Containers[CurrentContainer].Remove(item);
                     if (parentContainer == -1)
                         Game.Player.Inventory.Add(item);
                     else
-                        Containers[parentContainer].Add(item.ID);
-
-                    /*if (Containers[CurrentContainer].Count == 0)
-                    CurrentContainer = parentContainer;*/
+                        Containers[parentContainer].Add(item);
                 }
 
-                if (IO.KeyPressed(Keys.P))
+                //if it wasn't a container, or we pressed p
+                if (IO.KeyPressed(Keys.P) ||
+                    IO.KeyPressed(IO.Key.East) ||
+                    IO.KeyPressed(IO.Key.Enter))
                 {
                     _insertedItem = item.ID;
                     _inserting = true;
+                }
+
+                if (CurrentContainer != -1) return;
+
+                if (IO.KeyPressed(Keys.W))
+                {
+                    QpAnswerStack.Push(IO.Indexes[_selection]+"");
+                    if (!IO.Shift)
+                        PlayerResponses.Wield();
+                    else if (item.HasComponent("cWearable"))
+                        PlayerResponses.Wear();
+                }
+
+                if (IO.KeyPressed(Keys.S) && IO.Shift)
+                {
+                    QpAnswerStack.Push(IO.Indexes[_selection]+"");
+                    if(
+                        Game.Player.IsEquipped(item) &&
+                        !item.HasComponent("cWearable"))
+                        PlayerResponses.Sheath();
+                }
+
+                if (IO.KeyPressed(Keys.R) && IO.Shift)
+                {
+                    QpAnswerStack.Push(IO.Indexes[_selection]+"");
+                    if( Game.Player.IsEquipped(item) &&
+                        item.HasComponent("cWearable"))
+                        PlayerResponses.Remove();
+                }
+
+                if (IO.KeyPressed(Keys.D) && !IO.Shift)
+                {
+                    QpAnswerStack.Push(IO.Indexes[_selection]+"");
+                    if(item.Count > 1)
+                        IO.IOState = InputType.PlayerInput;
+                    PlayerResponses.Drop();
+                }
+
+                if (IO.KeyPressed(Keys.Q))
+                {
+                    Game.Player.Quiver = item;
                 }
             }
         }
@@ -889,7 +929,7 @@ namespace ODB
                     .Where(
                         item => Containers
                         [CurrentContainer]
-                        .Contains(item.ID)
+                        .Contains(item)
                     )
                 );
             else items.AddRange(Player.Inventory);
@@ -918,12 +958,24 @@ namespace ODB
                     name += Containers[item.ID].Count + " items)";
                 }
 
-                if (Game.Player.IsEquipped(item)) name += " (eq)";
+                if (Game.Player.IsEquipped(item))
+                {
+                    if (Game.Player.Quiver == item) name += " (quivered)";
+                    else if (Game.Player.PaperDoll.Any(
+                        x => x.Type == DollSlot.Hand && x.Item == item))
+                        name += " (wielded)";
+                    else
+                        name += " (worn)";
+                }
 
-                if(y == _selection + 1)
+                if (y == _selection + 1)
+                {
+                    if (_inserting)
+                        name = "> " + name;
                     _inventoryConsole.CellData.Print(
-                        2, y++, name, Color.White, Color.DarkGray
+                        2, y++, name, Color.White, Color.DimGray
                     );
+                }
                 else
                     _inventoryConsole.CellData.Print(
                         2, y++, name, Color.White

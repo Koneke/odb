@@ -33,6 +33,28 @@ namespace ODB
         public static string Indexes = Lowercase + Uppercase;
         public static List<char> AcceptedInput = new List<char>();
 
+        public enum Key
+        {
+            North, South, West, East,
+            NorthEast, NorthWest,
+            SouthEast, SouthWest,
+            Enter
+        }
+
+        public static Dictionary<Key, List<Keys>> KeyBindings =
+            new Dictionary<Key, List<Keys>>
+        {
+            {Key.North, new List<Keys>{Keys.Up, Keys.NumPad8, Keys.K}},
+            {Key.South, new List<Keys>{Keys.Down, Keys.NumPad2, Keys.J}},
+            {Key.West, new List<Keys>{Keys.Left, Keys.NumPad4, Keys.H}},
+            {Key.East, new List<Keys>{Keys.Right, Keys.NumPad6, Keys.L}},
+            {Key.NorthEast, new List<Keys>{Keys.NumPad9, Keys.U}},
+            {Key.NorthWest, new List<Keys>{Keys.NumPad7, Keys.Y}},
+            {Key.SouthEast, new List<Keys>{Keys.NumPad3, Keys.B}},
+            {Key.SouthWest, new List<Keys>{Keys.NumPad1, Keys.N}},
+            {Key.Enter, new List<Keys>{Keys.NumPad5, Keys.Enter}},
+        };
+
         public static void Update(bool final)
         {
             Shift =
@@ -49,6 +71,14 @@ namespace ODB
         public static bool KeyPressed(Keys k)
         {
             return _ks.IsKeyDown(k) && !_oks.IsKeyDown(k);
+        }
+
+        public static bool KeyPressed(Key binding)
+        {
+            if (!KeyBindings.ContainsKey(binding))
+                throw new ArgumentException();
+            return KeyBindings[binding].Any(
+                x => _ks.IsKeyDown(x) && !_oks.IsKeyDown(x));
         }
 
         private static void SubmitAnswer()
@@ -229,7 +259,7 @@ namespace ODB
 
             Game.Level = Game.Levels[playerLocation];
             Game.SetupBrains();
-            Game.Containers = new Dictionary<int, List<int>>();
+            Game.Containers = new Dictionary<int, List<Item>>();
         }
 
         public static void WriteToFile(string path, string content)

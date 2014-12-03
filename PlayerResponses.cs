@@ -87,6 +87,9 @@ namespace ODB
 
         static void DoDrop(int index)
         {
+            //make sure that we actually pop since we only peeked before
+            Game.QpAnswerStack.Pop();
+
             Item it = Game.Player.Inventory[index];
 
             Game.Player.Inventory.Remove(it);

@@ -235,10 +235,11 @@ namespace ODB
                     IO.AcceptedInput.Add(
                         IO.Indexes[Game.Player.Inventory.IndexOf(item)]
                     );
-                IO.AcceptedInput.Add(
-                    IO.Indexes
-                    [Game.Player.Inventory.IndexOf(Game.Player.Quiver)]
-                );
+                if(Game.Player.Quiver != null)
+                    IO.AcceptedInput.Add(
+                        IO.Indexes
+                        [Game.Player.Inventory.IndexOf(Game.Player.Quiver)]
+                    );
                 string question = "Sheath what? [";
                 question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
                 question += "] ";

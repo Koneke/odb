@@ -663,7 +663,7 @@ namespace ODB
                     foreach (Item it in Game.Level.ItemsOnTile(WmCursor))
                     {
                         Game.Level.WorldItems.Remove(it);
-                        Game.Containers[IO.ReadHex(args[0])].Add(it.ID);
+                        Game.Containers[IO.ReadHex(args[0])].Add(it);
                     }
                     break;
                 case "ii-sdef":
