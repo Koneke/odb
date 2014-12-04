@@ -34,6 +34,13 @@ namespace ODB
         public static string ViKeys = "hjklyubn";
         public static List<char> AcceptedInput = new List<char>();
 
+        //so we can map keys requiring certain shift-status
+        public struct SKey
+        {
+            public bool ModShift;
+            public Key Key;
+        }
+
         public enum Key
         {
             North, South, West, East,

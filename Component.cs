@@ -178,15 +178,6 @@ namespace ODB
 
         public List<int> AmmoTypes;
         public string Damage;
-        public int Hands;
-        public List<DollSlot> EquipSlots {
-            get {
-                List<DollSlot> slots = new List<DollSlot>();
-                for(int i = 0; i < Hands; i++)
-                    slots.Add(DollSlot.Hand);
-                return slots;
-            }
-        }
 
         public static LauncherComponent Create(string content)
         {
@@ -200,12 +191,9 @@ namespace ODB
 
             string damage = stream.ReadString();
 
-            int hands = stream.ReadHex(2);
-
             return new LauncherComponent {
                 AmmoTypes = ammoTypes,
                 Damage = damage,
-                Hands = hands
             };
         }
 

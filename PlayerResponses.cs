@@ -122,6 +122,7 @@ namespace ODB
             else if (count == it.Count)
             {
                 //falling through to the normal itemdropping
+                Game.QpAnswerStack.Push("");
                 DoDrop(index);
             }
             else
@@ -151,6 +152,8 @@ namespace ODB
 
         public static void Wield()
         {
+            //todo: if the player can one-hand it, ask if they want to 2hand it
+
             string answer = Game.QpAnswerStack.Pop();
             if (answer.Length <= 0) return;
 

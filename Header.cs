@@ -162,6 +162,16 @@ namespace ODB
 
     public class BodyPart
     {
+        public static Dictionary<DollSlot, string> BodyPartNames =
+            new Dictionary<DollSlot, string>
+            {
+                {DollSlot.Head, "Head"},
+                {DollSlot.Torso, "Torso"},
+                {DollSlot.Hand, "Hand"},
+                {DollSlot.Legs, "Legs"},
+                {DollSlot.Feet, "Feet"},
+            };
+
         protected bool Equals(BodyPart other)
         {
             return Type == other.Type && Equals(Item, other.Item);

@@ -388,24 +388,30 @@ namespace ODB
                 ).Where(bp => !equipped.Contains(bp.Item)))
                 equipped.Add(bp.Item);
 
-            return 8 + equipped
+            return 10 + equipped
                 .Select(
                     it => (WearableComponent)
                     it.Definition.GetComponent("cWearable"))
                 .Select(wc => wc.ArmorClass).Sum();
         }
 
+        public int GetCarriedWeight()
+        {
+            return Inventory.Sum(x => x.GetWeight());
+        }
+        public int GetCarryingCapacity()
+        {
+            return Get(Stat.Strength) * 600;
+        }
+
         public void Attack(Actor target)
         {
             //todo: Multiweapon fighting penalties?
-            int hitRoll = Util.Roll("1d6") + Get(Stat.Strength);
+            int hitRoll = Util.Roll("d20") + Get(Stat.Strength);
 
             int dodgeRoll = target.GetArmor();
             bool crit = Util.Roll("1d30") >= 30 -
-                Math.Max(
-                    Get(Stat.Dexterity)-5,
-                    0
-                );
+                Math.Max(Get(Stat.Dexterity)-5, 0);
 
             if (hitRoll >= dodgeRoll) {
                 int damageRoll = Get(Stat.Strength);
@@ -721,6 +727,13 @@ namespace ODB
                     }
         }
 
+        public string Is()
+        {
+            return ID == 0
+                ? "are"
+                : "is";
+        }
+
         public Stream WriteActor()
         {
             Stream stream = WriteGObject();
@@ -848,13 +861,6 @@ namespace ODB
             Awake = stream.ReadBool();
 
             return stream;
-        }
-
-        public string Is()
-        {
-            return ID == 0
-                ? "are"
-                : "is";
         }
     }
 }

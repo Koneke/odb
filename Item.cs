@@ -53,7 +53,6 @@ namespace ODB
         public int Count;
         public new ItemDefinition Definition;
         public List<Mod> Mods;
-        public int Weight;
 
         /*
          * bool BucKnown;
@@ -97,7 +96,6 @@ namespace ODB
             Charged = !Definition.Stacking && count > 0;
             if (Definition.HasComponent("cContainer"))
                 Game.Containers.Add(ID, new List<Item>());
-            Weight = 1;
         }
 
         //LOADING an OLD item
@@ -108,7 +106,6 @@ namespace ODB
             Charged = !Definition.Stacking && Count > 0;
             if (Definition.HasComponent("cContainer"))
                 Game.Containers.Add(ID, new List<Item>());
-            Weight = 1;
         }
 
         public bool Known
@@ -118,7 +115,6 @@ namespace ODB
                 return ItemDefinition.IdentifiedDefs.Contains(Definition.Type);
             }
         }
-
         private string UnknownApperance
         {
             get
@@ -133,7 +129,6 @@ namespace ODB
                     ];
             }
         }
-
         public string GetName(string format)
         {
             string apperance =
@@ -206,14 +201,26 @@ namespace ODB
             LauncherComponent lc = (LauncherComponent)GetComponent("cLauncher");
 
             if(wc != null) hands = wc.Hands;
-            else if (lc != null) hands = lc.Hands;
-            else hands = Weight > 1 ? 2 : 1;
+            else if (lc != null) hands = 2;
+            //360 decagram, i.e. 3.6kg, or ~8lb
+            //todo: adjust for actor strength
+            else hands = Definition.Weight > 360 ? 2 : 1;
 
             List<DollSlot> slots = new List<DollSlot>();
             for (int i = 0; i < hands; i++)
                 slots.Add(DollSlot.Hand);
 
             return slots;
+        }
+        public int GetWeight()
+        {
+            int weight = Definition.Weight;
+            if (Stacking) weight *= Count;
+
+            if (!HasComponent("cContainer")) return weight;
+
+            weight += Game.Containers[ID].Sum(item => item.GetWeight());
+            return weight;
         }
 
         public void SpendCharge()
@@ -257,7 +264,6 @@ namespace ODB
 
             return stream;
         }
-
         public Stream ReadItem(string s)
         {
             Stream stream = ReadGObject(s);

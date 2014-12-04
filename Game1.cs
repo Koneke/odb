@@ -18,6 +18,10 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 // * Inventory stuff currently doesn't make noise.
 // * nor take time (new parts atleast).
 
+//~~~ QUEST TRACKER for 4 nov ~~~
+// * Split/join stacks in inventory manager
+// * Inventory line wrapping
+
 //General note:
 // * Currently, items need cWeapon to be wieldable. This is /not/ the way it
 //   is supposed to. We need a GenerateHands(int count) or something, so we can
@@ -290,9 +294,6 @@ namespace ODB
                 ? Game.Player.Inventory
                 : Containers[CurrentContainer];
 
-            for (int i = 0; i < currentContainer.Count; i++)
-                if (IO.KeyPressed(i + Keys.A)) _selection = i;
-
             if (IO.KeyPressed(IO.Key.South)) _selection++;
 
             if (IO.KeyPressed(IO.Key.North)) _selection--;
@@ -419,7 +420,7 @@ namespace ODB
                     PlayerResponses.Drop();
                 }
 
-                if (IO.KeyPressed(Keys.Q))
+                if (IO.KeyPressed(Keys.Q) && IO.Shift)
                 {
                     Game.Player.Quiver = item;
                 }
@@ -654,18 +655,22 @@ namespace ODB
         {
             for (int x = 0; x < r.wh.x; x++)
             {
-                c.CellData.Print(x, 0, (char)205+"", fg, bg);
-                c.CellData.Print(x, r.wh.y-1, (char)205+"", fg, bg);
+                c.CellData.Print(r.xy.x + x, 0, (char)205+"", fg, bg);
+                c.CellData.Print(r.xy.x + x, r.wh.y-1, (char)205+"", fg, bg);
             }
             for (int y = 0; y < r.wh.y; y++)
             {
-                c.CellData.Print(0, y, (char)186+"", fg, bg);
-                c.CellData.Print(r.wh.x-1, y, (char)186+"", fg, bg);
+                c.CellData.Print(r.xy.x, y, (char)186+"", fg, bg);
+                c.CellData.Print(r.xy.x + r.wh.x-1, y, (char)186+"", fg, bg);
             }
-            _inventoryConsole.CellData.Print(0, 0, (char)201 + "");
-            _inventoryConsole.CellData.Print(r.wh.x-1, 0, (char)187 + "");
-            _inventoryConsole.CellData.Print(0, r.wh.y-1, (char)200 + "");
-            _inventoryConsole.CellData.Print(r.wh.x-1, r.wh.y-1, (char)188 + "");
+            _inventoryConsole.CellData.Print(
+                r.xy.x, 0, (char)201 + "");
+            _inventoryConsole.CellData.Print(
+                r.xy.x + r.wh.x-1, 0, (char)187 + "");
+            _inventoryConsole.CellData.Print(
+                r.xy.x, r.wh.y-1, (char)200 + "");
+            _inventoryConsole.CellData.Print(
+                r.xy.x + r.wh.x-1, r.wh.y-1, (char)188 + "");
         }
 
         public Point NumpadToDirection(Keys k)
@@ -926,6 +931,56 @@ namespace ODB
                 Color.DarkGray
             );
 
+            const int offset = 14;
+
+            DrawBorder(
+                _inventoryConsole,
+                new Rect(
+                    new Point(inventoryW - (offset + 3), 0),
+                    new Point(offset + 3, inventoryH)),
+                Color.Black,
+                Color.DarkGray
+            );
+
+            int j = 2;
+
+            _inventoryConsole.CellData.Print(
+                inventoryW - offset, j++, "<t>ake out", Color.White);
+            _inventoryConsole.CellData.Print(
+                inventoryW - offset, j++, "<p>ut into", Color.White);
+            if (CurrentContainer == -1)
+            {
+                _inventoryConsole.CellData.Print(
+                    inventoryW - offset, j++, "<d>rop", Color.White);
+                _inventoryConsole.CellData.Print(
+                    inventoryW - offset, j++, "<w>ield", Color.White);
+                _inventoryConsole.CellData.Print(
+                    inventoryW - offset, j++, "<W>ear", Color.White);
+                _inventoryConsole.CellData.Print(
+                    inventoryW - offset, j++, "<S>heath", Color.White);
+                _inventoryConsole.CellData.Print(
+                    inventoryW - offset, j++, "<R>emove", Color.White);
+                _inventoryConsole.CellData.Print(
+                    inventoryW - offset, j++, "<q>uiver", Color.White);
+            }
+
+            _inventoryConsole.CellData.Print(
+                inventoryW - (offset), j++ + 1, "Free:", Color.White);
+
+            List<DollSlot> emptySlots =
+                Game.Player.PaperDoll
+                    .Where(bp => bp.Item == null)
+                    .Select(bp => bp.Type)
+                    .ToList();
+
+            for(int i = 0; i < emptySlots.Count; i++)
+            {
+                _inventoryConsole.CellData.Print(
+                    inventoryW - (offset), j++ + 1,
+                    BodyPart.BodyPartNames[emptySlots[i]], Color.White);
+            }
+
+            //border texts
             if (CurrentContainer == -1)
                 _inventoryConsole.CellData.Print(
                     2, 0, Player.Definition.Name, Color.White);
@@ -934,10 +989,20 @@ namespace ODB
                     2, 0,
                     Util.GetItemByID(CurrentContainer).GetName("Name"),
                     Color.White);
+
+            string weightString =
+                Game.Player.GetCarriedWeight() + "/" +
+                Game.Player.GetCarryingCapacity() + "dag";
+
+            _inventoryConsole.CellData.Print(
+                _inventoryConsole.ViewArea.Width-(2+weightString.Length), 0,
+                weightString, Color.White);
+
             _inventoryConsole.CellData.Print(
                 2, _inventoryConsole.ViewArea.Height-1,
                 _log[_log.Count-1],
                 Color.White);
+            //end border texts
 
             List<Item> items = new List<Item>();
             if (CurrentContainer != -1)
@@ -952,27 +1017,33 @@ namespace ODB
             else items.AddRange(Player.Inventory);
 
             int y = 1;
-            foreach (Item item in items)
+            //foreach (Item item in items)
+            for(int i = 0; i < items.Count; i++)
             {
+                Item item = items[i];
+
                 string name = "";
 
                 name += IO.Indexes[items.IndexOf(item)];
-                name += " - ";
+                name += ") ";
 
-                name += item.Mod.ToString("+#;-#;+0");
-                name += " ";
-
-                if (item.Stacking)
-                    name += item.Count + "x ";
+                if (item.Stacking) name += item.Count + "x ";
+                name += item.Mod.ToString("+#;-#;+0") + " ";
                 name += item.GetName("Name");
+                if (item.Stacking && item.Count > 1) name += "s";
 
                 //LH-021214: We might actually not know the number of charges..?
                 if (item.Charged) name += "[" + item.Count + "]";
 
+                name += " " + item.GetWeight() + "dag";
+
                 if (item.HasComponent("cContainer"))
                 {
                     name += " (holding ";
-                    name += Containers[item.ID].Count + " items)";
+                    name += Containers[item.ID].Count + " item";
+                    if (Containers[item.ID].Count == 1)
+                        name += "s";
+                    name += ")";
                 }
 
                 if (Game.Player.IsEquipped(item))

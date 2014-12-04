@@ -62,6 +62,7 @@ namespace ODB
         //mainly, unidentified items of different defs take from the same
         //random appearance pool (but still only one appearance per definition)
         public int Category;
+        public int Weight;
 
         public List<Component> Components; 
 
@@ -109,8 +110,8 @@ namespace ODB
             Stream stream = ReadGObjectDefinition(s);
 
             Stacking = stream.ReadBool();
-
             Category = stream.ReadHex(2);
+            Weight = stream.ReadHex(4);
 
             ItemDefinitions[Type] = this;
 
@@ -130,8 +131,8 @@ namespace ODB
             Stream stream = WriteGObjectDefinition();
 
             stream.Write(Stacking);
-
             stream.Write(Category, 2);
+            stream.Write(Weight, 4);
 
             foreach (Component c in Components)
                 stream.Write(c.WriteComponent(), false);
