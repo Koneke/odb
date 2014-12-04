@@ -18,9 +18,11 @@ namespace ODB
             unchecked
             {
                 int hashCode = ID;
-                hashCode = (hashCode*397) ^ (Name != null ? Name.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^
+                           (Name != null ? Name.GetHashCode() : 0);
                 hashCode = (hashCode*397) ^ Frequency;
-                hashCode = (hashCode*397) ^ (Effect != null ? Effect.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^
+                           (Effect != null ? Effect.GetHashCode() : 0);
                 return hashCode;
             }
         }
@@ -76,9 +78,11 @@ namespace ODB
         {
             unchecked
             {
-                int hashCode = (Definition != null ? Definition.GetHashCode() : 0);
+                int hashCode = (Definition != null ?
+                                Definition.GetHashCode() : 0);
                 hashCode = (hashCode*397) ^ Timer;
-                hashCode = (hashCode*397) ^ (Holder != null ? Holder.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^
+                           (Holder != null ? Holder.GetHashCode() : 0);
                 hashCode = (hashCode*397) ^ LifeTime;
                 hashCode = (hashCode*397) ^ Die.GetHashCode();
                 return hashCode;
@@ -143,7 +147,8 @@ namespace ODB
         public Stream ReadTickingEffect(string s)
         {
             Stream stream = new Stream(s);
-            Definition = TickingEffectDefinition.Definitions[stream.ReadHex(4)];
+            Definition = TickingEffectDefinition.Definitions
+                [stream.ReadHex(4)];
             Timer = stream.ReadHex(4);
             LifeTime = stream.ReadHex(8);
             return stream;

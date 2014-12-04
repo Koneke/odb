@@ -52,7 +52,7 @@ namespace ODB
         private static bool MovementInput()
         {
             #region stairs
-            if (IO.KeyPressed(Keys.OemPeriod) && IO.Shift)
+            if (IO.KeyPressed(Keys.OemPeriod) && IO.ShiftState)
                 if (Game.Level.Map[
                     Game.Player.xy.x,
                     Game.Player.xy.y].Stairs == Stairs.Down)
@@ -65,7 +65,7 @@ namespace ODB
                     }
                 }
 
-            if (IO.KeyPressed(Keys.OemComma) && IO.Shift)
+            if (IO.KeyPressed(Keys.OemComma) && IO.ShiftState)
                 if (Game.Level.Map[
                     Game.Player.xy.x,
                     Game.Player.xy.y].Stairs == Stairs.Up)
@@ -81,14 +81,14 @@ namespace ODB
 
             Point offset = new Point(0, 0);
 
-                 if (IO.KeyPressed(IO.Key.North)) offset.Nudge(0, -1);
-            else if (IO.KeyPressed(IO.Key.NorthEast)) offset.Nudge(1, -1);
-            else if (IO.KeyPressed(IO.Key.East)) offset.Nudge(1, 0);
-            else if (IO.KeyPressed(IO.Key.SouthEast)) offset.Nudge(1, 1);
-            else if (IO.KeyPressed(IO.Key.South)) offset.Nudge(0, 1);
-            else if (IO.KeyPressed(IO.Key.SouthWest)) offset.Nudge(-1, 1);
-            else if (IO.KeyPressed(IO.Key.West)) offset.Nudge(-1, 0);
-            else if (IO.KeyPressed(IO.Key.NorthWest)) offset.Nudge(-1, -1);
+                 if (IO.KeyPressed(IO.Input.North)) offset.Nudge(0, -1);
+            else if (IO.KeyPressed(IO.Input.NorthEast)) offset.Nudge(1, -1);
+            else if (IO.KeyPressed(IO.Input.East)) offset.Nudge(1, 0);
+            else if (IO.KeyPressed(IO.Input.SouthEast)) offset.Nudge(1, 1);
+            else if (IO.KeyPressed(IO.Input.South)) offset.Nudge(0, 1);
+            else if (IO.KeyPressed(IO.Input.SouthWest)) offset.Nudge(-1, 1);
+            else if (IO.KeyPressed(IO.Input.West)) offset.Nudge(-1, 0);
+            else if (IO.KeyPressed(IO.Input.NorthWest)) offset.Nudge(-1, -1);
 
             if (IO.KeyPressed(Keys.NumPad5)) Game.Player.Pass(true);
 
@@ -100,8 +100,8 @@ namespace ODB
         private static void CheckGet()
         {
             if (
-                (!IO.KeyPressed(Keys.G) || IO.Shift) &&
-                (!IO.KeyPressed(Keys.OemComma) || IO.Shift)
+                (!IO.KeyPressed(Keys.G) || IO.ShiftState) &&
+                (!IO.KeyPressed(Keys.OemComma) || IO.ShiftState)
             ) return;
 
             List<Item> onFloor = Game.Level.ItemsOnTile(Game.Player.xy);
@@ -132,7 +132,7 @@ namespace ODB
 
         private static void CheckDrop()
         {
-            if (!IO.KeyPressed(Keys.D) || IO.Shift) return;
+            if (!IO.KeyPressed(Keys.D) || IO.ShiftState) return;
 
             IO.AcceptedInput.Clear();
             for (int i = 0; i < Game.Player.Inventory.Count; i++)
@@ -152,7 +152,7 @@ namespace ODB
 
         private static void CheckWield()
         {
-            if (!(IO.KeyPressed(Keys.W) && !IO.Shift)) return;
+            if (!(IO.KeyPressed(Keys.W) && !IO.ShiftState)) return;
 
             List<Item> wieldable = Game.Player.Inventory
                 .Where(x => !Game.Player.GetEquippedItems().Contains(x))
@@ -182,7 +182,7 @@ namespace ODB
 
         private static void CheckWear()
         {
-            if (!(IO.KeyPressed(Keys.W) && IO.Shift)) return;
+            if (!(IO.KeyPressed(Keys.W) && IO.ShiftState)) return;
 
             List<Item> wearable = Game.Player.Inventory
                 .Where(x => !Game.Player.GetEquippedItems().Contains(x))
@@ -213,7 +213,7 @@ namespace ODB
 
         private static void CheckSheath()
         {
-            if (!(IO.KeyPressed(Keys.S) && IO.Shift)) return;
+            if (!(IO.KeyPressed(Keys.S) && IO.ShiftState)) return;
 
             //LH-021214: Since we can (soon) wield anything, anything in your
             //           hands should be sheathable.
@@ -254,7 +254,7 @@ namespace ODB
 
         private static void CheckRemove()
         {
-            if (!(IO.KeyPressed(Keys.R) && IO.Shift)) return;
+            if (!(IO.KeyPressed(Keys.R) && IO.ShiftState)) return;
 
             //LH-021214: Since we can (soon) wield anything, anything in your
             //           hands should be sheathable.
@@ -289,7 +289,7 @@ namespace ODB
 
         private static void CheckOpen()
         {
-            if (!IO.KeyPressed(Keys.O) || IO.Shift) return;
+            if (!IO.KeyPressed(Keys.O) || IO.ShiftState) return;
 
             IO.AcceptedInput.Clear();
 
@@ -306,7 +306,7 @@ namespace ODB
 
         private static void CheckClose()
         {
-            if (!IO.KeyPressed(Keys.C) || IO.Shift) return;
+            if (!IO.KeyPressed(Keys.C) || IO.ShiftState) return;
 
             IO.AcceptedInput.Clear();
 
@@ -323,7 +323,7 @@ namespace ODB
 
         private static void CheckZap()
         {
-            if (!IO.KeyPressed(Keys.Z) || IO.Shift) return;
+            if (!IO.KeyPressed(Keys.Z) || IO.ShiftState) return;
 
             IO.AcceptedInput.Clear();
             for (int i = 0; i < Game.Player.Spellbook.Count; i++)
@@ -343,7 +343,7 @@ namespace ODB
 
         private static void CheckApply()
         {
-            if (!IO.KeyPressed(Keys.A) || IO.Shift) return;
+            if (!IO.KeyPressed(Keys.A) || IO.ShiftState) return;
 
             string question = "Use what? [";
             IO.AcceptedInput.Clear();
@@ -365,7 +365,7 @@ namespace ODB
 
         private static void CheckFire()
         {
-            if (!IO.KeyPressed(Keys.F) || IO.Shift) return;
+            if (!IO.KeyPressed(Keys.F) || IO.ShiftState) return;
 
             //todo: throwing
             //      if we pressed T instead, allow items in hands as ammo
@@ -427,7 +427,7 @@ namespace ODB
             //todo: like mentioned in the checkwield comment
             //      might want to make a size check or something here.
             //      quivering an orc corpse sounds a bit so-so...
-            if (!IO.KeyPressed(Keys.Q) || !IO.Shift) return;
+            if (!IO.KeyPressed(Keys.Q) || !IO.ShiftState) return;
 
             IO.AcceptedInput.Clear();
             foreach (int index in Game.Player.Inventory
@@ -454,7 +454,7 @@ namespace ODB
 
         private static void CheckLook()
         {
-            if (IO.KeyPressed(Keys.OemSemicolon) && IO.Shift)
+            if (IO.KeyPressed(Keys.OemSemicolon) && IO.ShiftState)
             {
                 IO.AskPlayer(
                     "Examine what?",
@@ -466,7 +466,7 @@ namespace ODB
 
         private static void CheckEat()
         {
-            if (!IO.KeyPressed(Keys.E) || IO.Shift) return;
+            if (!IO.KeyPressed(Keys.E) || IO.ShiftState) return;
 
             string question = "Eat what? [";
             IO.AcceptedInput.Clear();

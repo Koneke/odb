@@ -30,8 +30,10 @@ namespace ODB
                 hashCode = (hashCode*397) ^ ID;
                 hashCode = (hashCode*397) ^ Mod;
                 hashCode = (hashCode*397) ^ Count;
-                hashCode = (hashCode*397) ^ (Definition != null ? Definition.GetHashCode() : 0);
-                hashCode = (hashCode*397) ^ (Mods != null ? Mods.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^
+                           (Definition != null ? Definition.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^
+                           (Mods != null ? Mods.GetHashCode() : 0);
                 return hashCode;
             }
         }

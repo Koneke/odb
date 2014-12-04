@@ -227,13 +227,13 @@ namespace ODB
             }
             stream.Write("</ACTORS>", false);
 
-            IO.WriteToFile(path, stream.ToString());
+            SaveIO.WriteToFile(path, stream.ToString());
             return stream;
         }
 
         public void LoadLevelSave(string path)
         {
-            string content = IO.ReadFromFile(path);
+            string content = SaveIO.ReadFromFile(path);
             int read = 0;
 
             string dimensions =

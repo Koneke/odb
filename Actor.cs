@@ -76,17 +76,14 @@ namespace ODB
             {
                 int hashCode = base.GetHashCode();
                 hashCode = (hashCode*397) ^ ID;
-                hashCode = (hashCode*397) ^ (Definition != null ? Definition.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^
+                           (Definition != null ? Definition.GetHashCode() : 0);
                 hashCode = (hashCode*397) ^ HpCurrent;
                 hashCode = (hashCode*397) ^ MpCurrent;
                 hashCode = (hashCode*397) ^ Cooldown;
-                //hashCode = (hashCode*397) ^ (PaperDoll != null ? PaperDoll.GetHashCode() : 0);
-                //hashCode = (hashCode*397) ^ (Inventory != null ? Inventory.GetHashCode() : 0);
-                //hashCode = (hashCode*397) ^ (TickingEffects != null ? TickingEffects.GetHashCode() : 0);
-                //hashCode = (hashCode*397) ^ (LastingEffects != null ? LastingEffects.GetHashCode() : 0);
-                //hashCode = (hashCode*397) ^ (Intrinsics != null ? Intrinsics.GetHashCode() : 0);
                 hashCode = (hashCode*397) ^ Awake.GetHashCode();
-                hashCode = (hashCode*397) ^ (Quiver != null ? Quiver.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^
+                           (Quiver != null ? Quiver.GetHashCode() : 0);
                 return hashCode;
             }
         }

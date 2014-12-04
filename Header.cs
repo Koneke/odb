@@ -180,7 +180,8 @@ namespace ODB
         {
             unchecked
             {
-                return ((int)Type*397) ^ (Item != null ? Item.GetHashCode() : 0);
+                return ((int)Type*397) ^
+                       (Item != null ? Item.GetHashCode() : 0);
             }
         }
         public override bool Equals(object obj)

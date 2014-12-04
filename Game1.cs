@@ -20,7 +20,7 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 
 //~~~ QUEST TRACKER for 4 nov ~~~
 // * Split/join stacks in inventory manager
-// * Inventory line wrapping
+// * Save containers to file
 
 //General note:
 // * Currently, items need cWeapon to be wieldable. This is /not/ the way it
@@ -65,7 +65,8 @@ namespace ODB
         //only the player actually has hunger.
         public int Food; //not yet saved
 
-        int _camX, _camY;
+        private Point _camera;
+        private Point _cameraOffset;
         int _scrW, _scrH;
 
         int _logSize;
@@ -114,14 +115,15 @@ namespace ODB
 
             SetupConsoles();
 
-            _camX = _camY = 0;
+            _camera = new Point(0, 0);
+            _cameraOffset = new Point(0, 0);
             _scrW = 80; _scrH = 25;
 
             SetupMagic(); //essentially magic defs, but we hardcode magic
             SetupTickingEffects(); //same as magic, cba to add scripting
-            IO.ReadActorDefinitionsFromFile("Data/actors.def");
-            IO.ReadItemDefinitionsFromFile("Data/items.def");
-            IO.ReadTileDefinitionsFromFile("Data/tiles.def");
+            SaveIO.ReadActorDefinitionsFromFile("Data/actors.def");
+            SaveIO.ReadItemDefinitionsFromFile("Data/items.def");
+            SaveIO.ReadTileDefinitionsFromFile("Data/tiles.def");
 
             Seed = Guid.NewGuid().GetHashCode();
             Util.SetSeed(Seed);
@@ -190,22 +192,7 @@ namespace ODB
             _logConsole.Position = new xnaPoint(
                 0, -_logConsole.ViewArea.Height + _logSize
             );
-
-            //todo: edge scrolling
-            //ReSharper disable once ConvertToConstant.Local
-            //LH-011214: Not consting this since it will be adjustable in the
-            //           future, the const is only here as a placeholder really.
-            int scrollSpeed = 3;
-            if (IO.KeyPressed(Keys.Right)) _camX += scrollSpeed;
-            if (IO.KeyPressed(Keys.Left)) _camX -= scrollSpeed;
-            if (IO.KeyPressed(Keys.Up)) _camY += scrollSpeed;
-            if (IO.KeyPressed(Keys.Down)) _camY -= scrollSpeed;
-
-            _camX = Math.Max(0, _camX);
-            _camX = Math.Min(Game.Level.LevelSize.x - _scrW, _camX);
-            _camY = Math.Max(0, _camY);
-            _camY = Math.Min(Game.Level.LevelSize.y - _scrH, _camY);
-            #endregion camera
+            #endregion
 
             if (WizMode) Wizard.WmInput();
             else
@@ -235,6 +222,8 @@ namespace ODB
                 }
             }
 
+            UpdateCamera();
+
             //should probably find a better place to tick this
             foreach (Actor a in Game.Level.WorldActors)
             {
@@ -245,12 +234,12 @@ namespace ODB
 
             #region f-keys //devstuff
             if (IO.KeyPressed(Keys.F1))
-                IO.WriteActorDefinitionsToFile("Data/actors.def");
+                SaveIO.WriteActorDefinitionsToFile("Data/actors.def");
             if (IO.KeyPressed(Keys.F2))
-                IO.WriteItemDefinitionsToFile("Data/items.def");
+                SaveIO.WriteItemDefinitionsToFile("Data/items.def");
 
-            if (IO.KeyPressed(Keys.F5)) IO.Save();
-            if (IO.KeyPressed(Keys.F6)) IO.Load();
+            if (IO.KeyPressed(Keys.F5)) SaveIO.Save();
+            if (IO.KeyPressed(Keys.F6)) SaveIO.Load();
 
             if (IO.KeyPressed(Keys.F9) || IO.KeyPressed(Keys.OemTilde))
             {
@@ -266,6 +255,23 @@ namespace ODB
             RenderConsoles();
             IO.Update(true);
             base.Update(gameTime);
+        }
+
+        private void UpdateCamera()
+        {
+            if (IO.KeyPressed(Keys.PageDown)) _cameraOffset.x++;
+            if (IO.KeyPressed(Keys.Delete)) _cameraOffset.x--;
+            if (IO.KeyPressed(Keys.Home)) _cameraOffset.y++;
+            if (IO.KeyPressed(Keys.End)) _cameraOffset.y--;
+
+            _camera.x = Player.xy.x - 40;
+            _camera.y = Player.xy.y - 12;
+            _camera += _cameraOffset;
+
+            _camera.x = Math.Max(0, _camera.x);
+            _camera.x = Math.Min(Game.Level.LevelSize.x - _scrW, _camera.x);
+            _camera.y = Math.Max(0, _camera.y);
+            _camera.y = Math.Min(Game.Level.LevelSize.y - _scrH, _camera.y);
         }
 
         private int _selection;
@@ -294,16 +300,16 @@ namespace ODB
                 ? Game.Player.Inventory
                 : Containers[CurrentContainer];
 
-            if (IO.KeyPressed(IO.Key.South)) _selection++;
+            if (IO.KeyPressed(IO.Input.South)) _selection++;
 
-            if (IO.KeyPressed(IO.Key.North)) _selection--;
+            if (IO.KeyPressed(IO.Input.North)) _selection--;
 
             if (_selection < 0)
                 _selection += currentContainer.Count;
             if (currentContainer.Count > 0)
                 _selection = _selection % currentContainer.Count;
 
-            if(IO.KeyPressed(IO.Key.West))
+            if(IO.KeyPressed(IO.Input.West))
             {
                 if (CurrentContainer == -1)
                 {
@@ -331,33 +337,34 @@ namespace ODB
 
             if (_inserting)
             {
-                if (IO.KeyPressed(IO.Key.East) ||
-                    IO.KeyPressed(IO.Key.Enter))
-                    if (item.HasComponent("cContainer"))
-                    {
-                        Game.Log(
-                            "Put " + 
-                            Util.GetItemByID(_insertedItem)
+                if (!IO.KeyPressed(IO.Input.East) &&
+                    !IO.KeyPressed(IO.Input.Enter)) return;
+
+                if (!item.HasComponent("cContainer")) return;
+
+                Game.Log(
+                    "Put " + 
+                        Util.GetItemByID(_insertedItem)
                             .GetName("name") + " into " +
-                            item.GetName("name") + ".");
+                        item.GetName("name") + "."
+                    );
 
-                        if (CurrentContainer == -1)
-                            Game.Player.Inventory.Remove(
-                                Util.GetItemByID(_insertedItem));
-                        else
-                            Containers[CurrentContainer].Remove(
-                                Util.GetItemByID(_insertedItem));
-                        Containers[item.ID].Add(
-                            Util.GetItemByID(_insertedItem));
+                if (CurrentContainer == -1)
+                    Game.Player.Inventory.Remove(
+                        Util.GetItemByID(_insertedItem));
+                else
+                    Containers[CurrentContainer].Remove(
+                        Util.GetItemByID(_insertedItem));
+                Containers[item.ID].Add(
+                    Util.GetItemByID(_insertedItem));
 
-                        _inserting = false;
-                        _insertedItem = -1;
-                    }
+                _inserting = false;
+                _insertedItem = -1;
             }
             else
             {
-                if (IO.KeyPressed(IO.Key.East) ||
-                    IO.KeyPressed(IO.Key.Enter))
+                if (IO.KeyPressed(IO.Input.East) ||
+                    IO.KeyPressed(IO.Input.Enter))
                     if (item.HasComponent("cContainer"))
                     {
                         CurrentContainer = item.ID;
@@ -376,8 +383,8 @@ namespace ODB
 
                 //if it wasn't a container, or we pressed p
                 if (IO.KeyPressed(Keys.P) ||
-                    IO.KeyPressed(IO.Key.East) ||
-                    IO.KeyPressed(IO.Key.Enter))
+                    IO.KeyPressed(IO.Input.East) ||
+                    IO.KeyPressed(IO.Input.Enter))
                 {
                     _insertedItem = item.ID;
                     _inserting = true;
@@ -389,13 +396,13 @@ namespace ODB
                 if (IO.KeyPressed(Keys.W))
                 {
                     QpAnswerStack.Push(IO.Indexes[_selection]+"");
-                    if (!IO.Shift)
+                    if (!IO.ShiftState)
                         PlayerResponses.Wield();
                     else if (item.HasComponent("cWearable"))
                         PlayerResponses.Wear();
                 }
 
-                if (IO.KeyPressed(Keys.S) && IO.Shift)
+                if (IO.KeyPressed(Keys.S) && IO.ShiftState)
                 {
                     QpAnswerStack.Push(IO.Indexes[_selection]+"");
                     if(
@@ -404,7 +411,7 @@ namespace ODB
                         PlayerResponses.Sheath();
                 }
 
-                if (IO.KeyPressed(Keys.R) && IO.Shift)
+                if (IO.KeyPressed(Keys.R) && IO.ShiftState)
                 {
                     QpAnswerStack.Push(IO.Indexes[_selection]+"");
                     if( Game.Player.IsEquipped(item) &&
@@ -412,7 +419,7 @@ namespace ODB
                         PlayerResponses.Remove();
                 }
 
-                if (IO.KeyPressed(Keys.D) && !IO.Shift)
+                if (IO.KeyPressed(Keys.D) && !IO.ShiftState)
                 {
                     QpAnswerStack.Push(IO.Indexes[_selection]+"");
                     if(item.Count > 1)
@@ -420,7 +427,7 @@ namespace ODB
                     PlayerResponses.Drop();
                 }
 
-                if (IO.KeyPressed(Keys.Q) && IO.Shift)
+                if (IO.KeyPressed(Keys.Q) && IO.ShiftState)
                 {
                     Game.Player.Quiver = item;
                 }
@@ -793,15 +800,15 @@ namespace ODB
 
             for (int x = 0; x < _scrW; x++) for (int y = 0; y < _scrH; y++)
             {
-                Tile t = Game.Level.Map[x + _camX, y + _camY];
+                Tile t = Game.Level.Map[x + _camera.x, y + _camera.y];
 
                 if (t == null) continue;
                 if (
-                    !(Game.Level.Seen[x + _camX, y + _camY] || WizMode)
+                    !(Game.Level.Seen[x + _camera.x, y + _camera.y] || WizMode)
                 ) continue;
 
                 bool inVision =
-                    Game.Player.Vision[x + _camX, y + _camY] || WizMode;
+                    Game.Player.Vision[x + _camera.x, y + _camera.y] || WizMode;
 
                 string tileToDraw = t.Character;
                 //doors override the normal tile
@@ -823,7 +830,7 @@ namespace ODB
 
         private void RenderItems()
         {
-            Rect screen = new Rect(new Point(_camX, _camY), new Point(80, 25));
+            Rect screen = new Rect(_camera, new Point(80, 25));
 
             int[,] itemCount = new int[
                 Game.Level.LevelSize.x,
@@ -839,19 +846,19 @@ namespace ODB
             {
                 if (itemCount[i.xy.x, i.xy.y] == 1)
                     DrawToScreen(
-                        i.xy,
+                        i.xy - _camera,
                         i.Identified ? i.Definition.Background : null,
                         i.Identified ? i.Definition.Foreground : Color.Gray,
                         i.Definition.Tile
-                        );
-                    //not sure I like the + for pile, since doors are +
+                    );
+                //not sure I like the + for pile, since doors are +
                 else DrawToScreen(i.xy, null, Color.White, "+");
             }
         }
 
         private void RenderActors()
         {
-            Rect screen = new Rect(new Point(_camX, _camY), new Point(80, 25));
+            Rect screen = new Rect(_camera, new Point(80, 25));
 
             int[,] actorCount = new int[
                 Game.Level.LevelSize.x,
@@ -867,7 +874,8 @@ namespace ODB
             {
                 if (actorCount[a.xy.x, a.xy.y] == 1)
                     DrawToScreen(
-                        a.xy, a.Definition.Background,
+                        a.xy - _camera,
+                        a.Definition.Background,
                         a.Definition.Foreground, a.Definition.Tile
                         );
                     //draw a "pile" (shouldn't happen at all atm
@@ -973,11 +981,11 @@ namespace ODB
                     .Select(bp => bp.Type)
                     .ToList();
 
-            for(int i = 0; i < emptySlots.Count; i++)
+            foreach (DollSlot slot in emptySlots)
             {
                 _inventoryConsole.CellData.Print(
                     inventoryW - (offset), j++ + 1,
-                    BodyPart.BodyPartNames[emptySlots[i]], Color.White);
+                    BodyPart.BodyPartNames[slot], Color.White);
             }
 
             //border texts
@@ -1056,18 +1064,43 @@ namespace ODB
                         name += " (worn)";
                 }
 
-                if (y == _selection + 1)
+                Color bg = Color.Black;
+                if (i == _selection)
                 {
                     if (_inserting)
                         name = "> " + name;
-                    _inventoryConsole.CellData.Print(
-                        2, y++, name, Color.White, Color.DimGray
-                    );
+                    bg = Color.DimGray;
                 }
-                else
+
+                int yoffs=0;
+                const int xoffs = 6;
+                while (name.Length > 0)
+                {
+                    int cap = 58 + (yoffs > 0 ? -xoffs : 0);
+
+                    int len;
+                    if (name.Length > cap)
+                    {
+                        len = cap;
+                        //check if we have a better place to break on
+                        for (int k = 0; k < 10; k++)
+                        {
+                            if (name.Substring(cap - k, 1) != " ") continue;
+
+                            len -= k;
+                            name = name.Remove(cap - k, 1);
+                            break;
+                        }
+                    }
+                    else len = name.Length;
+
                     _inventoryConsole.CellData.Print(
-                        2, y++, name, Color.White
+                        yoffs > 0 ? 2 + xoffs : 2, y + yoffs++,
+                        name.Substring(0, len), Color.White, bg
                     );
+                    name = name.Substring(len, name.Length - len);
+                }
+                y += yoffs;
             }
         }
 

@@ -48,7 +48,7 @@ namespace ODB
             if (IO.KeyPressed(Keys.NumPad7)) {
                 WmCursor.Nudge(-1, -1); b = true; }
 
-            if (IO.KeyPressed(Keys.OemPeriod) && IO.Shift)
+            if (IO.KeyPressed(Keys.OemPeriod) && IO.ShiftState)
             {
                 if (Game.Levels.IndexOf(Game.Level) == Game.Levels.Count - 1)
                 {
@@ -65,7 +65,7 @@ namespace ODB
                 }
             }
 
-            if (IO.KeyPressed(Keys.OemComma) && IO.Shift)
+            if (IO.KeyPressed(Keys.OemComma) && IO.ShiftState)
             {
                 if (Game.Levels.IndexOf(Game.Level) > 0)
                     Game.Level = Game.Levels
@@ -231,13 +231,13 @@ namespace ODB
                 case "saveadefs":
                 case "sad":
                     #region sad
-                    IO.WriteActorDefinitionsToFile("Data/" + args[0]);
+                    SaveIO.WriteActorDefinitionsToFile("Data/" + args[0]);
                     break;
                     #endregion
 
                 case "saveidefs":
                 case "sid":
-                    IO.WriteItemDefinitionsToFile("Data/" + args[0]);
+                    SaveIO.WriteItemDefinitionsToFile("Data/" + args[0]);
                     break;
 
                 case "sp":
@@ -257,10 +257,10 @@ namespace ODB
                     Game.Log(Game.Seed + "");
                     break;
                 case "save":
-                    IO.Save();
+                    SaveIO.Save();
                     break;
                 case "load":
-                    IO.Load();
+                    SaveIO.Load();
                     break;
                 default: return false;
             }
@@ -280,6 +280,10 @@ namespace ODB
                         hadplayer = true;
                     Game.Level.Clear();
                     if (hadplayer) Game.Level.WorldActors.Add(Game.Player);
+
+                    //reset vision
+                    foreach (Actor actor in Game.Level.WorldActors)
+                        actor.Vision = null;
                     break;
                     #endregion
                 case "lv-moveup":
@@ -345,9 +349,9 @@ namespace ODB
                                 )
                             ),
                             Util.TileDefinitionByName(IO.ReadHex(args[4])),
-                            args.Length >= 6 ?
-                                Util.TileDefinitionByName(IO.ReadHex(args[5])) :
-                                null
+                            args.Length >= 6
+                                ? Util.TileDefinitionByName(IO.ReadHex(args[5]))
+                                : null
                         );
                         Game.Level.CalculateRoomLinks();
                     }
