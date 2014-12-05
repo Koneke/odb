@@ -345,15 +345,15 @@ namespace ODB
             AllItems.Remove(item);
         }
 
-        public void CreateRoom(
+        public Room CreateRoom(
             Rect rect,
             TileDefinition floor,
             TileDefinition walls = null
         ) {
-            CreateRoom(new List<Rect>{ rect }, floor, walls);
+            return CreateRoom(new List<Rect>{ rect }, floor, walls);
         }
 
-        public void CreateRoom(
+        public Room CreateRoom(
             List<Rect> rects,
             TileDefinition floor,
             TileDefinition walls = null
@@ -375,7 +375,7 @@ namespace ODB
                 }
             }
 
-            if (walls == null) return;
+            if (walls == null) return room;
 
             for (int x = 1; x < LevelSize.x-1; x++)
             {
@@ -391,6 +391,8 @@ namespace ODB
                     if(border) Map[x, y].Definition = walls;
                 }
             }
+
+            return room;
         }
     }
 }

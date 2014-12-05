@@ -90,6 +90,15 @@ namespace ODB
                 p.x < xy.x + wh.x &&
                 p.y < xy.y + wh.y;
         }
+
+        public bool Interects(Rect other, int border = 0)
+        {
+            if (other.xy.x > xy.x + wh.x - border) return false;
+            if (other.xy.y > xy.y + wh.y - border) return false;
+            if (other.xy.x + other.wh.x < xy.x + border) return false;
+            if (other.xy.y + other.wh.y < xy.y + border) return false;
+            return true;
+        }
     }
 
     public class Room
@@ -277,6 +286,7 @@ namespace ODB
             //todo: Difficulty check here
             Effect();
             Util.Game.Caster.Pass();
+            Util.Game.Caster = null;
         }
     }
 

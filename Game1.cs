@@ -19,8 +19,7 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 // * nor take time (new parts atleast).
 
 //~~~ QUEST TRACKER for 4 nov ~~~
-// * Split/join stacks in inventory manager
-// * Save containers to file
+// * Join stacks in inventory manager
 
 //General note:
 // * Currently, items need cWeapon to be wieldable. This is /not/ the way it
@@ -57,7 +56,19 @@ namespace ODB
         public Level Level;
         public List<Brain> Brains;
 
-        public Dictionary<int, List<Item>> Containers;
+        public bool OpenRolls = false;
+
+        public Dictionary<int, List<int>> ContainerIDs;
+        public Dictionary<int, List<Item>> Containers {
+            get
+            {
+                return
+                    ContainerIDs.ToDictionary(
+                    e => e.Key,
+                    e => ContainerIDs[e.Key].Select(
+                        Util.GetItemByID).ToList());
+            }
+        }
         public int CurrentContainer;
 
         public Actor Player;
@@ -145,7 +156,7 @@ namespace ODB
 
             SetupBrains();
 
-            Containers = new Dictionary<int, List<Item>>();
+            ContainerIDs = new Dictionary<int, List<int>>();
             CurrentContainer = -1;
 
             _logSize = 3;
@@ -318,8 +329,7 @@ namespace ODB
                         _inserting = false;
                         Game.Log("Nevermind.");
                     }
-                    else
-                        IO.IOState = InputType.PlayerInput;
+                    else IO.IOState = InputType.PlayerInput;
                     return;
                 }
 
@@ -353,10 +363,9 @@ namespace ODB
                     Game.Player.Inventory.Remove(
                         Util.GetItemByID(_insertedItem));
                 else
-                    Containers[CurrentContainer].Remove(
-                        Util.GetItemByID(_insertedItem));
-                Containers[item.ID].Add(
-                    Util.GetItemByID(_insertedItem));
+                    ContainerIDs[CurrentContainer].Remove(
+                        _insertedItem);
+                ContainerIDs[item.ID].Add(_insertedItem);
 
                 _inserting = false;
                 _insertedItem = -1;
@@ -374,11 +383,12 @@ namespace ODB
 
                 if (IO.KeyPressed(Keys.T) && CurrentContainer != -1)
                 {
-                    Containers[CurrentContainer].Remove(item);
+                    ContainerIDs[CurrentContainer].Remove(item.ID);
                     if (parentContainer == -1)
                         Game.Player.Inventory.Add(item);
                     else
-                        Containers[parentContainer].Add(item);
+                        ContainerIDs[parentContainer].Add(item.ID);
+                    Game.Player.Pass();
                 }
 
                 //if it wasn't a container, or we pressed p
@@ -393,7 +403,7 @@ namespace ODB
 
                 if (CurrentContainer != -1) return;
 
-                if (IO.KeyPressed(Keys.W))
+                if (IO.KeyPressed(Keys.W) && !Game.Player.IsEquipped(item))
                 {
                     QpAnswerStack.Push(IO.Indexes[_selection]+"");
                     if (!IO.ShiftState)
@@ -405,8 +415,7 @@ namespace ODB
                 if (IO.KeyPressed(Keys.S) && IO.ShiftState)
                 {
                     QpAnswerStack.Push(IO.Indexes[_selection]+"");
-                    if(
-                        Game.Player.IsEquipped(item) &&
+                    if( Game.Player.IsEquipped(item) &&
                         !item.HasComponent("cWearable"))
                         PlayerResponses.Sheath();
                 }
@@ -429,7 +438,23 @@ namespace ODB
 
                 if (IO.KeyPressed(Keys.Q) && IO.ShiftState)
                 {
-                    Game.Player.Quiver = item;
+                    if(Util.Game.Player.IsEquipped(item))
+                        Game.Player.Quiver = item;
+                }
+
+                if (IO.KeyPressed(Keys.S) && !IO.ShiftState)
+                {
+                    //ooh yeah use that stack
+                    Game.QpAnswerStack.Push(""+CurrentContainer);
+                    Game.QpAnswerStack.Push(""+item.ID);
+                    IO.AcceptedInput.Clear();
+                    for (Keys k = Keys.D0; k <= Keys.D9; k++)
+                        IO.AcceptedInput.Add((char)k);
+                    IO.AskPlayer(
+                        "Split out how many?",
+                        InputType.QuestionPrompt,
+                        PlayerResponses.Split
+                    );
                 }
             }
         }
@@ -978,8 +1003,10 @@ namespace ODB
             List<DollSlot> emptySlots =
                 Game.Player.PaperDoll
                     .Where(bp => bp.Item == null)
+                    .OrderBy(bp => bp.Type)
                     .Select(bp => bp.Type)
                     .ToList();
+
 
             foreach (DollSlot slot in emptySlots)
             {

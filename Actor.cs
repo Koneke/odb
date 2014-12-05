@@ -403,12 +403,47 @@ namespace ODB
 
         public void Attack(Actor target)
         {
-            //todo: Multiweapon fighting penalties?
-            int hitRoll = Util.Roll("d20") + Get(Stat.Strength);
+            int weaponCount = GetWieldedItems().Count;
+
+            int multiWeaponPenalty = 3*weaponCount-1;
+            multiWeaponPenalty = Math.Max(0, multiWeaponPenalty);
+
+            int strBonus = Get(Stat.Strength);
+
+            int dexBonus = Get(Stat.Dexterity);
+            dexBonus -= dexBonus % 2;
+            dexBonus /= 2;
+
+            int weaponBonus = GetWieldedItems()
+                .Select(weapon => weapon.Mod)
+                .Sum();
+
+            int roll = Util.Roll("1d20");
+
+            int hitRoll =
+                roll +
+                strBonus +
+                dexBonus +
+                weaponBonus +
+                multiWeaponPenalty
+            ;
 
             int dodgeRoll = target.GetArmor();
-            bool crit = Util.Roll("1d30") >= 30 -
-                Math.Max(Get(Stat.Dexterity)-5, 0);
+
+            if(Game.OpenRolls)
+                Game.Log(
+                    String.Format(
+                    "{0}{1:+#;-#;+0}{2:+#;-#;+0}{3:+#;-#;+0}{4:+#;-#;+0} vs {5}",
+                    roll,
+                    strBonus,
+                    dexBonus,
+                    weaponBonus,
+                    -multiWeaponPenalty,
+                    dodgeRoll
+                    )
+                );
+
+            bool crit = Util.Roll("1d20") >= 20;
 
             if (hitRoll >= dodgeRoll) {
                 int damageRoll = Get(Stat.Strength);

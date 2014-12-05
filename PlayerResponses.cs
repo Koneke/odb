@@ -74,6 +74,8 @@ namespace ODB
             }
             //just do a full drop, no splitting necessary
             else DoDrop(i);
+
+            Game.Player.Pass();
         }
 
         public static void DropCount()
@@ -148,6 +150,33 @@ namespace ODB
 
                 Game.Player.Pass();
             }
+        }
+
+        public static void Split()
+        {
+            int count = int.Parse(Game.QpAnswerStack.Pop());
+            int id = int.Parse(Game.QpAnswerStack.Pop());
+            int container = int.Parse(Game.QpAnswerStack.Pop());
+
+            Item item = Util.GetItemByID(id);
+            if (count > item.Count)
+            {
+                Game.Log("You don't have that many.");
+                return;
+            }
+
+            item.Count -= count;
+            Item stack = new Item(item.WriteItem().ToString());
+            stack.Count = count;
+            stack.ID = Item.IDCounter++;
+            Game.Level.AllItems.Add(stack);
+
+            if (container == -1)
+                Game.Player.Inventory.Add(stack);
+            else
+                Game.ContainerIDs[container].Add(stack.ID);
+
+            IO.IOState = InputType.Inventory;
         }
 
         public static void Wield()
@@ -293,6 +322,8 @@ namespace ODB
             stack.Count += it.Count;
             Game.Player.Inventory.Remove(it);
             Game.Level.AllItems.Remove(it);
+
+            Game.Player.Pass();
         }
 
         public static void Open()

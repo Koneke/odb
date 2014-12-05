@@ -97,7 +97,7 @@ namespace ODB
 
             Charged = !Definition.Stacking && count > 0;
             if (Definition.HasComponent("cContainer"))
-                Game.Containers.Add(ID, new List<Item>());
+                Game.ContainerIDs.Add(ID, new List<int>());
         }
 
         //LOADING an OLD item
@@ -106,8 +106,6 @@ namespace ODB
             ReadItem(s);
 
             Charged = !Definition.Stacking && Count > 0;
-            if (Definition.HasComponent("cContainer"))
-                Game.Containers.Add(ID, new List<Item>());
         }
 
         public bool Known

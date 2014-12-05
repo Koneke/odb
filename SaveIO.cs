@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Microsoft.Xna.Framework;
 
 namespace ODB
 {
@@ -24,6 +26,17 @@ namespace ODB
             //but 0xFFFF might be hit, and 0xFFFFF looks ugly.
             stream.Write(IO.Game.GameTick, 8);
             stream.Write(IO.Game.Seed, 8);
+
+            string containers = "";
+            foreach (int container in Util.Game.ContainerIDs.Keys)
+            {
+                containers += IO.WriteHex(container, 4);
+                containers = Util.Game.ContainerIDs[container]
+                    .Aggregate(containers,
+                    (current, item) => current + IO.WriteHex(item, 4));
+                containers += ",";
+            }
+            stream.Write(containers);
 
             foreach (int ided in ItemDefinition.IdentifiedDefs)
             {
@@ -54,6 +67,33 @@ namespace ODB
             IO.Game.GameTick = stream.ReadHex(8);
             IO.Game.Seed = stream.ReadHex(8);
 
+            IO.Game.Level = IO.Game.Levels[playerLocation];
+
+            string containers = stream.ReadString();
+            List<int> containerItems = new List<int>();
+            Util.Game.ContainerIDs = new Dictionary<int, List<int>>();
+            foreach (string container in containers.Split(','))
+            {
+                if(container == "") continue;
+
+                int count = container.Length / 4 - 1;
+                int id;
+
+                Stream strm = new Stream(container);
+                Util.Game.ContainerIDs.Add(
+                    id = strm.ReadHex(4), new List<int>());
+
+                for (int i = 0; i < count; i++)
+                {
+                    int itemid = strm.ReadHex(4);
+                    Util.Game.ContainerIDs[id].Add(itemid);
+                    containerItems.Add(itemid);
+                }
+            }
+
+            foreach (Level level in Util.Game.Levels)
+                level.WorldItems.RemoveAll(x => containerItems.Contains(x.ID));
+
             string identifieds = stream.ReadString();
             foreach (string ided in identifieds.Split(',')
                 .Where(ided => ided != ""))
@@ -61,9 +101,7 @@ namespace ODB
                 ItemDefinition.IdentifiedDefs.Add(IO.ReadHex(ided));
             }
 
-            IO.Game.Level = IO.Game.Levels[playerLocation];
             IO.Game.SetupBrains();
-            IO.Game.Containers = new Dictionary<int, List<Item>>();
         }
 
         public static void WriteToFile(string path, string content)
