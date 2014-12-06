@@ -593,6 +593,12 @@ namespace ODB
                 _log.Add(ss);
         }
 
+        public void Log(params object[] args)
+        {
+            var a = args.Skip(1).ToArray();
+            Game.Log(String.Format((string)args[0], args));
+        }
+
         //ReSharper disable once InconsistentNaming
         //LH-011214: NPC is a perfectly fine acronym thank you
         public void ProcessNPCs()

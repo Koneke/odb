@@ -26,9 +26,9 @@ namespace ODB
                 if (_wmScrollback < 0) _wmScrollback = 0;
                 if (_wmScrollback > WmHistory.Count)
                     _wmScrollback = WmHistory.Count;
-                IO.Answer = _wmScrollback > 0 ?
-                    WmHistory[WmHistory.Count - _wmScrollback] :
-                    "";
+                IO.Answer = _wmScrollback > 0
+                    ?  WmHistory[WmHistory.Count - _wmScrollback]
+                    : "";
             }
 
             bool b = false;
@@ -197,7 +197,6 @@ namespace ODB
                     Game.Level.WorldItems.Add(dummyitem);
                     break;
                     #endregion
-
                 case "sa":
                 case "spawnactor":
                     #region spawnactor
@@ -228,7 +227,6 @@ namespace ODB
                     Game.Level.WorldItems.Add(it);
                     break;
                     #endregion
-
                 case "saveadefs":
                 case "sad":
                     #region sad
@@ -240,7 +238,6 @@ namespace ODB
                 case "sid":
                     SaveIO.WriteItemDefinitionsToFile("Data/" + args[0]);
                     break;
-
                 case "sp":
                 case "setplayer":
                     #region setplayer

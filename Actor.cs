@@ -271,6 +271,12 @@ namespace ODB
                 equipped.Add(bp.Item);
             return equipped;
         }
+        public bool IsWorn(Item item)
+        {
+            return PaperDoll
+                .Where(bp => bp.Type != DollSlot.Hand)
+                .Any(x => x.Item == item);
+        }
         public List<Item> GetWornItems()
         {
             List<Item> equipped = new List<Item>();
@@ -285,6 +291,12 @@ namespace ODB
                 select bp)
                 equipped.Add(bp.Item);
             return equipped;
+        }
+        public bool IsWielded(Item item)
+        {
+            return PaperDoll
+                .Where(bp => bp.Type == DollSlot.Hand)
+                .Any(x => x.Item == item);
         }
         public List<Item> GetWieldedItems()
         {

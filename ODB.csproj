@@ -141,6 +141,15 @@
     <Compile Include="Wizard.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Data\actors.def">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\items.def">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\tiles.def">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Game.ico" />
     <Content Include="GameThumbnail.png" />
     <Content Include="logo.ico" />
