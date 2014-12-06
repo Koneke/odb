@@ -184,6 +184,7 @@ namespace ODB
             {
                 Wizard.WmHistory.Add(Answer);
                 Wizard.WmCommand(Answer);
+                Wizard.WmScrollback = 0;
             }
         }
 

@@ -11,23 +11,23 @@ namespace ODB
 
         public static Point WmCursor;
         public static List<string> WmHistory = new List<string>();
-        static int _wmScrollback;
+        public static int WmScrollback;
 
         public static void WmInput()
         {
             //wizmode terminal
 
             bool scrolled = false;
-            if (IO.KeyPressed(Keys.Up)) { _wmScrollback++; scrolled = true; }
-            if (IO.KeyPressed(Keys.Down)) { _wmScrollback--; scrolled = true; }
+            if (IO.KeyPressed(Keys.Up)) { WmScrollback++; scrolled = true; }
+            if (IO.KeyPressed(Keys.Down)) { WmScrollback--; scrolled = true; }
 
             if (scrolled)
             {
-                if (_wmScrollback < 0) _wmScrollback = 0;
-                if (_wmScrollback > WmHistory.Count)
-                    _wmScrollback = WmHistory.Count;
-                IO.Answer = _wmScrollback > 0
-                    ?  WmHistory[WmHistory.Count - _wmScrollback]
+                if (WmScrollback < 0) WmScrollback = 0;
+                if (WmScrollback > WmHistory.Count)
+                    WmScrollback = WmHistory.Count;
+                IO.Answer = WmScrollback > 0
+                    ?  WmHistory[WmHistory.Count - WmScrollback]
                     : "";
             }
 
@@ -158,11 +158,6 @@ namespace ODB
         {
             switch (cmd)
             {
-                //current container, until we get proper inventory code
-                case "curcont":
-                    if (args[0] == "FFFF") Game.InvMan.CurrentContainer = -1;
-                    else Game.InvMan.CurrentContainer = IO.ReadHex(args[0]);
-                    break;
                 //get item definition (id) (by name)
                 case "gid":
                     Game.Log(IO.WriteHex(Util.ItemDefByName(args[0]).Type, 4));
@@ -675,14 +670,6 @@ namespace ODB
                 case "ii-setmod":
                     foreach (Item it in items)
                         it.Mod = IO.ReadHex(args[0]);
-                    break;
-                case "ii-putinto":
-                    foreach (Item it in Game.Level.ItemsOnTile(WmCursor))
-                    {
-                        Game.Level.WorldItems.Remove(it);
-                        Game.InvMan.Containers
-                            [IO.ReadHex(args[0])].Add(it);
-                    }
                     break;
                 case "ii-sdef":
                 case "ii-setdef":

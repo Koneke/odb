@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.Serialization.Formatters;
 using Microsoft.Xna.Framework.Input;
 
 namespace ODB
@@ -25,18 +26,18 @@ namespace ODB
 
             if (it.Definition.Stacking)
             {
-                bool alreadyHolding = false;
-                foreach (Item item in Game.Player.Inventory
-                    .Where(item => item.Definition.Type == it.Definition.Type)
-                    .Where(item => !Game.Player.IsEquipped(item))
-                ) {
-                    alreadyHolding = true;
-                    item.Count+=it.Count;
-                    //merging into the already held item
-                    Game.Level.AllItems.Remove(it);
-                }
-                if (!alreadyHolding)
-                    Game.Player.Inventory.Add(it);
+                //todo: I don't know how wanted this is?
+                //      We could either always add a new stack,
+                //      or just don't let the player split stacks,
+                //      and instead just ask the player how many they
+                //      want to move with P in the inventory screen.
+                //      For now, this is good enough.
+                Item stack = Game.Player.Inventory
+                    .FirstOrDefault(item => item.CanStack(it));
+
+                if(stack != null) stack.Stack(it);
+                //if (!alreadyHolding)
+                else Game.Player.Inventory.Add(it);
             }
             else
             {
@@ -95,7 +96,15 @@ namespace ODB
             Item it = Game.Player.Inventory[index];
 
             Game.Player.Inventory.Remove(it);
-            Game.Level.WorldItems.Add(it);
+
+            List<Item> iot;
+            if ((iot = Game.Level.ItemsOnTile(Game.Player.xy))
+                .Any(item => item.CanStack(it)))
+            {
+                Item stack = iot.First(item => item.CanStack(it));
+                stack.Stack(it);
+            }
+            else Game.Level.WorldItems.Add(it);
 
             it.xy = Game.Player.xy;
 
@@ -135,14 +144,22 @@ namespace ODB
                         //clone item
                         it.WriteItem().ToString()
                     ) {
-                        //mod essential stuff
+                        xy = Game.Player.xy,
+                        //mod the essential stuff
                         ID = Item.IDCounter++,
                         Count = count
                     };
 
                 it.Count -= count;
-                Game.Level.Spawn(droppedStack);
-                droppedStack.xy = Game.Player.xy;
+
+                List<Item> iot;
+                if ((iot = Game.Level.ItemsOnTile(Game.Player.xy))
+                    .Any(item => item.CanStack(droppedStack)))
+                {
+                    Item stack = iot.First(item => item.CanStack(droppedStack));
+                    stack.Stack(droppedStack);
+                }
+                else Game.Level.Spawn(droppedStack);
 
                 Game.Log("Dropped " +
                     droppedStack.GetName("count") + "."
@@ -174,7 +191,7 @@ namespace ODB
             if (container == -1)
                 Game.Player.Inventory.Add(stack);
             else
-                Game.InvMan.ContainerIDs[container].Add(stack.ID);
+                InventoryManager.ContainerIDs[container].Add(stack.ID);
 
             IO.IOState = InputType.Inventory;
         }

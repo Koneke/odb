@@ -12,8 +12,8 @@ namespace ODB
             ContainerIDs = new Dictionary<int, List<int>>();
         }
 
-        public Dictionary<int, List<int>> ContainerIDs;
-        public Dictionary<int, List<Item>> Containers {
+        public static Dictionary<int, List<int>> ContainerIDs;
+        public static Dictionary<int, List<Item>> Containers {
             get
             {
                 return
@@ -23,7 +23,7 @@ namespace ODB
                         Util.GetItemByID).ToList());
             }
         }
-        public int CurrentContainer;
+        public static int CurrentContainer;
         public List<Item> CurrentContents {
             get
             {
@@ -43,10 +43,10 @@ namespace ODB
 
         public static Game1 Game;
 
-        public int Selection;
-        private Item _inserted;
+        public static int Selection;
+        private static Item _selected;
 
-        private int GetParentContainer(int container)
+        private static int GetParentContainer(int container)
         {
             foreach (int id in
                 Containers.Keys
@@ -61,10 +61,11 @@ namespace ODB
         public enum InventoryState
         {
             Browsing,
-            Inserting
+            Inserting,
+            Joining
         }
 
-        public InventoryState State;
+        public static InventoryState State;
 
         private void SelectionInput()
         {
@@ -103,13 +104,32 @@ namespace ODB
                         if (SelectedItem == null) break;
                         if (!SelectedItem.HasComponent("cContainer")) break;
 
-                        if (SelectedItem == _inserted)
+                        if (SelectedItem == _selected)
                         {
                             Game.Log("You can't bend space and/or time!");
                             break;
                         }
 
-                        PutInto(_inserted, SelectedItem.ID);
+                        PutInto(_selected, SelectedItem.ID);
+                    }
+                    break;
+
+                case InventoryState.Joining:
+                    if (IO.KeyPressed(IO.Input.West))
+                    {
+                        State = InventoryState.Browsing;
+                        Game.Log("Nevermind.");
+                    }
+
+                    if (IO.KeyPressed(IO.Input.East) ||
+                        IO.KeyPressed(IO.Input.Enter))
+                    {
+                        if (_selected.CanStack(SelectedItem))
+                        {
+                            SelectedItem.Stack(_selected);
+                            CurrentContents.Remove(_selected);
+                            State = InventoryState.Browsing;
+                        }
                     }
                     break;
             }
@@ -150,7 +170,7 @@ namespace ODB
                 IO.KeyPressed(IO.Input.East) ||
                 IO.KeyPressed(IO.Input.Enter))
             {
-                _inserted = SelectedItem;
+                _selected = SelectedItem;
                 State = InventoryState.Inserting;
                 Game.Log("Put " + SelectedItem.GetName("name") + " into what?");
             }
@@ -177,9 +197,19 @@ namespace ODB
 
             if (IO.KeyPressed(Keys.S) && !IO.ShiftState)
                 CheckSplit(SelectedItem);
+
+            if (IO.KeyPressed(Keys.J) && IO.ShiftState)
+            {
+                if (!SelectedItem.Stacking) return;
+
+                State = InventoryState.Joining;
+                _selected = SelectedItem;
+                Game.Log("Join " + _selected.GetName("count") +
+                    " with what?");
+            }
         }
 
-        private void CheckSplit(Item item)
+        private static void CheckSplit(Item item)
         {
             Game.QpAnswerStack.Push("" + CurrentContainer);
             Game.QpAnswerStack.Push("" + item.ID);
@@ -199,7 +229,7 @@ namespace ODB
                 Game.Player.Quiver = item;
         }
 
-        private void CheckDrop(Item item)
+        private static void CheckDrop(Item item)
         {
             Game.QpAnswerStack.Push(IO.Indexes[Selection] + "");
             if (item.Count > 1)
@@ -207,7 +237,7 @@ namespace ODB
             PlayerResponses.Drop();
         }
 
-        private void CheckWield(Item item)
+        private static void CheckWield(Item item)
         {
             if (Game.Player.IsWorn(item))
             {
@@ -225,7 +255,7 @@ namespace ODB
             PlayerResponses.Wield();
         }
 
-        private void CheckWear(Item item)
+        private static void CheckWear(Item item)
         {
             if (Game.Player.IsWorn(item))
             {
@@ -243,11 +273,11 @@ namespace ODB
             PlayerResponses.Wear();
         }
 
-        private void PutInto(Item item, int container)
+        private static void PutInto(Item item, int container)
         {
             Game.Log(
                 "Put " +
-                    _inserted.GetName("name") + " into " +
+                    _selected.GetName("name") + " into " +
                     item.GetName("name") + "."
                 );
 
@@ -259,12 +289,12 @@ namespace ODB
 
             State = InventoryState.Browsing;
             //not sure if nulling is necessary
-            _inserted = null;
+            _selected = null;
 
             Game.Player.Pass();
         }
 
-        private void CheckSheath(Item item)
+        private static void CheckSheath(Item item)
         {
             if (Game.Player.IsWielded(item))
             {
@@ -279,7 +309,7 @@ namespace ODB
             }
         }
 
-        private void CheckRemove(Item item)
+        private static void CheckRemove(Item item)
         {
             if (Game.Player.IsWorn(item))
             {

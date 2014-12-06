@@ -26,10 +26,10 @@ namespace ODB
             stream.Write(IO.Game.Seed, 8);
 
             string containers = "";
-            foreach (int container in Util.Game.InvMan.ContainerIDs.Keys)
+            foreach (int container in InventoryManager.ContainerIDs.Keys)
             {
                 containers += IO.WriteHex(container, 4);
-                containers = Util.Game.InvMan.ContainerIDs[container]
+                containers = InventoryManager.ContainerIDs[container]
                     .Aggregate(containers,
                     (current, item) => current + IO.WriteHex(item, 4));
                 containers += ",";
@@ -69,7 +69,7 @@ namespace ODB
 
             string containers = stream.ReadString();
             List<int> containerItems = new List<int>();
-            Util.Game.InvMan.ContainerIDs = new Dictionary<int, List<int>>();
+            InventoryManager.ContainerIDs = new Dictionary<int, List<int>>();
             foreach (string container in containers.Split(','))
             {
                 if(container == "") continue;
@@ -78,13 +78,13 @@ namespace ODB
                 int id;
 
                 Stream strm = new Stream(container);
-                Util.Game.InvMan.ContainerIDs.Add(
+                InventoryManager.ContainerIDs.Add(
                     id = strm.ReadHex(4), new List<int>());
 
                 for (int i = 0; i < count; i++)
                 {
                     int itemid = strm.ReadHex(4);
-                    Util.Game.InvMan.ContainerIDs[id].Add(itemid);
+                    InventoryManager.ContainerIDs[id].Add(itemid);
                     containerItems.Add(itemid);
                 }
             }

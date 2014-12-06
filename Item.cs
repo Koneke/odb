@@ -97,7 +97,7 @@ namespace ODB
 
             Charged = !Definition.Stacking && count > 0;
             if (Definition.HasComponent("cContainer"))
-                Game.InvMan.ContainerIDs.Add(ID, new List<int>());
+                InventoryManager.ContainerIDs.Add(ID, new List<int>());
         }
 
         //LOADING an OLD item
@@ -219,7 +219,8 @@ namespace ODB
 
             if (!HasComponent("cContainer")) return weight;
 
-            weight += Game.InvMan.Containers[ID].Sum(item => item.GetWeight());
+            weight += InventoryManager.Containers[ID]
+                .Sum(item => item.GetWeight());
             return weight;
         }
 
@@ -242,6 +243,19 @@ namespace ODB
                 //           potentially be recharged later).
                 Count--;
             }
+        }
+
+        public bool CanStack(Item other)
+        {
+            return Type == other.Type &&
+                //todo: should not just check with the player really
+                !Game.Player.IsEquipped(this) &&
+                !Game.Player.IsEquipped(other);
+        }
+        public void Stack(Item other)
+        {
+            Count += other.Count;
+            Game.Level.Despawn(other);
         }
 
         public Stream WriteItem()

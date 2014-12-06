@@ -592,10 +592,8 @@ namespace ODB
             foreach (string ss in rows)
                 _log.Add(ss);
         }
-
         public void Log(params object[] args)
         {
-            var a = args.Skip(1).ToArray();
             Game.Log(String.Format((string)args[0], args));
         }
 
@@ -815,7 +813,7 @@ namespace ODB
                 inventoryW - offset, j++, "<t>ake out", Color.White);
             _inventoryConsole.CellData.Print(
                 inventoryW - offset, j++, "<p>ut into", Color.White);
-            if (InvMan.CurrentContainer == -1)
+            if (InventoryManager.CurrentContainer == -1)
             {
                 _inventoryConsole.CellData.Print(
                     inventoryW - offset, j++, "<d>rop", Color.White);
@@ -850,13 +848,14 @@ namespace ODB
             }
 
             //border texts
-            if (InvMan.CurrentContainer == -1)
+            if (InventoryManager.CurrentContainer == -1)
                 _inventoryConsole.CellData.Print(
                     2, 0, Player.Definition.Name, Color.White);
             else
                 _inventoryConsole.CellData.Print(
                     2, 0,
-                    Util.GetItemByID(InvMan.CurrentContainer).GetName("Name"),
+                    Util.GetItemByID(InventoryManager.CurrentContainer)
+                        .GetName("Name"),
                     Color.White);
 
             string weightString =
@@ -874,12 +873,12 @@ namespace ODB
             //end border texts
 
             List<Item> items = new List<Item>();
-            if (InvMan.CurrentContainer != -1)
+            if (InventoryManager.CurrentContainer != -1)
                 items.AddRange(
                     Game.Level.AllItems
                     .Where(
-                        item => InvMan.Containers
-                        [InvMan.CurrentContainer]
+                        item => InventoryManager.Containers
+                        [InventoryManager.CurrentContainer]
                         .Contains(item)
                     )
                 );
@@ -909,8 +908,9 @@ namespace ODB
                 if (item.HasComponent("cContainer"))
                 {
                     name += " (holding ";
-                    name += InvMan.Containers[item.ID].Count + " item";
-                    if (InvMan.Containers[item.ID].Count == 1)
+                    name += InventoryManager.Containers[item.ID]
+                        .Count + " item";
+                    if (InventoryManager.Containers[item.ID].Count == 1)
                         name += "s";
                     name += ")";
                 }
@@ -926,10 +926,12 @@ namespace ODB
                 }
 
                 Color bg = Color.Black;
-                if (i == InvMan.Selection)
+                if (i == InventoryManager.Selection)
                 {
-                    if (InvMan.State ==
-                        InventoryManager.InventoryState.Inserting)
+                    if (InventoryManager.State ==
+                            InventoryManager.InventoryState.Inserting ||
+                        InventoryManager.State ==
+                            InventoryManager.InventoryState.Joining)
                         name = "> " + name;
                     bg = Color.DimGray;
                 }
