@@ -174,7 +174,7 @@ namespace ODB
             if (container == -1)
                 Game.Player.Inventory.Add(stack);
             else
-                Game.ContainerIDs[container].Add(stack.ID);
+                Game.InvMan.ContainerIDs[container].Add(stack.ID);
 
             IO.IOState = InputType.Inventory;
         }

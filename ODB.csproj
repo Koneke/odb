@@ -120,8 +120,10 @@
     <Compile Include="ActorDefinition.cs" />
     <Compile Include="Brain.cs" />
     <Compile Include="Component.cs" />
+    <Compile Include="Generator.cs" />
     <Compile Include="gObject.cs" />
     <Compile Include="Header.cs" />
+    <Compile Include="InventoryManager.cs" />
     <Compile Include="IO.cs" />
     <Compile Include="Item.cs" />
     <Compile Include="ItemDefinition.cs" />

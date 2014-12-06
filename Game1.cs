@@ -8,7 +8,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using xnaPoint = Microsoft.Xna.Framework.Point;
 
-//~~~ QUEST TRACKER for ?? nov ~~~
+//~~~ QUEST TRACKER for ?? dec ~~~
 // * Item value and paid-for status
 // * Wizard mode area select
 // * Clean up wizard mode class a bit
@@ -18,221 +18,11 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 // * Inventory stuff currently doesn't make noise.
 // * nor take time (new parts atleast).
 
-//~~~ QUEST TRACKER for 4 nov ~~~
+//~~~ QUEST TRACKER for 6 dec ~~~
 // * Join stacks in inventory manager
-
-//General note:
-// * Currently, items need cWeapon to be wieldable. This is /not/ the way it
-//   is supposed to. We need a GenerateHands(int count) or something, so we can
-//   generate an equip set on the fly depending on number of hands item needs
-//   so we can check them against Actor.CanEquip();
 
 namespace ODB
 {
-    public struct Connector
-    {
-        public Point Position;
-        public int Direction;
-
-        public Connector(Point p, int direction)
-        {
-            Position = p;
-            Direction = direction;
-        }
-    }
-
-    public class GenRoom
-    {
-        public Point Position;
-        public Point Size;
-        public List<Connector> Connectors;
-
-        public Rect Rect()
-        {
-            return new Rect(Position, Size);
-        }
-
-        public GenRoom()
-        {
-            Connectors = new List<Connector>();
-        }
-
-        public void RemoveCoveredConnectors(List<GenRoom> others )
-        {
-            Connectors.RemoveAll(
-                connector => others.Any(
-                    other => other.Rect().ContainsPoint(connector.Position)
-                )
-            );
-        }
-
-        public bool TryAttachTo(Gen gen, GenRoom other, List<GenRoom> rooms)
-        {
-            List<GenRoom> obstacles = rooms
-                .Where(room => room != other && room != this)
-                .ToList();
-
-            Dictionary<Connector, List<Connector>> connectorPairs =
-                new Dictionary<Connector, List<Connector>>();
-
-            Rect screen = new Rect(new Point(1, 4), new Point(78, 19));
-
-            Connectors
-            .ForEach(myConnector =>
-                connectorPairs.Add(
-                    myConnector,
-                    other.Connectors
-                    //0 - up, 2 - down. 1 - right, 3 - left.
-                    .Where(otherConnector =>
-                        (myConnector.Direction + otherConnector.Direction)
-                        % 2 == 0)
-                    .Where(otherConnector =>
-                        otherConnector.Direction != myConnector.Direction)
-                    .Where(otherConnector =>
-                        !Gen.Covers(
-                            //not us or the one we try connecting to
-                            obstacles,
-                            new Rect(
-                                //connector positions are offsets from room pos
-                                other.Position +
-                                otherConnector.Position -
-                                myConnector.Position,
-                                Size
-                            )
-                        )
-                    )
-                    //todo: DRY in some smart way
-                    .Where(otherConnector =>
-                        screen.Contains(
-                            new Rect(
-                                other.Position +
-                                otherConnector.Position -
-                                myConnector.Position,
-                                Size
-                            )
-                        )
-                    )
-                    .ToList()
-                )
-            );
-
-            List<Connector> empty = connectorPairs
-                .Where(kvp => connectorPairs[kvp.Key].Count == 0)
-                .Select(kvp => kvp.Key)
-                .ToList();
-            foreach (Connector key in empty)
-                connectorPairs.Remove(key);
-
-            if (connectorPairs.Count <= 0) return false;
-
-            //select a random of our connectors with friends in the other room
-            Connector mc = connectorPairs.Keys.ToList()
-                [Util.Random.Next(0, connectorPairs.Count)];
-            //select a random friend
-            Connector oc = connectorPairs
-                [mc]
-                [Util.Random.Next(0, connectorPairs[mc].Count)];
-
-            Position = other.Position + oc.Position - mc.Position;
-            //place a door at the joint
-            gen.Doors.Add(other.Position + oc.Position);
-
-            return true;
-        }
-    }
-
-    public class Gen
-    {
-        public Point RollSize()
-        {
-            return new Point(
-                Util.Random.Next(4, 8),
-                Util.Random.Next(4, 8)
-            );
-        }
-
-        public GenRoom GenerateRoom(List<GenRoom> others = null)
-        {
-            GenRoom gr = new GenRoom { Size = RollSize() };
-
-            for (int x = 1; x < gr.Size.x - 1; x++)
-            {
-                gr.Connectors.Add(new Connector(new Point(x, 0), 0));
-                int y = gr.Size.y - 1;
-                gr.Connectors.Add(new Connector(new Point(x, y), 2));
-            }
-
-            for (int y = 1; y < gr.Size.y - 1; y++)
-            {
-                gr.Connectors.Add(new Connector(new Point(0, y), 3));
-                int x = gr.Size.x - 1;
-                gr.Connectors.Add(new Connector(new Point(x, y), 1));
-            }
-
-            return gr;
-        }
-
-        public static bool Covers(List<GenRoom> rooms, Rect rect)
-        {
-            return rooms.Any(
-                room => room.Rect().Interects(rect)
-            );
-        }
-
-        //tiles to generate doors instead of walls on
-        public List<Point> Doors; 
-
-        //todo: Current issues:
-        //      Sometimes generates nonconnected rooms, and keeps working on
-        //        those (resulting in two separate room "blobs").
-        //      Occasionally generates doors in corners, which should not be
-        //        possible.
-        public void Generate()
-        {
-            List<GenRoom> rooms = new List<GenRoom>();
-            Doors = new List<Point>();
-
-            GenRoom root;
-            rooms.Add(root = GenerateRoom());
-            root.Position = new Point(40, 12);
-            root.Position -= root.Size / 2;
-
-            for (int i = 0; i < 25; i++)
-            {
-                GenRoom n;
-                rooms.Add(n = GenerateRoom());
-
-                List<GenRoom> candidates = new List<GenRoom>();
-                candidates.AddRange(rooms);
-                candidates = candidates.Shuffle();
-
-                bool connected = false;
-                while (candidates.Count > 0 && !connected)
-                {
-                    connected = n.TryAttachTo(this, candidates[0], rooms);
-                    if (!connected) candidates.RemoveAt(0);
-                }
-
-                if (!connected) continue;
-            }
-
-            //foreach(GenRoom g in rooms)
-            foreach (GenRoom room in rooms)
-                Util.Game.Level.CreateRoom(
-                    room.Rect(),
-                    TileDefinition.Definitions[0],
-                    TileDefinition.Definitions[1]
-                );
-
-            foreach (Point p in Doors)
-            {
-                Util.Game.Level.Map[p.x, p.y].Definition =
-                    TileDefinition.Definitions[0];
-                Util.Game.Level.Map[p.x, p.y].Door = Door.Closed;
-            }
-        }
-    }
-
     public class Game1 : Game
     {
         readonly GraphicsDeviceManager _graphics;
@@ -262,18 +52,7 @@ namespace ODB
 
         public bool OpenRolls = false;
 
-        public Dictionary<int, List<int>> ContainerIDs;
-        public Dictionary<int, List<Item>> Containers {
-            get
-            {
-                return
-                    ContainerIDs.ToDictionary(
-                    e => e.Key,
-                    e => ContainerIDs[e.Key].Select(
-                        Util.GetItemByID).ToList());
-            }
-        }
-        public int CurrentContainer;
+        public InventoryManager InvMan;
 
         public Actor Player;
         //for now, breaking on of the RL rules a bit,
@@ -282,7 +61,8 @@ namespace ODB
 
         private Point _camera;
         private Point _cameraOffset;
-        int _scrW, _scrH;
+        //int _scrW, _scrH;
+        public xnaPoint ScreenSize;
 
         int _logSize;
         List<string> _log;
@@ -304,9 +84,10 @@ namespace ODB
         {
             #region engineshit
             //this is starting to look dumb
+            InventoryManager.Game = 
             PlayerResponses.Game =
-            gObject.Game =
             ODB.Player.Game =
+            gObject.Game =
             Wizard.Game =
             Brain.Game =
             Util.Game =
@@ -332,7 +113,7 @@ namespace ODB
 
             _camera = new Point(0, 0);
             _cameraOffset = new Point(0, 0);
-            _scrW = 80; _scrH = 25;
+            ScreenSize = new xnaPoint(80, 25);
 
             SetupMagic(); //essentially magic defs, but we hardcode magic
             SetupTickingEffects(); //same as magic, cba to add scripting
@@ -360,8 +141,7 @@ namespace ODB
 
             SetupBrains();
 
-            ContainerIDs = new Dictionary<int, List<int>>();
-            CurrentContainer = -1;
+            InvMan = new InventoryManager();
 
             _logSize = 3;
             _log = new List<string>();
@@ -372,11 +152,13 @@ namespace ODB
             //wiz
             Wizard.WmCursor = Game.Player.xy;
 
-            Gen g = new Gen();
-            g.Generate();
+            _g = new Generator();
+            _g.Generate();
 
             base.Initialize();
         }
+
+        private Generator _g;
 
         protected override void Update(GameTime gameTime)
         {
@@ -432,7 +214,8 @@ namespace ODB
                         else ProcessNPCs(); //mind: also ticks gameclock
                         break;
                     case InputType.Inventory:
-                        InventoryInput();
+                        InvMan.InventoryInput();
+                        //InventoryInput();
                         break;
                     //if this happens,
                     //you're breaking some kind of weird shit somehow
@@ -459,7 +242,13 @@ namespace ODB
             if (IO.KeyPressed(Keys.F5)) SaveIO.Save();
             if (IO.KeyPressed(Keys.F6)) SaveIO.Load();
 
-            if (IO.KeyPressed(Keys.F9) || IO.KeyPressed(Keys.OemTilde))
+            if (IO.KeyPressed(Keys.F9))
+            {
+                SwitchLevel(_g.Generate());
+                IO.Answer = "";
+            }
+
+            if (IO.KeyPressed(Keys.OemTilde))
             {
                 if (WizMode)
                 {
@@ -487,183 +276,11 @@ namespace ODB
             _camera += _cameraOffset;
 
             _camera.x = Math.Max(0, _camera.x);
-            _camera.x = Math.Min(Game.Level.LevelSize.x - _scrW, _camera.x);
+            _camera.x = Math.Min(
+                Game.Level.LevelSize.x - ScreenSize.X, _camera.x);
             _camera.y = Math.Max(0, _camera.y);
-            _camera.y = Math.Min(Game.Level.LevelSize.y - _scrH, _camera.y);
-        }
-
-        private int _selection;
-        private bool _inserting;
-        private int _insertedItem;
-        private void InventoryInput()
-        {
-            if (IO.KeyPressed(Keys.I))
-                IO.IOState = InputType.PlayerInput;
-
-            int parentContainer = -1;
-            if (CurrentContainer != -1)
-            {
-                foreach (int id in
-                    Containers.Keys
-                    .Where(id => Containers[id]
-                        .Any(x => x.ID == CurrentContainer)))
-                {
-                    parentContainer = id;
-                    break;
-                }
-            }
-
-            List<Item> currentContainer =
-                CurrentContainer == -1
-                ? Game.Player.Inventory
-                : Containers[CurrentContainer];
-
-            if (IO.KeyPressed(IO.Input.South)) _selection++;
-
-            if (IO.KeyPressed(IO.Input.North)) _selection--;
-
-            if (_selection < 0)
-                _selection += currentContainer.Count;
-            if (currentContainer.Count > 0)
-                _selection = _selection % currentContainer.Count;
-
-            if(IO.KeyPressed(IO.Input.West))
-            {
-                if (CurrentContainer == -1)
-                {
-                    if (_inserting)
-                    {
-                        _inserting = false;
-                        Game.Log("Nevermind.");
-                    }
-                    else IO.IOState = InputType.PlayerInput;
-                    return;
-                }
-
-                if(!_inserting)
-                    CurrentContainer = parentContainer;
-                else
-                    _inserting = false;
-            }
-
-            int count = currentContainer.Count;
-
-            if (count <= 0) return;
-
-            Item item = currentContainer[_selection];
-
-            if (_inserting)
-            {
-                if (!IO.KeyPressed(IO.Input.East) &&
-                    !IO.KeyPressed(IO.Input.Enter)) return;
-
-                if (!item.HasComponent("cContainer")) return;
-
-                Game.Log(
-                    "Put " + 
-                        Util.GetItemByID(_insertedItem)
-                            .GetName("name") + " into " +
-                        item.GetName("name") + "."
-                    );
-
-                if (CurrentContainer == -1)
-                    Game.Player.Inventory.Remove(
-                        Util.GetItemByID(_insertedItem));
-                else
-                    ContainerIDs[CurrentContainer].Remove(
-                        _insertedItem);
-                ContainerIDs[item.ID].Add(_insertedItem);
-
-                _inserting = false;
-                _insertedItem = -1;
-            }
-            else
-            {
-                if (IO.KeyPressed(IO.Input.East) ||
-                    IO.KeyPressed(IO.Input.Enter))
-                    if (item.HasComponent("cContainer"))
-                    {
-                        CurrentContainer = item.ID;
-                        _selection = 0;
-                        return;
-                    }
-
-                if (IO.KeyPressed(Keys.T) && CurrentContainer != -1)
-                {
-                    ContainerIDs[CurrentContainer].Remove(item.ID);
-                    if (parentContainer == -1)
-                        Game.Player.Inventory.Add(item);
-                    else
-                        ContainerIDs[parentContainer].Add(item.ID);
-                    Game.Player.Pass();
-                }
-
-                //if it wasn't a container, or we pressed p
-                if (IO.KeyPressed(Keys.P) ||
-                    IO.KeyPressed(IO.Input.East) ||
-                    IO.KeyPressed(IO.Input.Enter))
-                {
-                    _insertedItem = item.ID;
-                    _inserting = true;
-                    Game.Log("Put " + item.GetName("name") + " into what?");
-                }
-
-                if (CurrentContainer != -1) return;
-
-                if (IO.KeyPressed(Keys.W) && !Game.Player.IsEquipped(item))
-                {
-                    QpAnswerStack.Push(IO.Indexes[_selection]+"");
-                    if (!IO.ShiftState)
-                        PlayerResponses.Wield();
-                    else if (item.HasComponent("cWearable"))
-                        PlayerResponses.Wear();
-                }
-
-                if (IO.KeyPressed(Keys.S) && IO.ShiftState)
-                {
-                    QpAnswerStack.Push(IO.Indexes[_selection]+"");
-                    if( Game.Player.IsEquipped(item) &&
-                        !item.HasComponent("cWearable"))
-                        PlayerResponses.Sheath();
-                }
-
-                if (IO.KeyPressed(Keys.R) && IO.ShiftState)
-                {
-                    QpAnswerStack.Push(IO.Indexes[_selection]+"");
-                    if( Game.Player.IsEquipped(item) &&
-                        item.HasComponent("cWearable"))
-                        PlayerResponses.Remove();
-                }
-
-                if (IO.KeyPressed(Keys.D) && !IO.ShiftState)
-                {
-                    QpAnswerStack.Push(IO.Indexes[_selection]+"");
-                    if(item.Count > 1)
-                        IO.IOState = InputType.PlayerInput;
-                    PlayerResponses.Drop();
-                }
-
-                if (IO.KeyPressed(Keys.Q) && IO.ShiftState)
-                {
-                    if(Util.Game.Player.IsEquipped(item))
-                        Game.Player.Quiver = item;
-                }
-
-                if (IO.KeyPressed(Keys.S) && !IO.ShiftState)
-                {
-                    //ooh yeah use that stack
-                    Game.QpAnswerStack.Push(""+CurrentContainer);
-                    Game.QpAnswerStack.Push(""+item.ID);
-                    IO.AcceptedInput.Clear();
-                    for (Keys k = Keys.D0; k <= Keys.D9; k++)
-                        IO.AcceptedInput.Add((char)k);
-                    IO.AskPlayer(
-                        "Split out how many?",
-                        InputType.QuestionPrompt,
-                        PlayerResponses.Split
-                    );
-                }
-            }
+            _camera.y = Math.Min(
+                Game.Level.LevelSize.y - ScreenSize.Y, _camera.y);
         }
 
         public void SetupConsoles()
@@ -723,8 +340,11 @@ namespace ODB
             foreach (Item it in Player.Inventory) Level.AllItems.Add(it);
 
             foreach (Actor a in Level.WorldActors)
+            {
                 //reset vision, incase the level we moved to is a different size
                 a.Vision = null;
+                a.ResetVision();
+            }
 
             SetupBrains();
 
@@ -795,8 +415,8 @@ namespace ODB
                     //the player. Game.Caster still refers to the right caster
                     //though, so that's neat.
                     //ReSharper disable once UnusedVariable
-                    string answer = Util.Game.QpAnswerStack.Pop();
-                    Util.Game.Log(
+                    string answer = Game.QpAnswerStack.Pop();
+                    Game.Log(
                         Game.Player.GetName("Name") +
                         " " +
                         Game.Player.Is() +
@@ -1030,7 +650,8 @@ namespace ODB
         {
             _dfc.CellData.Clear();
 
-            for (int x = 0; x < _scrW; x++) for (int y = 0; y < _scrH; y++)
+            for (int x = 0; x < ScreenSize.X; x++)
+            for (int y = 0; y < ScreenSize.Y; y++)
             {
                 Tile t = Game.Level.Map[x + _camera.x, y + _camera.y];
 
@@ -1188,7 +809,7 @@ namespace ODB
                 inventoryW - offset, j++, "<t>ake out", Color.White);
             _inventoryConsole.CellData.Print(
                 inventoryW - offset, j++, "<p>ut into", Color.White);
-            if (CurrentContainer == -1)
+            if (InvMan.CurrentContainer == -1)
             {
                 _inventoryConsole.CellData.Print(
                     inventoryW - offset, j++, "<d>rop", Color.White);
@@ -1223,13 +844,13 @@ namespace ODB
             }
 
             //border texts
-            if (CurrentContainer == -1)
+            if (InvMan.CurrentContainer == -1)
                 _inventoryConsole.CellData.Print(
                     2, 0, Player.Definition.Name, Color.White);
             else
                 _inventoryConsole.CellData.Print(
                     2, 0,
-                    Util.GetItemByID(CurrentContainer).GetName("Name"),
+                    Util.GetItemByID(InvMan.CurrentContainer).GetName("Name"),
                     Color.White);
 
             string weightString =
@@ -1247,12 +868,12 @@ namespace ODB
             //end border texts
 
             List<Item> items = new List<Item>();
-            if (CurrentContainer != -1)
+            if (InvMan.CurrentContainer != -1)
                 items.AddRange(
                     Game.Level.AllItems
                     .Where(
-                        item => Containers
-                        [CurrentContainer]
+                        item => InvMan.Containers
+                        [InvMan.CurrentContainer]
                         .Contains(item)
                     )
                 );
@@ -1282,8 +903,8 @@ namespace ODB
                 if (item.HasComponent("cContainer"))
                 {
                     name += " (holding ";
-                    name += Containers[item.ID].Count + " item";
-                    if (Containers[item.ID].Count == 1)
+                    name += InvMan.Containers[item.ID].Count + " item";
+                    if (InvMan.Containers[item.ID].Count == 1)
                         name += "s";
                     name += ")";
                 }
@@ -1299,9 +920,10 @@ namespace ODB
                 }
 
                 Color bg = Color.Black;
-                if (i == _selection)
+                if (i == InvMan.Selection)
                 {
-                    if (_inserting)
+                    if (InvMan.State ==
+                        InventoryManager.InventoryState.Inserting)
                         name = "> " + name;
                     bg = Color.DimGray;
                 }

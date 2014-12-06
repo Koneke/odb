@@ -8,6 +8,7 @@ namespace ODB
     class Wizard
     {
         public static Game1 Game;
+
         public static Point WmCursor;
         public static List<string> WmHistory = new List<string>();
         static int _wmScrollback;
@@ -159,8 +160,8 @@ namespace ODB
             {
                 //current container, until we get proper inventory code
                 case "curcont":
-                    if (args[0] == "FFFF") Game.CurrentContainer = -1;
-                    else Game.CurrentContainer = IO.ReadHex(args[0]);
+                    if (args[0] == "FFFF") Game.InvMan.CurrentContainer = -1;
+                    else Game.InvMan.CurrentContainer = IO.ReadHex(args[0]);
                     break;
                 //get item definition (id) (by name)
                 case "gid":
@@ -682,7 +683,8 @@ namespace ODB
                     foreach (Item it in Game.Level.ItemsOnTile(WmCursor))
                     {
                         Game.Level.WorldItems.Remove(it);
-                        Game.Containers[IO.ReadHex(args[0])].Add(it);
+                        Game.InvMan.Containers
+                            [IO.ReadHex(args[0])].Add(it);
                     }
                     break;
                 case "ii-sdef":

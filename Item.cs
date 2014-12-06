@@ -97,7 +97,7 @@ namespace ODB
 
             Charged = !Definition.Stacking && count > 0;
             if (Definition.HasComponent("cContainer"))
-                Game.ContainerIDs.Add(ID, new List<int>());
+                Game.InvMan.ContainerIDs.Add(ID, new List<int>());
         }
 
         //LOADING an OLD item
@@ -219,7 +219,7 @@ namespace ODB
 
             if (!HasComponent("cContainer")) return weight;
 
-            weight += Game.Containers[ID].Sum(item => item.GetWeight());
+            weight += Game.InvMan.Containers[ID].Sum(item => item.GetWeight());
             return weight;
         }
 
