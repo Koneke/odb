@@ -29,6 +29,210 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 
 namespace ODB
 {
+    public struct Connector
+    {
+        public Point Position;
+        public int Direction;
+
+        public Connector(Point p, int direction)
+        {
+            Position = p;
+            Direction = direction;
+        }
+    }
+
+    public class GenRoom
+    {
+        public Point Position;
+        public Point Size;
+        public List<Connector> Connectors;
+
+        public Rect Rect()
+        {
+            return new Rect(Position, Size);
+        }
+
+        public GenRoom()
+        {
+            Connectors = new List<Connector>();
+        }
+
+        public void RemoveCoveredConnectors(List<GenRoom> others )
+        {
+            Connectors.RemoveAll(
+                connector => others.Any(
+                    other => other.Rect().ContainsPoint(connector.Position)
+                )
+            );
+        }
+
+        public bool TryAttachTo(Gen gen, GenRoom other, List<GenRoom> rooms)
+        {
+            List<GenRoom> obstacles = rooms
+                .Where(room => room != other && room != this)
+                .ToList();
+
+            Dictionary<Connector, List<Connector>> connectorPairs =
+                new Dictionary<Connector, List<Connector>>();
+
+            Rect screen = new Rect(new Point(1, 4), new Point(78, 19));
+
+            Connectors
+            .ForEach(myConnector =>
+                connectorPairs.Add(
+                    myConnector,
+                    other.Connectors
+                    //0 - up, 2 - down. 1 - right, 3 - left.
+                    .Where(otherConnector =>
+                        (myConnector.Direction + otherConnector.Direction)
+                        % 2 == 0)
+                    .Where(otherConnector =>
+                        otherConnector.Direction != myConnector.Direction)
+                    .Where(otherConnector =>
+                        !Gen.Covers(
+                            //not us or the one we try connecting to
+                            obstacles,
+                            new Rect(
+                                //connector positions are offsets from room pos
+                                other.Position +
+                                otherConnector.Position -
+                                myConnector.Position,
+                                Size
+                            )
+                        )
+                    )
+                    //todo: DRY in some smart way
+                    .Where(otherConnector =>
+                        screen.Contains(
+                            new Rect(
+                                other.Position +
+                                otherConnector.Position -
+                                myConnector.Position,
+                                Size
+                            )
+                        )
+                    )
+                    .ToList()
+                )
+            );
+
+            List<Connector> empty = connectorPairs
+                .Where(kvp => connectorPairs[kvp.Key].Count == 0)
+                .Select(kvp => kvp.Key)
+                .ToList();
+            foreach (Connector key in empty)
+                connectorPairs.Remove(key);
+
+            if (connectorPairs.Count <= 0) return false;
+
+            //select a random of our connectors with friends in the other room
+            Connector mc = connectorPairs.Keys.ToList()
+                [Util.Random.Next(0, connectorPairs.Count)];
+            //select a random friend
+            Connector oc = connectorPairs
+                [mc]
+                [Util.Random.Next(0, connectorPairs[mc].Count)];
+
+            Position = other.Position + oc.Position - mc.Position;
+            //place a door at the joint
+            gen.Doors.Add(other.Position + oc.Position);
+
+            return true;
+        }
+    }
+
+    public class Gen
+    {
+        public Point RollSize()
+        {
+            return new Point(
+                Util.Random.Next(4, 8),
+                Util.Random.Next(4, 8)
+            );
+        }
+
+        public GenRoom GenerateRoom(List<GenRoom> others = null)
+        {
+            GenRoom gr = new GenRoom { Size = RollSize() };
+
+            for (int x = 1; x < gr.Size.x - 1; x++)
+            {
+                gr.Connectors.Add(new Connector(new Point(x, 0), 0));
+                int y = gr.Size.y - 1;
+                gr.Connectors.Add(new Connector(new Point(x, y), 2));
+            }
+
+            for (int y = 1; y < gr.Size.y - 1; y++)
+            {
+                gr.Connectors.Add(new Connector(new Point(0, y), 3));
+                int x = gr.Size.x - 1;
+                gr.Connectors.Add(new Connector(new Point(x, y), 1));
+            }
+
+            return gr;
+        }
+
+        public static bool Covers(List<GenRoom> rooms, Rect rect)
+        {
+            return rooms.Any(
+                room => room.Rect().Interects(rect)
+            );
+        }
+
+        //tiles to generate doors instead of walls on
+        public List<Point> Doors; 
+
+        //todo: Current issues:
+        //      Sometimes generates nonconnected rooms, and keeps working on
+        //        those (resulting in two separate room "blobs").
+        //      Occasionally generates doors in corners, which should not be
+        //        possible.
+        public void Generate()
+        {
+            List<GenRoom> rooms = new List<GenRoom>();
+            Doors = new List<Point>();
+
+            GenRoom root;
+            rooms.Add(root = GenerateRoom());
+            root.Position = new Point(40, 12);
+            root.Position -= root.Size / 2;
+
+            for (int i = 0; i < 25; i++)
+            {
+                GenRoom n;
+                rooms.Add(n = GenerateRoom());
+
+                List<GenRoom> candidates = new List<GenRoom>();
+                candidates.AddRange(rooms);
+                candidates = candidates.Shuffle();
+
+                bool connected = false;
+                while (candidates.Count > 0 && !connected)
+                {
+                    connected = n.TryAttachTo(this, candidates[0], rooms);
+                    if (!connected) candidates.RemoveAt(0);
+                }
+
+                if (!connected) continue;
+            }
+
+            //foreach(GenRoom g in rooms)
+            foreach (GenRoom room in rooms)
+                Util.Game.Level.CreateRoom(
+                    room.Rect(),
+                    TileDefinition.Definitions[0],
+                    TileDefinition.Definitions[1]
+                );
+
+            foreach (Point p in Doors)
+            {
+                Util.Game.Level.Map[p.x, p.y].Definition =
+                    TileDefinition.Definitions[0];
+                Util.Game.Level.Map[p.x, p.y].Door = Door.Closed;
+            }
+        }
+    }
+
     public class Game1 : Game
     {
         readonly GraphicsDeviceManager _graphics;
@@ -167,6 +371,9 @@ namespace ODB
 
             //wiz
             Wizard.WmCursor = Game.Player.xy;
+
+            Gen g = new Gen();
+            g.Generate();
 
             base.Initialize();
         }

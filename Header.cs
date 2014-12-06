@@ -66,6 +66,16 @@ namespace ODB
         {
             return new Point(a.x - b.x, a.y - b.y);
         }
+
+        public static Point operator /(Point a, int b)
+        {
+            return new Point(a.x / b, a.y / b);
+        }
+
+        public static Point operator /(Point a, Point b)
+        {
+            return new Point(a.x / b.x, a.y / b.y);
+        }
     }
 
     public struct Rect
@@ -98,6 +108,15 @@ namespace ODB
             if (other.xy.x + other.wh.x < xy.x + border) return false;
             if (other.xy.y + other.wh.y < xy.y + border) return false;
             return true;
+        }
+
+        public bool Contains(Rect other)
+        {
+            return
+                other.xy.x >= xy.x &&
+                other.xy.x + other.wh.x <= xy.x + wh.x &&
+                other.xy.y >= xy.y &&
+                other.xy.y + other.wh.y <= xy.y + wh.y;
         }
     }
 

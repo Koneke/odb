@@ -39,13 +39,25 @@ namespace ODB
             Character = character;
             Solid = solid;
 
-            Type = TypeCounter++;
-            Definitions[Type] = this;
+            for(int i = 0 ; i < 0xffff; i++)
+                if (Definitions[i] == null)
+                {
+                    Type = TypeCounter = i;
+                    break;
+                }
+            Definitions[TypeCounter] = this;
         }
 
         public TileDefinition(string s)
         {
             ReadTileDefinition(s);
+            for(int i = 0 ; i < 0xffff; i++)
+                if (Definitions[i] == null)
+                {
+                    Type = TypeCounter = i;
+                    break;
+                }
+            Definitions[TypeCounter] = this;
         }
 
         public Stream WriteTileDefinition()
