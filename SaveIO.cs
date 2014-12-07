@@ -237,7 +237,7 @@ namespace ODB
             List<string> definitions = content.Split(
                 new[] { "##" },
                 StringSplitOptions.RemoveEmptyEntries
-                ).ToList();
+            ).ToList();
 
             definitions.ForEach(definition => new TileDefinition(definition));
         }

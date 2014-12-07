@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.Serialization.Formatters;
 using Microsoft.Xna.Framework.Input;
 
 namespace ODB

@@ -272,6 +272,7 @@ namespace ODB
                 {
                     Tile t = new Tile();
                     Stream s = t.ReadTile(tiles[i]);
+                    s.Read++; //skip the semicolon
                     Seen[x, y] = s.ReadBool();
                     Map[x, y] = t;
                 }
@@ -305,8 +306,7 @@ namespace ODB
             );
 
             foreach (string item in items)
-                AllItems.Add(new Item(item));
-            WorldItems.AddRange(AllItems);
+                Spawn(new Item(item));
 
             string actorSection =
                 content.Substring(read, content.Length - read).Split(

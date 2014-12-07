@@ -206,6 +206,7 @@ namespace ODB
                 _selected = SelectedItem;
                 Game.Log("Join " + _selected.GetName("count") +
                     " with what?");
+                CurrentContainer--;
             }
         }
 

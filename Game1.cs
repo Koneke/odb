@@ -18,8 +18,7 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 // * Inventory stuff currently doesn't make noise.
 // * nor take time (new parts atleast).
 
-//~~~ QUEST TRACKER for 6 dec ~~~
-// * Join stacks in inventory manager
+//~~~ QUEST TRACKER for 7 dec ~~~
 
 namespace ODB
 {
@@ -244,7 +243,11 @@ namespace ODB
 
             if (IO.KeyPressed(Keys.F9))
             {
-                SwitchLevel(_g.Generate());
+                Level level = _g.Generate();
+                int index = Levels.IndexOf(Game.Level);
+                Levels.RemoveAt(index);
+                Levels.Insert(index, level);
+                SwitchLevel(level);
                 IO.Answer = "";
             }
 

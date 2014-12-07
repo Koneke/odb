@@ -67,15 +67,11 @@ namespace ODB
 
         //wraps
         public bool Stacking { get { return Definition.Stacking; } }
-        public int Type {
-            get { return Definition.Type; }
-        }
-        public bool HasComponent(string s)
-        {
+        public int Type { get { return Definition.Type; } }
+        public bool HasComponent(string s) {
             return Definition.HasComponent(s);
         }
-        public Component GetComponent(string s)
-        {
+        public Component GetComponent(string s) {
             return Definition.GetComponent(s);
         }
         public bool Identified { get { return Definition.Identified; } }
@@ -84,8 +80,6 @@ namespace ODB
         public Item(
             Point xy,
             ItemDefinition definition,
-            //might not make 100% sense, but non-stacking items are 0
-            //this so we can easily separate stacking, nonstacking and charged
             int count = 0,
             IEnumerable<Mod> mods = null
         ) : base(xy, definition) {
@@ -104,7 +98,6 @@ namespace ODB
         public Item(string s) : base(s)
         {
             ReadItem(s);
-
             Charged = !Definition.Stacking && Count > 0;
         }
 

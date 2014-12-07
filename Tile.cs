@@ -39,25 +39,13 @@ namespace ODB
             Character = character;
             Solid = solid;
 
-            for(int i = 0 ; i < 0xffff; i++)
-                if (Definitions[i] == null)
-                {
-                    Type = TypeCounter = i;
-                    break;
-                }
+            Type = TypeCounter++;
             Definitions[TypeCounter] = this;
         }
 
         public TileDefinition(string s)
         {
             ReadTileDefinition(s);
-            for(int i = 0 ; i < 0xffff; i++)
-                if (Definitions[i] == null)
-                {
-                    Type = TypeCounter = i;
-                    break;
-                }
-            Definitions[TypeCounter] = this;
         }
 
         public Stream WriteTileDefinition()
@@ -75,6 +63,7 @@ namespace ODB
         {
             Stream stream = new Stream(s);
             Type = stream.ReadHex(4);
+            if (Type >= TypeCounter) TypeCounter++;
             Background = stream.ReadColor();
             Foreground = stream.ReadColor();
             Character = stream.ReadString(1);

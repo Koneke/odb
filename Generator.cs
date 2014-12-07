@@ -226,7 +226,7 @@ namespace ODB
                     room.Rect(),
                     TileDefinition.Definitions[0],
                     TileDefinition.Definitions[1]
-                    );
+                );
 
             foreach (Point p in Doors)
             {
