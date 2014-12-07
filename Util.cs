@@ -174,8 +174,9 @@ namespace ODB
                             Point np = new Point(
                                 rr.xy.x + x,
                                 rr.xy.y + y
-                                );
+                            );
                             if (!route[n].ContainsPoint(np)) continue;
+                            if (Game.Level.Map[np.x, np.y].Solid) continue;
 
                             //if we're actually going anywhere...
                             if (np != xy) return np;

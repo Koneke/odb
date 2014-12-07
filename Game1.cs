@@ -9,9 +9,9 @@ using Microsoft.Xna.Framework.Input;
 using xnaPoint = Microsoft.Xna.Framework.Point;
 
 //~~~ QUEST TRACKER for ?? dec ~~~
-// * Item value and paid-for status
-// * Wizard mode area select
-// * Clean up wizard mode class a bit
+// * Item value and paid-for status.
+// * Wizard mode area select.
+// * Clean up wizard mode class a bit.
 //   * Fairly low prio, since it's not part of the /game/ per se,
 //     but it /is/ fairly messy.
 // * Switch from numbers in actor def to die?
@@ -994,6 +994,8 @@ namespace ODB
                 return;
             }
 
+            //Not using GetName() here, simply because that'd yield "You"
+            //since it is the player.
             string namerow = Player.Definition.Name;
             namerow += "  ";
             namerow += "STR " + Player.Get(Stat.Strength) + "  ";

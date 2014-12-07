@@ -72,17 +72,22 @@ namespace ODB
             }
             else
             {
-                Point moveTo = new Point(0, 0);
-
                 List<Point> possibleMoves = MeatPuppet.GetPossibleMoves(true);
 
-                bool xy = possibleMoves.Contains(new Point(offset.x, offset.y));
-                bool x = possibleMoves.Contains(new Point(offset.x, 0));
-                bool y = possibleMoves.Contains(new Point(0, offset.y));
+                bool xy =
+                    possibleMoves.Contains(offset) ||
+                    DoorAt(MeatPuppet.xy + offset, Door.Closed);
+                bool x = possibleMoves.Contains(
+                    new Point(offset.x, 0)) ||
+                    DoorAt(MeatPuppet.xy + new Point(offset.x, 0), Door.Closed);
+                bool y = possibleMoves.Contains(
+                    new Point(0, offset.y)) ||
+                    DoorAt(MeatPuppet.xy + new Point(0, offset.y), Door.Closed);
 
-                if (xy)  moveTo = MeatPuppet.xy + offset; 
-                else if (x) moveTo = MeatPuppet.xy + new Point(offset.x, 0);
-                else if (y) moveTo = MeatPuppet.xy + new Point(0, offset.y);
+                     if (!xy && x) offset.y = 0;
+                else if (!xy && y) offset.x = 0;
+
+                Point moveTo = MeatPuppet.xy + offset;
                 
                 if (xy || x || y)
                 {
@@ -94,7 +99,7 @@ namespace ODB
                         if (Game.Player.Vision[moveTo.x, moveTo.y])
                         {
                             Game.Log(
-                                MeatPuppet.Definition.Name +
+                                MeatPuppet.GetName("Name") +
                                 " opens a door."
                             );
                         }
@@ -104,6 +109,12 @@ namespace ODB
 
                 MeatPuppet.Pass(true);
             }
+        }
+
+        private bool DoorAt(Point p, Door d)
+        {
+            if (Game.Level.Map[p.x, p.y] == null) return false;
+            return Game.Level.Map[p.x, p.y].Door == d;
         }
     }
 }

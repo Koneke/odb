@@ -476,15 +476,15 @@ namespace ODB
                 }
 
                 Game.Log(
-                    Definition.Name + " strikes " +
-                    target.Definition.Name + (crit ? "!" : ".")
+                    GetName("Name") + " strike"+ (ID == 0 ? " " : "s ") +
+                    target.GetName("name") + (crit ? "!" : ".")
                 );
 
                 target.Damage(damageRoll);
             }
             else
             {
-                Game.Log(Definition.Name + " swings in the air.");
+                Game.Log(Definition.GetName("Name") + " swings in the air.");
             }
         }
         public void Shoot(Actor target)
