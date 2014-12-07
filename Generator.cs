@@ -62,10 +62,12 @@ namespace ODB
                         other.Connectors
                             //0 - up, 2 - down. 1 - right, 3 - left.
                             .Where(otherConnector =>
-                                (myConnector.Direction + otherConnector.Direction)
+                                (myConnector.Direction +
+                                otherConnector.Direction)
                                     % 2 == 0)
                             .Where(otherConnector =>
-                                otherConnector.Direction != myConnector.Direction)
+                                otherConnector.Direction !=
+                                myConnector.Direction)
                             .Where(otherConnector =>
                                 !Generator.Covers(
                                     //not us or the one we try connecting to

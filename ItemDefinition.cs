@@ -116,7 +116,7 @@ namespace ODB
             ItemDefinitions[Type] = this;
 
             Components = new List<Component>();
-            while (!stream.AtFinish())
+            while (!stream.AtFinish)
                 AddComponent(
                     Component.CreateComponent(
                         stream.ReadString(),

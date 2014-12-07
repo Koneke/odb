@@ -567,6 +567,9 @@ namespace ODB
 
             switch (cmd)
             {
+                case "ai-hurt":
+                    a.Damage(IO.ReadHex(args[0]));
+                    break;
                 case "ai-sdef":
                 case "ai-setdef":
                     a.Definition = ActorDefinition.ActorDefinitions
@@ -632,15 +635,6 @@ namespace ODB
                         a.Intrinsics.RemoveAt(i);
                         break;
                     }
-                    break;
-                    #endregion
-                case "ai-addte": //add ticker
-                    #region addte
-                    a.TickingEffects.Add(new TickingEffect(
-                            a, TickingEffectDefinition.
-                                Definitions[IO.ReadHex(args[0])]
-                        )
-                    );
                     break;
                     #endregion
                 case "ai-awake":

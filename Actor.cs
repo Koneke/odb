@@ -36,13 +36,6 @@ namespace ODB
                 (t, i) => !t.Equals(other.Inventory[i])).Any())
                 return false;
 
-            bool tickingEffectsEqual =
-                TickingEffects.Count == other.TickingEffects.Count;
-            if (!tickingEffectsEqual) return false;
-            if (TickingEffects.Where(
-                (t, i) => !t.Equals(other.TickingEffects[i])).Any())
-                return false;
-
             bool lastingEffectsEqual =
                 LastingEffects.Count == other.LastingEffects.Count;
             if (!lastingEffectsEqual) return false;
@@ -64,8 +57,6 @@ namespace ODB
                 HpCurrent == other.HpCurrent &&
                 MpCurrent == other.MpCurrent &&
                 Cooldown == other.Cooldown &&
-                //Equals(LastingEffects, other.LastingEffects) &&
-                //Equals(Intrinsics, other.Intrinsics) &&
                 Awake.Equals(other.Awake) &&
                 Equals(Quiver, other.Quiver)
             ;
@@ -107,7 +98,6 @@ namespace ODB
 
         public List<BodyPart> PaperDoll;
         public List<Item> Inventory;
-        public List<TickingEffect> TickingEffects;
         public List<LastingEffect> LastingEffects;
         public List<Mod> Intrinsics;
 
@@ -151,7 +141,6 @@ namespace ODB
             foreach (DollSlot ds in definition.BodyParts)
                 PaperDoll.Add(new BodyPart(ds));
             Inventory = new List<Item>();
-            TickingEffects = new List<TickingEffect>();
             Intrinsics = new List<Mod>(Definition.SpawnIntrinsics);
             Awake = false;
             LastingEffects = new List<LastingEffect>();
@@ -417,7 +406,7 @@ namespace ODB
         {
             int weaponCount = GetWieldedItems().Count;
 
-            int multiWeaponPenalty = 3*weaponCount-1;
+            int multiWeaponPenalty = 3 * weaponCount - 1;
             multiWeaponPenalty = Math.Max(0, multiWeaponPenalty);
 
             int strBonus = Get(Stat.Strength);
@@ -445,7 +434,8 @@ namespace ODB
             if(Game.OpenRolls)
                 Game.Log(
                     String.Format(
-                    "{0}{1:+#;-#;+0}{2:+#;-#;+0}{3:+#;-#;+0}{4:+#;-#;+0} vs {5}",
+                    "{0}{1:+#;-#;+0}{2:+#;-#;+0}" +
+                    "{3:+#;-#;+0}{4:+#;-#;+0} vs {5}",
                     roll,
                     strBonus,
                     dexBonus,
@@ -458,33 +448,40 @@ namespace ODB
             bool crit = Util.Roll("1d20") >= 20;
 
             if (hitRoll >= dodgeRoll) {
-                int damageRoll = Get(Stat.Strength);
-
-                foreach (WeaponComponent wc in PaperDoll
+                foreach (AttackComponent wc in PaperDoll
                     .FindAll(x => x.Type == DollSlot.Hand)
                     .Where(x => x.Item != null)
                     .Select(bp => bp.Item.Definition)
                     .Select(idef =>
-                        (WeaponComponent)
-                        idef.GetComponent("cWeapon"))
+                        (AttackComponent)
+                        idef.GetComponent("cAttack"))
                 ) {
-                    //If the held item has a cWeapon, roll that damage
+                    //If the held item has a cAttack, roll that damage
                     //Otherwise we go with standard bash damage
                     if (wc != null)
-                        damageRoll += Util.Roll(wc.Damage, crit);
-                    else damageRoll += Util.Roll("1d4", crit);
+                    {
+                        target.Damage(
+                            Util.Roll(wc.Damage, crit) + Get(Stat.Strength));
+                        foreach (EffectComponent ec in
+                            from ec in wc.Effects
+                            let chance = ec.Chance / 255f
+                            where Util.Random.NextDouble() <= chance
+                            select ec)
+                            target.LastingEffects.Add(ec.GetEffect(target));
+                    }
+                    else
+                        target.Damage(
+                            Util.Roll("1d4", crit) + Get(Stat.Strength));
                 }
 
                 Game.Log(
                     GetName("Name") + " strike"+ (ID == 0 ? " " : "s ") +
                     target.GetName("name") + (crit ? "!" : ".")
                 );
-
-                target.Damage(damageRoll);
             }
             else
             {
-                Game.Log(Definition.GetName("Name") + " swings in the air.");
+                Game.Log(GetName("Name") + " swings in the air.");
             }
         }
         public void Shoot(Actor target)
@@ -562,7 +559,7 @@ namespace ODB
             HpCurrent -= d;
             if (HpCurrent > 0) return;
 
-            Game.Log(Definition.Name + " dies!");
+            Game.Log(GetName("Name") + " dies!");
             Item corpse = new Item(
                 xy,
                 Util.ItemDefByName(Definition.Name + " corpse"),
@@ -578,21 +575,28 @@ namespace ODB
             Game.Level.WorldActors.Remove(this);
         }
 
-        public bool HasEffect(TickingEffectDefinition def)
-        {
-            return TickingEffects.Any(x => x.Definition == def);
+        public bool HasEffect(
+            StatusType type,
+            TickingEffectDefinition ticker = null
+        ) {
+            if (ticker == null)
+                return LastingEffects.Any(
+                    le => le.Type == type);
+            return LastingEffects.Any(
+                le => le.Type == type &&
+                le.Ticker == ticker
+            );
         }
-        public bool HasEffect(StatusType type)
+        public void AddEffect(LastingEffect le)
         {
-            return LastingEffects.Any(le => le.Type == type);
+            LastingEffects.Add(le);
         }
-        public void AddEffect(TickingEffectDefinition ted)
-        {
-            TickingEffects.Add(ted.Instantiate(this));
-        }
-        public void AddEffect(StatusType type, int duration)
-        {
-            LastingEffects.Add(new LastingEffect(type, duration));
+        public void AddEffect(
+            StatusType type,
+            int duration,
+            TickingEffectDefinition ticker = null
+        ) {
+            LastingEffects.Add(new LastingEffect(this, type, duration, ticker));
         }
         public void RemoveEffect(StatusType type)
         {
@@ -806,13 +810,6 @@ namespace ODB
             }
             stream.Write(";", false);
 
-            foreach (TickingEffect te in TickingEffects)
-            {
-                stream.Write(te.WriteTickingEffect().ToString(), false);
-                stream.Write(",", false);
-            }
-            stream.Write(";", false);
-
             foreach (LastingEffect le in LastingEffects)
             {
                 stream.Write(le.WriteLastingEffect().ToString(), false);
@@ -871,16 +868,6 @@ namespace ODB
                 Inventory.Add(
                     Util.GetItemByID(IO.ReadHex(ss))
                 );
-            }
-
-            TickingEffects = new List<TickingEffect>();
-            string tickers = stream.ReadString();
-            foreach (string ticker in tickers.Split(',')
-                .Where(ticker => ticker != ""))
-            {
-                TickingEffect te;
-                TickingEffects.Add(te = new TickingEffect(ticker));
-                te.Holder = this;
             }
 
             LastingEffects = new List<LastingEffect>();

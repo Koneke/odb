@@ -10,13 +10,11 @@ namespace ODB
         {
             return x == other.x && y == other.y;
         }
-
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;
             return obj is Point && Equals((Point) obj);
         }
-
         public override int GetHashCode()
         {
             unchecked
@@ -41,7 +39,6 @@ namespace ODB
             x += offsetX;
             y += offsetY;
         }
-
         public void Nudge(Point p)
         {
             this += p;
@@ -51,27 +48,22 @@ namespace ODB
         {
             return a.x == b.x && a.y == b.y;
         }
-
         public static bool operator !=(Point a, Point b)
         {
             return !(a == b);
         }
-
         public static Point operator +(Point a, Point b)
         {
             return new Point(a.x + b.x, a.y + b.y);
         }
-
         public static Point operator -(Point a, Point b)
         {
             return new Point(a.x - b.x, a.y - b.y);
         }
-
         public static Point operator /(Point a, int b)
         {
             return new Point(a.x / b, a.y / b);
         }
-
         public static Point operator /(Point a, Point b)
         {
             return new Point(a.x / b.x, a.y / b.y);
@@ -422,9 +414,12 @@ namespace ODB
 
     public enum StatusType
     {
+        None,
+        Any,
         Stun,
         Confusion,
-        Sleep
+        Sleep,
+        Bleed,
     }
 
     public class LastingEffect
@@ -433,19 +428,28 @@ namespace ODB
             new Dictionary<StatusType, string>
         {
             { StatusType.Stun, "Stun" },
-            { StatusType.Confusion, "Confusion" }
+            { StatusType.Confusion, "Confusion" },
+            { StatusType.Bleed, "Bleed" },
         };
 
         public StatusType Type;
-        //public int Value;
         public int Life;
 
+        //-1 = permanent
+        public Actor Holder;
+        public TickingEffectDefinition Ticker;
+        public int LifeLength;
+
         public LastingEffect(
+            Actor holder,
             StatusType type,
-            int life
+            int lifeLength,
+            TickingEffectDefinition ticker = null
         ) {
+            Holder = holder;
             Type = type;
-            Life = life;
+            LifeLength = lifeLength;
+            Ticker = ticker;
         }
 
         public LastingEffect(string s)
@@ -455,7 +459,11 @@ namespace ODB
 
         public void Tick()
         {
-            Life--;
+            Life++;
+
+            if (Ticker == null) return;
+            if (Life % Ticker.Frequency == 0)
+                Ticker.Effect(Holder);
         }
 
         public Stream WriteLastingEffect()
@@ -472,5 +480,18 @@ namespace ODB
             Type = (StatusType)stream.ReadHex(4);
             Life = stream.ReadHex(4);
         }
+    }
+
+    public enum AttackType
+    {
+        Slash,
+        Pierce,
+        Bash,
+        Bite
+    }
+
+    public enum EffectType
+    {
+        Poison
     }
 }

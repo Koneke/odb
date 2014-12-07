@@ -138,6 +138,14 @@ namespace ODB
             );
             Game.Food = 9000;
 
+            LastingEffect le = new LastingEffect(
+                Player,
+                StatusType.None,
+                -1,
+                Util.TickingEffectDefinitionByName("passive hp regeneration")
+            );
+            Game.Player.AddEffect(le);
+
             SetupBrains();
 
             InvMan = new InventoryManager();
@@ -391,7 +399,7 @@ namespace ODB
                     {
                         IO.AcceptedInput.Add(
                             IO.Indexes[Game.Player.Inventory.IndexOf(item)]
-                            );
+                        );
                     }
                 },
                 CastDifficulty = 0,
@@ -431,17 +439,20 @@ namespace ODB
                     if (!Game.Player.IsAlive) return;
                     if (Util.Roll("1d6") < 5) return;
 
-                    TickingEffectDefinition bleed =
-                        Util.TickingEffectDefinitionByName("bleed");
+                    if (Game.Player.HasEffect(StatusType.Bleed)) return;
 
-                    if (Game.Player.HasEffect(bleed)) return;
                     Game.Log(
                         //todo: Note, should be startS for everyone except you
                         Game.Player.GetName("Name") +
                         " start bleeding!"
                     );
                     Game.Player.AddEffect(
-                        Util.TickingEffectDefinitionByName("bleed")
+                        new LastingEffect(
+                            Game.Player,
+                            StatusType.Bleed,
+                            -1,
+                            Util.TickingEffectDefinitionByName("bleed")
+                        )
                     );
                 },
                 CastDifficulty = 0,
@@ -623,16 +634,12 @@ namespace ODB
                 List<Actor> wa = new List<Actor>(Level.WorldActors);
                 foreach (Actor a in wa)
                 {
-                    foreach (TickingEffect effect in a.TickingEffects)
-                        effect.Tick();
-                    a.TickingEffects.RemoveAll(x => x.Die);
-                }
-
-                foreach (Actor a in wa)
-                {
                     foreach (LastingEffect effect in a.LastingEffects)
                         effect.Tick();
-                    a.LastingEffects.RemoveAll(x => x.Life <= 0);
+                    a.LastingEffects.RemoveAll(
+                        x =>
+                            x.Life > x.LifeLength &&
+                            x.LifeLength != -1);
                 }
                 Level.WorldActors = wa;
             }
@@ -996,7 +1003,7 @@ namespace ODB
 
             //Not using GetName() here, simply because that'd yield "You"
             //since it is the player.
-            string namerow = Player.Definition.Name;
+            string namerow = Util.Capitalize(Player.Definition.Name);
             namerow += "  ";
             namerow += "STR " + Player.Get(Stat.Strength) + "  ";
             namerow += "DEX " + Player.Get(Stat.Dexterity) + "  ";
@@ -1011,7 +1018,12 @@ namespace ODB
             namerow = Game.Player.LastingEffects.Aggregate(
                 namerow,
                 (current, lastingEffect) => current +
-                (" " + LastingEffect.EffectNames[lastingEffect.Type]));
+                (
+                    lastingEffect.Type == StatusType.None
+                        ? ""
+                        : " " + LastingEffect.EffectNames[lastingEffect.Type]
+                )
+            );
 
             string statrow = "";
             statrow += "[";

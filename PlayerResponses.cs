@@ -205,13 +205,7 @@ namespace ODB
             int i = IO.Indexes.IndexOf(answer[0]);
             Item item = Game.Player.Inventory[i];
 
-            WeaponComponent wc =
-                (WeaponComponent)
-                item.Definition.GetComponent("cWeapon");
-
-            List<DollSlot> equipSlots;
-            if (wc != null) equipSlots = wc.EquipSlots;
-            else equipSlots = item.GetHands(Game.Player);
+            List<DollSlot> equipSlots = item.GetHands(Game.Player);
 
             if (!Game.Player.CanEquip(equipSlots))
                 Game.Log("You'd need more hands to do that!");

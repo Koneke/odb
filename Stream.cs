@@ -19,10 +19,7 @@ namespace ODB
             Read = 0;
         }
 
-        public bool AtFinish()
-        {
-            return Read == _stream.Length;
-        }
+        public bool AtFinish { get { return Read == _stream.Length; } }
 
         public override string ToString()
         {
@@ -151,14 +148,15 @@ namespace ODB
 
             if(s[0] != opener) throw new ArgumentException();
 
-            string ss = "";
-
-            for (int i = s.Length-1; i >= 0; i--)
+            int depth = 1;
+            int i = 1;
+            while (depth > 0)
             {
-                if (s[i] != closer) continue;
-                ss = s.Substring(1, i - 1);
+                if (s[i] == opener) depth++;
+                if (s[i] == closer) depth--;
+                i++;
             }
-
+            string ss = s.Substring(1, i - 2);
             Read += ss.Length + 2;
 
             return ss;

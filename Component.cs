@@ -18,22 +18,15 @@ namespace ODB
             //Component type
             switch (stream.ReadString())
             {
-                case "cUsable":
-                    return UsableComponent.Create(content);
-                case "cWeapon":
-                    return WeaponComponent.Create(content);
-                case "cWearable":
-                    return WearableComponent.Create(content);
-                case "cProjectile":
-                    return ProjectileComponent.Create(content);
-                case "cLauncher":
-                    return LauncherComponent.Create(content);
-                case "cEdible":
-                    return EdibleComponent.Create(content);
-                case "cContainer":
-                    return ContainerComponent.Create(content);
-                default:
-                    throw new ArgumentException();
+                case "cUsable": return UsableComponent.Create(content);
+                case "cAttack": return AttackComponent.Create(content);
+                case "cWearable": return WearableComponent.Create(content);
+                case "cProjectile": return ProjectileComponent.Create(content);
+                case "cLauncher": return LauncherComponent.Create(content);
+                case "cEdible": return EdibleComponent.Create(content);
+                case "cContainer": return ContainerComponent.Create(content);
+                case "cEffect": return EffectComponent.Create(content);
+                default: throw new ArgumentException();
             }
         }
     }
@@ -63,28 +56,34 @@ namespace ODB
         }
     }
 
-    public class WeaponComponent : Component
+    public class AttackComponent : Component
     {
-        public override string GetComponentType() { return "cWeapon"; }
+        public override string GetComponentType() { return "cAttack"; }
 
         public string Damage;
-        //todo: future: Have handedness depend on weight?
-        public int Hands;
-        public List<DollSlot> EquipSlots {
-            get {
-                List<DollSlot> slots = new List<DollSlot>();
-                for(int i = 0; i < Hands; i++)
-                    slots.Add(DollSlot.Hand);
-                return slots;
-            }
-        }
+        public AttackType AttackType;
+        public List<EffectComponent> Effects; 
 
-        public static WeaponComponent Create(string content)
+        public static AttackComponent Create(string content)
         {
             Stream stream = new Stream(content);
-            return new WeaponComponent {
-                Damage = stream.ReadString(),
-                Hands = stream.ReadHex(2)
+
+            string damage = stream.ReadString();
+            AttackType attackType = Util.ReadAttackType(stream.ReadString());
+
+            List<EffectComponent> effects = new List<EffectComponent>();
+            Stream effectsBlock = new Stream(stream.ReadBlock());
+            while (!effectsBlock.AtFinish)
+                effects.Add(
+                    (EffectComponent)
+                    CreateComponent(
+                        effectsBlock.ReadString(),
+                        effectsBlock.ReadBlock()));
+
+            return new AttackComponent {
+                Damage = damage,
+                AttackType = attackType,
+                Effects = effects
             };
         }
 
@@ -94,7 +93,11 @@ namespace ODB
             stream.Write(GetComponentType());
             stream.Write("{", false);
             stream.Write(Damage);
-            stream.Write(Hands, 2);
+            stream.Write(Util.WriteAttackType(AttackType));
+            stream.Write("{", false);
+            foreach (EffectComponent ec in Effects)
+                stream.Write(ec.WriteComponent(), false);
+            stream.Write("}", false);
             stream.Write("}", false);
             return stream;
         }
@@ -271,6 +274,49 @@ namespace ODB
             );
             stream.Write("}", false);
             return stream;
+        }
+    }
+
+    public class EffectComponent : Component
+    {
+        public override string GetComponentType() { return "cEffect"; }
+
+        public EffectType EffectType;
+        public int Chance;
+        public string Length;
+
+        public static EffectComponent Create(string content)
+        {
+            Stream stream = new Stream(content);
+            return new EffectComponent
+            {
+                EffectType = Util.ReadEffectType(stream.ReadString()),
+                Chance = stream.ReadHex(2),
+                Length = stream.ReadString()
+            };
+        }
+
+        public override Stream WriteComponent()
+        {
+            Stream stream = new Stream();
+            stream.Write(Util.WriteEffectType(EffectType));
+            stream.Write(Chance, 2);
+            stream.Write(Length);
+            return stream;
+        }
+
+        public LastingEffect GetEffect(Actor holder)
+        {
+            switch (EffectType)
+            {
+                case EffectType.Poison:
+                    return new LastingEffect(
+                        holder,
+                        StatusType.Confusion,
+                        Util.Roll(Length)
+                    );
+                default: throw new ArgumentException();
+            }
         }
     }
 }

@@ -190,11 +190,9 @@ namespace ODB
         {
             int hands;
 
-            WeaponComponent wc = (WeaponComponent)GetComponent("cWeapon");
             LauncherComponent lc = (LauncherComponent)GetComponent("cLauncher");
 
-            if(wc != null) hands = wc.Hands;
-            else if (lc != null) hands = 2;
+            if (lc != null) hands = 2;
             //360 decagram, i.e. 3.6kg, or ~8lb
             //todo: adjust for actor strength
             else hands = Definition.Weight > 360 ? 2 : 1;

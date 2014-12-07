@@ -320,5 +320,50 @@ namespace ODB
                 s.Substring(0, 1).ToUpper() +
                 s.Substring(1, s.Length - 1);
         }
+
+        public static AttackType ReadAttackType(string s)
+        {
+            switch (s.ToLower())
+            {
+                case "at_slash": return AttackType.Slash;
+                case "at_pierce": return AttackType.Pierce;
+                case "at_bash": return AttackType.Bash;
+                case "at_bite": return AttackType.Bite;
+                default: throw new ArgumentException();
+            }
+        }
+        public static string WriteAttackType(AttackType type)
+        {
+            switch (type)
+            {
+                case AttackType.Slash: return "at_slash";
+                case AttackType.Pierce: return "at_pierce";
+                case AttackType.Bash: return "at_bash";
+                case AttackType.Bite: return "at_bite";
+                default: throw new ArgumentException();
+            }
+        }
+
+        public static EffectType ReadEffectType(string s)
+        {
+            switch (s.ToLower())
+            {
+                case "et_poison": return EffectType.Poison;
+                default: throw new ArgumentException();
+            }
+        }
+        public static string WriteEffectType(EffectType type)
+        {
+            switch (type)
+            {
+                case EffectType.Poison: return "et_type";
+                default: throw new ArgumentException();
+            }
+        }
+
+        public static Point GetTarget()
+        {
+            return Game.Target;
+        }
     }
 }
