@@ -1,0 +1,5 @@
+﻿note, actors.def and items.def IDs use the same pool.
+0000-8000 are actors
+8001-ffff are items
+at 8800 start corpses atm, with actor 0000 having its corpse at 8800,
+0003 at 8803 etc.

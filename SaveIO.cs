@@ -172,16 +172,15 @@ namespace ODB
 
         public static void ReadItemDefinitionsFromFile(string path)
         {
-            while (ItemDefinition.ItemDefinitions[
-                gObjectDefinition.TypeCounter
-                ] != null)
+            while (ItemDefinition.ItemDefinitions
+                [gObjectDefinition.TypeCounter] != null)
                 gObjectDefinition.TypeCounter++;
 
             string content = ReadFromFile(path);
             List<string> definitions = content.Split(
                 new[] { "##" },
                 StringSplitOptions.RemoveEmptyEntries
-                ).ToList();
+            ).ToList();
 
             definitions.ForEach(definition => new ItemDefinition(definition));
         }

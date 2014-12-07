@@ -139,7 +139,7 @@ namespace ODB
             Game.Food = 9000;
 
             LastingEffect le = new LastingEffect(
-                Player,
+                Player.ID,
                 StatusType.None,
                 -1,
                 Util.TickingEffectDefinitionByName("passive hp regeneration")
@@ -448,7 +448,7 @@ namespace ODB
                     );
                     Game.Player.AddEffect(
                         new LastingEffect(
-                            Game.Player,
+                            Game.Player.ID,
                             StatusType.Bleed,
                             -1,
                             Util.TickingEffectDefinitionByName("bleed")
@@ -860,7 +860,7 @@ namespace ODB
             //border texts
             if (InventoryManager.CurrentContainer == -1)
                 _inventoryConsole.CellData.Print(
-                    2, 0, Player.Definition.Name, Color.White);
+                    2, 0, Player.GetName("Name", true), Color.White);
             else
                 _inventoryConsole.CellData.Print(
                     2, 0,
@@ -1003,7 +1003,7 @@ namespace ODB
 
             //Not using GetName() here, simply because that'd yield "You"
             //since it is the player.
-            string namerow = Util.Capitalize(Player.Definition.Name);
+            string namerow = Game.Player.GetName("Name", true);
             namerow += "  ";
             namerow += "STR " + Player.Get(Stat.Strength) + "  ";
             namerow += "DEX " + Player.Get(Stat.Dexterity) + "  ";

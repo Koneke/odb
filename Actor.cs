@@ -160,7 +160,7 @@ namespace ODB
         //              format this-a-way.
         //           3. Automatically handle player being referred to as "you"
         //              instead of "Moribund" or whatever they choose.
-        public string GetName(string format)
+        public string GetName(string format, bool realname = false)
         {
             string result;
 
@@ -184,7 +184,7 @@ namespace ODB
                     throw new ArgumentException();
             }
 
-            if (ID == 0) result = "you";
+            if (ID == 0 && !realname) result = "you";
 
             if (format[0] >= 'A' && format[0] <= 'Z')
                 result = Util.Capitalize(result);
@@ -447,15 +447,19 @@ namespace ODB
 
             bool crit = Util.Roll("1d20") >= 20;
 
-            if (hitRoll >= dodgeRoll) {
-                foreach (AttackComponent wc in PaperDoll
+            if (hitRoll >= dodgeRoll)
+            {
+                List<AttackComponent> attacks =
+                    PaperDoll
                     .FindAll(x => x.Type == DollSlot.Hand)
                     .Where(x => x.Item != null)
                     .Select(bp => bp.Item.Definition)
                     .Select(idef =>
                         (AttackComponent)
                         idef.GetComponent("cAttack"))
-                ) {
+                    .ToList();
+
+                foreach(AttackComponent wc in attacks) {
                     //If the held item has a cAttack, roll that damage
                     //Otherwise we go with standard bash damage
                     if (wc != null)
@@ -470,9 +474,17 @@ namespace ODB
                             target.LastingEffects.Add(ec.GetEffect(target));
                     }
                     else
+                    {
                         target.Damage(
                             Util.Roll("1d4", crit) + Get(Stat.Strength));
+                    }
                 }
+
+                //unarmed
+                //todo: use "natural attack" here
+                if(attacks.Count == 0)
+                    target.Damage(
+                        Util.Roll("1d4", crit) + Get(Stat.Strength));
 
                 Game.Log(
                     GetName("Name") + " strike"+ (ID == 0 ? " " : "s ") +
@@ -563,10 +575,8 @@ namespace ODB
             Item corpse = new Item(
                 xy,
                 Util.ItemDefByName(Definition.Name + " corpse"),
-                //ItemDefinition.ItemDefinitions[
-                    //Definition.CorpseType],
                 0, Intrinsics
-                );
+            );
             //should always be ided
             //or maybe not..? could be a mechanic in and of itself
             corpse.Identify();
@@ -596,7 +606,7 @@ namespace ODB
             int duration,
             TickingEffectDefinition ticker = null
         ) {
-            LastingEffects.Add(new LastingEffect(this, type, duration, ticker));
+            LastingEffects.Add(new LastingEffect(ID, type, duration, ticker));
         }
         public void RemoveEffect(StatusType type)
         {

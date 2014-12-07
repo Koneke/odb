@@ -204,14 +204,6 @@ namespace ODB
 
             CorpseType = stream.ReadHex(4);
 
-            if (Util.ItemDefByName(Name + " corpse") == null)
-            {
-                //should be put into a func of its own..?
-                ItemDefinition corpse = new ItemDefinition(
-                    null, Color.Red, "%", Name + " corpse");
-                CorpseType = corpse.Type;
-            }
-
             Spellbook = new List<int>();
             string spellbook = stream.ReadString();
             foreach (string spell in spellbook.Split(',')

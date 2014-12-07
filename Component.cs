@@ -311,7 +311,7 @@ namespace ODB
             {
                 case EffectType.Poison:
                     return new LastingEffect(
-                        holder,
+                        holder.ID,
                         StatusType.Confusion,
                         Util.Roll(Length)
                     );

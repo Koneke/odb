@@ -436,12 +436,12 @@ namespace ODB
         public int Life;
 
         //-1 = permanent
-        public Actor Holder;
+        public int Holder;
         public TickingEffectDefinition Ticker;
         public int LifeLength;
 
         public LastingEffect(
-            Actor holder,
+            int holder,
             StatusType type,
             int lifeLength,
             TickingEffectDefinition ticker = null
@@ -463,7 +463,7 @@ namespace ODB
 
             if (Ticker == null) return;
             if (Life % Ticker.Frequency == 0)
-                Ticker.Effect(Holder);
+                Ticker.Effect(Util.GetActorByID(Holder));
         }
 
         public Stream WriteLastingEffect()
@@ -471,14 +471,20 @@ namespace ODB
             Stream stream = new Stream();
             stream.Write((int)Type, 4);
             stream.Write(Life, 4);
+            stream.Write(Holder, 4);
+            stream.Write(Ticker.ID, 4);
+            stream.Write(LifeLength, 8);
             return stream;
         }
-
         public void ReadLastingEffect(string s)
         {
             Stream stream = new Stream(s);
             Type = (StatusType)stream.ReadHex(4);
             Life = stream.ReadHex(4);
+            Holder = stream.ReadHex(4);
+            Ticker = TickingEffectDefinition.Definitions
+                [stream.ReadHex(4)];
+            LifeLength = stream.ReadHex(8);
         }
     }
 
