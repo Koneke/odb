@@ -188,7 +188,7 @@ namespace ODB
         //        those (resulting in two separate room "blobs").
         //      Occasionally generates doors in corners, which should not be
         //        possible.
-        public Level Generate()
+        public Level Generate(int depth)
         {
             Level newLevel = new Level(80, 25);
 
@@ -252,15 +252,26 @@ namespace ODB
                 .ToList()
                 .SelectRandom().Stairs = Stairs.Up;
 
+            float difficulty = Util.Game.Player.Level + depth + 1;
+
+            List<ActorDefinition> possibleMonsters =
+                Monster.MonstersByDifficulty
+                .Where(kvp => kvp.Key <= difficulty)
+                .Where(kvp => kvp.Key * 4 >= difficulty)
+                .SelectMany(kvp => kvp.Value)
+                .Where(ad => ad.Type != 0) //no playermonsters, please, thanks.
+                .ToList();
+
             const int monsterCount = 7;
             for (int i = 0; i < monsterCount; i++)
             {
+                ActorDefinition monster =
+                    possibleMonsters.SelectRandom();
                 newLevel.Spawn(
                     new Actor(
                         newLevel.RandomOpenPoint(),
-                        Util.ADefByName("rat"),
-                        //todo: tweak this based on depth
-                        1
+                        monster,
+                        (int)Math.Floor(difficulty/2f)
                     )
                 );
             }

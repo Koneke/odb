@@ -5,6 +5,14 @@ using Microsoft.Xna.Framework;
 
 namespace ODB
 {
+    public enum ItemCategory
+    {
+        Potion = 0x00,
+        Scroll = 0x01,
+        Longsword = 0x10,
+        Twohander = 0x11,
+    }
+
     public class ItemDefinition : gObjectDefinition
     {
         protected bool Equals(ItemDefinition other)
@@ -48,19 +56,30 @@ namespace ODB
             new ItemDefinition[0xFFFF];
 
         public static Dictionary<int, List<string>> Appearances =
-            new Dictionary<int, List<string>>
+        #region appearances
+             new Dictionary<int, List<string>>
             {
-                {0, new List<string>{
+                {(int)ItemCategory.Potion, new List<string>{
                     "violet potion",
-                    "turqoise potion"
-                }}
+                    "turqoise potion",
+                    "bubbling potion",
+                }},
+                {(int)ItemCategory.Scroll, new List<string>{
+                    "scroll labelled ZELGO MER",
+                    "scroll labelled JUYED AWK YACC",
+                }},
+                {(int)ItemCategory.Longsword, new List<string>{
+                    "long blade",
+                    "curved blade"
+                }},
+                {(int)ItemCategory.Twohander, new List<string>{
+                    "huge sword",
+                }},
             };
+        #endregion
         public static List<int> IdentifiedDefs = new List<int>();
 
         public bool Stacking;
-        //groups potions together and what not
-        //mainly, unidentified items of different defs take from the same
-        //random appearance pool (but still only one appearance per definition)
         public int Category;
         public int Weight;
 

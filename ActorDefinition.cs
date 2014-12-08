@@ -78,6 +78,8 @@ namespace ODB
         public string Strength, Dexterity, Intelligence;
         public int Speed, Quickness;
         public string HitDie, ManaDie;
+        public int Experience;
+        public int Difficulty;
         public List<DollSlot> BodyParts;
         public int CorpseType;
         public List<int> Spellbook;
@@ -148,11 +150,13 @@ namespace ODB
             Stream stream = WriteGObjectDefinition();
 
             stream.Write(Named);
+            stream.Write(HitDie);
+            stream.Write(ManaDie);
+            stream.Write(Experience, 2); //xp per level
+            stream.Write(Difficulty, 2);
             stream.Write(Strength);
             stream.Write(Dexterity);
             stream.Write(Intelligence);
-            stream.Write(HitDie);
-            stream.Write(ManaDie);
             stream.Write(Speed, 2);
             stream.Write(Quickness, 2);
 
@@ -187,11 +191,13 @@ namespace ODB
             Stream stream = ReadGObjectDefinition(s);
 
             Named = stream.ReadBool();
+            HitDie = stream.ReadString();
+            ManaDie = stream.ReadString();
+            Experience = stream.ReadHex(2);
+            Difficulty = stream.ReadHex(2);
             Strength = stream.ReadString();
             Dexterity = stream.ReadString();
             Intelligence = stream.ReadString();
-            HitDie = stream.ReadString();
-            ManaDie = stream.ReadString();
             Speed = stream.ReadHex(2);
             Quickness = stream.ReadHex(2);
 
@@ -230,6 +236,11 @@ namespace ODB
                 stream.ReadString(),
                 stream.ReadBlock()
             );
+
+            if (!Monster.MonstersByDifficulty.ContainsKey(Difficulty))
+                Monster.MonstersByDifficulty.Add(
+                    Difficulty, new List<ActorDefinition>());
+            Monster.MonstersByDifficulty[Difficulty].Add(this);
 
             ActorDefinitions[Type] = this;
             return stream;

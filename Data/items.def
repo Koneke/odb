@@ -1,5 +1,6 @@
 8800XXXXXXFF0000%moribund corpse	;0	00	1b58	cEdible;{09c4}##
 8801XXXXXXFF0000%rat corpse		;0	00	00c8	cEdible;{03e8}##
+8802XXXXXXFF0000%newt corpse		;0	00	00c8	cEdible;{03e8}##
 8001XXXXXXFFC0CB[apron			;0	00	00c8	cWearable;{1,;00}##
 8002XXXXXXA52A2Aarrow			;1	00	0002	cProjectile;{1d2}##
 8003XXXXXXA52A2A)bow			;0	00	005a	cLauncher;{8005,;1d6;}##

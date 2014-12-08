@@ -333,5 +333,12 @@ namespace ODB
                 Game.Log("You are not wearing that.");
             }
         }
+
+        public void HandleCancel()
+        {
+            if(State != InventoryState.Browsing)
+                State = InventoryState.Browsing;
+            else IO.IOState = InputType.PlayerInput;
+        }
     }
 }

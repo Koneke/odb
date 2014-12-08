@@ -670,13 +670,15 @@ namespace ODB
             Game.Level.WorldActors.Remove(this);
 
             if(attacker != null)
-                attacker.GiveExperience(10);
+                attacker.GiveExperience(Definition.Experience * Level);
         }
 
         public void GiveExperience(int amount)
         {
             int lPre = Level;
+
             ExperiencePoints += amount;
+
             if (LevelFromExperience(ExperiencePoints) != lPre)
             {
                 Game.Log(
@@ -694,9 +696,18 @@ namespace ODB
 
         public int LevelFromExperience(int amount)
         {
-            int level = amount - (amount % 100);
-            level /= 100;
-            return level + 1;
+            int xp = amount;
+            int levelReq = 20; //for level 2
+
+            int newLevel = 1;
+            while (xp >= levelReq)
+            {
+                newLevel++;
+                xp -= levelReq;
+                levelReq *= 2;
+            }
+
+            return newLevel;
         }
 
         public bool HasEffect(

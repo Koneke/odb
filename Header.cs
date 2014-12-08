@@ -500,7 +500,6 @@ namespace ODB
 
     public class AttackMessage
     {
-
         public static Dictionary<AttackType, List<AttackMessage>> AttackMessages
             = new Dictionary<AttackType, List<AttackMessage>>
         {
@@ -585,5 +584,11 @@ namespace ODB
     public enum EffectType
     {
         Poison
+    }
+
+    public class Monster
+    {
+        public static Dictionary<int, List<ActorDefinition>>
+            MonstersByDifficulty = new Dictionary<int, List<ActorDefinition>>();
     }
 }

@@ -63,7 +63,7 @@ namespace ODB
                     if (depth + 1 > Game.Levels.Count - 1)
                     {
                         Generator g = new Generator();
-                        Game.Levels.Add(g.Generate());
+                        Game.Levels.Add(g.Generate(depth + 1));
                     }
                     Game.SwitchLevel(Game.Levels[depth + 1], true);
                     Game.Log("You descend the stairs...");

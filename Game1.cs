@@ -18,7 +18,6 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 
 //~~~ QUEST TRACKER for 8 dec ~~~
 // * Item value (for generation purposes).
-// * Look into hitdie.
 
 namespace ODB
 {
@@ -133,7 +132,7 @@ namespace ODB
                 1
             );
 
-            Levels.Add(new Generator().Generate());
+            Levels.Add(new Generator().Generate(1));
             Level = Levels[0];
 
             Level.Spawn(Player);
@@ -177,21 +176,33 @@ namespace ODB
             #region ui interaction
             if (IO.KeyPressed(Keys.Escape))
             {
-                if (WizMode) {
-                    WizMode = false; IO.IOState = InputType.PlayerInput; }
-                else if (IO.IOState != InputType.PlayerInput)
+                if (WizMode)
                 {
-                    //LH-021214: Temporary hack to make sure you can't cancel
-                    //           using an item or casting a spell without
-                    //           targeting. This is, well, okay-ish for now,
-                    //           if slightly annoying. This is mainly because
-                    //           a cancelled item use would otherwise spend a
-                    //           charge without doing anything.
-                    //           We'll see which way turns out the best.
-                    if(Caster == null)
-                        IO.IOState = InputType.PlayerInput;
+                    WizMode = false;
+                    IO.IOState = InputType.PlayerInput;
                 }
-                else Exit();
+                else
+                {
+                    switch (IO.IOState)
+                    {
+                        case InputType.Inventory:
+                            InvMan.HandleCancel();
+                            break;
+                        default:
+                            //LH-021214: Temporary hack to make sure you can't
+                            //           cancel using an item or casting a spell
+                            //           without targeting. This is, well,
+                            //           okay-ish for now, if slightly annoying.
+                            //           This is mainly because a cancelled item
+                            //           use would otherwise spend a charge
+                            //           without doing anything. We'll see which
+                            //           way turns out the best.
+                            if (Caster == null)
+                                IO.IOState = InputType.PlayerInput;
+                            else Exit();
+                            break;
+                    }
+                }
             }
 
             if (IO.KeyPressed((Keys)0x6B)) //np+
@@ -252,8 +263,9 @@ namespace ODB
 
             if (IO.KeyPressed(Keys.F9))
             {
-                Level level = new Generator().Generate();
                 int index = Levels.IndexOf(Game.Level);
+                Level level = new Generator()
+                    .Generate(index);
                 Levels.RemoveAt(index);
                 Levels.Insert(index, level);
                 SwitchLevel(level);
@@ -1052,7 +1064,6 @@ namespace ODB
             statrow += "]";
 
             statrow += " ";
-
             statrow += "[";
             statrow += ("" + Player.MpCurrent).PadLeft(3, ' ');
             statrow += "/";
@@ -1061,7 +1072,7 @@ namespace ODB
 
             statrow += " ";
             statrow += "XP:";
-            statrow += Player.Level+"";
+            statrow += Player.Level + "";
 
             statrow += " ";
             statrow += "T:";
