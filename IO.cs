@@ -189,6 +189,10 @@ namespace ODB
         }
 
         public static InputType IOState = InputType.PlayerInput;
+        //todo: should keep info about source as well
+        //      since the item is sometime removed
+        //      -actor.ID should be actor inventory
+        public static Item UsedItem;
         public static string Question;
         public static string Answer;
 

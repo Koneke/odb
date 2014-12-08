@@ -90,6 +90,7 @@ namespace ODB
         public List<int> Spellbook;
         //intrinsics spawned with
         public List<Mod> SpawnIntrinsics;
+        public AttackComponent NaturalAttack;
 
         public ActorDefinition(
             Color? background, Color foreground,
@@ -98,8 +99,7 @@ namespace ODB
             List<DollSlot> bodyParts,
             List<int> spellbook,
             bool named
-            )
-            : base(background, foreground, tile, name) {
+        ) : base(background, foreground, tile, name) {
             Strength = strength;
             Dexterity = dexterity;
             Intelligence = intelligence;
@@ -114,7 +114,12 @@ namespace ODB
             Spellbook = spellbook ?? new List<int>();
             Named = named;
             SpawnIntrinsics = new List<Mod>();
-            }
+            NaturalAttack = new AttackComponent
+            {
+                AttackType = AttackType.Bash,
+                Damage = "1d4"
+            };
+        }
 
         public ActorDefinition(string s) : base(s)
         {
@@ -181,9 +186,10 @@ namespace ODB
             }
             stream.Write(";", false);
 
+            stream.Write(NaturalAttack.WriteComponent().ToString(), false);
+
             return stream;
         }
-
         public Stream ReadActorDefinition(string s)
         {
             Stream stream = ReadGObjectDefinition(s);
@@ -218,12 +224,20 @@ namespace ODB
                     where mod != ""
                     select new Mod(
                         (ModType)
-                            IO.ReadHex(mod.Split(':')[0]),
+                        IO.ReadHex(mod.Split(':')[0]),
                         IO.ReadHex(mod.Split(':')[1])
-                        )
+                    )
                 ) {
                     SpawnIntrinsics.Add(m);
                 }
+
+            //nat attack
+            NaturalAttack =
+            (AttackComponent)
+            Component.CreateComponent(
+                stream.ReadString(),
+                stream.ReadBlock()
+            );
 
             ActorDefinitions[Type] = this;
             return stream;

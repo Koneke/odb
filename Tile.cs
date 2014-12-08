@@ -85,6 +85,9 @@ namespace ODB
         public Stairs Stairs;
         public string Engraving;
 
+        //no need to save
+        public Point Position;
+
         public Tile(
             TileDefinition definition,
             Door doors = Door.None,
@@ -114,7 +117,6 @@ namespace ODB
             stream.Write(Engraving);
             return stream;
         }
-
         public Stream ReadTile(string s)
         {
             Stream stream = new Stream(s);

@@ -267,8 +267,8 @@ namespace ODB
                 case "lv-new":
                     #region new
                     bool hadplayer = false;
-                    Game.Level.LevelSize.x = IO.ReadHex(args[0]);
-                    Game.Level.LevelSize.y = IO.ReadHex(args[1]);
+                    Game.Level.Size.x = IO.ReadHex(args[0]);
+                    Game.Level.Size.y = IO.ReadHex(args[1]);
                     if (Game.Level.WorldActors.Contains(Game.Player))
                         hadplayer = true;
                     Game.Level.Clear();
@@ -331,6 +331,7 @@ namespace ODB
                     if (args.Length >= 5)
                     {
                         Game.Level.CreateRoom(
+                            Game.Level,
                             new Rect(
                                 new Point(
                                     IO.ReadHex(args[0]),

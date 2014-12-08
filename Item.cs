@@ -223,9 +223,9 @@ namespace ODB
                 if (Count > 0) return;
 
                 //LH-021214: Spent last of stacking item -> Remove it.
+                //todo: this is player-centric and dumb
                 Game.Player.Inventory.Remove(this);
-                Game.Level.AllItems.Remove(this);
-                Game.Level.WorldItems.Remove(this);
+                Game.Level.Despawn(this);
             }
             else
             {
@@ -233,6 +233,14 @@ namespace ODB
                 //           charges, they remain, but uncharged (so they can
                 //           potentially be recharged later).
                 Count--;
+
+                //IF we already were at 0, but could still be used
+                //we were a consumable
+                if (Count != -1) return;
+
+                //todo: this is player-centric and dumb
+                Game.Player.Inventory.Remove(this);
+                Game.Level.Despawn(this);
             }
         }
 

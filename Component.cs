@@ -26,6 +26,10 @@ namespace ODB
                 case "cEdible": return EdibleComponent.Create(content);
                 case "cContainer": return ContainerComponent.Create(content);
                 case "cEffect": return EffectComponent.Create(content);
+                case ReadableComponent.Type:
+                    return ReadableComponent.Create(content);
+                case LearnableComponent.Type:
+                    return LearnableComponent.Create(content);
                 default: throw new ArgumentException();
             }
         }
@@ -40,9 +44,7 @@ namespace ODB
         public static UsableComponent Create(string content)
         {
             Stream stream = new Stream(content);
-            return new UsableComponent {
-                UseEffect = stream.ReadHex(4)
-            };
+            return new UsableComponent { UseEffect = stream.ReadHex(4) };
         }
 
         public override Stream WriteComponent()
@@ -62,7 +64,12 @@ namespace ODB
 
         public string Damage;
         public AttackType AttackType;
-        public List<EffectComponent> Effects; 
+        public List<EffectComponent> Effects;
+
+        public AttackComponent()
+        {
+            Effects = new List<EffectComponent>();
+        }
 
         public static AttackComponent Create(string content)
         {
@@ -279,7 +286,8 @@ namespace ODB
 
     public class EffectComponent : Component
     {
-        public override string GetComponentType() { return "cEffect"; }
+        public const string Type = "cEffect";
+        public override string GetComponentType() { return Type; }
 
         public EffectType EffectType;
         public int Chance;
@@ -299,9 +307,12 @@ namespace ODB
         public override Stream WriteComponent()
         {
             Stream stream = new Stream();
+            stream.Write(Type);
+            stream.Write("{", false);
             stream.Write(Util.WriteEffectType(EffectType));
             stream.Write(Chance, 2);
             stream.Write(Length);
+            stream.Write("}", false);
             return stream;
         }
 
@@ -317,6 +328,60 @@ namespace ODB
                     );
                 default: throw new ArgumentException();
             }
+        }
+    }
+
+    public class ReadableComponent : Component
+    {
+        public const string Type = "cReadable";
+        public override string GetComponentType() { return Type; }
+
+        public int Effect;
+
+        public static ReadableComponent Create(string content)
+        {
+            Stream stream = new Stream(content);
+            int effect = stream.ReadHex(4);
+            return new ReadableComponent {
+                Effect = effect,
+            };
+        }
+
+        public override Stream WriteComponent()
+        {
+            Stream stream = new Stream();
+            stream.Write(Type);
+            stream.Write("{", false);
+            stream.Write(Effect, 4);
+            stream.Write("}", false);
+            return stream;
+        }
+    }
+
+    public class LearnableComponent : Component
+    {
+        public const string Type = "cLearnable";
+        public override string GetComponentType() { return Type; }
+
+        public int Spell;
+
+        public static LearnableComponent Create(string content)
+        {
+            Stream stream = new Stream(content);
+            return new LearnableComponent
+            {
+                Spell = stream.ReadHex(4)
+            };
+        }
+
+        public override Stream WriteComponent()
+        {
+            Stream stream = new Stream();
+            stream.Write(Type);
+            stream.Write("{", false);
+            stream.Write(Spell, 4);
+            stream.Write("}", false);
+            return stream;
         }
     }
 }

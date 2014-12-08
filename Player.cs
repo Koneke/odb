@@ -46,6 +46,8 @@ namespace ODB
             CheckQuiver();
             CheckLook();
             CheckEat();
+            CheckEngrave();
+            CheckRead();
         }
 
         //return whether we moved or not
@@ -58,11 +60,13 @@ namespace ODB
                     Game.Player.xy.y].Stairs == Stairs.Down)
                 {
                     int depth = Game.Levels.IndexOf(Game.Level);
-                    if (depth + 1 <= Game.Levels.Count - 1)
+                    if (depth + 1 > Game.Levels.Count - 1)
                     {
-                        Game.SwitchLevel(Game.Levels[depth + 1]);
-                        Game.Log("You descend the stairs...");
+                        Generator g = new Generator();
+                        Game.Levels.Add(g.Generate());
                     }
+                    Game.SwitchLevel(Game.Levels[depth + 1], true);
+                    Game.Log("You descend the stairs...");
                 }
 
             if (IO.KeyPressed(Keys.OemComma) && IO.ShiftState)
@@ -73,7 +77,7 @@ namespace ODB
                     int depth = Game.Levels.IndexOf(Game.Level);
                     if (depth - 1 >= 0)
                     {
-                        Game.SwitchLevel(Game.Levels[depth - 1]);
+                        Game.SwitchLevel(Game.Levels[depth - 1], true);
                         Game.Log("You ascend the stairs...");
                     }
                 }
@@ -488,6 +492,56 @@ namespace ODB
                     PlayerResponses.Eat
                 );
             else Game.Log("You have nothing to eat.");
+        }
+
+        private static void CheckEngrave()
+        {
+            if (!IO.KeyPressed(Keys.E) || !IO.ShiftState) return;
+
+            string question = "Engrave what?";
+            IO.AcceptedInput.Clear();
+            IO.AcceptedInput.AddRange(IO.Indexes.ToCharArray());
+
+            IO.AskPlayer(
+                question,
+                InputType.QuestionPrompt,
+                PlayerResponses.Engrave
+            );
+        }
+
+        private static void CheckRead()
+        {
+            if (!IO.KeyPressed(Keys.R) || IO.ShiftState) return;
+
+            List<Item> readable = Game.Player.Inventory
+                .Where(item =>
+                    item.HasComponent(ReadableComponent.Type) ||
+                    item.HasComponent(LearnableComponent.Type))
+                .ToList();
+
+            if (readable.Count <= 0)
+            {
+                Game.Log("You have nothing to read.");
+                return;
+            }
+
+            IO.AcceptedInput.Clear();
+            IO.AcceptedInput.AddRange(
+                readable
+                .Select(item => Game.Player.Inventory.IndexOf(item))
+                .Select(index => IO.Indexes[index])
+            );
+
+            string question = "Read what? [";
+            question += IO.AcceptedInput.Aggregate(
+                "", (c, n) => c + n);
+            question += "] ";
+
+            IO.AskPlayer(
+                question,
+                InputType.QuestionPromptSingle,
+                PlayerResponses.Read
+            );
         }
     }
 }

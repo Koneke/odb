@@ -8,10 +8,11 @@ namespace ODB
     {
         public string Name;
 
-        public Point LevelSize;
+        public Point Size;
 
         public Tile[,] Map;
         public bool[,] Seen;
+        public bool[,] Blood;
         public List<Room> Rooms;
 
         public List<Actor> WorldActors;
@@ -25,7 +26,7 @@ namespace ODB
         public Level(
             int levelWidth, int levelHeight
         ) {
-            LevelSize = new Point(levelWidth, levelHeight);
+            Size = new Point(levelWidth, levelHeight);
             Clear();
             ActorPositions = new Dictionary<Room, List<Actor>>();
             ActorRooms = new Dictionary<Actor, List<Room>>();
@@ -38,10 +39,16 @@ namespace ODB
             ActorRooms = new Dictionary<Actor, List<Room>>();
         }
 
+        public Tile TileAt(Point p)
+        {
+            return Map[p.x, p.y];
+        }
+
         public void Clear()
         {
-            Map = new Tile[LevelSize.x, LevelSize.y];
-            Seen = new bool[LevelSize.x, LevelSize.y];
+            Map = new Tile[Size.x, Size.y];
+            Seen = new bool[Size.x, Size.y];
+            Blood = new bool[Size.x, Size.y];
             Rooms = new List<Room>();
 
             WorldActors = new List<Actor>();
@@ -51,8 +58,8 @@ namespace ODB
 
         public Actor ActorOnTile(Tile t)
         {
-            for (int x = 0; x < LevelSize.x; x++)
-                for (int y = 0; y < LevelSize.y; y++)
+            for (int x = 0; x < Size.x; x++)
+                for (int y = 0; y < Size.y; y++)
                     //do like this while migrating
                     //LH-011214: wtf? ^
                     //           migrating what?
@@ -192,17 +199,18 @@ namespace ODB
 
             Stream stream = new Stream();
 
-            stream.Write(LevelSize);
+            stream.Write(Size);
             stream.Write(Name);
             stream.Write("</HEADER>", false);
 
-            for (int y = 0; y < LevelSize.y; y++)
-                for (int x = 0; x < LevelSize.x; x++)
+            for (int y = 0; y < Size.y; y++)
+                for (int x = 0; x < Size.x; x++)
                 {
                     if (Map[x, y] != null)
                     {
                         stream.Write(Map[x, y].WriteTile().ToString());
                         stream.Write(Seen[x, y]);
+                        stream.Write(Blood[x, y]);
                     }
                     stream.Write("##", false);
                 }
@@ -245,7 +253,7 @@ namespace ODB
 
             Stream stream = new Stream(dimensions);
 
-            LevelSize = stream.ReadPoint();
+            Size = stream.ReadPoint();
             Clear();
 
             Name = stream.ReadString();
@@ -262,18 +270,22 @@ namespace ODB
                 new[] {"##"}, StringSplitOptions.None
             );
 
-            for (int i = 0; i < LevelSize.x * LevelSize.y; i++)
+            for (int i = 0; i < Size.x * Size.y; i++)
             {
-                int x = i % LevelSize.x;
-                int y = (i - (i % LevelSize.x)) / LevelSize.x;
+                int x = i % Size.x;
+                int y = (i - (i % Size.x)) / Size.x;
                 if (tiles[i] == "")
                     Map[x, y] = null;
                 else
                 {
-                    Tile t = new Tile();
+                    Tile t = new Tile
+                    {
+                        Position = new Point(x, y),
+                    };
                     Stream s = t.ReadTile(tiles[i]);
                     s.Read++; //skip the semicolon
                     Seen[x, y] = s.ReadBool();
+                    Blood[x, y] = s.ReadBool();
                     Map[x, y] = t;
                 }
             }
@@ -333,12 +345,20 @@ namespace ODB
             }
         }
 
+        public void Spawn(Actor actor)
+        {
+            WorldActors.Add(actor);
+            CalculateActorPositions();
+        }
         public void Spawn(Item item)
         {
             WorldItems.Add(item);
             AllItems.Add(item);
         }
-
+        public void Despawn(Actor actor)
+        {
+            WorldActors.Remove(actor);
+        }
         public void Despawn(Item item)
         {
             WorldItems.Remove(item);
@@ -346,30 +366,38 @@ namespace ODB
         }
 
         public Room CreateRoom(
+            Level level,
             Rect rect,
             TileDefinition floor,
             TileDefinition walls = null
         ) {
-            return CreateRoom(new List<Rect>{ rect }, floor, walls);
+            return CreateRoom(level, new List<Rect>{ rect }, floor, walls);
         }
 
         public Room CreateRoom(
+            Level level,
             List<Rect> rects,
             TileDefinition floor,
             TileDefinition walls = null
         ) {
-            Room room = new Room();
+            Room room = new Room { Level = level };
             room.Rects.AddRange(rects);
             Rooms.Add(room);
 
-            bool[,] drawn = new bool[LevelSize.x, LevelSize.y];
+            bool[,] drawn = new bool[Size.x, Size.y];
             foreach (Rect rect in rects)
             {
                 for (int x = 0; x < rect.wh.x; x++)
                 {
                     for (int y = 0; y < rect.wh.y; y++)
                     {
-                        Map[rect.xy.x + x, rect.xy.y + y] = new Tile(floor);
+                        Map[rect.xy.x + x, rect.xy.y + y] = new Tile(floor)
+                        {
+                            Position =  new Point(
+                                rect.xy.x + x,
+                                rect.xy.y + y
+                            )
+                        };
                         drawn[rect.xy.x + x, rect.xy.y + y] = true;
                     }
                 }
@@ -377,9 +405,9 @@ namespace ODB
 
             if (walls == null) return room;
 
-            for (int x = 1; x < LevelSize.x-1; x++)
+            for (int x = 1; x < Size.x-1; x++)
             {
-                for (int y = 1; y < LevelSize.y-1; y++)
+                for (int y = 1; y < Size.y-1; y++)
                 {
                     bool border =
                         drawn[x, y] &&
@@ -393,6 +421,19 @@ namespace ODB
             }
 
             return room;
+        }
+
+        public Point RandomOpenPoint()
+        {
+            return Rooms
+                .SelectRandom()
+                .GetTiles()
+                .Where(t => !t.Solid)
+                .Where(t => t.Door == Door.None)
+                .Where(t => t.Stairs == Stairs.None)
+                .Where(t => ActorOnTile(t.Position) == null)
+                .ToList()
+                .SelectRandom().Position;
         }
     }
 }

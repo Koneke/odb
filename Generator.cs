@@ -121,9 +121,6 @@ namespace ODB
 
             gen.Connections.Add(new KeyValuePair<Connector, Connector>(oc, mc));
 
-            if(Position.x < 6 || Position.y < 6)
-                Game1.Game.WizMode = true;
-
             return true;
         }
     }
@@ -225,6 +222,7 @@ namespace ODB
             //foreach(GenRoom g in rooms)
             foreach (GenRoom room in Rooms)
                 newLevel.CreateRoom(
+                    newLevel,
                     room.Rect(),
                     TileDefinition.Definitions[0],
                     TileDefinition.Definitions[1]
@@ -235,6 +233,34 @@ namespace ODB
                 newLevel.Map[p.x, p.y].Definition =
                     TileDefinition.Definitions[0];
                 newLevel.Map[p.x, p.y].Door = Door.Closed;
+            }
+
+            newLevel.Rooms
+                .SelectRandom()
+                .GetTiles()
+                .Where(t => t.Solid == false)
+                .Where(t => t.Door == Door.None)
+                .ToList()
+                .SelectRandom().Stairs = Stairs.Down;
+
+            newLevel.Rooms
+                .SelectRandom()
+                .GetTiles()
+                .Where(t => t.Solid == false)
+                .Where(t => t.Door == Door.None)
+                .Where(t => t.Stairs == Stairs.None)
+                .ToList()
+                .SelectRandom().Stairs = Stairs.Up;
+
+            const int monsterCount = 7;
+            for (int i = 0; i < monsterCount; i++)
+            {
+                newLevel.Spawn(
+                    new Actor(
+                        newLevel.RandomOpenPoint(),
+                        Util.ADefByName("rat")
+                    )
+                );
             }
 
             return newLevel;

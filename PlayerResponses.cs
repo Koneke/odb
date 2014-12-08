@@ -400,19 +400,26 @@ namespace ODB
             if (answer.Length <= 0) return;
 
             int index = IO.Indexes.IndexOf(answer[0]);
+            Spell spell = Game.Player.Spellbook[index];
 
+            Cast(spell);
+        }
+
+        private static void Cast(Spell spell)
+        {
             //LH-021214: If the spells is nontargetted, just trigger the effect
             //           instantly.
-            if (Spell.Spells[index].CastType == InputType.None)
-            {
-                Spell.Spells[index].Cast();
-            }
+            if (spell.CastType == InputType.None) spell.Cast();
             //LH-021214: Otherwise, ask a player of the spell's kind.
             //           Flexible, fancy, and reuses code! Woo!
             else
             {
                 Game.Caster = Game.Player;
-                Spell.Spells[index].SetupAcceptedInput();
+                IO.AcceptedInput.Clear();
+                if (spell.CastType != InputType.Targeting)
+                    spell.SetupAcceptedInput();
+                else
+                    for (char c = '0'; c <= '9'; c++) IO.AcceptedInput.Add(c);
 
                 if (IO.AcceptedInput.Count <= 0)
                 {
@@ -420,8 +427,8 @@ namespace ODB
                     return;
                 }
 
-                string question = "Cast " + Spell.Spells[index].Name;
-                switch (Spell.Spells[index].CastType)
+                string question = "Cast " + spell.Name;
+                switch (spell.CastType)
                 {
                     case InputType.QuestionPrompt:
                     case InputType.QuestionPromptSingle:
@@ -431,14 +438,18 @@ namespace ODB
                         question += " where? ";
                         break;
                 }
-                question += "[";
-                question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
-                question += "]";
+
+                if (spell.CastType != InputType.Targeting)
+                {
+                    question += "[";
+                    question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
+                    question += "]";
+                }
 
                 IO.AskPlayer(
                     question,
-                    Spell.Spells[index].CastType,
-                    Spell.Spells[index].Cast
+                    spell.CastType,
+                    spell.Cast
                 );
             }
         }
@@ -464,6 +475,7 @@ namespace ODB
             //           This mainly so you don't cancel and lose out on a
             //           charge. /Might/ be wanted behaviour, we'll see.
             item.SpendCharge();
+            IO.UsedItem = item;
 
             UsableComponent uc =
                 (UsableComponent)
@@ -472,38 +484,7 @@ namespace ODB
             //LH-021214: if uc is null here, we failed an earlier check.
             Debug.Assert(uc != null);
 
-            //LH-021214: If the spells is nontargetted, just trigger the effect
-            //           instantly.
-            if (Spell.Spells[uc.UseEffect].CastType == InputType.None)
-                Spell.Spells[uc.UseEffect].Cast();
-            //LH-021214: Otherwise, ask a player of the spell's kind.
-            //           Flexible, fancy, and reuses code! Woo!
-            else
-            {
-                Game.Caster = Game.Player;
-                Spell.Spells[uc.UseEffect].SetupAcceptedInput();
-
-                string question = "Use " + item.GetName("the");
-                switch (Spell.Spells[uc.UseEffect].CastType)
-                {
-                    case InputType.QuestionPrompt:
-                    case InputType.QuestionPromptSingle:
-                        question += " on what? ";
-                        break;
-                    case InputType.Targeting:
-                        question += " where? ";
-                        break;
-                }
-                question += "[";
-                question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
-                question += "]";
-
-                IO.AskPlayer(
-                    question,
-                    Spell.Spells[uc.UseEffect].CastType,
-                    Spell.Spells[uc.UseEffect].Cast
-                );
-            }
+            Cast(Spell.Spells[uc.UseEffect]);
         }
 
         public static void Fire()
@@ -527,7 +508,6 @@ namespace ODB
 
         public static void Look()
         {
-            Game.Target = Game.Player.xy;
             Examine(true);
         }
 
@@ -615,6 +595,46 @@ namespace ODB
                 Game.Player.Eat(it);
             }
 
+        }
+
+        public static void Engrave()
+        {
+            string answer = Game.QpAnswerStack.Pop();
+            Game.Level.TileAt(Game.Player.xy).Engraving = answer;
+            Game.Log("You wrote \""+answer+"\" on the dungeon floor.");
+        }
+
+        public static void Read()
+        {
+            string answer = Game.QpAnswerStack.Pop();
+            int index = IO.Indexes.IndexOf(answer[0]);
+
+            Item item = Game.Player.Inventory[index];
+
+            Game.Log("You read {1}...", item.GetName("name"));
+
+            ReadableComponent rc =
+                (ReadableComponent)
+                item.GetComponent(ReadableComponent.Type);
+
+            if (rc != null)
+            {
+                item.SpendCharge();
+                IO.UsedItem = item;
+
+                Cast(Spell.Spells[rc.Effect]);
+                return;
+            }
+
+            LearnableComponent lc =
+                (LearnableComponent)
+                item.GetComponent(LearnableComponent.Type);
+
+            Spell spell = Spell.Spells[lc.Spell];
+
+            Game.Log("You feel knowledgable about {1}!", spell.Name);
+
+            Game.Player.LearnSpell(spell);
         }
     }
 }

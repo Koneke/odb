@@ -115,6 +115,7 @@ namespace ODB
     public class Room
     {
         public List<Rect> Rects;
+        public Level Level;
 
         //should not be saved to file
         public List<Room> Linked;
@@ -136,6 +137,16 @@ namespace ODB
             return Rects.Any(r => r.ContainsPoint(p));
         }
 
+        public List<Tile> GetTiles()
+        {
+            List<Tile> tiles = new List<Tile>();
+            foreach (Rect rect in Rects)
+                for(int x = 0; x < rect.wh.x; x++)
+                for (int y = 0; y < rect.wh.y; y++)
+                tiles.Add(Level.Map[rect.xy.x + x, rect.xy.y + y]);
+            return tiles;
+        }
+
         //should probably switch to stream for ease
         public string WriteRoom()
         {
@@ -148,7 +159,6 @@ namespace ODB
             }
             return output;
         }
-
         public Stream ReadRoom(string s)
         {
             Stream stream = new Stream(s);
@@ -485,6 +495,82 @@ namespace ODB
             Ticker = TickingEffectDefinition.Definitions
                 [stream.ReadHex(4)];
             LifeLength = stream.ReadHex(8);
+        }
+    }
+
+    public class AttackMessage
+    {
+
+        public static Dictionary<AttackType, List<AttackMessage>> AttackMessages
+            = new Dictionary<AttackType, List<AttackMessage>>
+        {
+            { AttackType.Bash,
+                new List<AttackMessage> {
+                    new AttackMessage(
+                        "#actor #verb #target with #gen #weapon.",
+                        "bash"),
+                    new AttackMessage(
+                        "#actor #verb all over #target " +
+                        "with #gen #weapon.",
+                        "wail"),
+                    new AttackMessage(
+                        "#target get#pass-s #verb-pass with #genname #weapon.",
+                        "smack")
+                }
+            },
+            { AttackType.Slash,
+                new List<AttackMessage> {
+                    new AttackMessage(
+                        "#actor #verb #target with #gen #weapon.", "slash")
+                }
+            },
+            { AttackType.Pierce,
+                new List<AttackMessage> {
+                    new AttackMessage(
+                        "#actor #verb #target with #gen #weapon.", "pierce"),
+                    new AttackMessage(
+                        "#actor #verb #gen #weapon right into #target.", "jam")
+                }
+            },
+            { AttackType.Bite,
+                new List<AttackMessage> {
+                    new AttackMessage(
+                        "#actor #verb #target.", "bite"),
+                    new AttackMessage(
+                        "#actor #verb on #target.", "chew")
+                }
+            },
+        };
+
+        public string Format;
+        public string Verb;
+
+        public AttackMessage(string format, string verb)
+        {
+            Format = format;
+            Verb = verb;
+        }
+
+        public string Instantiate(
+            Actor actor,
+            Actor target,
+            Item weapon
+        ) {
+            string result = Format
+                .Replace("#actor", actor.GetName("name"))
+                .Replace("#target", target.GetName("name"))
+                .Replace("#weapon", weapon == null
+                    ? "fists"
+                    : weapon.GetName("name"))
+                .Replace("#verb-pass", actor.Verb(Verb, Actor.Tempus.Passive))
+                .Replace("#verb", actor.Verb(Verb))
+                .Replace("#genname", actor.Genitive("name"))
+                .Replace("#gen", actor.Genitive())
+                .Replace("#pass-s", target == Util.Game.Player ? "" : "s")
+                .Replace("#s", actor == Util.Game.Player ? "" : "s")
+            ;
+
+            return Util.Capitalize(result);
         }
     }
 

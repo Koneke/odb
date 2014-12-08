@@ -60,7 +60,6 @@ namespace ODB
 
         private Point _camera;
         private Point _cameraOffset;
-        //int _scrW, _scrH;
         public xnaPoint ScreenSize;
 
         int _logSize;
@@ -127,15 +126,22 @@ namespace ODB
             //IO.Load(); //load entire game (except definitions atm)
 
             Game.Levels = new List<Level>();
-            Game.Level = new Level(80, 25);
-            Game.Levels.Add(Game.Level);
 
-            Game.Level.WorldActors.Add(
-                Player = new Actor(
-                    new Point(13, 15),
-                    Util.ADefByName("Moribund")
-                )
+            Player = new Actor(
+                new Point(0, 0),
+                Util.ADefByName("Moribund")
             );
+
+            Levels.Add(new Generator().Generate());
+            Level = Levels[0];
+
+            Level.Spawn(Player);
+            Player.xy =
+                Level.Rooms
+                .SelectMany(r => r.GetTiles())
+                .First(t => t.Stairs == Stairs.Up).Position;
+                
+
             Game.Food = 9000;
 
             LastingEffect le = new LastingEffect(
@@ -159,13 +165,8 @@ namespace ODB
             //wiz
             Wizard.WmCursor = Game.Player.xy;
 
-            _g = new Generator();
-            _g.Generate();
-
             base.Initialize();
         }
-
-        private Generator _g;
 
         protected override void Update(GameTime gameTime)
         {
@@ -222,7 +223,6 @@ namespace ODB
                         break;
                     case InputType.Inventory:
                         InvMan.InventoryInput();
-                        //InventoryInput();
                         break;
                     //if this happens,
                     //you're breaking some kind of weird shit somehow
@@ -251,7 +251,7 @@ namespace ODB
 
             if (IO.KeyPressed(Keys.F9))
             {
-                Level level = _g.Generate();
+                Level level = new Generator().Generate();
                 int index = Levels.IndexOf(Game.Level);
                 Levels.RemoveAt(index);
                 Levels.Insert(index, level);
@@ -288,10 +288,10 @@ namespace ODB
 
             _camera.x = Math.Max(0, _camera.x);
             _camera.x = Math.Min(
-                Game.Level.LevelSize.x - ScreenSize.X, _camera.x);
+                Game.Level.Size.x - ScreenSize.X, _camera.x);
             _camera.y = Math.Max(0, _camera.y);
             _camera.y = Math.Min(
-                Game.Level.LevelSize.y - ScreenSize.Y, _camera.y);
+                Game.Level.Size.y - ScreenSize.Y, _camera.y);
         }
 
         public void SetupConsoles()
@@ -363,8 +363,8 @@ namespace ODB
 
             //auto tele to (a) pair of stairs
             //so hint for now: don't have more stairs, it gets weird
-            for (int x = 0; x < Level.LevelSize.x; x++)
-                for (int y = 0; y < Level.LevelSize.y; y++)
+            for (int x = 0; x < Level.Size.x; x++)
+                for (int y = 0; y < Level.Size.y; y++)
                     if (Level.Map[x, y] != null)
                         if (
                             (Level.Map[x, y].Stairs == Stairs.Up &&
@@ -408,6 +408,24 @@ namespace ODB
             };
 
             //ReSharper disable once ObjectCreationAsStatement
+            new Spell("forcebolt")
+            {
+                CastType = InputType.Targeting,
+                Effect = () =>
+                {
+                    Actor target = Game.Level.ActorOnTile(Game.Target);
+                    target.Damage(Util.Roll("2d4"));
+                    Game.Log(
+                        "The forcebolt hits {1}.",
+                        target.GetName("the")
+                    );
+                },
+                CastDifficulty = 1,
+                Cost = 1,
+                Range = 5
+            };
+
+            //ReSharper disable once ObjectCreationAsStatement
             //LH-011214: registered to the spelldefinition list in constructor.
             new Spell("fiery touch")
             {
@@ -430,7 +448,7 @@ namespace ODB
                     Game.Log(
                         Game.Player.GetName("Name") +
                         " " +
-                        Game.Player.Is() +
+                        Game.Player.Verb("is") +
                         " burned by " +
                         Game.Caster.Definition.Name + "'s touch!"
                     );
@@ -509,7 +527,7 @@ namespace ODB
                 _dfc.CellData.SetBackground(
                     xy.x, xy.y, bg.Value
                 );
-            else
+            /*else
             {
                 Tile bgtile = Game.Level.Map[xy.x, xy.y];
                 if(bgtile != null)
@@ -517,7 +535,7 @@ namespace ODB
                         xy.x, xy.y,
                         bgtile.Background
                     );
-            }
+            }*/
 
             _dfc.CellData.SetForeground(xy.x, xy.y, fg);
 
@@ -663,6 +681,7 @@ namespace ODB
         private void RenderMap()
         {
             _dfc.CellData.Clear();
+            //_dfc.CellData.Fill(Color.Gray, Color.Gray, ' ', null);
 
             for (int x = 0; x < ScreenSize.X; x++)
             for (int y = 0; y < ScreenSize.Y; y++)
@@ -670,17 +689,20 @@ namespace ODB
                 Tile t = Game.Level.Map[x + _camera.x, y + _camera.y];
 
                 if (t == null) continue;
-                if (
-                    !(Game.Level.Seen[x + _camera.x, y + _camera.y] || WizMode)
+                if (!(Game.Level.Seen[x + _camera.x, y + _camera.y] || WizMode)
                 ) continue;
 
                 bool inVision =
                     Game.Player.Vision[x + _camera.x, y + _camera.y] || WizMode;
 
+                Color background = t.Background;
+                if (Level.Blood[x, y]) background = Color.DarkRed;
+
                 string tileToDraw = t.Character;
                 //doors override the normal tile
                 //which shouldn't be a problem
                 //if it is a problem, it's not, it's something else
+                if (t.Engraving != "") tileToDraw = ",";
                 if (t.Door == Door.Closed) tileToDraw = "+";
                 if (t.Door == Door.Open) tileToDraw = "/";
                 if (t.Stairs == Stairs.Down) tileToDraw = ">";
@@ -688,7 +710,7 @@ namespace ODB
 
                 DrawToScreen(
                     new Point(x, y),
-                    t.Background,
+                    background,
                     t.Foreground * (inVision ? 1f : 0.6f),
                     tileToDraw
                 );
@@ -700,8 +722,8 @@ namespace ODB
             Rect screen = new Rect(_camera, new Point(80, 25));
 
             int[,] itemCount = new int[
-                Game.Level.LevelSize.x,
-                Game.Level.LevelSize.y
+                Game.Level.Size.x,
+                Game.Level.Size.y
             ];
 
             foreach (Item i in Game.Level.WorldItems)
@@ -728,8 +750,8 @@ namespace ODB
             Rect screen = new Rect(_camera, new Point(80, 25));
 
             int[,] actorCount = new int[
-                Game.Level.LevelSize.x,
-                Game.Level.LevelSize.y
+                Game.Level.Size.x,
+                Game.Level.Size.y
             ];
 
             foreach (Actor a in Game.Level.WorldActors)
@@ -744,7 +766,7 @@ namespace ODB
                         a.xy - _camera,
                         a.Definition.Background,
                         a.Definition.Foreground, a.Definition.Tile
-                        );
+                    );
                     //draw a "pile" (shouldn't happen at all atm
                 else DrawToScreen(a.xy, null, Color.White, "*");
             }

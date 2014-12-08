@@ -122,12 +122,9 @@ namespace ODB
         public int HpMax { get { return Definition.HpMax; } }
         public int MpMax { get { return Definition.MpMax; } }
         public bool IsAlive { get { return HpCurrent > 0; } }
-
         #endregion
 
-        public Actor(
-            Point xy, ActorDefinition definition
-        )
+        public Actor(Point xy, ActorDefinition definition)
             : base(xy, definition)
         {
             ID = IDCounter++;
@@ -146,8 +143,7 @@ namespace ODB
             LastingEffects = new List<LastingEffect>();
         }
 
-        public Actor(string s)
-            : base(s)
+        public Actor(string s) : base(s)
         {
             ReadActor(s);
         }
@@ -449,32 +445,51 @@ namespace ODB
 
             if (hitRoll >= dodgeRoll)
             {
-                List<AttackComponent> attacks =
+                List<Item> weapons =
                     PaperDoll
                     .FindAll(x => x.Type == DollSlot.Hand)
                     .Where(x => x.Item != null)
-                    .Select(bp => bp.Item.Definition)
-                    .Select(idef =>
-                        (AttackComponent)
-                        idef.GetComponent("cAttack"))
+                    .Select(bp => bp.Item)
                     .ToList();
 
-                foreach(AttackComponent wc in attacks) {
+                foreach (Item item in weapons)
+                {
+                    AttackComponent wc =
+                        (AttackComponent)
+                        item.GetComponent("cAttack");
                     //If the held item has a cAttack, roll that damage
                     //Otherwise we go with standard bash damage
                     if (wc != null)
                     {
-                        target.Damage(
-                            Util.Roll(wc.Damage, crit) + Get(Stat.Strength));
                         foreach (EffectComponent ec in
                             from ec in wc.Effects
                             let chance = ec.Chance / 255f
                             where Util.Random.NextDouble() <= chance
                             select ec)
                             target.LastingEffects.Add(ec.GetEffect(target));
+                        Game.Log(
+                            AttackMessage.AttackMessages[wc.AttackType]
+                            .SelectRandom()
+                            .Instantiate(
+                                this,
+                                target,
+                                item
+                            )
+                        );
+                        target.Damage(
+                            Util.Roll(wc.Damage, crit) + Get(Stat.Strength));
                     }
                     else
                     {
+                        Game.Log(
+                            AttackMessage.AttackMessages[AttackType.Bash]
+                            .SelectRandom()
+                            .Instantiate(
+                                this,
+                                target,
+                                item
+                            )
+                        );
                         target.Damage(
                             Util.Roll("1d4", crit) + Get(Stat.Strength));
                     }
@@ -482,14 +497,23 @@ namespace ODB
 
                 //unarmed
                 //todo: use "natural attack" here
-                if(attacks.Count == 0)
+                if (weapons.Count == 0)
+                {
+                    AttackComponent natAttack = Definition.NaturalAttack;
+                    Game.Log(
+                        AttackMessage.AttackMessages[natAttack.AttackType]
+                            .SelectRandom()
+                            .Instantiate(
+                            this,
+                            target,
+                            null
+                        )
+                    );
                     target.Damage(
-                        Util.Roll("1d4", crit) + Get(Stat.Strength));
-
-                Game.Log(
-                    GetName("Name") + " strike"+ (ID == 0 ? " " : "s ") +
-                    target.GetName("name") + (crit ? "!" : ".")
-                );
+                        Util.Roll(natAttack.Damage, crit) +
+                        Get(Stat.Strength)
+                    );
+                }
             }
             else
             {
@@ -568,10 +592,19 @@ namespace ODB
         }
         public void Damage(int d)
         {
+            Game.Level.Blood[xy.x, xy.y] = true;
+            for(int x = -1; x <= 1; x++)
+            for(int y = -1; y <= 1; y++)
+                if (Util.Random.Next(0, 4) >= 3)
+                    if( xy.x + x > 0 && xy.x + x < Game.Level.Size.x &&
+                        xy.x + y > 0 && xy.y + y < Game.Level.Size.y)
+                        if(!Game.Level.Map[xy.x + x, xy.y + y].Solid)
+                            Game.Level.Blood[xy.x + x, xy.y + y] = true;
+
             HpCurrent -= d;
             if (HpCurrent > 0) return;
 
-            Game.Log(GetName("Name") + " dies!");
+            Game.Log(GetName("Name") + " " + Verb("die") + "!");
             Item corpse = new Item(
                 xy,
                 Util.ItemDefByName(Definition.Name + " corpse"),
@@ -682,9 +715,9 @@ namespace ODB
                 {
                     if(
                         xy.x + xx < 0 ||
-                        xy.x + xx >= Game.Level.LevelSize.x ||
+                        xy.x + xx >= Game.Level.Size.x ||
                         xy.y + yy < 0 ||
-                        xy.y + yy >= Game.Level.LevelSize.y
+                        xy.y + yy >= Game.Level.Size.y
                     ) continue;
 
                     bool legal = true;
@@ -759,11 +792,11 @@ namespace ODB
         {
             if (Vision == null)
                 Vision = new bool[
-                    Game.Level.LevelSize.x,
-                    Game.Level.LevelSize.y
+                    Game.Level.Size.x,
+                    Game.Level.Size.y
                 ];
-            for (int x = 0; x < Game.Level.LevelSize.x; x++)
-                for (int y = 0; y < Game.Level.LevelSize.y; y++)
+            for (int x = 0; x < Game.Level.Size.x; x++)
+                for (int y = 0; y < Game.Level.Size.y; y++)
                     Vision[x, y] = false;
         }
         public void AddRoomToVision(Room r)
@@ -785,11 +818,65 @@ namespace ODB
                     }
         }
 
-        public string Is()
+        public enum Tempus
         {
-            return ID == 0
-                ? "are"
-                : "is";
+            Present,
+            Passive
+        }
+        public string Verb(string verb, Tempus tempus = Tempus.Present)
+        {
+            switch (tempus)
+            {
+                case Tempus.Present:
+                    switch (verb)
+                    {
+                        case "be":
+                            if (this == Game.Player) verb = "are";
+                            else verb = "is";
+                            break;
+                        default:
+                            if (this != Game.Player)
+                            {
+                                //bashES, slashES, etc.
+                                if (verb[verb.Length - 1] == 'h')
+                                    verb += "e";
+                                verb += "s";
+                            }
+                            break;
+                    }
+                    break;
+                case Tempus.Passive:
+                    verb += "ed";
+                    break;
+            }
+
+            return verb;
+        }
+
+        public void LearnSpell(Spell spell)
+        {
+            Definition.Spellbook.Add(spell.ID);
+        }
+
+        public string Genitive(string format = "")
+        {
+            string result;
+            switch (format.ToLower())
+            {
+                case "name":
+                    result = this == Game.Player
+                        ? "your"
+                        : Definition.Name + "'s";
+                    break;
+                default:
+                    result = this == Game.Player
+                        ? "your"
+                        : "their";
+                    break;
+            }
+            if (format.Length == 0) return result;
+            if (format[0] <= 'Z') return Util.Capitalize(result);
+            return result;
         }
 
         public Stream WriteActor()
@@ -896,7 +983,7 @@ namespace ODB
                 Intrinsics.Add(new Mod(
                     (ModType)IO.ReadHex(mod.Split(':')[0]),
                     IO.ReadHex(mod.Split(':')[1]))
-                    );
+                );
             }
 
             Awake = stream.ReadBool();

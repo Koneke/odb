@@ -152,6 +152,7 @@
     </Content>
     <Content Include="Game.ico" />
     <Content Include="GameThumbnail.png" />
+    <Content Include="general format rules.txt" />
     <Content Include="logo.ico" />
   </ItemGroup>
   <ItemGroup>

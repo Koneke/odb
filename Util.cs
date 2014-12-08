@@ -28,6 +28,11 @@ namespace ODB
             }
             return list;
         }
+
+        public static T SelectRandom<T>(this List<T> l)
+        {
+            return l[Util.Random.Next(0, l.Count)];
+        }
     }
 
     public class Util
