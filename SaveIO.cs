@@ -22,8 +22,9 @@ namespace ODB
             //okay, so I really don't think anyone's going to hit
             //gametick 0xFFFFFFFF, that'd be ludicrous.
             //but 0xFFFF might be hit, and 0xFFFFF looks ugly.
-            stream.Write(IO.Game.GameTick, 8);
-            stream.Write(IO.Game.Seed, 8);
+            stream.Write(Util.Game.GameTick, 8);
+            stream.Write(Util.Game.Seed, 8);
+            stream.Write(Util.Game.Food, 8);
 
             string containers = "";
             foreach (int container in InventoryManager.ContainerIDs.Keys)
@@ -62,10 +63,11 @@ namespace ODB
             for (int i = 0; i < levels; i++)
                 IO.Game.Levels.Add(new Level("Save/level" + i + ".sv"));
 
-            IO.Game.GameTick = stream.ReadHex(8);
-            IO.Game.Seed = stream.ReadHex(8);
+            Util.Game.GameTick = stream.ReadHex(8);
+            Util.Game.Seed = stream.ReadHex(8);
+            Util.Game.Food = stream.ReadHex(8);
 
-            IO.Game.Level = IO.Game.Levels[playerLocation];
+            Util.Game.Level = IO.Game.Levels[playerLocation];
 
             string containers = stream.ReadString();
             List<int> containerItems = new List<int>();

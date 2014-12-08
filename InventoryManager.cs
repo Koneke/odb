@@ -221,13 +221,22 @@ namespace ODB
                 "Split out how many?",
                 InputType.QuestionPrompt,
                 PlayerResponses.Split
-                );
+            );
         }
 
         private static void CheckQuiver(Item item)
         {
-            if (Game.Player.IsEquipped(item))
-                Game.Player.Quiver = item;
+            if (!Game.Player.IsEquipped(item))
+            {
+                Game.QpAnswerStack.Push(IO.Indexes[Selection] + "");
+                PlayerResponses.Quiver();
+            }
+            else
+            {
+                if (Game.Player.IsWielded(item))
+                    Game.Log("You have to sheath that first.");
+                else Game.Log("You have to remove that first");
+            }
         }
 
         private static void CheckDrop(Item item)

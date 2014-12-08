@@ -9,16 +9,16 @@ using Microsoft.Xna.Framework.Input;
 using xnaPoint = Microsoft.Xna.Framework.Point;
 
 //~~~ QUEST TRACKER for ?? dec ~~~
-// * Item value and paid-for status.
+// * Item paid-for status.
 // * Wizard mode area select.
 // * Clean up wizard mode class a bit.
 //   * Fairly low prio, since it's not part of the /game/ per se,
 //     but it /is/ fairly messy.
-// * Switch from numbers in actor def to die?
 // * Inventory stuff currently doesn't make noise.
-// * nor take time (new parts atleast).
 
-//~~~ QUEST TRACKER for 7 dec ~~~
+//~~~ QUEST TRACKER for 8 dec ~~~
+// * Item value (for generation purposes).
+// * Look into hitdie.
 
 namespace ODB
 {
@@ -56,7 +56,7 @@ namespace ODB
         public Actor Player;
         //for now, breaking on of the RL rules a bit,
         //only the player actually has hunger.
-        public int Food; //not yet saved
+        public int Food;
 
         private Point _camera;
         private Point _cameraOffset;
@@ -142,7 +142,7 @@ namespace ODB
                 .First(t => t.Stairs == Stairs.Up).Position;
                 
 
-            Game.Food = 9000;
+            Food = 9000;
 
             LastingEffect le = new LastingEffect(
                 Player.ID,
@@ -527,15 +527,6 @@ namespace ODB
                 _dfc.CellData.SetBackground(
                     xy.x, xy.y, bg.Value
                 );
-            /*else
-            {
-                Tile bgtile = Game.Level.Map[xy.x, xy.y];
-                if(bgtile != null)
-                    _dfc.CellData.SetBackground(
-                        xy.x, xy.y,
-                        bgtile.Background
-                    );
-            }*/
 
             _dfc.CellData.SetForeground(xy.x, xy.y, fg);
 

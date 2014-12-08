@@ -59,9 +59,6 @@ namespace ODB
                 //      as separate keys in a dict for some reason...
                 int hashCode = base.GetHashCode();
                 hashCode = (hashCode*397) ^ Named.GetHashCode();
-                hashCode = (hashCode*397) ^ Strength;
-                hashCode = (hashCode*397) ^ Dexterity;
-                hashCode = (hashCode*397) ^ Intelligence;
                 hashCode = (hashCode*397) ^ Speed;
                 hashCode = (hashCode*397) ^ Quickness;
                 hashCode = (hashCode*397) ^ HpMax;
@@ -82,7 +79,7 @@ namespace ODB
             new ActorDefinition[0xFFFF];
 
         public bool Named; //for uniques and what not
-        public int Strength, Dexterity, Intelligence;
+        public string Strength, Dexterity, Intelligence;
         public int Speed, Quickness;
         public int HpMax, MpMax;
         public List<DollSlot> BodyParts;
@@ -95,7 +92,8 @@ namespace ODB
         public ActorDefinition(
             Color? background, Color foreground,
             string tile, string name,
-            int strength, int dexterity, int intelligence, int hp,
+            string strength, string dexterity, string intelligence,
+            int hp,
             List<DollSlot> bodyParts,
             List<int> spellbook,
             bool named
@@ -126,7 +124,7 @@ namespace ODB
             ReadActorDefinition(s);
         }
 
-        public void Set(Stat stat, int value)
+        public void Set(Stat stat, string value)
         {
             switch (stat)
             {
@@ -140,10 +138,10 @@ namespace ODB
                     Intelligence = value;
                     break;
                 case Stat.Speed:
-                    Speed = value;
+                    Speed = IO.ReadHex(value);
                     break;
                 case Stat.Quickness:
-                    Quickness = value;
+                    Quickness = IO.ReadHex(value);
                     break;
                 default:
                     Util.Game.Log("~ERROR~: Bad stat.");
@@ -156,9 +154,9 @@ namespace ODB
             Stream stream = WriteGObjectDefinition();
 
             stream.Write(Named);
-            stream.Write(Strength, 2);
-            stream.Write(Dexterity, 2);
-            stream.Write(Intelligence, 2);
+            stream.Write(Strength+"d1");
+            stream.Write(Dexterity+"d1");
+            stream.Write(Intelligence+"d1");
             stream.Write(HpMax, 2);
             stream.Write(MpMax, 2);
             stream.Write(Speed, 2);
@@ -195,9 +193,9 @@ namespace ODB
             Stream stream = ReadGObjectDefinition(s);
 
             Named = stream.ReadBool();
-            Strength = stream.ReadHex(2);
-            Dexterity = stream.ReadHex(2);
-            Intelligence = stream.ReadHex(2);
+            Strength = stream.ReadString();
+            Dexterity = stream.ReadString();
+            Intelligence = stream.ReadString();
             HpMax = stream.ReadHex(2);
             MpMax = stream.ReadHex(2);
             Speed = stream.ReadHex(2);

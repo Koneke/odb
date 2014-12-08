@@ -170,7 +170,7 @@ namespace ODB
                     #region sda
                     ActorDefinition adef = new ActorDefinition(
                         null, Color.White, "X", "DUMMY",
-                        0, 0, 0, 100, null, null, false
+                        "0d0", "0d0", "0d0", 100, null, null, false
                     );
                     Actor dummy = new Actor(
                         WmCursor,
@@ -449,7 +449,7 @@ namespace ODB
                 case "ad-stat":
                     adef.Set(
                         (Stat)IO.ReadHex(args[0]),
-                        IO.ReadHex(args[1])
+                        args[0]
                     );
                     break;
                 case "ad-pointmax":

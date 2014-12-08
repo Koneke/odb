@@ -105,6 +105,9 @@ namespace ODB
         public Item Quiver;
         #endregion
 
+        //rolled stats
+        private int Strength, Dexterity, Intelligence;
+
         #region temporary/cached (nonwritten)
         public bool[,] Vision;
         #endregion
@@ -130,6 +133,9 @@ namespace ODB
             ID = IDCounter++;
 
             Definition = definition;
+            Strength = Util.Roll(definition.Strength);
+            Dexterity = Util.Roll(definition.Dexterity);
+            Intelligence = Util.Roll(definition.Intelligence);
             HpCurrent = definition.HpMax;
             MpCurrent = definition.MpMax;
             Cooldown = 0;
@@ -312,13 +318,13 @@ namespace ODB
             switch (stat)
             {
                 case Stat.Strength:
-                    return Definition.Strength +
+                    return Strength +
                         (modded ? GetMod(stat) : 0);
                 case Stat.Dexterity:
-                    return Definition.Dexterity +
+                    return Dexterity +
                         (modded ? GetMod(stat) : 0);
                 case Stat.Intelligence:
-                    return Definition.Intelligence +
+                    return Intelligence +
                         (modded ? GetMod(stat) : 0);
                 case Stat.Speed:
                     return Definition.Speed +
@@ -884,6 +890,9 @@ namespace ODB
             Stream stream = WriteGObject();
             stream.Write(Definition.Type, 4);
             stream.Write(ID, 4);
+            stream.Write(Strength, 2);
+            stream.Write(Dexterity, 2);
+            stream.Write(Intelligence, 2);
             stream.Write(HpCurrent, 2);
             stream.Write(MpCurrent, 2);
             stream.Write(Cooldown, 2);
@@ -935,6 +944,9 @@ namespace ODB
                 ];
 
             ID = stream.ReadHex(4);
+            Strength = stream.ReadHex(2);
+            Dexterity = stream.ReadHex(2);
+            Intelligence = stream.ReadHex(2);
             HpCurrent = stream.ReadHex(2);
             MpCurrent = stream.ReadHex(2);
             Cooldown = stream.ReadHex(2);
