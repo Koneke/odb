@@ -90,10 +90,13 @@ namespace ODB
         public int ID;
 
         public new ActorDefinition Definition;
+        private int _strength, _dexterity, _intelligence;
         public int HpCurrent;
         public int MpCurrent;
         public int HpMax;
         public int MpMax;
+        public int Level;
+        public int ExperiencePoints;
         public int Cooldown;
 
         public List<BodyPart> PaperDoll;
@@ -103,9 +106,6 @@ namespace ODB
 
         public bool Awake;
         public Item Quiver;
-
-        //rolled stats
-        private int _strength, _dexterity, _intelligence;
 
         #region temporary/cached (nonwritten)
         public bool[,] Vision;
@@ -146,6 +146,9 @@ namespace ODB
 
             HpCurrent = HpMax;
             MpCurrent = MpMax;
+
+            Level = 1;
+            ExperiencePoints = 0;
 
             Cooldown = 0;
 
@@ -566,7 +569,7 @@ namespace ODB
 
             Game.Log(message);
             if(damage > 0)
-                target.Damage(damage);
+                target.Damage(damage, this);
         }
         public void Shoot(Actor target)
         {
@@ -627,7 +630,7 @@ namespace ODB
                     target.Definition.Name + " is hit! " +
                     "(" + hitRoll + " vs " + dodgeRoll + ")"
                 );
-                target.Damage(damageRoll);
+                target.Damage(damageRoll, this);
             } else {
                 Game.Log(
                     Definition.Name + " misses " +
@@ -638,8 +641,7 @@ namespace ODB
             Game.Level.MakeNoise(1, target.xy);
             Pass();
         }
-
-        public void Damage(int d)
+        public void Damage(int d, Actor attacker)
         {
             if (HpCurrent <= 0) return;
 
@@ -664,9 +666,37 @@ namespace ODB
             //should always be ided
             //or maybe not..? could be a mechanic in and of itself
             corpse.Identify();
-            Game.Level.WorldItems.Add(corpse);
-            Game.Level.AllItems.Add(corpse);
+            Game.Level.Spawn(corpse);
             Game.Level.WorldActors.Remove(this);
+
+            if(attacker != null)
+                attacker.GiveExperience(10);
+        }
+
+        public void GiveExperience(int amount)
+        {
+            int lPre = Level;
+            ExperiencePoints += amount;
+            if (LevelFromExperience(ExperiencePoints) != lPre)
+            {
+                Game.Log(
+                    "{1} {2}",
+                    this == Game.Player
+                        ? "You feel"
+                        : GetName("Name") + " looks",
+                    "stronger."
+                );
+                HpMax += Util.Roll(Definition.HitDie);
+                MpMax += Util.Roll(Definition.ManaDie);
+                Level = LevelFromExperience(ExperiencePoints);
+            }
+        }
+
+        public int LevelFromExperience(int amount)
+        {
+            int level = amount - (amount % 100);
+            level /= 100;
+            return level + 1;
         }
 
         public bool HasEffect(

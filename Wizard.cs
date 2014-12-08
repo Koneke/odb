@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
 namespace ODB
@@ -539,7 +538,7 @@ namespace ODB
             switch (cmd)
             {
                 case "ai-hurt":
-                    a.Damage(IO.ReadHex(args[0]));
+                    a.Damage(IO.ReadHex(args[0]), null);
                     break;
                 case "ai-sdef":
                 case "ai-setdef":

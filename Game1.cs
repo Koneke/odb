@@ -415,7 +415,7 @@ namespace ODB
                 Effect = () =>
                 {
                     Actor target = Game.Level.ActorOnTile(Game.Target);
-                    target.Damage(Util.Roll("2d4"));
+                    target.Damage(Util.Roll("2d4"), Game.Caster);
                     Game.Log(
                         "The forcebolt hits {1}.",
                         target.GetName("the")
@@ -453,7 +453,7 @@ namespace ODB
                         " burned by " +
                         Game.Caster.Definition.Name + "'s touch!"
                     );
-                    Game.Player.Damage(Util.Roll("6d2"));
+                    Game.Player.Damage(Util.Roll("6d2"), Game.Caster);
 
                     if (!Game.Player.IsAlive) return;
                     if (Util.Roll("1d6") < 5) return;
@@ -517,7 +517,12 @@ namespace ODB
                         Game.Log(
                             holder.GetName("Name")+"'s wound bleeds!"
                         );
-                    holder.Damage(Util.Roll("2d3"));
+                    //todo: getting killed by this effect does currently
+                    //      NOT GRANT EXPERIENCE!
+                    //      this since it's not directly from another actor,
+                    //      but indirectly via the effect. this has to be
+                    //      changed.
+                    holder.Damage(Util.Roll("2d3"), null);
                 }
             );
         }
@@ -1053,6 +1058,10 @@ namespace ODB
             statrow += "/";
             statrow += ("" + Player.MpMax).PadLeft(3, ' ');
             statrow += "]";
+
+            statrow += " ";
+            statrow += "XP:";
+            statrow += Player.Level+"";
 
             statrow += " ";
             statrow += "T:";
