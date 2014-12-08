@@ -40,8 +40,6 @@ namespace ODB
                     Intelligence == other.Intelligence &&
                     Speed == other.Speed &&
                     Quickness == other.Quickness &&
-                    HpMax == other.HpMax &&
-                    MpMax == other.MpMax &&
                     CorpseType == other.CorpseType
                 ;
         }
@@ -61,8 +59,6 @@ namespace ODB
                 hashCode = (hashCode*397) ^ Named.GetHashCode();
                 hashCode = (hashCode*397) ^ Speed;
                 hashCode = (hashCode*397) ^ Quickness;
-                hashCode = (hashCode*397) ^ HpMax;
-                hashCode = (hashCode*397) ^ MpMax;
                 hashCode = (hashCode*397) ^ CorpseType;
                 return hashCode;
             }
@@ -81,7 +77,7 @@ namespace ODB
         public bool Named; //for uniques and what not
         public string Strength, Dexterity, Intelligence;
         public int Speed, Quickness;
-        public int HpMax, MpMax;
+        public string HitDie, ManaDie;
         public List<DollSlot> BodyParts;
         public int CorpseType;
         public List<int> Spellbook;
@@ -93,7 +89,6 @@ namespace ODB
             Color? background, Color foreground,
             string tile, string name,
             string strength, string dexterity, string intelligence,
-            int hp,
             List<DollSlot> bodyParts,
             List<int> spellbook,
             bool named
@@ -101,7 +96,6 @@ namespace ODB
             Strength = strength;
             Dexterity = dexterity;
             Intelligence = intelligence;
-            HpMax = hp;
             BodyParts = bodyParts ?? new List<DollSlot>();
             ActorDefinitions[Type] = this;
 
@@ -154,11 +148,11 @@ namespace ODB
             Stream stream = WriteGObjectDefinition();
 
             stream.Write(Named);
-            stream.Write(Strength+"d1");
-            stream.Write(Dexterity+"d1");
-            stream.Write(Intelligence+"d1");
-            stream.Write(HpMax, 2);
-            stream.Write(MpMax, 2);
+            stream.Write(Strength);
+            stream.Write(Dexterity);
+            stream.Write(Intelligence);
+            stream.Write(HitDie);
+            stream.Write(ManaDie);
             stream.Write(Speed, 2);
             stream.Write(Quickness, 2);
 
@@ -196,8 +190,8 @@ namespace ODB
             Strength = stream.ReadString();
             Dexterity = stream.ReadString();
             Intelligence = stream.ReadString();
-            HpMax = stream.ReadHex(2);
-            MpMax = stream.ReadHex(2);
+            HitDie = stream.ReadString();
+            ManaDie = stream.ReadString();
             Speed = stream.ReadHex(2);
             Quickness = stream.ReadHex(2);
 

@@ -165,33 +165,6 @@ namespace ODB
                 case "gad":
                     Game.Log(IO.WriteHex(Util.ADefByName(args[0]).Type, 4));
                     break;
-                case "sda":
-                case "spawndummyactor":
-                    #region sda
-                    ActorDefinition adef = new ActorDefinition(
-                        null, Color.White, "X", "DUMMY",
-                        "0d0", "0d0", "0d0", 100, null, null, false
-                    );
-                    Actor dummy = new Actor(
-                        WmCursor,
-                        adef
-                    );
-                    Game.Level.WorldActors.Add(dummy);
-                    break;
-                    #endregion
-                case "sdi":
-                case "spawndummyitem":
-                    #region sdi
-                    ItemDefinition idef = new ItemDefinition(
-                        null, Color.White, "X", "DUMMY"
-                    );
-                    Item dummyitem = new Item(
-                        WmCursor,
-                        idef
-                    );
-                    Game.Level.WorldItems.Add(dummyitem);
-                    break;
-                    #endregion
                 case "sa":
                 case "spawnactor":
                     #region spawnactor
@@ -203,7 +176,10 @@ namespace ODB
                     }
                     Actor act = new Actor(
                         WmCursor,
-                        Util.ADefByName(args[0])
+                        Util.ADefByName(args[0]),
+                        args.Length > 1
+                        ? IO.ReadHex(args[1])
+                        : 1
                     );
                     Game.Level.WorldActors.Add(act);
                     Game.Brains.Add(new Brain(act));
@@ -451,12 +427,6 @@ namespace ODB
                         (Stat)IO.ReadHex(args[0]),
                         args[0]
                     );
-                    break;
-                case "ad-pointmax":
-                    if (!IO.ReadBool(args[0]))
-                        adef.HpMax = IO.ReadHex(args[1]);
-                    else
-                        adef.MpMax = IO.ReadHex(args[1]);
                     break;
                 case "ad-addbodypart":
                     adef.BodyParts.Add((DollSlot)IO.ReadHex(args[0]));

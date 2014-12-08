@@ -6,6 +6,6 @@
 8004XXXXXXD3D3D3)longsword		;0	00	00b4	cAttack;{1d6;at_slash;{}}cUsable;{0000}##
 8005XXXXXXFFFFFF?scroll of forcebolt	;0	00	0001	cUsable;{0000}##
 8006XXXXXXA52A2A(bag			;0	00	0005	cContainer;{}##
-8007XXXXXXA52A2A)zweihander		;0	00	0140	cAttack;{2d1;at_slash;{cEffect;{et_poison;ff100d2}}}##
+8007XXXXXXA52A2A)zweihander		;0	00	0190	cAttack;{2d6;at_slash;{cEffect;{et_poison;ff100d2}}}##
 8008XXXXXXA52A2A[chainmail		;0	00	0708	cWearable;{1,;04}##
 8009XXXXXXFFFF00+tome of forcebolt	;0	00	0ce8	cLearnable;{0001}##

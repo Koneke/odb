@@ -133,7 +133,8 @@ namespace ODB
             return Roll(
                 number,
                 sides,
-                mod
+                mod,
+                max
             );
         }
 

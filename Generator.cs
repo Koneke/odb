@@ -258,7 +258,9 @@ namespace ODB
                 newLevel.Spawn(
                     new Actor(
                         newLevel.RandomOpenPoint(),
-                        Util.ADefByName("rat")
+                        Util.ADefByName("rat"),
+                        //todo: tweak this based on depth
+                        1
                     )
                 );
             }

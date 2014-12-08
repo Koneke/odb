@@ -195,7 +195,7 @@ namespace ODB
             if (lc != null) hands = 2;
             //360 decagram, i.e. 3.6kg, or ~8lb
             //todo: adjust for actor strength
-            else hands = Definition.Weight > 360 ? 2 : 1;
+            else hands = Definition.Weight >= 280 ? 2 : 1;
 
             List<DollSlot> slots = new List<DollSlot>();
             for (int i = 0; i < hands; i++)

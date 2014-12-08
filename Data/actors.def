@@ -1,2 +1,2 @@
-0000XXXXXX00FFFFmoribund;	1	1d3+3;1d3+3;1d3+3;	320A00001,2,2,3,4,;8800;;cAttack;{1d4;at_bash;{}}##
-0001XXXXXXADAD09rrat;		0	1d1;2d1;0d1;		0A000202;8801;;cAttack;{1d2;at_bite;{}}##
+0000XXXXXX00FFFFmoribund;	1	1d3+3;	1d3+3;	1d3+3;	1d8;1d6;	0000	1,2,2,3,4,;	8800;;cAttack;{1d4;at_bash;{}}##
+0001XXXXXXADAD09rrat;		0	1d1;	2d1;	0d1;	1d8;0d0;	0202	;		8801;;cAttack;{1d2;at_bite;{}}##

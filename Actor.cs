@@ -87,13 +87,13 @@ namespace ODB
         }
 
         public static int IDCounter = 0;
-
-        #region written to save
         public int ID;
 
         public new ActorDefinition Definition;
         public int HpCurrent;
         public int MpCurrent;
+        public int HpMax;
+        public int MpMax;
         public int Cooldown;
 
         public List<BodyPart> PaperDoll;
@@ -103,10 +103,9 @@ namespace ODB
 
         public bool Awake;
         public Item Quiver;
-        #endregion
 
         //rolled stats
-        private int Strength, Dexterity, Intelligence;
+        private int _strength, _dexterity, _intelligence;
 
         #region temporary/cached (nonwritten)
         public bool[,] Vision;
@@ -121,23 +120,33 @@ namespace ODB
                 ).ToList();
             }
         }
-
-        public int HpMax { get { return Definition.HpMax; } }
-        public int MpMax { get { return Definition.MpMax; } }
         public bool IsAlive { get { return HpCurrent > 0; } }
         #endregion
 
-        public Actor(Point xy, ActorDefinition definition)
-            : base(xy, definition)
+        public Actor(
+            Point xy,
+            ActorDefinition definition,
+            int level
+        ) : base(xy, definition)
         {
             ID = IDCounter++;
-
             Definition = definition;
-            Strength = Util.Roll(definition.Strength);
-            Dexterity = Util.Roll(definition.Dexterity);
-            Intelligence = Util.Roll(definition.Intelligence);
-            HpCurrent = definition.HpMax;
-            MpCurrent = definition.MpMax;
+
+            _strength = Util.Roll(definition.Strength);
+            _dexterity = Util.Roll(definition.Dexterity);
+            _intelligence = Util.Roll(definition.Intelligence);
+
+            HpMax = Util.Roll(definition.HitDie, true);
+            for (int i = 0; i < level - 1; i++)
+                HpMax += Util.Roll(definition.HitDie);
+
+            MpMax = Util.Roll(definition.ManaDie, true);
+            for (int i = 0; i < level - 1; i++)
+                MpMax += Util.Roll(definition.ManaDie);
+
+            HpCurrent = HpMax;
+            MpCurrent = MpMax;
+
             Cooldown = 0;
 
             PaperDoll = new List<BodyPart>();
@@ -318,13 +327,13 @@ namespace ODB
             switch (stat)
             {
                 case Stat.Strength:
-                    return Strength +
+                    return _strength +
                         (modded ? GetMod(stat) : 0);
                 case Stat.Dexterity:
-                    return Dexterity +
+                    return _dexterity +
                         (modded ? GetMod(stat) : 0);
                 case Stat.Intelligence:
-                    return Intelligence +
+                    return _intelligence +
                         (modded ? GetMod(stat) : 0);
                 case Stat.Speed:
                     return Definition.Speed +
@@ -409,13 +418,19 @@ namespace ODB
             int weaponCount = GetWieldedItems().Count;
 
             int multiWeaponPenalty = 3 * weaponCount - 1;
-            multiWeaponPenalty = Math.Max(0, multiWeaponPenalty);
-
-            int strBonus = Get(Stat.Strength);
 
             int dexBonus = Get(Stat.Dexterity);
             dexBonus -= dexBonus % 2;
             dexBonus /= 2;
+
+            //dexbonus lowers multipenalty, but doesn't help unless you have
+            //that penalty
+            multiWeaponPenalty -= dexBonus;
+            multiWeaponPenalty = Math.Max(0, multiWeaponPenalty);
+
+            int strBonus = Get(Stat.Strength);
+            strBonus -= strBonus % 2;
+            strBonus /= 2;
 
             int weaponBonus = GetWieldedItems()
                 .Select(weapon => weapon.Mod)
@@ -426,28 +441,38 @@ namespace ODB
             int hitRoll =
                 roll +
                 strBonus +
-                dexBonus +
-                weaponBonus +
+                weaponBonus -
                 multiWeaponPenalty
             ;
 
+            bool crit = roll >= 20;
+
             int dodgeRoll = target.GetArmor();
 
-            if(Game.OpenRolls)
-                Game.Log(
-                    String.Format(
-                    "{0}{1:+#;-#;+0}{2:+#;-#;+0}" +
-                    "{3:+#;-#;+0}{4:+#;-#;+0} vs {5}",
-                    roll,
-                    strBonus,
-                    dexBonus,
-                    weaponBonus,
-                    -multiWeaponPenalty,
-                    dodgeRoll
-                    )
-                );
+            string message = "";
 
-            bool crit = Util.Roll("1d20") >= 20;
+            if(Game.OpenRolls)
+                message =
+                    String.Format(
+                        GetName("Name") + ": To-hit " +
+                        "{0}{1:+#;-#;+0}{2:+#;-#;+0}" +
+                        "{3:+#;-#;+0}={4} vs {5}{6} ",
+                        roll,
+                        strBonus,
+                        weaponBonus,
+                        -multiWeaponPenalty,
+                        hitRoll,
+                        dodgeRoll,
+                        crit
+                        ? "!"
+                        : "."
+                    )
+                ;
+
+            const string damageString =
+                "{0}{1:+#;-#;+0} damage: -{2} health. ";
+
+            int damage = 0;
 
             if (hitRoll >= dodgeRoll)
             {
@@ -456,75 +481,92 @@ namespace ODB
                     .FindAll(x => x.Type == DollSlot.Hand)
                     .Where(x => x.Item != null)
                     .Select(bp => bp.Item)
+                    .Distinct()
                     .ToList();
 
-                foreach (Item item in weapons)
-                {
-                    AttackComponent wc =
+                List<AttackComponent> attacks = new List<AttackComponent>();
+                attacks.AddRange(
+                    weapons.Select(w =>
                         (AttackComponent)
-                        item.GetComponent("cAttack");
-                    //If the held item has a cAttack, roll that damage
-                    //Otherwise we go with standard bash damage
-                    if (wc != null)
+                        w.GetComponent("cAttack")
+                    )
+                );
+
+                //nothing wielded => natural attack
+                if (attacks.Count == 0)
+                    attacks.Add(Definition.NaturalAttack);
+
+                for (int index = 0; index < attacks.Count; index++)
+                {
+                    AttackComponent ac = attacks[index];
+                    Item weapon = ac != Definition.NaturalAttack
+                        ? weapons[index]
+                        : null;
+
+                    if (ac != null)
                     {
+                        message += 
+                            AttackMessage.AttackMessages[ac.AttackType]
+                                .SelectRandom()
+                                .Instantiate(
+                                    this,
+                                    target,
+                                    weapon
+                                ) + " ";
+
                         foreach (EffectComponent ec in
-                            from ec in wc.Effects
+                            from ec in ac.Effects
                             let chance = ec.Chance / 255f
                             where Util.Random.NextDouble() <= chance
                             select ec)
                             target.LastingEffects.Add(ec.GetEffect(target));
-                        Game.Log(
-                            AttackMessage.AttackMessages[wc.AttackType]
-                            .SelectRandom()
-                            .Instantiate(
-                                this,
-                                target,
-                                item
-                            )
-                        );
-                        target.Damage(
-                            Util.Roll(wc.Damage, crit) + Get(Stat.Strength));
+
+                        int damageRoll = Util.Roll(ac.Damage, crit);
+
+                        if (Game.OpenRolls)
+                            message += String.Format(
+                                damageString,
+                                ac.Damage,
+                                strBonus,
+                                damageRoll + strBonus
+                            );
+
+                        damage += damageRoll + strBonus;
                     }
                     else
                     {
-                        Game.Log(
+                        message +=
                             AttackMessage.AttackMessages[AttackType.Bash]
-                            .SelectRandom()
-                            .Instantiate(
-                                this,
-                                target,
-                                item
-                            )
-                        );
-                        target.Damage(
-                            Util.Roll("1d4", crit) + Get(Stat.Strength));
-                    }
-                }
+                                .SelectRandom()
+                                .Instantiate(
+                                    this,
+                                    target,
+                                    weapon
+                                ) + " ";
 
-                //unarmed
-                //todo: use "natural attack" here
-                if (weapons.Count == 0)
-                {
-                    AttackComponent natAttack = Definition.NaturalAttack;
-                    Game.Log(
-                        AttackMessage.AttackMessages[natAttack.AttackType]
-                            .SelectRandom()
-                            .Instantiate(
-                            this,
-                            target,
-                            null
-                        )
-                    );
-                    target.Damage(
-                        Util.Roll(natAttack.Damage, crit) +
-                        Get(Stat.Strength)
-                    );
+                        int damageRoll = Util.Roll("1d4", crit);
+
+                        if (Game.OpenRolls)
+                            message += String.Format(
+                                damageString,
+                                "1d4",
+                                strBonus,
+                                damageRoll + strBonus
+                            );
+
+                        damage += damageRoll + strBonus;
+                    }
                 }
             }
             else
             {
-                Game.Log(GetName("Name") + " swings in the air.");
+                message +=
+                    GetName("Name") + " " + Verb("swing") + " in the air.";
             }
+
+            Game.Log(message);
+            if(damage > 0)
+                target.Damage(damage);
         }
         public void Shoot(Actor target)
         {
@@ -596,8 +638,11 @@ namespace ODB
             Game.Level.MakeNoise(1, target.xy);
             Pass();
         }
+
         public void Damage(int d)
         {
+            if (HpCurrent <= 0) return;
+
             Game.Level.Blood[xy.x, xy.y] = true;
             for(int x = -1; x <= 1; x++)
             for(int y = -1; y <= 1; y++)
@@ -890,11 +935,13 @@ namespace ODB
             Stream stream = WriteGObject();
             stream.Write(Definition.Type, 4);
             stream.Write(ID, 4);
-            stream.Write(Strength, 2);
-            stream.Write(Dexterity, 2);
-            stream.Write(Intelligence, 2);
+            stream.Write(_strength, 2);
+            stream.Write(_dexterity, 2);
+            stream.Write(_intelligence, 2);
             stream.Write(HpCurrent, 2);
+            stream.Write(HpMax, 2);
             stream.Write(MpCurrent, 2);
+            stream.Write(MpMax, 2);
             stream.Write(Cooldown, 2);
 
             foreach (BodyPart bp in PaperDoll)
@@ -944,11 +991,13 @@ namespace ODB
                 ];
 
             ID = stream.ReadHex(4);
-            Strength = stream.ReadHex(2);
-            Dexterity = stream.ReadHex(2);
-            Intelligence = stream.ReadHex(2);
+            _strength = stream.ReadHex(2);
+            _dexterity = stream.ReadHex(2);
+            _intelligence = stream.ReadHex(2);
             HpCurrent = stream.ReadHex(2);
+            HpMax = stream.ReadHex(2);
             MpCurrent = stream.ReadHex(2);
+            MpMax = stream.ReadHex(2);
             Cooldown = stream.ReadHex(2);
 
             PaperDoll = new List<BodyPart>();

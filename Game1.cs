@@ -129,7 +129,8 @@ namespace ODB
 
             Player = new Actor(
                 new Point(0, 0),
-                Util.ADefByName("Moribund")
+                Util.ADefByName("Moribund"),
+                1
             );
 
             Levels.Add(new Generator().Generate());
