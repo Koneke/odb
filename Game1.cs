@@ -132,6 +132,8 @@ namespace ODB
                 1
             );
 
+            InvMan = new InventoryManager();
+
             Levels.Add(new Generator().Generate(1));
             Level = Levels[0];
 
@@ -141,7 +143,6 @@ namespace ODB
                 .SelectMany(r => r.GetTiles())
                 .First(t => t.Stairs == Stairs.Up).Position;
                 
-
             Food = 9000;
 
             LastingEffect le = new LastingEffect(
@@ -153,8 +154,6 @@ namespace ODB
             Game.Player.AddEffect(le);
 
             SetupBrains();
-
-            InvMan = new InventoryManager();
 
             _logSize = 3;
             _log = new List<string>();
@@ -185,6 +184,9 @@ namespace ODB
                 {
                     switch (IO.IOState)
                     {
+                        case InputType.PlayerInput:
+                            Exit();
+                            break;
                         case InputType.Inventory:
                             InvMan.HandleCancel();
                             break;
@@ -199,7 +201,6 @@ namespace ODB
                             //           way turns out the best.
                             if (Caster == null)
                                 IO.IOState = InputType.PlayerInput;
-                            else Exit();
                             break;
                     }
                 }
@@ -745,8 +746,8 @@ namespace ODB
                 if (itemCount[i.xy.x, i.xy.y] == 1)
                     DrawToScreen(
                         i.xy - _camera,
-                        i.Identified ? i.Definition.Background : null,
-                        i.Identified ? i.Definition.Foreground : Color.Gray,
+                        i.Known ? i.Definition.Background : null,
+                        i.Known ? i.Definition.Foreground : Color.Gray,
                         i.Definition.Tile
                     );
                 //not sure I like the + for pile, since doors are +
@@ -850,24 +851,32 @@ namespace ODB
 
             int j = 2;
 
-            _inventoryConsole.CellData.Print(
-                inventoryW - offset, j++, "<t>ake out", Color.White);
-            _inventoryConsole.CellData.Print(
-                inventoryW - offset, j++, "<p>ut into", Color.White);
-            if (InventoryManager.CurrentContainer == -1)
+            if (InventoryManager.CurrentContainer != -1)
+            {
+                _inventoryConsole.CellData.Print(
+                    inventoryW - offset, j++, "<p>ut into", Color.White);
+                _inventoryConsole.CellData.Print(
+                    inventoryW - offset, j++, "<t>ake out", Color.White);
+            }
+            //if (InventoryManager.CurrentContainer == -1)
+            else
             {
                 _inventoryConsole.CellData.Print(
                     inventoryW - offset, j++, "<d>rop", Color.White);
                 _inventoryConsole.CellData.Print(
-                    inventoryW - offset, j++, "<w>ield", Color.White);
+                    inventoryW - offset, j++, "<e>at", Color.White);
                 _inventoryConsole.CellData.Print(
-                    inventoryW - offset, j++, "<W>ear", Color.White);
-                _inventoryConsole.CellData.Print(
-                    inventoryW - offset, j++, "<S>heath", Color.White);
+                    inventoryW - offset, j++, "<r>ead", Color.White);
                 _inventoryConsole.CellData.Print(
                     inventoryW - offset, j++, "<R>emove", Color.White);
                 _inventoryConsole.CellData.Print(
+                    inventoryW - offset, j++, "<S>heath", Color.White);
+                _inventoryConsole.CellData.Print(
                     inventoryW - offset, j++, "<q>uiver", Color.White);
+                _inventoryConsole.CellData.Print(
+                    inventoryW - offset, j++, "<w>ield", Color.White);
+                _inventoryConsole.CellData.Print(
+                    inventoryW - offset, j++, "<W>ear", Color.White);
             }
 
             _inventoryConsole.CellData.Print(
@@ -1073,6 +1082,14 @@ namespace ODB
             statrow += " ";
             statrow += "XP:";
             statrow += Player.Level + "";
+
+            statrow += " ";
+            statrow += "$:";
+            statrow +=
+                Player.Inventory
+                .Where(item => item.Type == 0x8000)
+                .Sum(item => item.Count)
+            ;
 
             statrow += " ";
             statrow += "T:";

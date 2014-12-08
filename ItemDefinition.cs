@@ -70,7 +70,6 @@ namespace ODB
                 }},
                 {(int)ItemCategory.Longsword, new List<string>{
                     "long blade",
-                    "curved blade"
                 }},
                 {(int)ItemCategory.Twohander, new List<string>{
                     "huge sword",
@@ -82,6 +81,7 @@ namespace ODB
         public bool Stacking;
         public int Category;
         public int Weight;
+        public int Value;
 
         public List<Component> Components; 
 
@@ -131,6 +131,7 @@ namespace ODB
             Stacking = stream.ReadBool();
             Category = stream.ReadHex(2);
             Weight = stream.ReadHex(4);
+            Value = stream.ReadHex(4);
 
             ItemDefinitions[Type] = this;
 
@@ -152,6 +153,7 @@ namespace ODB
             stream.Write(Stacking);
             stream.Write(Category, 2);
             stream.Write(Weight, 4);
+            stream.Write(Value, 4);
 
             foreach (Component c in Components)
                 stream.Write(c.WriteComponent(), false);

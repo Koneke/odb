@@ -323,6 +323,8 @@ namespace ODB
         {
             Game.Level.WorldItems.Add(item);
             Inventory.Remove(item);
+            foreach (BodyPart bp in PaperDoll.Where(bp => bp.Item == item))
+                bp.Item = null;
         }
 
         public int Get(Stat stat, bool modded = true)

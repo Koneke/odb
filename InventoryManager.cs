@@ -198,6 +198,12 @@ namespace ODB
             if (IO.KeyPressed(Keys.S) && !IO.ShiftState)
                 CheckSplit(SelectedItem);
 
+            if (IO.KeyPressed(Keys.E) && !IO.ShiftState)
+                CheckEat(SelectedItem);
+
+            if (IO.KeyPressed(Keys.R) && !IO.ShiftState)
+                CheckRead(SelectedItem);
+
             if (IO.KeyPressed(Keys.J) && IO.ShiftState)
             {
                 if (!SelectedItem.Stacking) return;
@@ -332,6 +338,27 @@ namespace ODB
             {
                 Game.Log("You are not wearing that.");
             }
+        }
+
+        private static void CheckEat(Item item)
+        {
+            if (!item.HasComponent("cEdible")) return;
+
+            Game.Log("You eat {0}", item.GetName("the"));
+            Game.Player.Eat(item);
+            Game.Player.Pass();
+        }
+
+        private static void CheckRead(Item item)
+        {
+            if (!item.HasComponent("cReadable") &&
+                !item.HasComponent("cLearnable")) return;
+
+            Game.QpAnswerStack.Push(
+                IO.Indexes[Game.Player.Inventory.IndexOf(item)] + ""
+            );
+            PlayerResponses.Read();
+            Game.Player.Pass();
         }
 
         public void HandleCancel()

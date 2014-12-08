@@ -1,12 +1,13 @@
-8800XXXXXXFF0000%moribund corpse	;0	00	1b58	cEdible;{09c4}##
-8801XXXXXXFF0000%rat corpse		;0	00	00c8	cEdible;{03e8}##
-8802XXXXXXFF0000%newt corpse		;0	00	00c8	cEdible;{03e8}##
-8001XXXXXXFFC0CB[apron			;0	00	00c8	cWearable;{1,;00}##
-8002XXXXXXA52A2Aarrow			;1	00	0002	cProjectile;{1d2}##
-8003XXXXXXA52A2A)bow			;0	00	005a	cLauncher;{8005,;1d6;}##
-8004XXXXXXD3D3D3)longsword		;0	00	00b4	cAttack;{1d6;at_slash;{}}cUsable;{0000}##
-8005XXXXXXFFFFFF?scroll of forcebolt	;0	00	0001	cUsable;{0000}##
-8006XXXXXXA52A2A(bag			;0	00	0005	cContainer;{}##
-8007XXXXXXA52A2A)zweihander		;0	00	0190	cAttack;{2d6;at_slash;{cEffect;{et_poison;ff100d2}}}##
-8008XXXXXXA52A2A[chainmail		;0	00	0708	cWearable;{1,;04}##
-8009XXXXXXFFFF00+tome of forcebolt	;0	00	0ce8	cLearnable;{0001}##
+8000XXXXXXFFFF00$gold coin;		1	ff	0001	ffff	##	
+8001XXXXXXFFC0CB[apron;			0	00	00C8	000a	cWearable;{01,;01}##
+8002XXXXXXA52A2Aarrow;			1	00	0002	ffff	cProjectile;{1d2;}##
+8003XXXXXXA52A2A)bow;			0	00	005A	ffff	cLauncher;{8005,;1d6;}##
+8004XXXXXXD3D3D3)longsword;		0	00	00B4	0010	cAttack;{1d6;at_slash;{}}##
+8005XXXXXXFFFFFF?scroll of forcebolt;	0	01	0001	000d	cReadable;{0000}##
+8006XXXXXXA52A2A(bag;			0	00	0005	0006	cContainer;{}##
+8007XXXXXXA52A2A)zweihander;		0	00	0190	0015	cAttack;{2d6;at_slash;{cEffect;{et_poison;FF100d2;}}}##
+8008XXXXXXA52A2A[chainmail;		0	00	0708	001a	cWearable;{01,;03}##
+8009XXXXXXFFFF00+tome of forcebolt;	0	00	0CE8	ffff	cLearnable;{0001}##
+8800XXXXXXFF0000%moribund corpse;	0	00	1B58	ffff	cEdible;{09C4}##
+8801XXXXXXFF0000%rat corpse;		0	00	00C8	ffff	cEdible;{03E8}##
+8802XXXXXXFF0000%newt corpse;		0	00	00C8	ffff	cEdible;{03E8}##

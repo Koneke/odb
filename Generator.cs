@@ -267,6 +267,7 @@ namespace ODB
             {
                 ActorDefinition monster =
                     possibleMonsters.SelectRandom();
+
                 newLevel.Spawn(
                     new Actor(
                         newLevel.RandomOpenPoint(),
@@ -275,6 +276,56 @@ namespace ODB
                     )
                 );
             }
+
+            int loot = (depth + 1) * 15;
+            List<ItemDefinition> possibleItems =
+                ItemDefinition.ItemDefinitions
+                    .Where(itd => itd != null)
+                    .Where(itd => itd.Value < loot)
+                    .ToList();
+
+            while (loot > 0 && possibleItems.Count > 0)
+            {
+                ItemDefinition itemd = possibleItems.SelectRandom();
+
+                loot -= itemd.Value;
+                Item item = new Item(
+                    newLevel.RandomOpenPoint(),
+                    itemd,
+                    //todo: Stacking items should be able to spawn in stacks
+                    //      otherwise they are fairly useless, lol.
+                    //      Same goes for charged items.
+                    //ReSharper disable once RedundantArgumentDefaultValue
+                    itemd.Stacking
+                    ? Util.Roll("3d3")
+                    : 0
+                );
+
+                newLevel.Spawn(item);
+
+                possibleItems =
+                    ItemDefinition.ItemDefinitions
+                    .Where(itd => itd != null)
+                    .Where(itd => itd.Value < loot)
+                    .ToList();
+            }
+
+            while (loot > 0)
+            {
+                //Notice: gold should always be at the first item spot, i.e.
+                //0x8000.
+                ItemDefinition gold = ItemDefinition.ItemDefinitions[0x8000];
+                int amount = Util.Random.Next(1, loot + 1);
+                Item item = new Item(
+                    newLevel.RandomOpenPoint(),
+                    gold,
+                    amount * 3 + Util.Random.Next(0, 3)
+                );
+                newLevel.Spawn(item);
+                loot -= amount;
+            }
+
+            newLevel.Name = "Dungeon:" + depth;
 
             return newLevel;
         }

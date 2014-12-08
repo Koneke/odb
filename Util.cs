@@ -362,7 +362,7 @@ namespace ODB
         {
             switch (type)
             {
-                case EffectType.Poison: return "et_type";
+                case EffectType.Poison: return "et_poison";
                 default: throw new ArgumentException();
             }
         }

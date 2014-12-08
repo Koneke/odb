@@ -74,7 +74,6 @@ namespace ODB
         public Component GetComponent(string s) {
             return Definition.GetComponent(s);
         }
-        public bool Identified { get { return Definition.Identified; } }
 
         //SPAWNING a NEW item
         public Item(
@@ -105,7 +104,10 @@ namespace ODB
         {
             get
             {
-                return ItemDefinition.IdentifiedDefs.Contains(Definition.Type);
+                return
+                    ItemDefinition.IdentifiedDefs.Contains(Definition.Type) ||
+                    Definition.Category == 0xff
+                ;
             }
         }
         private string UnknownApperance
@@ -133,9 +135,9 @@ namespace ODB
 
             //Stacking item, but only one of it
             if (format == "count")
-                if (Count < 2 || !Stacking) format = "a";
+                if (Count == 1  || !Stacking) format = "a";
             if (format == "Count")
-                if (Count < 2 || !Stacking) format = "A";
+                if (Count == 1 || !Stacking) format = "A";
 
             switch (format.ToLower())
             {

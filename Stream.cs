@@ -78,6 +78,11 @@ namespace ODB
             Write(s.ToString(), delimit);
         }
 
+        public void Tab()
+        {
+            Write("\t", false);
+        }
+
         public Color ReadColor()
         {
             Color c = new Color(

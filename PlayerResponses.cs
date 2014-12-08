@@ -595,6 +595,7 @@ namespace ODB
                 Game.Player.Eat(it);
             }
 
+            Game.Player.Pass();
         }
 
         public static void Engrave()

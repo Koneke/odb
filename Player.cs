@@ -169,8 +169,10 @@ namespace ODB
             }
 
             IO.AcceptedInput.Clear();
-            for (int i = 0; i < wieldable.Count; i++)
-                IO.AcceptedInput.Add(IO.Indexes[i]);
+            foreach(Item item in wieldable)
+                IO.AcceptedInput.Add(IO.Indexes
+                    [Game.Player.Inventory.IndexOf(item)]
+                );
 
             string question = "Wield what? [";
             question += IO.AcceptedInput.Aggregate(
