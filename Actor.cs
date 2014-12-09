@@ -304,17 +304,13 @@ namespace ODB
         }
         public List<Item> GetWieldedItems()
         {
-            List<Item> equipped = new List<Item>();
-            foreach (
-                BodyPart bp in
-                from bp in PaperDoll
-                    where bp != null
-                    where bp.Item != null
-                    where bp.Type == DollSlot.Hand
-                    where !equipped.Contains(bp.Item)
-                select bp)
-                equipped.Add(bp.Item);
-            return equipped;
+            return PaperDoll
+                .Where(bp => bp != null)
+                .Where(bp => bp.Type == DollSlot.Hand)
+                .Where(bp => bp.Item != null)
+                .Select(bp => bp.Item)
+                .Distinct()
+                .ToList();
         }
         public List<BodyPart> GetSlots(DollSlot type)
         {
@@ -525,7 +521,15 @@ namespace ODB
                             let chance = ec.Chance / 255f
                             where Util.Random.NextDouble() <= chance
                             select ec)
-                            target.LastingEffects.Add(ec.GetEffect(target));
+                        {
+                            target.AddEffect(
+                                LastingEffect.Create(
+                                    target.ID,
+                                    ec.EffectType,
+                                    Util.Roll(ec.Length)
+                                )
+                            );
+                        }
 
                         int damageRoll = Util.Roll(ac.Damage, crit);
 
@@ -664,14 +668,13 @@ namespace ODB
             Item corpse = new Item(
                 xy,
                 LevelID,
-                Util.ItemDefByName(Definition.Name + " corpse"),
+                ItemDefinition.ItemDefinitions[Definition.CorpseType],
                 0, Intrinsics
             );
             //should always be ided
             //or maybe not..? could be a mechanic in and of itself
             corpse.Identify();
             Game.Level.Spawn(corpse);
-            World.WorldActors.Remove(this);
             Game.Brains.RemoveAll(b => b.MeatPuppet == this);
 
             if(attacker != null)
@@ -974,6 +977,11 @@ namespace ODB
             if (format.Length == 0) return result;
             if (format[0] <= 'Z') return Util.Capitalize(result);
             return result;
+        }
+
+        public bool Sees(Actor other)
+        {
+            return Vision[other.xy.x, other.xy.y];
         }
 
         public Stream WriteActor()

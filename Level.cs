@@ -30,17 +30,11 @@ namespace ODB
             ActorRooms = new Dictionary<Actor, List<Room>>();
             ID = IDCounter++;
         }
-
         public Level(string s)
         {
             LoadLevelSave(s);
             ActorPositions = new Dictionary<Room, List<Actor>>();
             ActorRooms = new Dictionary<Actor, List<Room>>();
-        }
-
-        public Tile TileAt(Point p)
-        {
-            return Map[p.x, p.y];
         }
 
         public void Clear()
@@ -51,6 +45,10 @@ namespace ODB
             Rooms = new List<Room>();
         }
 
+        public Tile TileAt(Point p)
+        {
+            return Map[p.x, p.y];
+        }
         public Actor ActorOnTile(Tile t)
         {
             for (int x = 0; x < Size.x; x++)
@@ -64,7 +62,6 @@ namespace ODB
                         return ActorOnTile(new Point(x, y));
             return null;
         }
-
         public Actor ActorOnTile(Point xy, int? level = null)
         {
             return World.WorldActors
@@ -76,7 +73,6 @@ namespace ODB
                 )
                 .FirstOrDefault(actor => actor.xy == xy);
         }
-
         public List<Item> ItemsOnTile(Point xy)
         {
             return World.WorldItems
@@ -108,7 +104,6 @@ namespace ODB
                 r.Linked.AddRange(NeighbouringRooms(r));
             }
         }
-
         public void CalculateActorPositions()
         {
             ActorPositions.Clear();
@@ -189,12 +184,10 @@ namespace ODB
              * Header
                  * Name
                  * Dimensions
-                 * (future: our own id)
+                 * ID
              * Body
                  * Level itself
                  * Rooms
-                 * Actors
-                 * Items
              */
 
             Stream stream = new Stream();
@@ -223,23 +216,9 @@ namespace ODB
             }
             stream.Write("</ROOMS>", false);
 
-            /*foreach (Item item in AllItems)
-            {
-                stream.Write(item.WriteItem() + "##", false);
-            }
-            stream.Write("</ITEMS>", false);*/
-
-            /*foreach (Actor actor in WorldActors)
-            {
-                stream.Write(
-                    actor.WriteActor() + "##", false);
-            }
-            stream.Write("</ACTORS>", false);*/
-
             SaveIO.WriteToFile(path, stream.ToString());
             return stream;
         }
-
         public void LoadLevelSave(string path)
         {
             string content = SaveIO.ReadFromFile(path);
@@ -344,7 +323,6 @@ namespace ODB
         ) {
             return CreateRoom(level, new List<Rect>{ rect }, floor, walls);
         }
-
         public Room CreateRoom(
             Level level,
             List<Rect> rects,

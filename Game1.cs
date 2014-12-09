@@ -21,7 +21,11 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 //   to the .def files.
 //   * Mainly because it just makes things more convenient to edit
 //     manually.
-// * #15, add actor/item saving to file back in (but in game.sv now).
+// * Switch to human numbers in .def-files?
+//   * Original reason for hex was because I was dumb and though
+//     "wow can't use variable length things", then I realized what a semicolon
+//     was?
+//   * More easily manually tweaked that way.
 
 namespace ODB
 {
@@ -150,11 +154,20 @@ namespace ODB
                 
             Food = 9000;
 
+            //todo: these should probably not be lastingeffects
+            //      they probably should be hardcoded really.
             LastingEffect le = new LastingEffect(
                 Player.ID,
                 StatusType.None,
                 -1,
                 Util.TickingEffectDefinitionByName("passive hp regeneration")
+            );
+            Game.Player.AddEffect(le);
+            le = new LastingEffect(
+                Player.ID,
+                StatusType.None,
+                -1,
+                Util.TickingEffectDefinitionByName("passive mp regeneration")
             );
             Game.Player.AddEffect(le);
 
@@ -436,15 +449,48 @@ namespace ODB
                 Effect = () =>
                 {
                     Actor target = Game.Level.ActorOnTile(Game.Target);
-                    target.Damage(Util.Roll("2d4"), Game.Caster);
+                    if (target == null)
+                    {
+                        Game.Log("The bolt fizzles in the air.");
+                        return;
+                    }
                     Game.Log(
                         "The forcebolt hits {1}.",
                         target.GetName("the")
                     );
+                    target.Damage(Util.Roll("2d4"), Game.Caster);
                 },
                 CastDifficulty = 1,
                 Cost = 1,
                 Range = 5
+            };
+
+            new Spell("identify")
+            {
+                CastType = InputType.QuestionPromptSingle,
+                SetupAcceptedInput = () =>
+                {
+                    IO.AcceptedInput.Clear();
+                    IO.AcceptedInput.AddRange(
+                        Game.Caster.Inventory
+                            .Where(it => !it.Known)
+                            .Select(item => Game.Caster.Inventory.IndexOf(item))
+                            .Select(index => IO.Indexes[index])
+                    );
+
+                },
+                Effect = () =>
+                {
+                    string answer = Game.QpAnswerStack.Pop();
+                    int index = IO.Indexes.IndexOf(answer[0]);
+                    Item item = Game.Caster.Inventory[index];
+                    string prename = item.GetName("the");
+                    item.Identify();
+                    Game.Log("You identified " +
+                        prename + " as " + item.GetName("a") + ".");
+                },
+                CastDifficulty = 0,
+                Cost = 0
             };
 
             //ReSharper disable once ObjectCreationAsStatement
@@ -482,9 +528,8 @@ namespace ODB
                     if (Game.Player.HasEffect(StatusType.Bleed)) return;
 
                     Game.Log(
-                        //todo: Note, should be startS for everyone except you
                         Game.Player.GetName("Name") +
-                        " start bleeding!"
+                        Game.Player.Verb("start") + " bleeding!"
                     );
                     Game.Player.AddEffect(
                         new LastingEffect(
@@ -666,8 +711,7 @@ namespace ODB
 
                 GameTick++;
 
-                List<Actor> wa = new List<Actor>(World.WorldActors);
-                foreach (Actor a in wa)
+                foreach (Actor a in World.WorldActors)
                 {
                     foreach (LastingEffect effect in a.LastingEffects)
                         effect.Tick();
@@ -676,7 +720,7 @@ namespace ODB
                             x.Life > x.LifeLength &&
                             x.LifeLength != -1);
                 }
-                World.WorldActors = wa;
+                World.WorldActors.RemoveAll(a => !a.IsAlive);
             }
         }
 

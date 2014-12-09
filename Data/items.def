@@ -3,11 +3,16 @@
 8002XXXXXXA52A2Aarrow;			1	ff	0002	ffff	cProjectile;{1d2;}##
 8003XXXXXXA52A2A)bow;			0	ff	005A	ffff	cLauncher;{8005,;1d6;}##
 8004XXXXXXD3D3D3)longsword;		0	10	00B4	0010	cAttack;{1d6;at_slash;{}}##
-8005XXXXXXFFFFFF?scroll of forcebolt;	0	01	0001	000d	cReadable;{0000}##
-8006XXXXXXA52A2A(bag;			0	02	0005	0006	cContainer;{}##
-8007XXXXXXA52A2A)zweihander;		0	11	0190	0015	cAttack;{2d6;at_slash;{cEffect;{et_poison;FF100d2;}}}##
-8008XXXXXXA52A2A[chainmail;		0	ff	0708	001a	cWearable;{01,;03}##
-8009XXXXXXFFFF00+tome of forcebolt;	0	00	0CE8	ffff	cLearnable;{0001}##
+8005XXXXXXA52A2A(cloth bag;		0	03	0005	0006	cContainer;{}##
+8006XXXXXXA52A2A)zweihander;		0	11	0190	0015	cAttack;{2d6;at_slash;{cEffect;{st_poison;FF100d2;}}}##
+8007XXXXXXA52A2A[chainmail;		0	ff	0708	001a	cWearable;{01,;03}##
+
+8100XXXXXXFFFFFF?scroll of forcebolt;	0	01	0001	000d	cReadable;{0001}##
+8101XXXXXXFFFFFF?scroll of identify;	0	01	0001	000d	cReadable;{0002}##
+8200XXXXXXFFFF00+tome of forcebolt;	0	02	0032	002a	cLearnable;{0001}##
+8201XXXXXXFFFF00+tome of identify;	0	02	0032	0025	cLearnable;{0002}##
+
 8800XXXXXXFF0000%moribund corpse;	0	00	1B58	ffff	cEdible;{09C4}##
-8801XXXXXXFF0000%rat corpse;		0	00	00C8	ffff	cEdible;{03E8}##
-8802XXXXXXFF0000%newt corpse;		0	00	00C8	ffff	cEdible;{03E8}##
+8801XXXXXXFF0000%rat corpse;		0	00	00C8	ffff	cEdible;{01E8}cAttack;{1d6;at_bash;{cEffect;{st_poison;0850d2;}}}##
+8802XXXXXXFF0000%newt corpse;		0	00	00C8	ffff	cEdible;{01E8}##
+8803XXXXXXFF0000%kobold corpse;		0	00	00C8	ffff	cEdible;{02E8}##

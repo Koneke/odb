@@ -84,7 +84,11 @@ namespace ODB
         {
             if (IO.KeyPressed(Keys.I))
             {
-                State = InventoryState.Browsing;
+                if (State != InventoryState.Browsing)
+                {
+                    State = InventoryState.Browsing;
+                    Game.Log("Nevermind.");
+                }
                 IO.IOState = InputType.PlayerInput;
             }
 
@@ -329,9 +333,7 @@ namespace ODB
                     PlayerResponses.Sheath();
             }
             else
-            {
                 Game.Log("You are not wielding that.");
-            }
         }
 
         private static void CheckRemove(Item item)
@@ -344,9 +346,7 @@ namespace ODB
                     PlayerResponses.Remove();
             }
             else
-            {
                 Game.Log("You are not wearing that.");
-            }
         }
 
         private static void CheckEat(Item item)
@@ -372,8 +372,11 @@ namespace ODB
 
         public void HandleCancel()
         {
-            if(State != InventoryState.Browsing)
+            if (State != InventoryState.Browsing)
+            {
                 State = InventoryState.Browsing;
+                Game.Log("Nevermind.");
+            }
             else IO.IOState = InputType.PlayerInput;
         }
     }

@@ -350,23 +350,6 @@ namespace ODB
             }
         }
 
-        public static EffectType ReadEffectType(string s)
-        {
-            switch (s.ToLower())
-            {
-                case "et_poison": return EffectType.Poison;
-                default: throw new ArgumentException();
-            }
-        }
-        public static string WriteEffectType(EffectType type)
-        {
-            switch (type)
-            {
-                case EffectType.Poison: return "et_poison";
-                default: throw new ArgumentException();
-            }
-        }
-
         public static Point GetTarget()
         {
             return Game.Target;

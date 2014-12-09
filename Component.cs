@@ -289,7 +289,7 @@ namespace ODB
         public const string Type = "cEffect";
         public override string GetComponentType() { return Type; }
 
-        public EffectType EffectType;
+        public StatusType EffectType;
         public int Chance;
         public string Length;
 
@@ -298,7 +298,7 @@ namespace ODB
             Stream stream = new Stream(content);
             return new EffectComponent
             {
-                EffectType = Util.ReadEffectType(stream.ReadString()),
+                EffectType = LastingEffect.ReadStatusType(stream.ReadString()),
                 Chance = stream.ReadHex(2),
                 Length = stream.ReadString()
             };
@@ -309,25 +309,11 @@ namespace ODB
             Stream stream = new Stream();
             stream.Write(Type);
             stream.Write("{", false);
-            stream.Write(Util.WriteEffectType(EffectType));
+            stream.Write(LastingEffect.WriteStatusType(EffectType));
             stream.Write(Chance, 2);
             stream.Write(Length);
             stream.Write("}", false);
             return stream;
-        }
-
-        public LastingEffect GetEffect(Actor holder)
-        {
-            switch (EffectType)
-            {
-                case EffectType.Poison:
-                    return new LastingEffect(
-                        holder.ID,
-                        StatusType.Confusion,
-                        Util.Roll(Length)
-                    );
-                default: throw new ArgumentException();
-            }
         }
     }
 

@@ -202,8 +202,9 @@ namespace ODB
             }
 
             IO.AcceptedInput.Clear();
-            for (int i = 0; i < wearable.Count; i++)
-                IO.AcceptedInput.Add(IO.Indexes[i]);
+            foreach(Item item in wearable)
+                IO.AcceptedInput.Add(
+                    IO.Indexes[Game.Player.Inventory.IndexOf(item)]);
 
             string question = "Wear what? [";
             question += IO.AcceptedInput.Aggregate(
