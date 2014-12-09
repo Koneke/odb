@@ -21,7 +21,7 @@ namespace ODB
             );
 
             Item it = onTile[i];
-            Game.Level.WorldItems.Remove(it);
+            World.WorldItems.Remove(it);
 
             if (it.Definition.Stacking)
             {
@@ -103,7 +103,7 @@ namespace ODB
                 Item stack = iot.First(item => item.CanStack(it));
                 stack.Stack(it);
             }
-            else Game.Level.WorldItems.Add(it);
+            else World.WorldItems.Add(it);
 
             it.xy = Game.Player.xy;
 
@@ -185,7 +185,7 @@ namespace ODB
             Item stack = new Item(item.WriteItem().ToString());
             stack.Count = count;
             stack.ID = Item.IDCounter++;
-            Game.Level.AllItems.Add(stack);
+            World.AllItems.Add(stack);
 
             if (container == -1)
                 Game.Player.Inventory.Add(stack);
@@ -255,7 +255,7 @@ namespace ODB
                 clone.Count--;
                 it.Count = 1;
                 Game.Player.Inventory.Add(clone);
-                Game.Level.AllItems.Add(clone);
+                World.AllItems.Add(clone);
             }
             Game.Player.Wear(it);
             it.Identify();
@@ -331,7 +331,7 @@ namespace ODB
 
             stack.Count += it.Count;
             Game.Player.Inventory.Remove(it);
-            Game.Level.AllItems.Remove(it);
+            World.AllItems.Remove(it);
 
             Game.Player.Pass();
         }

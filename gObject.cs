@@ -119,12 +119,16 @@ namespace ODB
         //ReSharper disable InconsistentNaming
         public Point xy;
         //ReSharper restore InconsistentNaming
+        public int LevelID;
         public gObjectDefinition Definition;
 
         public gObject(
-            Point xy, gObjectDefinition definition
+            Point xy,
+            int level,
+            gObjectDefinition definition
         ) {
             this.xy = xy;
+            LevelID = level;
             Definition = definition;
         }
 

@@ -49,12 +49,12 @@ namespace ODB
 
         public static Item GetItemByID(int id)
         {
-            return Game.Level.AllItems.Find(x => x.ID == id);
+            return World.AllItems.Find(x => x.ID == id);
         }
 
         public static Actor GetActorByID(int id)
         {
-            return Game.Level.WorldActors.Find(x => x.ID == id);
+            return World.WorldActors.Find(x => x.ID == id);
         }
 
         public static ItemDefinition ItemDefByName(string name)

@@ -16,8 +16,12 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 //     but it /is/ fairly messy.
 // * Inventory stuff currently doesn't make noise.
 
-//~~~ QUEST TRACKER for 8 dec ~~~
-// * Item value (for generation purposes).
+//~~~ QUEST TRACKER for 09 dec ~~~
+// * Write item/character tile number, instead of the actual tile,
+//   to the .def files.
+//   * Mainly because it just makes things more convenient to edit
+//     manually.
+// * #15, add actor/item saving to file back in (but in game.sv now).
 
 namespace ODB
 {
@@ -128,6 +132,7 @@ namespace ODB
 
             Player = new Actor(
                 new Point(0, 0),
+                0,
                 Util.ADefByName("Moribund"),
                 1
             );
@@ -246,7 +251,8 @@ namespace ODB
             UpdateCamera();
 
             //should probably find a better place to tick this
-            foreach (Actor a in Game.Level.WorldActors)
+            foreach (Actor a in World.WorldActors
+                .Where(a => a.LevelID == Level.ID))
             {
                 a.ResetVision();
                 foreach (Room r in Util.GetRooms(a))
@@ -346,7 +352,8 @@ namespace ODB
         public void SetupBrains() {
             if(Brains == null) Brains = new List<Brain>();
             else Brains.Clear();
-            foreach (Actor actor in Level.WorldActors)
+            foreach (Actor actor in World.WorldActors
+                .Where(a => a.LevelID == Game.Level.ID))
                 //shouldn't be needed, but
                 //what did i even mean with that comment
                 if (actor.ID == 0) Game.Player = actor;
@@ -357,14 +364,15 @@ namespace ODB
         {
             bool downwards =
                 Game.Levels.IndexOf(newLevel) > Game.Levels.IndexOf(Level);
-            Level.WorldActors.Remove(Player);
-            foreach (Item it in Player.Inventory) Level.Despawn(it);
+
+            Game.Player.LevelID = newLevel.ID;
 
             Level = newLevel;
-            Level.WorldActors.Add(Player);
-            foreach (Item it in Player.Inventory) Level.AllItems.Add(it);
+            foreach (Item item in Player.Inventory)
+                item.MoveTo(newLevel);
 
-            foreach (Actor a in Level.WorldActors)
+            foreach (Actor a in World.WorldActors
+                .Where(a => a.LevelID == Level.ID))
             {
                 //reset vision, incase the level we moved to is a different size
                 a.Vision = null;
@@ -647,8 +655,7 @@ namespace ODB
             {
                 foreach (Brain b in Brains
                     .Where(
-                        b => Game.Level.WorldActors.Contains(b.MeatPuppet) &&
-                        b.MeatPuppet.Cooldown <= 0 && b.MeatPuppet.Awake))
+                        b => b.MeatPuppet.Cooldown <= 0 && b.MeatPuppet.Awake))
                     b.Tick();
 
                 foreach (Brain b in Brains.Where(b => b.MeatPuppet.Awake))
@@ -659,7 +666,7 @@ namespace ODB
 
                 GameTick++;
 
-                List<Actor> wa = new List<Actor>(Level.WorldActors);
+                List<Actor> wa = new List<Actor>(World.WorldActors);
                 foreach (Actor a in wa)
                 {
                     foreach (LastingEffect effect in a.LastingEffects)
@@ -669,7 +676,7 @@ namespace ODB
                             x.Life > x.LifeLength &&
                             x.LifeLength != -1);
                 }
-                Level.WorldActors = wa;
+                World.WorldActors = wa;
             }
         }
 
@@ -736,10 +743,12 @@ namespace ODB
                 Game.Level.Size.y
             ];
 
-            foreach (Item i in Game.Level.WorldItems)
+            foreach (Item i in World.WorldItems
+                .Where(it => it.LevelID == Game.Level.ID))
                 itemCount[i.xy.x, i.xy.y]++;
 
-            foreach (Item i in Game.Level.WorldItems
+            foreach (Item i in World.WorldItems
+                .Where(i => i.LevelID == Level.ID)
                 .Where(i => Game.Player.Vision[i.xy.x, i.xy.y] || WizMode)
                 .Where(i => screen.ContainsPoint(i.xy)))
             {
@@ -764,10 +773,12 @@ namespace ODB
                 Game.Level.Size.y
             ];
 
-            foreach (Actor a in Game.Level.WorldActors)
+            foreach (Actor a in World.WorldActors
+                .Where(a => a.LevelID == Level.ID))
                 actorCount[a.xy.x, a.xy.y]++;
 
-            foreach (Actor a in Game.Level.WorldActors
+            foreach (Actor a in World.WorldActors
+                .Where(a => a.LevelID == Level.ID)
                 .Where(a => Game.Player.Vision[a.xy.x, a.xy.y] || WizMode)
                 .Where(a => screen.ContainsPoint(a.xy)))
             {
@@ -924,18 +935,10 @@ namespace ODB
 
             List<Item> items = new List<Item>();
             if (InventoryManager.CurrentContainer != -1)
-                items.AddRange(
-                    Game.Level.AllItems
-                    .Where(
-                        item => InventoryManager.Containers
-                        [InventoryManager.CurrentContainer]
-                        .Contains(item)
-                    )
-                );
+                items.AddRange(InvMan.CurrentContents);
             else items.AddRange(Player.Inventory);
 
             int y = 1;
-            //foreach (Item item in items)
             for(int i = 0; i < items.Count; i++)
             {
                 Item item = items[i];
@@ -946,7 +949,10 @@ namespace ODB
                 name += ") ";
 
                 if (item.Stacking) name += item.Count + "x ";
-                name += item.Mod.ToString("+#;-#;+0") + " ";
+                if ((item.HasComponent("cWearable") ||
+                    item.HasComponent("cAttack")) &&
+                    item.Known)
+                    name += item.Mod.ToString("+#;-#;+0") + " ";
                 name += item.GetName("Name");
                 if (item.Stacking && item.Count > 1) name += "s";
 

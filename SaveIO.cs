@@ -12,12 +12,10 @@ namespace ODB
         {
             Stream stream = new Stream();
             stream.Write(IO.Game.Levels.Count, 2);
+            stream.Write(IO.Game.Player.LevelID, 2);
+
             for (int i = 0; i < IO.Game.Levels.Count; i++)
-            {
-                if (IO.Game.Levels[i].WorldActors.Contains(IO.Game.Player))
-                    stream.Write(i, 2);
                 IO.Game.Levels[i].WriteLevelSave("Save/level" + i + ".sv");
-            }
 
             //okay, so I really don't think anyone's going to hit
             //gametick 0xFFFFFFFF, that'd be ludicrous.
@@ -92,7 +90,7 @@ namespace ODB
             }
 
             foreach (Level level in Util.Game.Levels)
-                level.WorldItems.RemoveAll(x => containerItems.Contains(x.ID));
+                World.WorldItems.RemoveAll(x => containerItems.Contains(x.ID));
 
             string identifieds = stream.ReadString();
             foreach (string ided in identifieds.Split(',')

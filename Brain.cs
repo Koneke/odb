@@ -17,7 +17,7 @@ namespace ODB
 
         public void Tick()
         {
-            if (!Game.Level.WorldActors.Contains(MeatPuppet))
+            if (MeatPuppet.LevelID != Game.Level.ID)
                 return;
 
             if (!MeatPuppet.Awake) return;

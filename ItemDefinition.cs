@@ -9,6 +9,7 @@ namespace ODB
     {
         Potion = 0x00,
         Scroll = 0x01,
+        Bag = 0x02,
         Longsword = 0x10,
         Twohander = 0x11,
     }
@@ -67,6 +68,9 @@ namespace ODB
                 {(int)ItemCategory.Scroll, new List<string>{
                     "scroll labelled ZELGO MER",
                     "scroll labelled JUYED AWK YACC",
+                }},
+                {(int)ItemCategory.Bag, new List<string>{
+                    "bag",
                 }},
                 {(int)ItemCategory.Longsword, new List<string>{
                     "long blade",

@@ -271,6 +271,7 @@ namespace ODB
                 newLevel.Spawn(
                     new Actor(
                         newLevel.RandomOpenPoint(),
+                        newLevel.ID,
                         monster,
                         (int)Math.Floor(difficulty/2f)
                     )
@@ -291,6 +292,7 @@ namespace ODB
                 loot -= itemd.Value;
                 Item item = new Item(
                     newLevel.RandomOpenPoint(),
+                    newLevel.ID,
                     itemd,
                     //todo: Stacking items should be able to spawn in stacks
                     //      otherwise they are fairly useless, lol.
@@ -318,6 +320,7 @@ namespace ODB
                 int amount = Util.Random.Next(1, loot + 1);
                 Item item = new Item(
                     newLevel.RandomOpenPoint(),
+                    newLevel.ID,
                     gold,
                     amount * 3 + Util.Random.Next(0, 3)
                 );

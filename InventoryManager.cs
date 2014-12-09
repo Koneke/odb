@@ -18,9 +18,11 @@ namespace ODB
             {
                 return
                     ContainerIDs.ToDictionary(
-                    e => e.Key,
-                    e => ContainerIDs[e.Key].Select(
-                        Util.GetItemByID).ToList());
+                        e => e.Key,
+                        e => ContainerIDs[e.Key]
+                            .Select(Util.GetItemByID)
+                            .ToList()
+                    );
             }
         }
         public static int CurrentContainer;
@@ -81,7 +83,10 @@ namespace ODB
         public void InventoryInput()
         {
             if (IO.KeyPressed(Keys.I))
+            {
+                State = InventoryState.Browsing;
                 IO.IOState = InputType.PlayerInput;
+            }
 
             SelectionInput();
 
@@ -273,6 +278,12 @@ namespace ODB
 
         private static void CheckWear(Item item)
         {
+            if (!item.HasComponent("cWearable"))
+            {
+                Game.Log("You can't wear that!");
+                return;
+            }
+
             if (Game.Player.IsWorn(item))
             {
                 Game.Log("You are already wearing that.");
@@ -293,8 +304,8 @@ namespace ODB
         {
             Game.Log(
                 "Put " +
-                    _selected.GetName("name") + " into " +
-                    item.GetName("name") + "."
+                    item.GetName("name") + " into " +
+                    Util.GetItemByID(container).GetName("name") + "."
                 );
 
             if (GetParentContainer(container) == -1)
@@ -315,8 +326,6 @@ namespace ODB
             if (Game.Player.IsWielded(item))
             {
                 Game.QpAnswerStack.Push(IO.Indexes[Selection] + "");
-                if (Game.Player.IsEquipped(item) &&
-                    !item.HasComponent("cWearable"))
                     PlayerResponses.Sheath();
             }
             else

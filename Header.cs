@@ -591,4 +591,11 @@ namespace ODB
         public static Dictionary<int, List<ActorDefinition>>
             MonstersByDifficulty = new Dictionary<int, List<ActorDefinition>>();
     }
+
+    public class World
+    {
+        public static List<Item> AllItems = new List<Item>();
+        public static List<Item> WorldItems = new List<Item>();
+        public static List<Actor> WorldActors = new List<Actor>();
+    }
 }

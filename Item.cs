@@ -78,10 +78,11 @@ namespace ODB
         //SPAWNING a NEW item
         public Item(
             Point xy,
+            int levelid,
             ItemDefinition definition,
             int count = 0,
             IEnumerable<Mod> mods = null
-        ) : base(xy, definition) {
+        ) : base(xy, levelid, definition) {
             ID = IDCounter++;
             Count = count;
             Definition = definition;
@@ -307,6 +308,15 @@ namespace ODB
             }
 
             return stream;
+        }
+
+        public void MoveTo(Level newLevel)
+        {
+            LevelID = newLevel.ID;
+            if (!HasComponent("cContainer")) return;
+
+            foreach (Item it in InventoryManager.Containers[ID])
+                it.MoveTo(newLevel);
         }
     }
 }

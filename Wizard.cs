@@ -175,12 +175,13 @@ namespace ODB
                     }
                     Actor act = new Actor(
                         WmCursor,
+                        Game.Level.ID,
                         Util.ADefByName(args[0]),
                         args.Length > 1
                         ? IO.ReadHex(args[1])
                         : 1
                     );
-                    Game.Level.WorldActors.Add(act);
+                    World.WorldActors.Add(act);
                     Game.Brains.Add(new Brain(act));
                     Game.Level.CalculateActorPositions();
                     break;
@@ -190,11 +191,12 @@ namespace ODB
                     #region spawnitem
                     Item it = new Item(
                         WmCursor,
+                        Game.Level.ID,
                         Util.ItemDefByName(args[0]),
                         IO.ReadHex(args[1])
                     );
-                    Game.Level.AllItems.Add(it);
-                    Game.Level.WorldItems.Add(it);
+                    World.AllItems.Add(it);
+                    World.WorldItems.Add(it);
                     break;
                     #endregion
                 case "saveadefs":
@@ -239,21 +241,6 @@ namespace ODB
         {
             switch (cmd)
             {
-                case "lv-new":
-                    #region new
-                    bool hadplayer = false;
-                    Game.Level.Size.x = IO.ReadHex(args[0]);
-                    Game.Level.Size.y = IO.ReadHex(args[1]);
-                    if (Game.Level.WorldActors.Contains(Game.Player))
-                        hadplayer = true;
-                    Game.Level.Clear();
-                    if (hadplayer) Game.Level.WorldActors.Add(Game.Player);
-
-                    //reset vision
-                    foreach (Actor actor in Game.Level.WorldActors)
-                        actor.Vision = null;
-                    break;
-                    #endregion
                 case "lv-moveup":
                     #region mu
                     int depth = Game.Levels.IndexOf(Game.Level);
@@ -353,18 +340,6 @@ namespace ODB
                     Game.Level.LoadLevelSave("Save/" + args[0]);
                     Game.SetupBrains();
                     Game.Level.CalculateActorPositions();
-                    break;
-                    #endregion
-                case "lv-rl":
-                case "lv-rmlvl":
-                    #region rmlvl
-                    if (Game.Levels.Count > 0)
-                    {
-                        Game.Levels.Remove(Game.Level);
-                        if (Game.Level.WorldActors.Contains(Game.Player))
-                            Game.Levels[0].WorldActors.Add(Game.Player);
-                        Game.Level = Game.Levels[0];
-                    }
                     break;
                     #endregion
                 case "lv-cl":

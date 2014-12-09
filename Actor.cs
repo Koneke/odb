@@ -125,9 +125,10 @@ namespace ODB
 
         public Actor(
             Point xy,
+            int levelid,
             ActorDefinition definition,
             int level
-        ) : base(xy, definition)
+        ) : base(xy, levelid, definition)
         {
             ID = IDCounter++;
             Definition = definition;
@@ -321,7 +322,7 @@ namespace ODB
         }
         public void DropItem(Item item)
         {
-            Game.Level.WorldItems.Add(item);
+            World.WorldItems.Add(item);
             Inventory.Remove(item);
             foreach (BodyPart bp in PaperDoll.Where(bp => bp.Item == item))
                 bp.Item = null;
@@ -611,7 +612,7 @@ namespace ODB
             if(ammo.Count <= 0)
             {
                 Quiver = null;
-                Game.Level.AllItems.Remove(ammo);
+                World.AllItems.Remove(ammo);
                 Game.Player.Inventory.Remove(ammo);
             }
 
@@ -662,6 +663,7 @@ namespace ODB
             Game.Log(GetName("Name") + " " + Verb("die") + "!");
             Item corpse = new Item(
                 xy,
+                LevelID,
                 Util.ItemDefByName(Definition.Name + " corpse"),
                 0, Intrinsics
             );
@@ -669,7 +671,8 @@ namespace ODB
             //or maybe not..? could be a mechanic in and of itself
             corpse.Identify();
             Game.Level.Spawn(corpse);
-            Game.Level.WorldActors.Remove(this);
+            World.WorldActors.Remove(this);
+            Game.Brains.RemoveAll(b => b.MeatPuppet == this);
 
             if(attacker != null)
                 attacker.GiveExperience(Definition.Experience * Level);

@@ -6,7 +6,9 @@ namespace ODB
 {
     public class Level
     {
+        public static int IDCounter = 0;
         public string Name;
+        public int ID;
 
         public Point Size;
 
@@ -14,10 +16,6 @@ namespace ODB
         public bool[,] Seen;
         public bool[,] Blood;
         public List<Room> Rooms;
-
-        public List<Actor> WorldActors;
-        public List<Item> WorldItems;
-        public List<Item> AllItems; //WorldItems + stuff in inventories
 
         //should not be saved
         public Dictionary<Room, List<Actor>> ActorPositions;
@@ -30,6 +28,7 @@ namespace ODB
             Clear();
             ActorPositions = new Dictionary<Room, List<Actor>>();
             ActorRooms = new Dictionary<Actor, List<Room>>();
+            ID = IDCounter++;
         }
 
         public Level(string s)
@@ -50,10 +49,6 @@ namespace ODB
             Seen = new bool[Size.x, Size.y];
             Blood = new bool[Size.x, Size.y];
             Rooms = new List<Room>();
-
-            WorldActors = new List<Actor>();
-            WorldItems = new List<Item>();
-            AllItems = new List<Item>();
         }
 
         public Actor ActorOnTile(Tile t)
@@ -63,27 +58,30 @@ namespace ODB
                     //do like this while migrating
                     //LH-011214: wtf? ^
                     //           migrating what?
+                    //LH-091214: And to this day, I still don't know what
+                    //           the fuck that was about.
                     if (Map[x, y] == t)
-                        return ActorOnTile(
-                            new Point(x, y)
-                            );
+                        return ActorOnTile(new Point(x, y));
             return null;
         }
 
-        public Actor ActorOnTile(Point xy)
+        public Actor ActorOnTile(Point xy, int? level = null)
         {
-            return WorldActors.
-                FirstOrDefault(actor => actor.xy == xy);
-        }
-
-        public Actor ActorOnTile(int x, int y)
-        {
-            return ActorOnTile(new Point(x, y));
+            return World.WorldActors
+                .Where(a => a.LevelID == (
+                    level == null
+                        ? Util.Game.Level.ID
+                        : level.Value
+                    )
+                )
+                .FirstOrDefault(actor => actor.xy == xy);
         }
 
         public List<Item> ItemsOnTile(Point xy)
         {
-            return WorldItems.Where(item => item.xy == xy).ToList();
+            return World.WorldItems
+                .Where(item => item.LevelID == ID)
+                .Where(item => item.xy == xy).ToList();
         }
 
         public List<Room> NeighbouringRooms(Room r)
@@ -115,13 +113,15 @@ namespace ODB
         {
             ActorPositions.Clear();
             ActorRooms.Clear();
-            foreach (Actor a in WorldActors)
+            foreach (Actor a in
+                World.WorldActors.Where(a => a.LevelID == ID))
                 ActorRooms.Add(a, new List<Room>());
 
             foreach (Room r in Rooms.Where(r => r != null))
             {
                 ActorPositions.Add(r, new List<Actor>());
-                foreach (Actor a in WorldActors
+                foreach (Actor a in World.WorldActors
+                    .Where(a => a.LevelID == ID)
                     //ReSharper disable once AccessToForEachVariableInClosure
                     //LH-011214: we're only /using/ the value here, so it's ok
                     .Where(a => r.ContainsPoint(a.xy)))
@@ -201,6 +201,7 @@ namespace ODB
 
             stream.Write(Size);
             stream.Write(Name);
+            stream.Write(ID, 2);
             stream.Write("</HEADER>", false);
 
             for (int y = 0; y < Size.y; y++)
@@ -222,18 +223,18 @@ namespace ODB
             }
             stream.Write("</ROOMS>", false);
 
-            foreach (Item item in AllItems)
+            /*foreach (Item item in AllItems)
             {
                 stream.Write(item.WriteItem() + "##", false);
             }
-            stream.Write("</ITEMS>", false);
+            stream.Write("</ITEMS>", false);*/
 
-            foreach (Actor actor in WorldActors)
+            /*foreach (Actor actor in WorldActors)
             {
                 stream.Write(
                     actor.WriteActor() + "##", false);
             }
-            stream.Write("</ACTORS>", false);
+            stream.Write("</ACTORS>", false);*/
 
             SaveIO.WriteToFile(path, stream.ToString());
             return stream;
@@ -257,6 +258,7 @@ namespace ODB
             Clear();
 
             Name = stream.ReadString();
+            ID = stream.ReadHex(2);
 
             string levelSection =
                 content.Substring(read, content.Length - read).Split(
@@ -320,7 +322,7 @@ namespace ODB
             foreach (string item in items)
                 Spawn(new Item(item));
 
-            string actorSection =
+            /*string actorSection =
                 content.Substring(read, content.Length - read).Split(
                     new[] {"</ACTORS>"},
                     StringSplitOptions.None
@@ -342,27 +344,34 @@ namespace ODB
                 WorldActors.Add(actor);
                 foreach (Item item in actor.Inventory)
                     WorldItems.Remove(item);
-            }
+            }*/
         }
 
         public void Spawn(Actor actor)
         {
-            WorldActors.Add(actor);
+            actor.LevelID = ID;
+            World.WorldActors.Add(actor);
             CalculateActorPositions();
         }
         public void Spawn(Item item)
         {
-            WorldItems.Add(item);
-            AllItems.Add(item);
+            item.LevelID = ID;
+            World.WorldItems.Add(item);
+            World.AllItems.Add(item);
         }
         public void Despawn(Actor actor)
         {
-            WorldActors.Remove(actor);
+            foreach (Item it in actor.Inventory)
+                Despawn(it);
+            World.WorldActors.Remove(actor);
         }
         public void Despawn(Item item)
         {
-            WorldItems.Remove(item);
-            AllItems.Remove(item);
+            if (item.HasComponent("cContainer"))
+                foreach (Item it in InventoryManager.Containers[item.ID])
+                    Despawn(it);
+            World.WorldItems.Remove(item);
+            World.AllItems.Remove(item);
         }
 
         public Room CreateRoom(
@@ -431,7 +440,7 @@ namespace ODB
                 .Where(t => !t.Solid)
                 .Where(t => t.Door == Door.None)
                 .Where(t => t.Stairs == Stairs.None)
-                .Where(t => ActorOnTile(t.Position) == null)
+                .Where(t => ActorOnTile(t.Position, ID) == null)
                 .ToList()
                 .SelectRandom().Position;
         }
