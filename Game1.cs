@@ -8,6 +8,8 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using xnaPoint = Microsoft.Xna.Framework.Point;
 
+using Bind = ODB.KeyBindings.Bind;
+
 //~~~ QUEST TRACKER for ?? dec ~~~
 // * Item paid-for status.
 // * Wizard mode area select.
@@ -190,6 +192,8 @@ namespace ODB
             //wiz
             Wizard.WmCursor = Game.Player.xy;
 
+            KeyBindings.ReadBinds(SaveIO.ReadFromFile("Data/keybindings.kb"));
+
             base.Initialize();
         }
 
@@ -294,20 +298,6 @@ namespace ODB
                     c.Font = Engine.DefaultFont;
                 Engine.DefaultFont.ResizeGraphicsDeviceManager(
                     _graphics, 80, 25, 0, 0);
-            }
-
-            if (IO.KeyPressed(Keys.F5)) SaveIO.Save();
-            if (IO.KeyPressed(Keys.F6)) SaveIO.Load();
-
-            if (IO.KeyPressed(Keys.F9))
-            {
-                int index = Levels.IndexOf(Game.Level);
-                Level level = new Generator()
-                    .Generate(index);
-                Levels.RemoveAt(index);
-                Levels.Insert(index, level);
-                SwitchLevel(level);
-                IO.Answer = "";
             }
 
             if (IO.KeyPressed(Keys.OemTilde))
@@ -510,10 +500,7 @@ namespace ODB
                     string answer = Game.QpAnswerStack.Pop();
                     int index = IO.Indexes.IndexOf(answer[0]);
                     Item item = Game.Caster.Inventory[index];
-                    string prename = item.GetName("the");
                     item.Identify();
-                    /*Game.Log("You identified " +
-                        prename + " as " + item.GetName("a") + ".");*/
                 },
                 CastDifficulty = 0,
                 Cost = 0

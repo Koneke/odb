@@ -33,7 +33,7 @@ namespace ODB
         public static List<char> AcceptedInput = new List<char>();
 
         //so we can map keys requiring certain shift-status
-        public struct Keybind
+        private struct Keybind
         {
             public bool Shift;
             public Keys Kb;
@@ -47,7 +47,7 @@ namespace ODB
             Enter
         }
 
-        public static Dictionary<Input, Keybind[]> KeyBindings =
+        private static readonly Dictionary<Input, Keybind[]> KeyBindings =
             new Dictionary<Input, Keybind[]>
         {
             {Input.North, new[] {
