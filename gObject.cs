@@ -142,6 +142,7 @@ namespace ODB
             Stream stream = new Stream();
             stream.Write(Definition.Type, 4);
             stream.Write(xy);
+            stream.Write(LevelID, 4);
             return stream;
         }
 
@@ -153,6 +154,7 @@ namespace ODB
             ];
 
             xy = stream.ReadPoint();
+            LevelID = stream.ReadHex(4);
             return stream;
         }
     }

@@ -297,54 +297,16 @@ namespace ODB
                     new[] {"</ROOMS>"},
                     StringSplitOptions.RemoveEmptyEntries
                 )[0];
+            // ReSharper disable once RedundantAssignment
             read += roomSection.Length + "</ROOMS>".Length;
 
             string[] rooms = roomSection.Split(
                 new[] {"##"},
                 StringSplitOptions.RemoveEmptyEntries
-                );
+            );
 
             foreach (string room in rooms)
                 Rooms.Add(new Room(room));
-
-            string itemSection =
-                content.Substring(read, content.Length - read).Split(
-                    new[] {"</ITEMS>"},
-                    StringSplitOptions.None
-                )[0];
-            read += itemSection.Length + "</ITEMS>".Length;
-
-            string[] items = itemSection.Split(
-                new[] {"##"},
-                StringSplitOptions.RemoveEmptyEntries
-            );
-
-            foreach (string item in items)
-                Spawn(new Item(item));
-
-            /*string actorSection =
-                content.Substring(read, content.Length - read).Split(
-                    new[] {"</ACTORS>"},
-                    StringSplitOptions.None
-                )[0];
-            //LH-011214: it makes sense to keep this here even if "read"
-            //           is not actually used after this point, since we might
-            //           add on more sections later, and it'd be a dumb miss
-            //           to miss on updating it when it then turns relevant ;)
-            //ReSharper disable once RedundantAssignment
-            read += actorSection.Length + "</ACTORS>".Length;
-
-            string[] actorList = actorSection.Split(
-                new[] {"##"},
-                StringSplitOptions.RemoveEmptyEntries
-            );
-
-            foreach (Actor actor in actorList.Select(a => new Actor(a)))
-            {
-                WorldActors.Add(actor);
-                foreach (Item item in actor.Inventory)
-                    WorldItems.Remove(item);
-            }*/
         }
 
         public void Spawn(Actor actor)

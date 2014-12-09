@@ -42,6 +42,14 @@ namespace ODB
             }
             stream.Write(";", false);
 
+            foreach (Item item in World.AllItems)
+                stream.Write(item.WriteItem() + "##", false);
+            stream.Write("</ITEMS>", false);
+
+            foreach (Actor actor in World.WorldActors)
+                stream.Write(actor.WriteActor() + "##", false);
+            stream.Write("</ACTORS>", false);
+
             WriteToFile("Save/game.sv", stream.ToString());
         }
 
@@ -64,8 +72,7 @@ namespace ODB
             Util.Game.GameTick = stream.ReadHex(8);
             Util.Game.Seed = stream.ReadHex(8);
             Util.Game.Food = stream.ReadHex(8);
-
-            Util.Game.Level = IO.Game.Levels[playerLocation];
+            Util.Game.Level = Util.Game.Levels[playerLocation];
 
             string containers = stream.ReadString();
             List<int> containerItems = new List<int>();
@@ -89,15 +96,37 @@ namespace ODB
                 }
             }
 
-            foreach (Level level in Util.Game.Levels)
-                World.WorldItems.RemoveAll(x => containerItems.Contains(x.ID));
-
             string identifieds = stream.ReadString();
             foreach (string ided in identifieds.Split(',')
                 .Where(ided => ided != ""))
-            {
                 ItemDefinition.IdentifiedDefs.Add(IO.ReadHex(ided));
+
+            World.AllItems.Clear();
+            World.WorldItems.Clear();
+            World.WorldActors.Clear();
+
+            string items = stream.ReadTo("</ITEMS>");
+
+            foreach (Item item in items.Split(
+                new[] {"##"}, StringSplitOptions.RemoveEmptyEntries)
+                .Select(i => new Item(i))
+            ) {
+                World.AllItems.Add(item);
+                World.WorldItems.Add(item);
             }
+
+            string actors = stream.ReadTo("</ACTORS>");
+
+            foreach (Actor actor in actors.Split(
+                new[] {"##"}, StringSplitOptions.RemoveEmptyEntries)
+                .Select(a => new Actor(a))
+            ) {
+                World.WorldActors.Add(actor);
+                foreach (Item item in actor.Inventory)
+                    World.WorldItems.Remove(item);
+            }
+
+            World.WorldItems.RemoveAll(x => containerItems.Contains(x.ID));
 
             IO.Game.SetupBrains();
         }

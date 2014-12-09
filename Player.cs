@@ -500,7 +500,7 @@ namespace ODB
         {
             if (!IO.KeyPressed(Keys.E) || !IO.ShiftState) return;
 
-            string question = "Engrave what?";
+            const string question = "Engrave what?";
             IO.AcceptedInput.Clear();
             IO.AcceptedInput.AddRange(IO.Indexes.ToCharArray());
 

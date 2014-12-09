@@ -166,5 +166,17 @@ namespace ODB
 
             return ss;
         }
+
+        public string ReadTo(string target)
+        {
+            string s = _stream.Substring(Read, _stream.Length - Read);
+            s = s.Split(
+                new[] { target },
+                StringSplitOptions.RemoveEmptyEntries)[0];
+
+            Read += s.Length + target.Length;
+
+            return s;
+        }
     }
 }
