@@ -673,7 +673,7 @@ namespace ODB
             );
             //should always be ided
             //or maybe not..? could be a mechanic in and of itself
-            corpse.Identify();
+            corpse.Identify(true);
             Game.Level.Spawn(corpse);
             Game.Brains.RemoveAll(b => b.MeatPuppet == this);
 

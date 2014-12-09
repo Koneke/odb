@@ -559,9 +559,21 @@ namespace ODB
                     if (items.Count == 1)
                         str +=
                             "There's " + items[0].GetName("count") +
-                            distString;
+                                distString;
                     else
-                        str += "There's several items" + distString;
+                    {
+                        if (!verbose)
+                            str += "There's several items" + distString;
+                        else
+                        {
+                            str += items.Aggregate(
+                                "There's ",
+                                (c, n) => c + n.GetName("count") + ", "
+                                );
+                            str = str.Substring(0, str.Length - 2);
+                            str += distString;
+                        }
+                    }
                 }
             }
 
@@ -630,6 +642,7 @@ namespace ODB
             {
                 item.SpendCharge();
                 IO.UsedItem = item;
+                item.Identify();
 
                 Cast(Spell.Spells[rc.Effect]);
                 return;
@@ -642,7 +655,7 @@ namespace ODB
             Spell spell = Spell.Spells[lc.Spell];
 
             Game.Log("You feel knowledgable about {1}!", spell.Name);
-
+            item.Identify();
             Game.Player.LearnSpell(spell);
         }
     }

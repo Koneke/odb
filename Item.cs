@@ -152,10 +152,16 @@ namespace ODB
                         apperance;
                     break;
                 case "the":
-                    result =
-                        "the" +
-                        " " +
-                        apperance;
+                    if(Stacking && Count > 1)
+                        result =
+                            "the " +
+                            Count + "x " +
+                            apperance + "s";
+                    else
+                        result =
+                            "the" +
+                            " " +
+                            apperance;
                     break;
                 case "count":
                     result =
@@ -178,8 +184,13 @@ namespace ODB
             //bool cursed,
             //bool blessed,
             //bool mods
+            bool silent = false
         ) {
+            string prename = GetName("the");
             ItemDefinition.IdentifiedDefs.Add(Type);
+            if (!silent)
+                Game.Log("You identified " +
+                    prename + " as " + GetName("count") + ".");
         }
 
         //LH-031214: We want to switch this to depend on the actor strength

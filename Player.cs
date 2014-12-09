@@ -343,6 +343,12 @@ namespace ODB
             for (int i = 0; i < Game.Player.Spellbook.Count; i++)
                 IO.AcceptedInput.Add(IO.Indexes[i]);
 
+            if (IO.AcceptedInput.Count <= 0)
+            {
+                Game.Log("You don't know any spells.");
+                return;
+            }
+
             string question = "Cast what? [";
             question += IO.AcceptedInput.Aggregate(
                 "", (c, n) => c + n);
@@ -359,16 +365,23 @@ namespace ODB
         {
             if (!IO.KeyPressed(Keys.A) || IO.ShiftState) return;
 
-            string question = "Use what? [";
             IO.AcceptedInput.Clear();
-            foreach (Item item in Game.Player.Inventory
-                .Where(x => x.HasComponent("cUsable")))
-            {
-                int index = Game.Player.Inventory.IndexOf(item);
-                question += IO.Indexes[index];
-                IO.AcceptedInput.Add(IO.Indexes[index]);
-            }
+            IO.AcceptedInput.AddRange(
+                Game.Player.Inventory
+                    .Where(item => item.HasComponent("cUsable"))
+                    .Select(item => Game.Player.Inventory.IndexOf(item))
+                    .Select(index => IO.Indexes[index])
+            );
+
+            string question = "Use what? [";
+            question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
             question += "]";
+
+            if (IO.AcceptedInput.Count <= 0)
+            {
+                Game.Log("You don't know any spells.");
+                return;
+            }
 
             IO.AskPlayer(
                 question,
@@ -567,7 +580,7 @@ namespace ODB
             string question = "Read what? [";
             question += IO.AcceptedInput.Aggregate(
                 "", (c, n) => c + n);
-            question += "] ";
+            question += "]";
 
             IO.AskPlayer(
                 question,

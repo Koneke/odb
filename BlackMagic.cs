@@ -1,6 +1,4 @@
-﻿using Microsoft.Xna.Framework;
-
-namespace ODB
+﻿namespace ODB
 {
     class BlackMagic
     {

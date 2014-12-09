@@ -362,7 +362,6 @@ namespace ODB
         {
             if (!item.HasComponent("cEdible")) return;
 
-            Game.Log("You eat {0}", item.GetName("the"));
             Game.Player.Eat(item);
             Game.Player.Pass();
         }

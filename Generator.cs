@@ -250,7 +250,7 @@ namespace ODB
                 .ToList()
                 .SelectRandom().Stairs = Stairs.Up;
 
-            float difficulty = Util.Game.Player.Level + depth;
+            float difficulty = Util.Game.Player.Level + depth + 1;
 
             List<ActorDefinition> possibleMonsters =
                 Monster.MonstersByDifficulty

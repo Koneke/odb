@@ -512,8 +512,8 @@ namespace ODB
                     Item item = Game.Caster.Inventory[index];
                     string prename = item.GetName("the");
                     item.Identify();
-                    Game.Log("You identified " +
-                        prename + " as " + item.GetName("a") + ".");
+                    /*Game.Log("You identified " +
+                        prename + " as " + item.GetName("a") + ".");*/
                 },
                 CastDifficulty = 0,
                 Cost = 0
