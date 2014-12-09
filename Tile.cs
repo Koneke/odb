@@ -126,5 +126,22 @@ namespace ODB
             Engraving = stream.ReadString();
             return stream;
         }
+
+        public string RenderEngraving()
+        {
+            switch (Engraving.ToLower())
+            {
+                case "tor": return (char)(255 - 31) + "";
+                case "zok": return (char)(255 - 30) + "";
+                case "kel": return (char)(255 - 29) + "";
+                case "bal": return (char)(255 - 28) + "";
+                case "jol": return (char)(255 - 27) + "";
+                case "khr": return (char)(255 - 26) + "";
+                case "yyl": return (char)(255 - 25) + "";
+                case "don": return (char)(255 - 24) + "";
+                case "bik": return (char)(255 - 23) + "";
+                default: return ",";
+            }
+        }
     }
 }

@@ -223,10 +223,19 @@ namespace ODB
                     " with what?");
                 CurrentContainer--;
             }
+
+            if (Selection > CurrentContents.Count - 1)
+                Selection--;
         }
 
         private static void CheckSplit(Item item)
         {
+            if (Game.Player.Inventory.Count >= 23)
+            {
+                Game.Log("You are carrying too much!");
+                return;
+            }
+
             Game.QpAnswerStack.Push("" + CurrentContainer);
             Game.QpAnswerStack.Push("" + item.ID);
             IO.AcceptedInput.Clear();

@@ -33,6 +33,7 @@ namespace ODB
     {
         readonly GraphicsDeviceManager _graphics;
 
+        private List<Console> _consoles;
         Console _dfc;
         Console _logConsole;
         Console _inputRowConsole;
@@ -85,6 +86,9 @@ namespace ODB
 
         public int StandardActionLength = 10;
 
+        private Font _standardFont;
+        private Font _doubleFont;
+
         protected override void Initialize()
         {
             #region engineshit
@@ -107,7 +111,11 @@ namespace ODB
             Engine.UseKeyboard = true;
 
             using (var stream = System.IO.File.OpenRead("Fonts/IBM.font"))
-                Engine.DefaultFont = Serializer.Deserialize<Font>(stream);
+                _standardFont = Serializer.Deserialize<Font>(stream);
+            using (var stream = System.IO.File.OpenRead("Fonts/IBM2x.font"))
+                _doubleFont = Serializer.Deserialize<Font>(stream);
+
+            Engine.DefaultFont = _standardFont;
 
             Engine.DefaultFont.ResizeGraphicsDeviceManager(
                 _graphics, 80, 25, 0, 0
@@ -143,7 +151,7 @@ namespace ODB
 
             InvMan = new InventoryManager();
 
-            Levels.Add(new Generator().Generate(1));
+            Levels.Add(new Generator().Generate(0));
             Level = Levels[0];
 
             Level.Spawn(Player);
@@ -277,6 +285,16 @@ namespace ODB
                 SaveIO.WriteActorDefinitionsToFile("Data/actors.def");
             if (IO.KeyPressed(Keys.F2))
                 SaveIO.WriteItemDefinitionsToFile("Data/items.def");
+            if (IO.KeyPressed(Keys.F3))
+            {
+                Engine.DefaultFont = Engine.DefaultFont == _standardFont
+                    ? _doubleFont
+                    : _standardFont;
+                foreach (Console c in _consoles)
+                    c.Font = Engine.DefaultFont;
+                Engine.DefaultFont.ResizeGraphicsDeviceManager(
+                    _graphics, 80, 25, 0, 0);
+            }
 
             if (IO.KeyPressed(Keys.F5)) SaveIO.Save();
             if (IO.KeyPressed(Keys.F6)) SaveIO.Load();
@@ -329,6 +347,8 @@ namespace ODB
 
         public void SetupConsoles()
         {
+            _consoles = new List<Console>();
+
             _dfc = new Console(80, 25);
             Engine.ActiveConsole = _dfc;
 
@@ -353,6 +373,12 @@ namespace ODB
             _statRowConsole = new Console(80, 2) {
                 Position = new xnaPoint(0, 23)
             };
+
+            _consoles.Add(_dfc);
+            _consoles.Add(_logConsole);
+            _consoles.Add(_inputRowConsole);
+            _consoles.Add(_statRowConsole);
+            _consoles.Add(_inventoryConsole);
 
             //draw order
             Engine.ConsoleRenderStack.Add(_dfc);
@@ -763,7 +789,7 @@ namespace ODB
                 //doors override the normal tile
                 //which shouldn't be a problem
                 //if it is a problem, it's not, it's something else
-                if (t.Engraving != "") tileToDraw = ",";
+                if (t.Engraving != "") tileToDraw = t.RenderEngraving();
                 if (t.Door == Door.Closed) tileToDraw = "+";
                 if (t.Door == Door.Open) tileToDraw = "/";
                 if (t.Stairs == Stairs.Down) tileToDraw = ">";
@@ -862,6 +888,7 @@ namespace ODB
 
             _inputRowConsole.Position = new xnaPoint(0, _logSize);
             _inputRowConsole.CellData.Fill(
+                //Color.WhiteSmoke,
                 Color.Black,
                 Color.WhiteSmoke,
                 ' ',
@@ -869,7 +896,7 @@ namespace ODB
             );
 
             _inputRowConsole.CellData.Print(
-                0, 0, (WizMode ? "" : IO.Question + " ") + IO.Answer);
+                0, 0, (WizMode ? "" : IO.Question + " ") + IO.Answer + "_");
         }
 
         private void RenderInventory()

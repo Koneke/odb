@@ -930,6 +930,10 @@ namespace ODB
                 case Tempus.Present:
                     switch (verb)
                     {
+                        case "#feel":
+                            if (this == Game.Player) verb = "feel";
+                            else verb = "looks";
+                            break;
                         case "be":
                             if (this == Game.Player) verb = "are";
                             else verb = "is";
@@ -982,6 +986,16 @@ namespace ODB
         public bool Sees(Actor other)
         {
             return Vision[other.xy.x, other.xy.y];
+        }
+
+        public void Chant(string chant)
+        {
+            BlackMagic.CheckCircle(this, chant);
+        }
+        public void Heal(int amount)
+        {
+            HpCurrent += amount;
+            HpCurrent = Math.Min(HpCurrent, HpMax);
         }
 
         public Stream WriteActor()

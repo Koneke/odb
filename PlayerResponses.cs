@@ -605,6 +605,14 @@ namespace ODB
             Game.Log("You wrote \""+answer+"\" on the dungeon floor.");
         }
 
+        public static void Chant()
+        {
+            string answer = Game.QpAnswerStack.Pop();
+            Game.Log("You chant...");
+            Game.Log("\"" + Util.Capitalize(answer) + "...\"");
+            Game.Player.Chant(answer);
+        }
+
         public static void Read()
         {
             string answer = Game.QpAnswerStack.Pop();

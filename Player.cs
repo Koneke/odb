@@ -47,6 +47,7 @@ namespace ODB
             CheckLook();
             CheckEat();
             CheckEngrave();
+            CheckChant();
             CheckRead();
         }
 
@@ -107,6 +108,12 @@ namespace ODB
                 (!IO.KeyPressed(Keys.G) || IO.ShiftState) &&
                 (!IO.KeyPressed(Keys.OemComma) || IO.ShiftState)
             ) return;
+
+            if (Game.Player.Inventory.Count >= 23)
+            {
+                Game.Log("You are carrying too much!");
+                return;
+            }
 
             List<Item> onFloor = Game.Level.ItemsOnTile(Game.Player.xy);
             if (onFloor.Count > 1)
@@ -501,6 +508,12 @@ namespace ODB
         {
             if (!IO.KeyPressed(Keys.E) || !IO.ShiftState) return;
 
+            if (Game.Level.TileAt(Game.Player.xy).Stairs != Stairs.None)
+            {
+                Game.Log("You can't engrave here.");
+                return;
+            }
+
             const string question = "Engrave what?";
             IO.AcceptedInput.Clear();
             IO.AcceptedInput.AddRange(IO.Indexes.ToCharArray());
@@ -509,6 +522,22 @@ namespace ODB
                 question,
                 InputType.QuestionPrompt,
                 PlayerResponses.Engrave
+            );
+        }
+
+        private static void CheckChant()
+        {
+            if (!IO.KeyPressed(Keys.C) || !IO.ShiftState) return;
+
+            const string question = "Chant what?";
+            IO.AcceptedInput.Clear();
+            IO.AcceptedInput.AddRange(IO.Indexes.ToCharArray());
+            IO.AcceptedInput.Add(' ');
+
+            IO.AskPlayer(
+                question,
+                InputType.QuestionPrompt,
+                PlayerResponses.Chant
             );
         }
 

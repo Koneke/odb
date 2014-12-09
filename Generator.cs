@@ -173,9 +173,7 @@ namespace ODB
 
         public static bool Covers(List<GenRoom> rooms, Rect rect)
         {
-            return rooms.Any(
-                room => room.Rect().Interects(rect)
-                );
+            return rooms.Any(room => room.Rect().Interects(rect));
         }
 
         //tiles to generate doors instead of walls on
@@ -252,7 +250,7 @@ namespace ODB
                 .ToList()
                 .SelectRandom().Stairs = Stairs.Up;
 
-            float difficulty = Util.Game.Player.Level + depth + 1;
+            float difficulty = Util.Game.Player.Level + depth;
 
             List<ActorDefinition> possibleMonsters =
                 Monster.MonstersByDifficulty
@@ -328,7 +326,7 @@ namespace ODB
                 loot -= amount;
             }
 
-            newLevel.Name = "Dungeon:" + depth;
+            newLevel.Name = "Dungeon:" + (depth + 1);
 
             return newLevel;
         }

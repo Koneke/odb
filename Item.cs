@@ -249,6 +249,7 @@ namespace ODB
 
         public bool CanStack(Item other)
         {
+            if (!Stacking) return false;
             return Type == other.Type &&
                 //todo: should not just check with the player really
                 !Game.Player.IsEquipped(this) &&
