@@ -33,21 +33,21 @@ namespace ODB
             }
 
             bool b = false;
-            if (KeyBindings.Pressed(KeyBindings.Bind.North))
+            if (KeyBindings.Pressed(KeyBindings.Bind.Wm_North))
                 { WmCursor.Nudge(0, -1); b = true; }
-            if (KeyBindings.Pressed(KeyBindings.Bind.NorthEast))
+            if (KeyBindings.Pressed(KeyBindings.Bind.Wm_NorthEast))
                 { WmCursor.Nudge(1, -1); b = true; }
-            if (KeyBindings.Pressed(KeyBindings.Bind.East))
+            if (KeyBindings.Pressed(KeyBindings.Bind.Wm_East))
                 { WmCursor.Nudge(1, 0); b = true; }
-            if (KeyBindings.Pressed(KeyBindings.Bind.SouthEast))
+            if (KeyBindings.Pressed(KeyBindings.Bind.Wm_SouthEast))
                 { WmCursor.Nudge(1, 1); b = true; }
-            if (KeyBindings.Pressed(KeyBindings.Bind.South))
+            if (KeyBindings.Pressed(KeyBindings.Bind.Wm_South))
                 { WmCursor.Nudge(0, 1); b = true; }
-            if (KeyBindings.Pressed(KeyBindings.Bind.SouthWest))
+            if (KeyBindings.Pressed(KeyBindings.Bind.Wm_SouthWest))
                 { WmCursor.Nudge(-1, 1); b = true; }
-            if (KeyBindings.Pressed(KeyBindings.Bind.West))
+            if (KeyBindings.Pressed(KeyBindings.Bind.Wm_West))
                 { WmCursor.Nudge(-1, 0); b = true; }
-            if (KeyBindings.Pressed(KeyBindings.Bind.NorthWest))
+            if (KeyBindings.Pressed(KeyBindings.Bind.Wm_NorthWest))
                 { WmCursor.Nudge(-1, -1); b = true; }
 
             if (KeyBindings.Pressed(KeyBindings.Bind.Down))
@@ -131,24 +131,12 @@ namespace ODB
 
             switch (prefix)
             {
-                case "":
-                    realcmd = GenericCommands(cmd, args);
-                    break;
-                case "ad":
-                    realcmd = ActorDefinitionCommands(cmd, args);
-                    break;
-                case "id":
-                    realcmd = ItemDefinitionCommands(cmd, args);
-                    break;
-                case "ai":
-                    realcmd = ActorInstanceCommands(cmd, args);
-                    break;
-                case "ii":
-                    realcmd = ItemInstanceCommands(cmd, args);
-                    break;
-                case "lv":
-                    realcmd = LevelCommands(cmd, args);
-                    break;
+                case "": realcmd = GenericCommands(cmd, args); break;
+                case "ad": realcmd = ActorDefinitionCommands(cmd, args); break;
+                case "id": realcmd = ItemDefinitionCommands(cmd, args); break;
+                case "ai": realcmd = ActorInstanceCommands(cmd, args); break;
+                case "ii": realcmd = ItemInstanceCommands(cmd, args); break;
+                case "lv": realcmd = LevelCommands(cmd, args); break;
             }
 
             if (!realcmd) Game.Log("No such command: " + cmd);
@@ -160,6 +148,10 @@ namespace ODB
         {
             switch (cmd)
             {
+                case "togglerolls":
+                    Game.OpenRolls = !Game.OpenRolls;
+                    Game.Log("=> " + Game.OpenRolls);
+                    break;
                 //get item definition (id) (by name)
                 case "gid":
                     Game.Log(IO.WriteHex(Util.ItemDefByName(args[0]).Type, 4));

@@ -430,37 +430,37 @@ namespace ODB
             { AttackType.Bash,
                 new List<AttackMessage> {
                     new AttackMessage(
-                        "#actor #verb #target with #gen #weapon.",
+                        "#actor #verb #target with #gen #weapon",
                         "bash"),
                     new AttackMessage(
                         "#actor #verb all over #target " +
-                        "with #gen #weapon.",
+                        "with #gen #weapon",
                         "wail"),
                     new AttackMessage(
-                        "#target get#pass-s #verb-pass with #genname #weapon.",
+                        "#target get#pass-s #verb-pass with #genname #weapon",
                         "smack")
                 }
             },
             { AttackType.Slash,
                 new List<AttackMessage> {
                     new AttackMessage(
-                        "#actor #verb #target with #gen #weapon.", "slash")
+                        "#actor #verb #target with #gen #weapon", "slash")
                 }
             },
             { AttackType.Pierce,
                 new List<AttackMessage> {
                     new AttackMessage(
-                        "#actor #verb #target with #gen #weapon.", "pierce"),
+                        "#actor #verb #target with #gen #weapon", "pierce"),
                     new AttackMessage(
-                        "#actor #verb #gen #weapon right into #target.", "jam")
+                        "#actor #verb #gen #weapon right into #target", "jam")
                 }
             },
             { AttackType.Bite,
                 new List<AttackMessage> {
                     new AttackMessage(
-                        "#actor #verb #target.", "bite"),
+                        "#actor #verb #target", "bite"),
                     new AttackMessage(
-                        "#actor #verb on #target.", "chew")
+                        "#actor #verb on #target", "chew")
                 }
             },
         };

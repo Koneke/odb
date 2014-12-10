@@ -78,6 +78,9 @@ namespace ODB
 
             Wm_Scrollback,
             Wm_Scrolldown,
+            Wm_East, Wm_West, Wm_North, Wm_South,
+            Wm_NorthEast, Wm_NorthWest,
+            Wm_SouthEast, Wm_SouthWest,
 // ReSharper restore InconsistentNaming
         }
 

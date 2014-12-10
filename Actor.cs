@@ -399,11 +399,12 @@ namespace ODB
                 ).Where(bp => !equipped.Contains(bp.Item)))
                 equipped.Add(bp.Item);
 
-            return 10 + equipped
+            return 8 + equipped
                 .Select(
                     it => (WearableComponent)
                     it.Definition.GetComponent("cWearable"))
-                .Select(wc => wc.ArmorClass).Sum();
+                .Select(wc => wc.ArmorClass).Sum() +
+                Get(Stat.Dexterity);
         }
 
         public int GetCarriedWeight()
@@ -417,166 +418,114 @@ namespace ODB
 
         public void Attack(Actor target)
         {
-            int weaponCount = GetWieldedItems().Count;
+            int dexBonus = Util.XperY(1, 3, Get(Stat.Dexterity));
+            int strBonus = Util.XperY(1, 2, Get(Stat.Strength));
 
-            int multiWeaponPenalty = 3 * weaponCount - 1;
+            int multiWeaponPenalty = 3 * GetWieldedItems().Count - 1;
+            multiWeaponPenalty = Math.Max(0, multiWeaponPenalty - dexBonus);
 
-            int dexBonus = Get(Stat.Dexterity);
-            dexBonus -= dexBonus % 2;
-            dexBonus /= 2;
+            int targetDefense = target.GetArmor();
 
-            //dexbonus lowers multipenalty, but doesn't help unless you have
-            //that penalty
-            multiWeaponPenalty -= dexBonus;
-            multiWeaponPenalty = Math.Max(0, multiWeaponPenalty);
+            AttackComponent bash = new AttackComponent
+                { AttackType = AttackType.Bash, Damage = "1d4" };
 
-            int strBonus = Get(Stat.Strength);
-            strBonus -= strBonus % 2;
-            strBonus /= 2;
+            List<Tuple<Item, AttackComponent>> attacks =
+                new List<Tuple<Item, AttackComponent>>();
 
-            int weaponBonus = GetWieldedItems()
-                .Select(weapon => weapon.Mod)
-                .Sum();
+            foreach (Item item in GetWieldedItems())
+                attacks.Add(new Tuple<Item, AttackComponent>
+                    (item, (AttackComponent)
+                        item.GetComponent("cAttack") ??
+                        bash));
 
-            int roll = Util.Roll("1d20");
-
-            int hitRoll =
-                roll +
-                strBonus +
-                weaponBonus -
-                multiWeaponPenalty
-            ;
-
-            bool crit = roll >= 20;
-
-            int dodgeRoll = target.GetArmor();
+            if (attacks.Count == 0)
+                attacks.Add(new Tuple<Item, AttackComponent>(
+                    null, Definition.NaturalAttack));
 
             string message = "";
+            int totalDamage = 0;
 
-            if(Game.OpenRolls)
-                message =
-                    String.Format(
-                        GetName("Name") + ": To-hit " +
-                        "{0}{1:+#;-#;+0}{2:+#;-#;+0}" +
-                        "{3:+#;-#;+0}={4} vs {5}{6} ",
-                        roll,
-                        strBonus,
-                        weaponBonus,
-                        -multiWeaponPenalty,
-                        hitRoll,
-                        dodgeRoll,
-                        crit
-                        ? "!"
-                        : "."
-                    )
-                ;
-
-            const string damageString =
-                "{0}{1:+#;-#;+0} damage: -{2} health. ";
-
-            int damage = 0;
-
-            if (hitRoll >= dodgeRoll)
+            //foreach (Item weapon in GetWieldedItems())
+            foreach(Tuple<Item, AttackComponent> attack in attacks)
             {
-                List<Item> weapons =
-                    PaperDoll
-                    .FindAll(x => x.Type == DollSlot.Hand)
-                    .Where(x => x.Item != null)
-                    .Select(bp => bp.Item)
-                    .Distinct()
-                    .ToList();
+                if (totalDamage > target.HpCurrent) continue;
 
-                List<AttackComponent> attacks = new List<AttackComponent>();
-                attacks.AddRange(
-                    weapons.Select(w =>
-                        (AttackComponent)
-                        w.GetComponent("cAttack")
-                    )
-                );
+                Item weapon = attack.Item1;
 
-                //nothing wielded => natural attack
-                if (attacks.Count == 0)
-                    attacks.Add(Definition.NaturalAttack);
+                int roll = Util.Roll("1d20");
+                bool crit = roll >= 20;
+                int mod = weapon == null ? 0 : weapon.Mod;
 
-                for (int index = 0; index < attacks.Count; index++)
+                int totalModifier =
+                    strBonus + dexBonus + Level +
+                    mod - multiWeaponPenalty;
+                int hitRoll = roll + totalModifier;
+
+                if (hitRoll <= targetDefense)
                 {
-                    AttackComponent ac = attacks[index];
-                    Item weapon = ac != Definition.NaturalAttack
-                        ? weapons[index]
-                        : null;
+                    message += String.Format(
+                        "{0} {1} {2}in the air. ",
+                        GetName("Name"),
+                        Verb("swing"),
+                        weapon == null ?
+                            "" : (Genitive() + weapon.GetName("name") + " ")
+                    );
 
-                    if (ac != null)
-                    {
-                        message += 
-                            AttackMessage.AttackMessages[ac.AttackType]
-                                .SelectRandom()
-                                .Instantiate(
-                                    this,
-                                    target,
-                                    weapon
-                                ) + " ";
+                    if (Game.OpenRolls)
+                        message += String.Format(
+                            "d20+{0} ({1}+{2}+{3}+{4}-{5}), " +
+                                "{6}+{0}, {7} vs. {8}. ",
+                            totalModifier,
+                            strBonus, dexBonus, Level, mod, multiWeaponPenalty,
+                            roll,
+                            hitRoll,
+                            targetDefense
+                        );
 
-                        foreach (EffectComponent ec in
-                            from ec in ac.Effects
-                            let chance = ec.Chance / 255f
-                            where Util.Random.NextDouble() <= chance
-                            select ec)
-                        {
-                            target.AddEffect(
-                                LastingEffect.Create(
-                                    target.ID,
-                                    ec.EffectType,
-                                    Util.Roll(ec.Length)
-                                )
-                            );
-                        }
-
-                        int damageRoll = Util.Roll(ac.Damage, crit);
-
-                        if (Game.OpenRolls)
-                            message += String.Format(
-                                damageString,
-                                ac.Damage,
-                                strBonus,
-                                damageRoll + strBonus
-                            );
-
-                        damage += damageRoll + strBonus;
-                    }
-                    else
-                    {
-                        message +=
-                            AttackMessage.AttackMessages[AttackType.Bash]
-                                .SelectRandom()
-                                .Instantiate(
-                                    this,
-                                    target,
-                                    weapon
-                                ) + " ";
-
-                        int damageRoll = Util.Roll("1d4", crit);
-
-                        if (Game.OpenRolls)
-                            message += String.Format(
-                                damageString,
-                                "1d4",
-                                strBonus,
-                                damageRoll + strBonus
-                            );
-
-                        damage += damageRoll + strBonus;
-                    }
+                    continue;
                 }
-            }
-            else
-            {
+
+                AttackComponent ac =
+                    weapon == null
+                    ? attack.Item2
+                    : (AttackComponent)weapon.GetComponent("cAttack");
+
+                ac = ac ?? bash;
+
                 message +=
-                    GetName("Name") + " " + Verb("swing") + " in the air.";
+                    AttackMessage.AttackMessages[ac.AttackType]
+                    .SelectRandom().Instantiate(this, target, weapon) +
+                    (crit ? "!" : ".") + " ";
+
+                foreach (EffectComponent ec in ac.Effects)
+                    //also rolls to check for success
+                    ec.Apply(target);
+
+                int damageRoll = Util.Roll(ac.Damage, crit);
+                int damage = damageRoll + strBonus;
+
+                if (Game.OpenRolls)
+                {
+                    message += String.Format(
+                        "d20+{0} ({1}+{2}+{3}+{4}-{5}), " +
+                            "{6}+{0}, {7} vs. {8}. ",
+                        totalModifier,
+                        strBonus, dexBonus, Level, mod, multiWeaponPenalty,
+                        roll,
+                        hitRoll,
+                        targetDefense
+                    );
+
+                    message += String.Format(
+                        "{0}+{2}, {1}+{2}, {3} hit points damage. ",
+                        ac.Damage, damageRoll, strBonus, damage);
+                }
+
+                totalDamage += damage;
             }
 
             Game.Log(message);
-            if(damage > 0)
-                target.Damage(damage, this);
+            target.Damage(totalDamage, this);
         }
         public void Shoot(Actor target)
         {

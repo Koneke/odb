@@ -350,9 +350,14 @@ namespace ODB
             }
         }
 
-        public static Point GetTarget()
+        //for every y points of source, return x
+        //e.g., 1 per 2, strength, one point for every two points of strength
+        public static int XperY(int x, int y, int source)
         {
-            return Game.Target;
+            int result = source - (source % y);
+            result /= y;
+            result *= x;
+            return result;
         }
     }
 }

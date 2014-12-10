@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace ODB
 {
@@ -314,6 +315,17 @@ namespace ODB
             stream.Write(Length);
             stream.Write("}", false);
             return stream;
+        }
+
+        public void Apply(Actor target, bool noRoll = false)
+        {
+            if (!(Util.Random.NextDouble() <= Chance / 255f)) return;
+
+            target.AddEffect(
+                LastingEffect.Create(
+                    target.ID, EffectType, Util.Roll(Length)
+                )
+            );
         }
     }
 

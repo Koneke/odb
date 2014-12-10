@@ -57,3 +57,11 @@ inv_cancel			=	:back, :h, :left, :numpad4;
 
 wm_scrollback		=	:up;
 wm_scrolldown		=	:down;
+wm_west				=	:left, :numpad4;
+wm_east				=	:right, :numpad6;
+wm_north			=	:up, :numpad8;
+wm_south			=	:down, :numpad2;
+wm_northwest		=	:numpad7;
+wm_northeast		=	:numpad9;
+wm_southwest		=	:numpad1;
+wm_southeast		=	:numpad3;
