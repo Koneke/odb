@@ -260,7 +260,7 @@ namespace ODB
                 .Where(ad => ad.Type != 0) //no playermonsters, please, thanks.
                 .ToList();
 
-            const int monsterCount = 7;
+            const int monsterCount = 10;
             for (int i = 0; i < monsterCount; i++)
             {
                 ActorDefinition monster =
@@ -276,7 +276,7 @@ namespace ODB
                 );
             }
 
-            int loot = (depth + 1) * 15;
+            int loot = (depth + 1) * 25;
             List<ItemDefinition> possibleItems =
                 ItemDefinition.ItemDefinitions
                     .Where(itd => itd != null)

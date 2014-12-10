@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework;
 
 namespace ODB
 {
+    //todo: read/write for this
     public enum ItemCategory
     {
         Potion = 0x00,

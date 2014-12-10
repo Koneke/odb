@@ -1,4 +1,4 @@
-0000XXXXXX00FFFF	01	moribund;1	2d8;1d6;	0000	1d3+3;1d3+3;1d3+3;	00001,2,2,3,4,;8800;;cAttack;{1d4;at_bash;{}}##
-0001XXXXXX8e5500	72	rat;0		1d6;0d0;	0402	1d1;2d1;0d1;		0202;8801;;cAttack;{1d4;at_bite;{}}##
+0000XXXXXX00FFFF	01	moribund;1	1d10;1d6;	0000	1d3+3;1d3+3;1d3+3;	0000head,torso,back,hand,hand,legs,feet;8800;;cAttack;{1d4;at_bash;{}}##
+0001XXXXXX8e5500	72	rat;0		1d5;0d0;	0402	1d2;2d1;0d1;		0000;8801;;cAttack;{1d3;at_bite;{}}##
 0002XXXXXXFFFF55	3a	newt;0		1d4;0d0;	0101	1d1;2d1;0d1;		0000;8802;;cAttack;{1d2;at_bite;{}}##
-0003XXXXXX8e5500	6b	kobold;0	1d8+1;0d0;	0104	1d2+2;1d3;1d2;		00001,2,2,3,4;8803;;cAttack;{1d4;at_bash;{}}##
+0003XXXXXX8e5500	6b	kobold;0	1d8;0d0;	0804	1d2+2;1d3+1;1d2;	0000head,torso,back,hand,hand,legs,feet;8803;;cAttack;{1d4;at_bash;{}}##

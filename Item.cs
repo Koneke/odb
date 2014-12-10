@@ -186,6 +186,9 @@ namespace ODB
             //bool mods
             bool silent = false
         ) {
+            //no need to double ID
+            if (Known) return;
+
             string prename = GetName("the");
             ItemDefinition.IdentifiedDefs.Add(Type);
             if (!silent)
@@ -261,10 +264,11 @@ namespace ODB
         public bool CanStack(Item other)
         {
             if (!Stacking) return false;
-            return Type == other.Type &&
+            return Type == other.Type;
+                /* &&
                 //todo: should not just check with the player really
                 !Game.Player.IsEquipped(this) &&
-                !Game.Player.IsEquipped(other);
+                !Game.Player.IsEquipped(other);*/
         }
         public void Stack(Item other)
         {

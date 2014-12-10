@@ -160,9 +160,13 @@ namespace ODB
             stream.Write(Speed, 2);
             stream.Write(Quickness, 2);
 
-            foreach (DollSlot ds in BodyParts)
-                stream.Write((int)ds + ",", false);
-            stream.Write(";", false);
+            stream.Write(
+                BodyParts.Aggregate(
+                    "",
+                    (current, ds) => current +
+                    BodyPart.WriteDollSlot(ds) + ","
+                )
+            );
 
             stream.Write(CorpseType, 4);
 
@@ -201,10 +205,11 @@ namespace ODB
             Speed = stream.ReadHex(2);
             Quickness = stream.ReadHex(2);
 
-            BodyParts = new List<DollSlot>();
-            foreach (string ss in stream.ReadString().Split(',')
-                .Where(ss => ss != ""))
-                BodyParts.Add((DollSlot)int.Parse(ss));
+            BodyParts = stream.ReadString()
+                .Split(',')
+                .Where(ss => ss != "")
+                .Select(BodyPart.ReadDollSlot)
+                .ToList();
 
             CorpseType = stream.ReadHex(4);
 

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Xna.Framework.Graphics;
 
 namespace ODB
 {
@@ -125,7 +124,7 @@ namespace ODB
             List<DollSlot> equipSlots =
                 stream.ReadString().Split(',')
                 .Where(slot => slot != "")
-                .Select(slot => (DollSlot)IO.ReadHex(slot))
+                .Select(BodyPart.ReadDollSlot)
                 .ToList();
 
             int armorClass = stream.ReadInt();
@@ -145,7 +144,8 @@ namespace ODB
             string slots =
                 EquipSlots.Aggregate(
                     "",
-                    (current, ds) => current + (IO.WriteHex((int)ds, 2) + ",")
+                    (current, ds) => current +
+                    BodyPart.WriteDollSlot(ds) + ","
                 );
 
             stream.Write("{", false);

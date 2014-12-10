@@ -413,7 +413,7 @@ namespace ODB
         }
         public int GetCarryingCapacity()
         {
-            return Get(Stat.Strength) * 600;
+            return 1200 + Level * 100 + Get(Stat.Strength) * 400;
         }
 
         public void Attack(Actor target)
@@ -467,8 +467,9 @@ namespace ODB
                         "{0} {1} {2}in the air. ",
                         GetName("Name"),
                         Verb("swing"),
-                        weapon == null ?
-                            "" : (Genitive() + weapon.GetName("name") + " ")
+                        weapon == null
+                            ?  ""
+                            : (Genitive() + " "+ weapon.GetName("name") + " ")
                     );
 
                     if (Game.OpenRolls)
@@ -529,9 +530,6 @@ namespace ODB
         }
         public void Shoot(Actor target)
         {
-            int hitRoll = Util.Roll("1d6") + Get(Stat.Dexterity);
-            int dodgeRoll = target.GetArmor() + Util.Distance(xy, target.xy);
-
             Item weapon = null;
             LauncherComponent lc = null;
 
@@ -554,11 +552,8 @@ namespace ODB
                 ammo.GetComponent("cProjectile");
 
             bool throwing;
-
-            //weapon and appropriate ammo
             if (weapon != null && lc != null)
                 throwing = !lc.AmmoTypes.Contains(ammo.Type);
-            //ammo
             else throwing = true;
 
             ammo.Count--;
@@ -569,30 +564,85 @@ namespace ODB
                 Game.Player.Inventory.Remove(ammo);
             }
 
-            if(hitRoll >= dodgeRoll) {
-                int damageRoll;
+            int roll = Util.Roll("1d20");
+
+            int dexBonus = Get(Stat.Dexterity);
+            int distanceModifier = 1;
+            if (pc == null) distanceModifier++;
+            if (lc == null) distanceModifier++;
+            int distancePenalty =
+                Util.XperY(distanceModifier, 1, Util.Distance(xy, target.xy));
+            int mod = ammo.Mod;
+            if (weapon != null) mod += weapon.Mod;
+            int totalModifier = dexBonus + mod - distancePenalty;
+
+            int targetArmor = target.GetArmor();
+
+            int hitRoll = roll + totalModifier;
+
+            string message = "";
+
+            if(hitRoll >= targetArmor) {
+                int ammoDamage;
+                int launcherDamage = 0;
 
                 if (throwing)
                 {
-                    damageRoll = Util.Roll(pc.Damage);
+                    if(pc != null)
+                        ammoDamage = Util.Roll(pc.Damage);
+                    else
+                        ammoDamage = Util.Roll("1d4");
                 }
                 else
                 {
-                    damageRoll = Util.Roll(lc.Damage);
-                    damageRoll += Util.Roll(pc.Damage);
+                    launcherDamage = Util.Roll(lc.Damage);
+                    Debug.Assert(pc != null, "pc != null");
+                    ammoDamage = Util.Roll(pc.Damage);
                 }
 
-                Game.Log(
-                    target.Definition.Name + " is hit! " +
-                    "(" + hitRoll + " vs " + dodgeRoll + ")"
-                );
+                int damageRoll = ammoDamage + launcherDamage;
+
+                message += target.GetName("Name") + " is hit! ";
+                if (Game.OpenRolls)
+                {
+                    message +=
+                        String.Format(
+                            "d20+{0} ({1}+{2}-{3}), " +
+                                "{4}+{0}, {5} vs. {6}. ",
+                            totalModifier,
+                            dexBonus, mod, distancePenalty,
+                            roll,
+                            hitRoll,
+                            targetArmor
+                        );
+                    message +=
+                        String.Format(
+                            "{0}{1}, {2}{3}, {4} hit points damage.",
+                            pc == null ? "1d4" : pc.Damage,
+                            lc == null ? "" : ("+" + lc.Damage),
+                            ammoDamage,
+                            lc == null ? "" : ("+" + launcherDamage),
+                            damageRoll
+                        );
+                }
                 target.Damage(damageRoll, this);
-            } else {
-                Game.Log(
-                    Definition.Name + " misses " +
-                    "(" + hitRoll + " vs " + dodgeRoll + ")"
-                );
             }
+            else
+            {
+                message += GetName("Name") + " " + Verb("miss") + ". ";
+                if (Game.OpenRolls)
+                    message +=
+                        String.Format(
+                            "d20+{0} ({1}+{2}-{3}), " +
+                                "{4}+{0}, {5} vs. {6}. ",
+                            totalModifier,
+                            dexBonus, mod, distancePenalty,
+                            roll,
+                            hitRoll,
+                            targetArmor
+                        );
+            }
+            Game.Log(message);
 
             Game.Level.MakeNoise(1, target.xy);
             Pass();
@@ -662,7 +712,7 @@ namespace ODB
             {
                 newLevel++;
                 xp -= levelReq;
-                levelReq *= 2;
+                levelReq += newLevel * 30;
             }
 
             return newLevel;
@@ -892,7 +942,9 @@ namespace ODB
                             if (this != Game.Player)
                             {
                                 //bashES, slashES, etc.
-                                if (verb[verb.Length - 1] == 'h')
+                                //missES
+                                if (verb[verb.Length - 1] == 'h' ||
+                                    verb[verb.Length - 1] == 's')
                                     verb += "e";
                                 verb += "s";
                             }

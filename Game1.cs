@@ -45,8 +45,10 @@ namespace ODB
         public int GameTick;
         public int Seed;
 
+        //LH-101214: Move these two world?
         public List<Level> Levels;
         public Level Level;
+
         public List<Brain> Brains;
 
         public bool OpenRolls = false;
@@ -858,6 +860,7 @@ namespace ODB
                 0, 0, (WizMode ? "" : IO.Question + " ") + IO.Answer + "_");
         }
 
+        //todo: Needs tender love, care and attention.
         private void RenderInventory()
         {
             _inventoryConsole.IsVisible = IO.IOState == InputType.Inventory;
@@ -899,7 +902,6 @@ namespace ODB
                 _inventoryConsole.CellData.Print(
                     inventoryW - offset, j++, "<t>ake out", Color.White);
             }
-            //if (InventoryManager.CurrentContainer == -1)
             else
             {
                 _inventoryConsole.CellData.Print(
@@ -913,7 +915,7 @@ namespace ODB
                 _inventoryConsole.CellData.Print(
                     inventoryW - offset, j++, "<S>heath", Color.White);
                 _inventoryConsole.CellData.Print(
-                    inventoryW - offset, j++, "<q>uiver", Color.White);
+                    inventoryW - offset, j++, "<Q>uiver", Color.White);
                 _inventoryConsole.CellData.Print(
                     inventoryW - offset, j++, "<w>ield", Color.White);
                 _inventoryConsole.CellData.Print(

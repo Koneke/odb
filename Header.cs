@@ -183,11 +183,11 @@ namespace ODB
         //Face,
         //Neck,
         Torso,
+        Back,
         //Gloves, //maybe?
         Hand,
         Legs,
         Feet,
-        //Quiver
     }
 
     public class BodyPart
@@ -195,12 +195,20 @@ namespace ODB
         public static Dictionary<DollSlot, string> BodyPartNames =
             new Dictionary<DollSlot, string>
             {
-                {DollSlot.Head, "Head"},
-                {DollSlot.Torso, "Torso"},
-                {DollSlot.Hand, "Hand"},
-                {DollSlot.Legs, "Legs"},
-                {DollSlot.Feet, "Feet"},
+                { DollSlot.Head, "Head" },
+                { DollSlot.Torso, "Torso" },
+                { DollSlot.Back, "Back" },
+                { DollSlot.Hand, "Hand" },
+                { DollSlot.Legs, "Legs" },
+                { DollSlot.Feet, "Feet" },
             };
+        public static DollSlot ReadDollSlot(string s)
+        {
+            return BodyPartNames
+                .First(kvp => kvp.Value.ToLower()  == s.ToLower()).Key;
+        }
+        public static string WriteDollSlot(DollSlot ds)
+            { return BodyPartNames[ds]; }
 
         protected bool Equals(BodyPart other)
         {

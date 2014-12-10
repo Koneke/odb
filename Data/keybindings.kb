@@ -10,8 +10,8 @@ up					=	s:oemcomma;
 down				=	s:oemperiod;
 wait				=	:s, :oemperiod, :numpad5;
 
-target_accept		=	:oemperiod, :numpad5, :enter;
-target_cancel		=	:escape, :space;
+target_accept		=	:oemperiod, :numpad5, :enter, :space;
+target_cancel		=	:escape;
 
 dev_toggleconsole	=	:oemtilde;
 dev_saveactors		=	:f1;
