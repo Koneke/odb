@@ -17,8 +17,10 @@ namespace ODB
             //wizmode terminal
 
             bool scrolled = false;
-            if (IO.KeyPressed(Keys.Up)) { WmScrollback++; scrolled = true; }
-            if (IO.KeyPressed(Keys.Down)) { WmScrollback--; scrolled = true; }
+            if (KeyBindings.Pressed(KeyBindings.Bind.Wm_Scrollback))
+                { WmScrollback++; scrolled = true; }
+            if (KeyBindings.Pressed(KeyBindings.Bind.Wm_Scrolldown))
+                { WmScrollback--; scrolled = true; }
 
             if (scrolled)
             {
@@ -31,24 +33,24 @@ namespace ODB
             }
 
             bool b = false;
-            if (IO.KeyPressed(Keys.NumPad8))
+            if (KeyBindings.Pressed(KeyBindings.Bind.North))
                 { WmCursor.Nudge(0, -1); b = true; }
-            if (IO.KeyPressed(Keys.NumPad9)) {
-                WmCursor.Nudge(1, -1); b = true; }
-            if (IO.KeyPressed(Keys.NumPad6)) {
-                WmCursor.Nudge(1, 0); b = true; }
-            if (IO.KeyPressed(Keys.NumPad3)) {
-                WmCursor.Nudge(1, 1); b = true; }
-            if (IO.KeyPressed(Keys.NumPad2)) {
-                WmCursor.Nudge(0, 1); b = true; }
-            if (IO.KeyPressed(Keys.NumPad1)) {
-                WmCursor.Nudge(-1, 1); b = true; }
-            if (IO.KeyPressed(Keys.NumPad4)) {
-                WmCursor.Nudge(-1, 0); b = true; }
-            if (IO.KeyPressed(Keys.NumPad7)) {
-                WmCursor.Nudge(-1, -1); b = true; }
+            if (KeyBindings.Pressed(KeyBindings.Bind.NorthEast))
+                { WmCursor.Nudge(1, -1); b = true; }
+            if (KeyBindings.Pressed(KeyBindings.Bind.East))
+                { WmCursor.Nudge(1, 0); b = true; }
+            if (KeyBindings.Pressed(KeyBindings.Bind.SouthEast))
+                { WmCursor.Nudge(1, 1); b = true; }
+            if (KeyBindings.Pressed(KeyBindings.Bind.South))
+                { WmCursor.Nudge(0, 1); b = true; }
+            if (KeyBindings.Pressed(KeyBindings.Bind.SouthWest))
+                { WmCursor.Nudge(-1, 1); b = true; }
+            if (KeyBindings.Pressed(KeyBindings.Bind.West))
+                { WmCursor.Nudge(-1, 0); b = true; }
+            if (KeyBindings.Pressed(KeyBindings.Bind.NorthWest))
+                { WmCursor.Nudge(-1, -1); b = true; }
 
-            if (IO.KeyPressed(Keys.OemPeriod) && IO.ShiftState)
+            if (KeyBindings.Pressed(KeyBindings.Bind.Down))
             {
                 if (Game.Levels.IndexOf(Game.Level) == Game.Levels.Count - 1)
                 {
@@ -65,7 +67,7 @@ namespace ODB
                 }
             }
 
-            if (IO.KeyPressed(Keys.OemComma) && IO.ShiftState)
+            if (KeyBindings.Pressed(KeyBindings.Bind.Up))
             {
                 if (Game.Levels.IndexOf(Game.Level) > 0)
                     Game.Level = Game.Levels
@@ -81,7 +83,8 @@ namespace ODB
             foreach (char c in IO.Indexes) IO.AcceptedInput.Add(c); //letters
             IO.AcceptedInput.Add(' ');
             for (int i = 48; i < 58; i++) IO.AcceptedInput.Add((char)i); //nums
-            if (IO.KeyPressed(Keys.OemComma)) IO.Answer += "~"; //arg. delimiter
+
+            if (IO.KeyPressed(Keys.OemComma))IO.Answer += "~"; //arg. delimiter
             if (IO.KeyPressed(Keys.OemQuestion)) //shift-. to repeat
             {
                 if (WmHistory.Count > 0 && IO.Answer == "")

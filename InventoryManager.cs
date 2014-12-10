@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework.Input;
 
+using Bind = ODB.KeyBindings.Bind;
+
 namespace ODB
 {
     public class InventoryManager
@@ -71,8 +73,8 @@ namespace ODB
 
         private void SelectionInput()
         {
-            if (IO.KeyPressed(IO.Input.North)) Selection--;
-            if (IO.KeyPressed(IO.Input.South)) Selection++;
+            if (KeyBindings.Pressed(Bind.Inv_Up)) Selection--;
+            if (KeyBindings.Pressed(Bind.Inv_Down)) Selection++;
 
             if (Selection < 0)
                 Selection += CurrentContents.Count;
@@ -82,7 +84,7 @@ namespace ODB
 
         public void InventoryInput()
         {
-            if (IO.KeyPressed(Keys.I))
+            if (KeyBindings.Pressed(Bind.Inventory))
             {
                 if (State != InventoryState.Browsing)
                 {
@@ -101,14 +103,13 @@ namespace ODB
                     break;
 
                 case InventoryState.Inserting:
-                    if (IO.KeyPressed(IO.Input.West))
+                    if (KeyBindings.Pressed(Bind.Inv_Cancel))
                     {
                         State = InventoryState.Browsing;
                         Game.Log("Nevermind.");
                     }
 
-                    if (IO.KeyPressed(IO.Input.East) ||
-                        IO.KeyPressed(IO.Input.Enter))
+                    if (KeyBindings.Pressed(Bind.Inv_Select))
                     {
                         if (SelectedItem == null) break;
                         if (!SelectedItem.HasComponent("cContainer")) break;
@@ -124,14 +125,13 @@ namespace ODB
                     break;
 
                 case InventoryState.Joining:
-                    if (IO.KeyPressed(IO.Input.West))
+                    if (KeyBindings.Pressed(Bind.Inv_Cancel))
                     {
                         State = InventoryState.Browsing;
                         Game.Log("Nevermind.");
                     }
 
-                    if (IO.KeyPressed(IO.Input.East) ||
-                        IO.KeyPressed(IO.Input.Enter))
+                    if (KeyBindings.Pressed(Bind.Inv_Select))
                     {
                         if (_selected.CanStack(SelectedItem))
                         {
@@ -146,7 +146,7 @@ namespace ODB
 
         private void BrowsingInput()
         {
-            if (IO.KeyPressed(IO.Input.West))
+            if (KeyBindings.Pressed(Bind.Inv_Cancel))
             {
                 if (CurrentContainer == -1)
                     IO.IOState = InputType.PlayerInput;
@@ -155,8 +155,7 @@ namespace ODB
 
             if (SelectedItem == null) return;
 
-            if (IO.KeyPressed(IO.Input.East) ||
-                IO.KeyPressed(IO.Input.Enter))
+            if (KeyBindings.Pressed(Bind.Inv_Select))
                 if (SelectedItem.HasComponent("cContainer"))
                 {
                     CurrentContainer = SelectedItem.ID;
@@ -164,7 +163,7 @@ namespace ODB
                     return;
                 }
 
-            if (IO.KeyPressed(Keys.T) && CurrentContainer != -1)
+            if (KeyBindings.Pressed(Bind.TakeOut) && CurrentContainer != -1)
             {
                 ContainerIDs[CurrentContainer].Remove(SelectedItem.ID);
                 if (GetParentContainer(CurrentContainer) == -1)
@@ -175,9 +174,7 @@ namespace ODB
                 Game.Player.Pass();
             }
 
-            if (IO.KeyPressed(Keys.P) ||
-                IO.KeyPressed(IO.Input.East) ||
-                IO.KeyPressed(IO.Input.Enter))
+            if (KeyBindings.Pressed(Bind.PutInto))
             {
                 _selected = SelectedItem;
                 State = InventoryState.Inserting;
@@ -186,34 +183,17 @@ namespace ODB
 
             if (CurrentContainer != -1) return;
 
-            if (IO.KeyPressed(Keys.D) && !IO.ShiftState)
-                CheckDrop(SelectedItem);
+            if (KeyBindings.Pressed(Bind.Drop)) CheckDrop(SelectedItem);
+            if (KeyBindings.Pressed(Bind.Wield)) CheckWield(SelectedItem);
+            if (KeyBindings.Pressed(Bind.Wear)) CheckWear(SelectedItem);
+            if (KeyBindings.Pressed(Bind.Sheath)) CheckSheath(SelectedItem);
+            if (KeyBindings.Pressed(Bind.Remove)) CheckRemove(SelectedItem);
+            if (KeyBindings.Pressed(Bind.Quiver)) CheckQuiver(SelectedItem);
+            if (KeyBindings.Pressed(Bind.Split)) CheckSplit(SelectedItem);
+            if (KeyBindings.Pressed(Bind.Eat)) CheckEat(SelectedItem);
+            if (KeyBindings.Pressed(Bind.Read)) CheckRead(SelectedItem);
 
-            if (IO.KeyPressed(Keys.W) && !IO.ShiftState)
-                CheckWield(SelectedItem);
-
-            if (IO.KeyPressed(Keys.W) && IO.ShiftState)
-                CheckWear(SelectedItem);
-
-            if (IO.KeyPressed(Keys.S) && IO.ShiftState)
-                CheckSheath(SelectedItem);
-
-            if (IO.KeyPressed(Keys.R) && IO.ShiftState)
-                CheckRemove(SelectedItem);
-
-            if (IO.KeyPressed(Keys.Q) && IO.ShiftState)
-                CheckQuiver(SelectedItem);
-
-            if (IO.KeyPressed(Keys.S) && !IO.ShiftState)
-                CheckSplit(SelectedItem);
-
-            if (IO.KeyPressed(Keys.E) && !IO.ShiftState)
-                CheckEat(SelectedItem);
-
-            if (IO.KeyPressed(Keys.R) && !IO.ShiftState)
-                CheckRead(SelectedItem);
-
-            if (IO.KeyPressed(Keys.J) && IO.ShiftState)
+            if (KeyBindings.Pressed(Bind.Join))
             {
                 if (!SelectedItem.Stacking) return;
 
@@ -221,7 +201,7 @@ namespace ODB
                 _selected = SelectedItem;
                 Game.Log("Join " + _selected.GetName("count") +
                     " with what?");
-                CurrentContainer--;
+                Selection--;
             }
 
             if (Selection > CurrentContents.Count - 1)

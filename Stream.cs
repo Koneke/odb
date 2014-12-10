@@ -178,5 +178,11 @@ namespace ODB
 
             return s;
         }
+
+        public void Back(int length = 1)
+        {
+            _stream = _stream.Substring(0, _stream.Length - length);
+            Read -= length;
+        }
     }
 }

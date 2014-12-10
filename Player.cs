@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework.Input;
 
+using Bind = ODB.KeyBindings.Bind;
+
 namespace ODB
 {
     public class Player
@@ -55,7 +57,7 @@ namespace ODB
         private static bool MovementInput()
         {
             #region stairs
-            if (IO.KeyPressed(Keys.OemPeriod) && IO.ShiftState)
+            if (KeyBindings.Pressed(Bind.Down))
                 if (Game.Level.Map[
                     Game.Player.xy.x,
                     Game.Player.xy.y].Stairs == Stairs.Down)
@@ -70,7 +72,7 @@ namespace ODB
                     Game.Log("You descend the stairs...");
                 }
 
-            if (IO.KeyPressed(Keys.OemComma) && IO.ShiftState)
+            if (KeyBindings.Pressed(Bind.Up))
                 if (Game.Level.Map[
                     Game.Player.xy.x,
                     Game.Player.xy.y].Stairs == Stairs.Up)
@@ -86,16 +88,16 @@ namespace ODB
 
             Point offset = new Point(0, 0);
 
-                 if (IO.KeyPressed(IO.Input.North)) offset.Nudge(0, -1);
-            else if (IO.KeyPressed(IO.Input.NorthEast)) offset.Nudge(1, -1);
-            else if (IO.KeyPressed(IO.Input.East)) offset.Nudge(1, 0);
-            else if (IO.KeyPressed(IO.Input.SouthEast)) offset.Nudge(1, 1);
-            else if (IO.KeyPressed(IO.Input.South)) offset.Nudge(0, 1);
-            else if (IO.KeyPressed(IO.Input.SouthWest)) offset.Nudge(-1, 1);
-            else if (IO.KeyPressed(IO.Input.West)) offset.Nudge(-1, 0);
-            else if (IO.KeyPressed(IO.Input.NorthWest)) offset.Nudge(-1, -1);
+                 if (KeyBindings.Pressed(Bind.North)) offset.Nudge(0, -1);
+            else if (KeyBindings.Pressed(Bind.NorthEast)) offset.Nudge(1, -1);
+            else if (KeyBindings.Pressed(Bind.East)) offset.Nudge(1, 0);
+            else if (KeyBindings.Pressed(Bind.SouthEast)) offset.Nudge(1, 1);
+            else if (KeyBindings.Pressed(Bind.South)) offset.Nudge(0, 1);
+            else if (KeyBindings.Pressed(Bind.SouthWest)) offset.Nudge(-1, 1);
+            else if (KeyBindings.Pressed(Bind.West)) offset.Nudge(-1, 0);
+            else if (KeyBindings.Pressed(Bind.NorthWest)) offset.Nudge(-1, -1);
 
-            if (IO.KeyPressed(Keys.NumPad5)) Game.Player.Pass(true);
+            if (KeyBindings.Pressed(Bind.Wait)) Game.Player.Pass(true);
 
             if (offset.x == 0 && offset.y == 0) return false;
 
@@ -104,10 +106,7 @@ namespace ODB
 
         private static void CheckGet()
         {
-            if (
-                (!IO.KeyPressed(Keys.G) || IO.ShiftState) &&
-                (!IO.KeyPressed(Keys.OemComma) || IO.ShiftState)
-            ) return;
+            if (!KeyBindings.Pressed(Bind.Get)) return;
 
             if (Game.Player.Inventory.Count >= 23)
             {
@@ -143,11 +142,17 @@ namespace ODB
 
         private static void CheckDrop()
         {
-            if (!IO.KeyPressed(Keys.D) || IO.ShiftState) return;
+            if (!KeyBindings.Pressed(Bind.Drop)) return;
 
             IO.AcceptedInput.Clear();
             for (int i = 0; i < Game.Player.Inventory.Count; i++)
                 IO.AcceptedInput.Add(IO.Indexes[i]);
+
+            if (IO.AcceptedInput.Count <= 0)
+            {
+                Game.Log("You have nothing you can drop.");
+                return;
+            }
 
             string question = "Drop what? [";
             question += IO.AcceptedInput.Aggregate(
@@ -163,7 +168,7 @@ namespace ODB
 
         private static void CheckWield()
         {
-            if (!(IO.KeyPressed(Keys.W) && !IO.ShiftState)) return;
+            if (!KeyBindings.Pressed(Bind.Wield)) return;
 
             List<Item> wieldable = Game.Player.Inventory
                 .Where(x => !Game.Player.GetEquippedItems().Contains(x))
@@ -195,7 +200,7 @@ namespace ODB
 
         private static void CheckWear()
         {
-            if (!(IO.KeyPressed(Keys.W) && IO.ShiftState)) return;
+            if (!KeyBindings.Pressed(Bind.Wear)) return;
 
             List<Item> wearable = Game.Player.Inventory
                 .Where(x => !Game.Player.GetEquippedItems().Contains(x))
@@ -227,7 +232,7 @@ namespace ODB
 
         private static void CheckSheath()
         {
-            if (!(IO.KeyPressed(Keys.S) && IO.ShiftState)) return;
+            if (!KeyBindings.Pressed(Bind.Sheath)) return;
 
             //LH-021214: Since we can (soon) wield anything, anything in your
             //           hands should be sheathable.
@@ -268,7 +273,7 @@ namespace ODB
 
         private static void CheckRemove()
         {
-            if (!(IO.KeyPressed(Keys.R) && IO.ShiftState)) return;
+            if (!KeyBindings.Pressed(Bind.Remove)) return;
 
             //LH-021214: Since we can (soon) wield anything, anything in your
             //           hands should be sheathable.
@@ -303,7 +308,7 @@ namespace ODB
 
         private static void CheckOpen()
         {
-            if (!IO.KeyPressed(Keys.O) || IO.ShiftState) return;
+            if (!KeyBindings.Pressed(Bind.Open)) return;
 
             IO.AcceptedInput.Clear();
 
@@ -320,7 +325,7 @@ namespace ODB
 
         private static void CheckClose()
         {
-            if (!IO.KeyPressed(Keys.C) || IO.ShiftState) return;
+            if (!KeyBindings.Pressed(Bind.Close)) return;
 
             IO.AcceptedInput.Clear();
 
@@ -337,7 +342,7 @@ namespace ODB
 
         private static void CheckZap()
         {
-            if (!IO.KeyPressed(Keys.Z) || IO.ShiftState) return;
+            if (!KeyBindings.Pressed(Bind.Zap)) return;
 
             IO.AcceptedInput.Clear();
             for (int i = 0; i < Game.Player.Spellbook.Count; i++)
@@ -363,7 +368,7 @@ namespace ODB
 
         private static void CheckApply()
         {
-            if (!IO.KeyPressed(Keys.A) || IO.ShiftState) return;
+            if (!KeyBindings.Pressed(Bind.Apply)) return;
 
             IO.AcceptedInput.Clear();
             IO.AcceptedInput.AddRange(
@@ -379,7 +384,7 @@ namespace ODB
 
             if (IO.AcceptedInput.Count <= 0)
             {
-                Game.Log("You don't know any spells.");
+                Game.Log("You don't have anything to apply or use.");
                 return;
             }
 
@@ -392,7 +397,7 @@ namespace ODB
 
         private static void CheckFire()
         {
-            if (!IO.KeyPressed(Keys.F) || IO.ShiftState) return;
+            if (!KeyBindings.Pressed(Bind.Fire)) return;
 
             //todo: throwing
             //      if we pressed T instead, allow items in hands as ammo
@@ -454,7 +459,7 @@ namespace ODB
             //todo: like mentioned in the checkwield comment
             //      might want to make a size check or something here.
             //      quivering an orc corpse sounds a bit so-so...
-            if (!IO.KeyPressed(Keys.Q) || !IO.ShiftState) return;
+            if (!KeyBindings.Pressed(Bind.Quiver)) return;
 
             IO.AcceptedInput.Clear();
             foreach (int index in Game.Player.Inventory
@@ -481,19 +486,18 @@ namespace ODB
 
         private static void CheckLook()
         {
-            if (IO.KeyPressed(Keys.OemSemicolon) && IO.ShiftState)
-            {
-                IO.AskPlayer(
-                    "Examine what?",
-                    InputType.Targeting,
-                    PlayerResponses.Look
-                );
-            }
+            if (!KeyBindings.Pressed(Bind.Look)) return;
+
+            IO.AskPlayer(
+                "Examine what?",
+                InputType.Targeting,
+                PlayerResponses.Look
+            );
         }
 
         private static void CheckEat()
         {
-            if (!IO.KeyPressed(Keys.E) || IO.ShiftState) return;
+            if (!KeyBindings.Pressed(Bind.Eat)) return;
 
             string question = "Eat what? [";
             IO.AcceptedInput.Clear();
@@ -519,7 +523,7 @@ namespace ODB
 
         private static void CheckEngrave()
         {
-            if (!IO.KeyPressed(Keys.E) || !IO.ShiftState) return;
+            if (!KeyBindings.Pressed(Bind.Engrave)) return;
 
             if (Game.Level.TileAt(Game.Player.xy).Stairs != Stairs.None)
             {
@@ -540,7 +544,7 @@ namespace ODB
 
         private static void CheckChant()
         {
-            if (!IO.KeyPressed(Keys.C) || !IO.ShiftState) return;
+            if (!KeyBindings.Pressed(Bind.Chant)) return;
 
             const string question = "Chant what?";
             IO.AcceptedInput.Clear();
@@ -556,7 +560,7 @@ namespace ODB
 
         private static void CheckRead()
         {
-            if (!IO.KeyPressed(Keys.R) || IO.ShiftState) return;
+            if (!KeyBindings.Pressed(Bind.Read)) return;
 
             List<Item> readable = Game.Player.Inventory
                 .Where(item =>

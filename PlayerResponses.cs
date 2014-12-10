@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Microsoft.Xna.Framework.Input;
+//using Microsoft.Xna.Framework.Input;
 
 namespace ODB
 {
@@ -63,8 +63,9 @@ namespace ODB
             if (it.Definition.Stacking && it.Count > 1)
             {
                 IO.AcceptedInput.Clear();
-                for (Keys k = Keys.D0; k <= Keys.D9; k++)
-                    IO.AcceptedInput.Add((char)k);
+                /*for (Keys k = Keys.D0; k <= Keys.D9; k++)
+                    IO.AcceptedInput.Add((char)k);*/
+                IO.AcceptedInput.AddRange(IO.Numbers.ToList());
 
                 IO.AskPlayer(
                     "How many?",

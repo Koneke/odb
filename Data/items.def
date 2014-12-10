@@ -4,7 +4,7 @@
 8003XXXXXXA52A2A)bow;			0	ff	005A	ffff	cLauncher;{8005,;1d6;}##
 8004XXXXXXD3D3D3)longsword;		0	10	00B4	0010	cAttack;{1d6;at_slash;{}}##
 8005XXXXXXA52A2A(cloth bag;		0	03	0005	0006	cContainer;{}##
-8006XXXXXXA52A2A)zweihander;		0	11	0190	0015	cAttack;{2d6;at_slash;{cEffect;{st_poison;FF100d2;}}}##
+8006XXXXXXA52A2A)zweihander;		0	11	0190	0015	cAttack;{2d6;at_slash;{}}##
 8007XXXXXXA52A2A[chainmail;		0	ff	0708	001a	cWearable;{01,;03}##
 
 8100XXXXXXFFFFFF?scroll of forcebolt;	0	01	0001	000d	cReadable;{0001}##

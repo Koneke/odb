@@ -1,0 +1,59 @@
+﻿west				=	:h, :left, :numpad4;
+east				=	:l, :right, :numpad6;
+north				=	:k, :up, :numpad8;
+south				=	:j, :down, :numpad2;
+northwest			=	:y, :numpad7;
+northeast			=	:u, :numpad9;
+southwest			=	:b, :numpad1;
+southeast			=	:n, :numpad3;
+up					=	s:oemcomma;
+down				=	s:oemperiod;
+wait				=	:oemperiod, :numpad5;
+
+target_accept		=	:oemperiod, :numpad5, :enter;
+target_cancel		=	:escape, :space;
+
+dev_toggleconsole	=	:oemtilde;
+dev_saveactors		=	:f1;
+dev_saveitems		=	:f2;
+window_size			=	:f3;
+exit				=	:escape;
+
+log_size_up			=	:add;
+log_size_down		=	:subtract;
+
+camera_left			=	:delete;
+camera_right		=	:pagedown;
+camera_up			=	:home;
+camera_down			=	:end;
+
+apply				=	:a;
+chant				=	s:c;
+close				=	:c;
+drop				=	:d;
+eat					=	:e;
+engrave				=	s:e;
+fire				=	:f;
+get					=	:g, :oemcomma;
+inventory			=	:i;
+look				=	s:oemsemicolon;
+open				=	:o;
+quiver				=	s:q;
+read				=	:r;
+remove				=	s:r;
+sheath				=	s:s;
+wear				=	s:w;
+wield				=	:w;
+zap					=	:z;
+
+split				=	:s;
+join				=	:j;
+putinto				=	:p;
+takeout				=	:t;
+inv_up				=	:k, :up, :numpad8;
+inv_down			=	:j, :down, :numpad2;
+inv_select			=	:enter, :l, :numpad6, :right;
+inv_cancel			=	:back, :h, :left, :numpad4;
+
+wm_scrollback		=	:up;
+wm_scrolldown		=	:down;
