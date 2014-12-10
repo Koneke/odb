@@ -19,17 +19,6 @@ using Bind = ODB.KeyBindings.Bind;
 //     but it /is/ fairly messy.
 // * Inventory stuff currently doesn't make noise.
 
-//~~~ QUEST TRACKER for 09 dec ~~~
-// * Write item/character tile number, instead of the actual tile,
-//   to the .def files.
-//   * Mainly because it just makes things more convenient to edit
-//     manually.
-// * Switch to human numbers in .def-files?
-//   * Original reason for hex was because I was dumb and though
-//     "wow can't use variable length things", then I realized what a semicolon
-//     was?
-//   * More easily manually tweaked that way.
-
 namespace ODB
 {
     public class Game1 : Game

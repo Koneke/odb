@@ -67,7 +67,7 @@ namespace ODB
             Type = stream.ReadHex(4);
             Background = stream.ReadNullableColor();
             Foreground = stream.ReadColor();
-            Tile = stream.ReadString(1);
+            Tile = (char)stream.ReadHex(2) + "";
             Name = stream.ReadString();
 
             Definitions[Type] = this;
@@ -85,7 +85,7 @@ namespace ODB
             stream.Write(Type, 4);
             stream.Write(Background);
             stream.Write(Foreground);
-            stream.Write(Tile, false);
+            stream.Write(Tile[0], 2);
             stream.Write(Name);
             return stream;
         }

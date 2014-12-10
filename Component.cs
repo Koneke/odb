@@ -127,7 +127,7 @@ namespace ODB
                 .Select(slot => (DollSlot)IO.ReadHex(slot))
                 .ToList();
 
-            int armorClass = stream.ReadHex(2);
+            int armorClass = stream.ReadInt();
 
             return new WearableComponent
             {
@@ -149,7 +149,7 @@ namespace ODB
 
             stream.Write("{", false);
             stream.Write(slots);
-            stream.Write(ArmorClass, 2);
+            stream.Write(ArmorClass);
             stream.Write("}", false);
 
             return stream;
@@ -231,7 +231,7 @@ namespace ODB
         {
             Stream stream = new Stream(content);
 
-            int nutrition = stream.ReadHex(4);
+            int nutrition = stream.ReadInt();
 
             return new EdibleComponent {
                 Nutrition =  nutrition,
@@ -243,7 +243,7 @@ namespace ODB
             Stream stream = new Stream();
             stream.Write(GetComponentType());
             stream.Write("{", false);
-            stream.Write(Nutrition, 4);
+            stream.Write(Nutrition);
             stream.Write("}", false);
             return stream;
         }

@@ -8,7 +8,7 @@ southwest			=	:b, :numpad1;
 southeast			=	:n, :numpad3;
 up					=	s:oemcomma;
 down				=	s:oemperiod;
-wait				=	:oemperiod, :numpad5;
+wait				=	:s, :oemperiod, :numpad5;
 
 target_accept		=	:oemperiod, :numpad5, :enter;
 target_cancel		=	:escape, :space;
@@ -47,7 +47,7 @@ wield				=	:w;
 zap					=	:z;
 
 split				=	:s;
-join				=	:j;
+join				=	s:j;
 putinto				=	:p;
 takeout				=	:t;
 inv_up				=	:k, :up, :numpad8;

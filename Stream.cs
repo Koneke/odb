@@ -66,6 +66,13 @@ namespace ODB
             _stream += s;
         }
 
+        public void Write(int i)
+        {
+            string s = i + ";";
+            Read += s.Length;
+            _stream += s;
+        }
+
         public void Write(bool b)
         {
             string s = IO.Write(b);
@@ -139,6 +146,12 @@ namespace ODB
             s = s.Substring(0, length);
             Read += length;
             return IO.ReadHex(s);
+        }
+
+        public int ReadInt()
+        {
+            string s = ReadString();
+            return int.Parse(s);
         }
 
         public bool ReadBool()

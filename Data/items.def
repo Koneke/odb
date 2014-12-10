@@ -1,18 +1,18 @@
-8000XXXXXXFFFF00$gold coin;		1	ff	0001	ffff	##	
-8001XXXXXXFFC0CB[apron;			0	ff	00C8	000a	cWearable;{01,;01}##
-8002XXXXXXA52A2Aarrow;			1	ff	0002	ffff	cProjectile;{1d2;}##
-8003XXXXXXA52A2A)bow;			0	ff	005A	ffff	cLauncher;{8005,;1d6;}##
-8004XXXXXXD3D3D3)longsword;		0	10	00B4	0010	cAttack;{1d6;at_slash;{}}##
-8005XXXXXXA52A2A(cloth bag;		0	03	0005	0006	cContainer;{}##
-8006XXXXXXA52A2A)zweihander;		0	11	0190	0015	cAttack;{2d6;at_slash;{}}##
-8007XXXXXXA52A2A[chainmail;		0	ff	0708	001a	cWearable;{01,;03}##
+8000XXXXXXFFFF00	24	gold coin;		1	ff	   1;	65536;	##	
+8001XXXXXXFFC0CB	5b	apron;			0	ff	 200;	10;	cWearable;{01,;1;}##
+8002XXXXXXA52A2A	18	arrow;			1	ff	   2;	65536;	cProjectile;{1d2;}##
+8003XXXXXXA52A2A	29	bow;			0	ff	  90;	65536;	cLauncher;{8005,;1d6;}##
+8004XXXXXXD3D3D3	29	longsword;		0	10	 180;	15;	cAttack;{1d6;at_slash;{}}##
+8005XXXXXXA52A2A	28	cloth bag;		0	03	   5;	5;	cContainer;{}##
+8006XXXXXXA52A2A	29	zweihander;		0	11	 400;	20;	cAttack;{2d6;at_slash;{}}##
+8007XXXXXXA52A2A	5b	chainmail;		0	ff	1800;	25;	cWearable;{01,;3;}##
 
-8100XXXXXXFFFFFF?scroll of forcebolt;	0	01	0001	000d	cReadable;{0001}##
-8101XXXXXXFFFFFF?scroll of identify;	0	01	0001	000d	cReadable;{0002}##
-8200XXXXXXFFFF00+tome of forcebolt;	0	02	0032	002a	cLearnable;{0001}##
-8201XXXXXXFFFF00+tome of identify;	0	02	0032	0025	cLearnable;{0002}##
+8100XXXXXXFFFFFF	3f	scroll of forcebolt;	0	01	   1;	15;	cReadable;{0001}##
+8101XXXXXXFFFFFF	3f	scroll of identify;	0	01	   1;	15;	cReadable;{0002}##
+8200XXXXXXFFFF00	2b	tome of forcebolt;	0	02	  50;	65;	cLearnable;{0001}##
+8201XXXXXXFFFF00	2b	tome of identify;	0	02	  50;	80;	cLearnable;{0002}##
 
-8800XXXXXXFF0000%moribund corpse;	0	00	1B58	ffff	cEdible;{09C4}##
-8801XXXXXXFF0000%rat corpse;		0	00	00C8	ffff	cEdible;{01E8}cAttack;{1d6;at_bash;{cEffect;{st_poison;0850d2;}}}##
-8802XXXXXXFF0000%newt corpse;		0	00	00C8	ffff	cEdible;{01E8}##
-8803XXXXXXFF0000%kobold corpse;		0	00	00C8	ffff	cEdible;{02E8}##
+8800XXXXXXFF0000	25	moribund corpse;	0	00	7000;	65536;	cEdible;{2500;}##
+8801XXXXXXFF0000	25	rat corpse;		0	00	 200;	65536;	cEdible;{500;}##
+8802XXXXXXFF0000	25	newt corpse;		0	00	 200;	65536;	cEdible;{500;}##
+8803XXXXXXFF0000	25	kobold corpse;		0	00	1300;	65536;	cEdible;{750;}##

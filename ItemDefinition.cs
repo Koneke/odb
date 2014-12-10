@@ -140,8 +140,8 @@ namespace ODB
 
             Stacking = stream.ReadBool();
             Category = stream.ReadHex(2);
-            Weight = stream.ReadHex(4);
-            Value = stream.ReadHex(4);
+            Weight = stream.ReadInt();
+            Value = stream.ReadInt();
 
             ItemDefinitions[Type] = this;
 
@@ -162,8 +162,8 @@ namespace ODB
 
             stream.Write(Stacking);
             stream.Write(Category, 2);
-            stream.Write(Weight, 4);
-            stream.Write(Value, 4);
+            stream.Write(Weight);
+            stream.Write(Value);
 
             foreach (Component c in Components)
                 stream.Write(c.WriteComponent(), false);
