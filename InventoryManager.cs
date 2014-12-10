@@ -80,6 +80,10 @@ namespace ODB
                 Selection += CurrentContents.Count;
             if (CurrentContents.Count > 0)
                 Selection = Selection % CurrentContents.Count;
+
+            for (int i = (int)Bind.Inv_Jump_0; i <= (int)Bind.Inv_Jump_23; i++)
+                if (KeyBindings.Pressed((Bind)i))
+                    Selection = i - (int)Bind.Inv_Jump_0;
         }
 
         public void InventoryInput()

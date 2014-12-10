@@ -599,6 +599,7 @@ namespace ODB
         }
         public void Damage(int d, Actor attacker)
         {
+            if (d <= 0) return;
             if (HpCurrent <= 0) return;
 
             Game.Level.Blood[xy.x, xy.y] = true;

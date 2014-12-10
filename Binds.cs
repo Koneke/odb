@@ -81,6 +81,12 @@ namespace ODB
             Wm_East, Wm_West, Wm_North, Wm_South,
             Wm_NorthEast, Wm_NorthWest,
             Wm_SouthEast, Wm_SouthWest,
+
+            Inv_Jump_0, Inv_Jump_1, Inv_Jump_2, Inv_Jump_3, Inv_Jump_4,
+            Inv_Jump_5, Inv_Jump_6, Inv_Jump_7, Inv_Jump_8, Inv_Jump_9,
+            Inv_Jump_10, Inv_Jump_11, Inv_Jump_12, Inv_Jump_13, Inv_Jump_14,
+            Inv_Jump_15, Inv_Jump_16, Inv_Jump_17, Inv_Jump_18, Inv_Jump_19,
+            Inv_Jump_20, Inv_Jump_21, Inv_Jump_22, Inv_Jump_23,
 // ReSharper restore InconsistentNaming
         }
 
