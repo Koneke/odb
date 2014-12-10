@@ -1,9 +1,10 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+
+using Bind = ODB.KeyBindings.Bind;
 
 namespace ODB
 {
@@ -28,61 +29,10 @@ namespace ODB
 
         private const string Lowercase = "abcdefghijklmnopqrstuvwxyz";
         private const string Uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        public static string Numbers = "0123456789";
         public static string Indexes = Lowercase + Uppercase;
         public static string ViKeys = "hjklyubn";
         public static List<char> AcceptedInput = new List<char>();
-
-        //so we can map keys requiring certain shift-status
-        private struct Keybind
-        {
-            public bool Shift;
-            public Keys Kb;
-        }
-
-        public enum Input
-        {
-            North, South, West, East,
-            NorthEast, NorthWest,
-            SouthEast, SouthWest,
-            Enter
-        }
-
-        private static readonly Dictionary<Input, Keybind[]> KeyBindings =
-            new Dictionary<Input, Keybind[]>
-        {
-            {Input.North, new[] {
-                new Keybind{Kb = Keys.Up, Shift = false},
-                new Keybind{Kb = Keys.NumPad8, Shift = false},
-                new Keybind{Kb = Keys.K, Shift = false}}},
-            {Input.South, new[] {
-                new Keybind{Kb = Keys.Down, Shift = false},
-                new Keybind{Kb = Keys.NumPad2, Shift = false},
-                new Keybind{Kb = Keys.J, Shift = false}}},
-            {Input.West, new[] {
-                new Keybind{Kb = Keys.Left, Shift = false},
-                new Keybind{Kb = Keys.NumPad4, Shift = false},
-                new Keybind{Kb = Keys.H, Shift = false}}},
-            {Input.East, new[] {
-                new Keybind{Kb = Keys.Right, Shift = false},
-                new Keybind{Kb = Keys.NumPad6, Shift = false},
-                new Keybind{Kb = Keys.L, Shift = false}}},
-            {Input.NorthEast, new[] {
-                new Keybind{Kb = Keys.NumPad9, Shift = false},
-                new Keybind{Kb = Keys.U, Shift = false}}},
-            {Input.NorthWest, new[] {
-                new Keybind{Kb = Keys.NumPad7, Shift = false},
-                new Keybind{Kb = Keys.Y, Shift = false}}},
-            {Input.SouthEast, new[] {
-                new Keybind{Kb = Keys.NumPad3, Shift = false},
-                new Keybind{Kb = Keys.N, Shift = false}}},
-            {Input.SouthWest, new[] {
-                new Keybind{Kb = Keys.NumPad1, Shift = false},
-                new Keybind{Kb = Keys.B, Shift = false}}},
-            {Input.Enter, new[] {
-                new Keybind{Kb = Keys.NumPad5, Shift = false},
-                new Keybind{Kb = Keys.OemPeriod, Shift = false},
-                new Keybind{Kb = Keys.Enter, Shift = false}}},
-        };
 
         public static void Update(bool final)
         {
@@ -97,18 +47,13 @@ namespace ODB
             else _oks = _ks;
         }
 
+        public static bool KeyDown(Keys k)
+        {
+            return _ks.IsKeyDown(k);
+        }
         public static bool KeyPressed(Keys k)
         {
             return _ks.IsKeyDown(k) && !_oks.IsKeyDown(k);
-        }
-        public static bool KeyPressed(Input binding)
-        {
-            if (!KeyBindings.ContainsKey(binding))
-                throw new ArgumentException();
-            return KeyBindings[binding]
-                .Where(x => x.Shift == ShiftState)
-                .Any(x => _ks.IsKeyDown(x.Kb) && !_oks.IsKeyDown(x.Kb))
-            ;
         }
 
         private static void SubmitAnswer()
@@ -213,20 +158,19 @@ namespace ODB
         {
             Point offset = new Point(0, 0);
 
-            if (KeyPressed(Input.NorthWest)) offset.Nudge(-1, -1);
-            if (KeyPressed(Input.North)) offset.Nudge(0, -1);
-            if (KeyPressed(Input.NorthEast)) offset.Nudge(1, -1);
-            if (KeyPressed(Input.West)) offset.Nudge(-1, 0);
-            if (KeyPressed(Input.East)) offset.Nudge(1, 0);
-            if (KeyPressed(Input.SouthWest)) offset.Nudge(-1, 1);
-            if (KeyPressed(Input.South)) offset.Nudge(0, 1);
-            if (KeyPressed(Input.SouthEast)) offset.Nudge(1, 1);
+            if (KeyBindings.Pressed(Bind.NorthWest)) offset.Nudge(-1, -1);
+            if (KeyBindings.Pressed(Bind.North)) offset.Nudge(0, -1);
+            if (KeyBindings.Pressed(Bind.NorthEast)) offset.Nudge(1, -1);
+            if (KeyBindings.Pressed(Bind.West)) offset.Nudge(-1, 0);
+            if (KeyBindings.Pressed(Bind.East)) offset.Nudge(1, 0);
+            if (KeyBindings.Pressed(Bind.SouthWest)) offset.Nudge(-1, 1);
+            if (KeyBindings.Pressed(Bind.South)) offset.Nudge(0, 1);
+            if (KeyBindings.Pressed(Bind.SouthEast)) offset.Nudge(1, 1);
 
             Game.Target.Nudge(offset);
 
-            if (KeyPressed(Input.Enter)) {
+            if (KeyBindings.Pressed(Bind.Target_Accept))
                 SubmitAnswer();
-            }
         }
 
         public static string Write(Point p)

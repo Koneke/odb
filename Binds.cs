@@ -24,10 +24,61 @@ namespace ODB
     {
         public enum Bind
         {
+// ReSharper disable InconsistentNaming
             East, West, North, South,
             NorthEast, NorthWest,
             SouthEast, SouthWest,
-            Dev_ToggleConsole
+            Up,
+            Down,
+            Wait,
+
+            Target_Accept,
+            Target_Cancel,
+
+            Dev_ToggleConsole,
+            Dev_SaveActors,
+            Dev_SaveItems,
+            Window_Size,
+            Exit,
+            Log_Size_Up,
+            Log_Size_Down,
+
+            Camera_Up,
+            Camera_Down,
+            Camera_Left,
+            Camera_Right,
+
+            Apply,
+            Chant,
+            Close,
+            Drop,
+            Eat,
+            Engrave,
+            Fire,
+            Get,
+            Inventory,
+            Look,
+            Open,
+            Quiver,
+            Read,
+            Remove,
+            Sheath,
+            Wear,
+            Wield,
+            Zap,
+
+            Split,
+            Join,
+            TakeOut,
+            PutInto,
+            Inv_Up,
+            Inv_Down,
+            Inv_Select,
+            Inv_Cancel,
+
+            Wm_Scrollback,
+            Wm_Scrolldown,
+// ReSharper restore InconsistentNaming
         }
 
         public static bool Pressed(Bind bind)
@@ -36,12 +87,16 @@ namespace ODB
 
             foreach (KeyBind kb in Binds[bind])
             {
-                bool shift = (IO.KeyPressed(Keys.LeftShift) ||
-                    IO.KeyPressed(Keys.RightShift)) == kb.Shift;
-                bool alt = (IO.KeyPressed(Keys.LeftAlt) ||
-                    IO.KeyPressed(Keys.RightAlt)) == kb.Alt;
-                bool control = (IO.KeyPressed(Keys.LeftControl) ||
-                    IO.KeyPressed(Keys.RightControl)) == kb.Control;
+                bool shift =
+                    (IO.KeyDown(Keys.LeftShift) ||
+                     IO.KeyDown(Keys.RightShift)) == kb.Shift;
+                bool alt =
+                    (IO.KeyDown(Keys.LeftAlt) ||
+                     IO.KeyDown(Keys.RightAlt)) == kb.Alt;
+                bool control =
+                    (IO.KeyDown(Keys.LeftControl) ||
+                     IO.KeyDown(Keys.RightControl)) == kb.Control;
+
                 bool key = (IO.KeyPressed(kb.Key));
 
                 if (shift && alt && control && key) return true;
@@ -90,6 +145,7 @@ namespace ODB
                 bool shift = modifiers.IndexOf('s') != -1;
                 bool alt = modifiers.IndexOf('a') != -1;
                 bool control = modifiers.IndexOf('c') != -1;
+
                 Keys key;
                 Enum.TryParse(keystring, true, out key);
 

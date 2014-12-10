@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Xna.Framework.Input;
 using SadConsole;
 using Console = SadConsole.Consoles.Console;
 
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
+//using Microsoft.Xna.Framework.Input;
 using xnaPoint = Microsoft.Xna.Framework.Point;
 
 using Bind = ODB.KeyBindings.Bind;
@@ -203,7 +204,7 @@ namespace ODB
             IO.Update(false);
 
             #region ui interaction
-            if (IO.KeyPressed(Keys.Escape))
+            if (KeyBindings.Pressed(Bind.Exit))
             {
                 if (WizMode)
                 {
@@ -236,10 +237,12 @@ namespace ODB
                 }
             }
 
-            if (IO.KeyPressed((Keys)0x6B)) //np+
+            if (KeyBindings.Pressed(Bind.Log_Size_Up))
                 _logSize = Math.Min(_logConsole.ViewArea.Height, ++_logSize);
-            if (IO.KeyPressed((Keys)0x6D)) //np-
+
+            if (KeyBindings.Pressed(Bind.Log_Size_Down))
                 _logSize = Math.Max(0, --_logSize);
+
             _logConsole.Position = new xnaPoint(
                 0, -_logConsole.ViewArea.Height + _logSize
             );
@@ -258,7 +261,7 @@ namespace ODB
                         IO.TargetInput();
                         break;
                     case InputType.PlayerInput:
-                        if (IO.KeyPressed(Keys.I) && !WizMode)
+                        if (KeyBindings.Pressed(Bind.Inventory) && !WizMode)
                             IO.IOState = InputType.Inventory;
                         if (Player.Cooldown == 0)
                             ODB.Player.PlayerInput();
@@ -285,11 +288,11 @@ namespace ODB
             }
 
             #region f-keys //devstuff
-            if (IO.KeyPressed(Keys.F1))
+            if (KeyBindings.Pressed(Bind.Dev_SaveActors))
                 SaveIO.WriteActorDefinitionsToFile("Data/actors.def");
-            if (IO.KeyPressed(Keys.F2))
+            if (KeyBindings.Pressed(Bind.Dev_SaveItems))
                 SaveIO.WriteItemDefinitionsToFile("Data/items.def");
-            if (IO.KeyPressed(Keys.F3))
+            if (KeyBindings.Pressed(Bind.Window_Size))
             {
                 Engine.DefaultFont = Engine.DefaultFont == _standardFont
                     ? _doubleFont
@@ -300,7 +303,7 @@ namespace ODB
                     _graphics, 80, 25, 0, 0);
             }
 
-            if (IO.KeyPressed(Keys.OemTilde))
+            if (KeyBindings.Pressed(Bind.Dev_ToggleConsole))
             {
                 if (WizMode)
                 {
@@ -318,10 +321,10 @@ namespace ODB
 
         private void UpdateCamera()
         {
-            if (IO.KeyPressed(Keys.PageDown)) _cameraOffset.x++;
-            if (IO.KeyPressed(Keys.Delete)) _cameraOffset.x--;
-            if (IO.KeyPressed(Keys.Home)) _cameraOffset.y++;
-            if (IO.KeyPressed(Keys.End)) _cameraOffset.y--;
+            if (KeyBindings.Pressed(Bind.Camera_Right)) _cameraOffset.x++;
+            if (KeyBindings.Pressed(Bind.Camera_Left)) _cameraOffset.x--;
+            if (KeyBindings.Pressed(Bind.Camera_Down)) _cameraOffset.y++;
+            if (KeyBindings.Pressed(Bind.Camera_Up)) _cameraOffset.y--;
 
             _camera.x = Player.xy.x - 40;
             _camera.y = Player.xy.y - 12;
@@ -638,26 +641,6 @@ namespace ODB
                 r.xy.x, r.wh.y-1, (char)200 + "");
             _inventoryConsole.CellData.Print(
                 r.xy.x + r.wh.x-1, r.wh.y-1, (char)188 + "");
-        }
-
-        public Point NumpadToDirection(Keys k)
-        {
-            Point p;
-            switch (k)
-            {
-                case Keys.NumPad7: p = new Point(-1, -1); break;
-                case Keys.NumPad8: p = new Point(0, -1); break;
-                case Keys.NumPad9: p = new Point(1, -1); break;
-                case Keys.NumPad4: p = new Point(-1, 0); break;
-                case Keys.NumPad6: p = new Point(1, 0); break;
-                case Keys.NumPad1: p = new Point(-1, 1); break;
-                case Keys.NumPad2: p = new Point(0, 1); break;
-                case Keys.NumPad3: p = new Point(1, 1); break;
-                default: throw new Exception(
-                        "Bad input (expected numpad keycode, " +
-                        "got something weird instead).");
-            }
-            return p;
         }
 
         public Point NumpadToDirection(char c)
