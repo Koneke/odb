@@ -21,6 +21,7 @@ namespace ODB
                 return;
 
             if (!MeatPuppet.Awake) return;
+            if (!Game.Player.IsAlive) return;
 
             if (MeatPuppet.HasEffect(StatusType.Stun))
             {

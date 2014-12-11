@@ -98,6 +98,7 @@ namespace ODB
         public int Level;
         public int ExperiencePoints;
         public int Cooldown;
+        private int _food;
 
         public List<BodyPart> PaperDoll;
         public List<Item> Inventory;
@@ -152,6 +153,8 @@ namespace ODB
             ExperiencePoints = 0;
 
             Cooldown = 0;
+
+            _food = 9000;
 
             PaperDoll = new List<BodyPart>();
             foreach (DollSlot ds in definition.BodyParts)
@@ -382,6 +385,19 @@ namespace ODB
             modifier += Util.GetModsOfType(mt, this).Sum(
                 m => m.GetValue()
             );
+
+            switch (stat)
+            {
+                case Stat.Dexterity:
+                    if (GetFoodStatus() == FoodStatus.Stuffed) modifier--;
+                    break;
+                case Stat.Strength:
+                    if (GetFoodStatus() == FoodStatus.Starving) modifier--;
+                    break;
+                case Stat.Speed:
+                    if (GetFoodStatus() == FoodStatus.Stuffed) modifier--;
+                    break;
+            }
 
             return modifier;
         }
@@ -765,7 +781,7 @@ namespace ODB
                 (EdibleComponent)
                 item.GetComponent("cEdible");
 
-            Game.Food += ec.Nutrition;
+            AddFood(ec.Nutrition);
 
             if (item.Mods.Count <= 0) return;
             if (Util.Roll("1d5") != 5) return;
@@ -998,6 +1014,83 @@ namespace ODB
         {
             HpCurrent += amount;
             HpCurrent = Math.Min(HpCurrent, HpMax);
+        }
+
+        public enum FoodStatus
+        {
+            Starving,
+            Hungry,
+            Satisfied,
+            Full,
+            Stuffed
+        }
+        public static string FoodStatusString(FoodStatus fs)
+        {
+            switch (fs)
+            {
+                case FoodStatus.Starving: return "starving";
+                case FoodStatus.Hungry: return "hungry";
+                case FoodStatus.Satisfied: return "satisfied";
+                case FoodStatus.Full: return "full";
+                case FoodStatus.Stuffed: return "stuffed";
+            }
+            throw new ArgumentException();
+        }
+        public FoodStatus GetFoodStatus()
+        {
+            if (_food < 500) return FoodStatus.Starving;
+            if (_food < 1500) return FoodStatus.Hungry;
+            if (_food < 10000) return FoodStatus.Satisfied;
+            if (_food < 20000) return FoodStatus.Full;
+            return FoodStatus.Stuffed;
+        }
+        public void AddFood(int amount)
+        {
+            FoodStatus pre = GetFoodStatus();
+            _food += amount;
+            FoodStatus neo = GetFoodStatus();
+            if (neo == pre) return;
+
+            string message = "";
+            switch (neo)
+            {
+                case FoodStatus.Hungry:
+                    message = "You still feel hungry.";
+                    break;
+                case FoodStatus.Satisfied:
+                    message = "Man, that hit the spot.";
+                    break;
+                case FoodStatus.Full:
+                    message = "You feel full.";
+                    break;
+                case FoodStatus.Stuffed:
+                    message = "Eugh, not even a mint'd go down now.";
+                    break;
+            }
+            Game.Log(message);
+        }
+        public void RemoveFood(int amount)
+        {
+            FoodStatus pre = GetFoodStatus();
+            _food -= amount;
+            FoodStatus neo = GetFoodStatus();
+            if (neo == pre) return;
+
+            string message = "";
+            switch (neo)
+            {
+                case FoodStatus.Starving:
+                    message = Definition.Name + " needs food, badly!";
+                    break;
+                case FoodStatus.Hungry:
+                    message = "You are starting to feel peckish.";
+                    break;
+                case FoodStatus.Full:
+                    message = "Hm, a mint maybe isn't such a bad idea.";
+                    break;
+            }
+            if(message != "")
+                Game.Log(message);
         }
 
         public Stream WriteActor()

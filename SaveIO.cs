@@ -22,7 +22,7 @@ namespace ODB
             //but 0xFFFF might be hit, and 0xFFFFF looks ugly.
             stream.Write(Util.Game.GameTick, 8);
             stream.Write(Util.Game.Seed, 8);
-            stream.Write(Util.Game.Food, 8);
+            //stream.Write(Util.Game.Food, 8);
 
             string containers = "";
             foreach (int container in InventoryManager.ContainerIDs.Keys)
@@ -71,7 +71,7 @@ namespace ODB
 
             Util.Game.GameTick = stream.ReadHex(8);
             Util.Game.Seed = stream.ReadHex(8);
-            Util.Game.Food = stream.ReadHex(8);
+            //Util.Game.Food = stream.ReadHex(8);
             Util.Game.Level = Util.Game.Levels[playerLocation];
 
             string containers = stream.ReadString();

@@ -58,7 +58,6 @@ namespace ODB
         public Actor Player;
         //for now, breaking on of the RL rules a bit,
         //only the player actually has hunger.
-        public int Food;
 
         private Point _camera;
         private Point _cameraOffset;
@@ -154,7 +153,7 @@ namespace ODB
                 .SelectMany(r => r.GetTiles())
                 .First(t => t.Stairs == Stairs.Up).Position;
                 
-            Food = 9000;
+            //Food = 9000;
 
             //todo: these should probably not be lastingeffects
             //      they probably should be hardcoded really.
@@ -690,11 +689,13 @@ namespace ODB
                         b => b.MeatPuppet.Cooldown <= 0 && b.MeatPuppet.Awake))
                     b.Tick();
 
-                foreach (Brain b in Brains.Where(b => b.MeatPuppet.Awake))
-                    b.MeatPuppet.Cooldown--;
-                Game.Player.Cooldown--;
+                foreach (Actor a in
+                    World.WorldActors
+                    .Where(a => a.LevelID == Level.ID))
+                    a.Cooldown--;
 
-                Game.Food--;
+                //todo: should apply to everyone?
+                Game.Player.RemoveFood(1);
 
                 GameTick++;
 
@@ -1088,10 +1089,9 @@ namespace ODB
             namerow += "INT " + Player.Get(Stat.Intelligence) + "  ";
             namerow += "AC " + Player.GetArmor();
 
-            if (Game.Food < 500)
-                namerow += "  Starving";
-            else if (Game.Food < 1500)
-                namerow += "  Hungry";
+            if (Game.Player.GetFoodStatus() != Actor.FoodStatus.Satisfied)
+                namerow += " " +
+                    Actor.FoodStatusString(Game.Player.GetFoodStatus());
 
             namerow = Game.Player.LastingEffects.Aggregate(
                 namerow,
@@ -1126,8 +1126,7 @@ namespace ODB
             statrow +=
                 Player.Inventory
                 .Where(item => item.Type == 0x8000)
-                .Sum(item => item.Count)
-            ;
+                .Sum(item => item.Count);
 
             statrow += " ";
             statrow += "T:";
@@ -1138,14 +1137,9 @@ namespace ODB
 
             statrow += " (" + Game.Level.Name + ")";
 
-            float playerHealthPcnt =
-                Player.HpCurrent /
-                (float)Player.HpMax
-            ;
-            float playerManaPcnt =
-                Player.MpCurrent /
-                (float)Player.MpMax
-            ;
+            float playerHealthPcnt = Player.HpCurrent / (float)Player.HpMax;
+            float playerManaPcnt = Player.MpCurrent / (float)Player.MpMax;
+
             float colorStrength = 0.6f + 0.4f - (0.4f * playerHealthPcnt);
             float manaColorStrength = 0.6f + 0.4f - (0.4f * playerManaPcnt);
 
