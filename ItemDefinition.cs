@@ -117,22 +117,21 @@ namespace ODB
             ReadItemDefinition(s);
         }
 
-        public void AddComponent(Component component)
+        public void AddComponent<T>(T component) where T : Component
         {
             //Only one of each kind of component, please and thanks
-            if(GetComponent(component.GetComponentType()) != null)
+            if(HasComponent<T>())
                 throw new InvalidOperationException();
 
             Components.Add(component);
         }
-        public bool HasComponent(string type)
+        public bool HasComponent<T>() where T : Component
         {
-            return Components.Any(x => x.GetComponentType() == type);
+            return Components.Any(c => c is T);
         }
-        public Component GetComponent(string type)
+        public T GetComponent<T>() where T : Component
         {
-            return Components.FirstOrDefault(
-                x => x.GetComponentType() == type);
+            return (T)Components.FirstOrDefault(c => c is T);
         }
 
         public Stream ReadItemDefinition(string s)

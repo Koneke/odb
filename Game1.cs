@@ -469,8 +469,8 @@ namespace ODB
                     );
                     target.Damage(Util.Roll("2d4"), Game.Caster);
                 },
-                CastDifficulty = 1,
-                Cost = 1,
+                CastDifficulty = 10,
+                Cost = 3,
                 Range = 5
             };
 
@@ -495,8 +495,8 @@ namespace ODB
                     Item item = Game.Caster.Inventory[index];
                     item.Identify();
                 },
-                CastDifficulty = 0,
-                Cost = 0
+                CastDifficulty = 15,
+                Cost = 7
             };
 
             //ReSharper disable once ObjectCreationAsStatement
@@ -982,8 +982,8 @@ namespace ODB
                 name += ") ";
 
                 if (item.Stacking) name += item.Count + "x ";
-                if ((item.HasComponent("cWearable") ||
-                    item.HasComponent("cAttack")) &&
+                if ((item.HasComponent<WearableComponent>() ||
+                    item.HasComponent<AttackComponent>()) &&
                     item.Known)
                     name += item.Mod.ToString("+#;-#;+0") + " ";
                 name += item.GetName("Name");
@@ -994,7 +994,7 @@ namespace ODB
 
                 name += " " + item.GetWeight() + "dag";
 
-                if (item.HasComponent("cContainer"))
+                if (item.HasComponent<ContainerComponent>())
                 {
                     name += " (holding ";
                     name += InventoryManager.Containers[item.ID]

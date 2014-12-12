@@ -308,7 +308,7 @@ namespace ODB
         }
         public void Despawn(Item item)
         {
-            if (item.HasComponent("cContainer"))
+            if (item.HasComponent<ContainerComponent>())
                 foreach (Item it in InventoryManager.Containers[item.ID])
                     Despawn(it);
             World.WorldItems.Remove(item);
@@ -374,6 +374,22 @@ namespace ODB
 
         public Point RandomOpenPoint()
         {
+            //todo: making this more verbose because of occasional crashes
+            //      this is less of a "to do" and more of a "don't forget this";
+
+            Room r = Rooms.SelectRandom();
+            List<Tile> tiles = r.GetTiles();
+            List<Tile> nonSolid = tiles
+                .Where(t => !t.Solid).ToList();
+            List<Tile> nonDoor =
+                nonSolid.Where(t => t.Door == Door.None).ToList();
+            List<Tile> nonStairs =
+                nonDoor.Where(t => t.Door == Door.None).ToList();
+            List<Tile> nonActor =
+                nonStairs.Where(t => ActorOnTile(t.Position) == null).ToList();
+            // ReSharper disable once UnusedVariable
+            Point p = nonActor.SelectRandom().Position;
+
             return Rooms
                 .SelectRandom()
                 .GetTiles()

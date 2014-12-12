@@ -312,8 +312,17 @@ namespace ODB
 
         public void Cast()
         {
-            //todo: Difficulty check here
-            Effect();
+            Actor caster = Util.Game.Caster;
+            Util.Game.Caster.MpCurrent -= Cost;
+            if (Util.Roll("1d20") + caster.Get(Stat.Intelligence) >
+                CastDifficulty)
+                Effect();
+            else
+                Util.Game.Log(
+                    caster.GetName("Name") + " " +
+                    caster.Verb("whiff") + " " +
+                    "the spell!"
+                );
             Util.Game.Caster.Pass();
             Util.Game.Caster = null;
         }

@@ -245,9 +245,7 @@ namespace ODB
         }
         public void Wear(Item it)
         {
-            WearableComponent wc = 
-                (WearableComponent)
-                it.Definition.GetComponent("cWearable");
+            WearableComponent wc = it.GetComponent<WearableComponent>();
 
             foreach (DollSlot ds in wc.EquipSlots)
             {
@@ -294,7 +292,7 @@ namespace ODB
                     where bp.Item != null
                     where bp.Type != DollSlot.Hand
                     where !equipped.Contains(bp.Item)
-                    where bp.Item.HasComponent("cWearable")
+                    where bp.Item.HasComponent<WearableComponent>()
                 select bp)
                 equipped.Add(bp.Item);
             return equipped;
@@ -403,23 +401,10 @@ namespace ODB
         }
         public int GetArmor()
         {
-            List<Item> equipped = new List<Item>();
-            foreach (BodyPart bp in PaperDoll.FindAll(
-                x =>
-                    //might seem dumb, but ds.Hand is currently for
-                    //eh, like, the grip, more than the hand itself
-                    //glove-hands currently do not exist..?
-                    //idk, we'll get to it
-                    x.Type != DollSlot.Hand &&
-                    x.Item != null
-                ).Where(bp => !equipped.Contains(bp.Item)))
-                equipped.Add(bp.Item);
-
-            return 8 + equipped
-                .Select(
-                    it => (WearableComponent)
-                    it.Definition.GetComponent("cWearable"))
-                .Select(wc => wc.ArmorClass).Sum() +
+            return 8 +
+                GetWornItems()
+                .Select(item => item.GetComponent<WearableComponent>())
+                .Select(c => c.ArmorClass).Sum() +
                 Get(Stat.Dexterity);
         }
 
@@ -450,9 +435,7 @@ namespace ODB
 
             foreach (Item item in GetWieldedItems())
                 attacks.Add(new Tuple<Item, AttackComponent>
-                    (item, (AttackComponent)
-                        item.GetComponent("cAttack") ??
-                        bash));
+                    (item, item.GetComponent<AttackComponent>() ??  bash));
 
             if (attacks.Count == 0)
                 attacks.Add(new Tuple<Item, AttackComponent>(
@@ -505,7 +488,7 @@ namespace ODB
                 AttackComponent ac =
                     weapon == null
                     ? attack.Item2
-                    : (AttackComponent)weapon.GetComponent("cAttack");
+                    : weapon.GetComponent<AttackComponent>();
 
                 ac = ac ?? bash;
 
@@ -551,21 +534,19 @@ namespace ODB
 
             //Not currently considering have several launchers equipped.
             if (Game.Player.GetEquippedItems().Any(
-                x => x.HasComponent("cLauncher")))
+                x => x.HasComponent<LauncherComponent>()))
             {
                 weapon = Game.Player.GetEquippedItems()
-                    .Where(x => x.HasComponent("cLauncher"))
+                    .Where(x => x.HasComponent<LauncherComponent>())
                     .ToList()[0];
-                lc = (LauncherComponent)
-                    weapon.GetComponent("cLauncher");
+                lc = weapon.GetComponent<LauncherComponent>();
             }
 
             Item ammo = Quiver;
             Debug.Assert(ammo != null, "ammo != null");
 
             ProjectileComponent pc =
-                (ProjectileComponent)
-                ammo.GetComponent("cProjectile");
+                ammo.GetComponent<ProjectileComponent>();
 
             bool throwing;
             if (weapon != null && lc != null)
@@ -703,19 +684,15 @@ namespace ODB
 
             ExperiencePoints += amount;
 
-            if (LevelFromExperience(ExperiencePoints) != lPre)
-            {
-                Game.Log(
-                    "{1} {2}",
-                    this == Game.Player
-                        ? "You feel"
-                        : GetName("Name") + " looks",
-                    "stronger."
-                );
-                HpMax += Util.Roll(Definition.HitDie);
-                MpMax += Util.Roll(Definition.ManaDie);
-                Level = LevelFromExperience(ExperiencePoints);
-            }
+            if (LevelFromExperience(ExperiencePoints) == lPre) return;
+
+            Game.Log(
+                "{1} stronger",
+                this == Game.Player ? "You feel" : GetName("Name") + " looks"
+            );
+            HpMax += Util.Roll(Definition.HitDie);
+            MpMax += Util.Roll(Definition.ManaDie);
+            Level = LevelFromExperience(ExperiencePoints);
         }
 
         public int LevelFromExperience(int amount)
@@ -773,13 +750,13 @@ namespace ODB
                 Game.Level.Despawn(item);
             }
 
-            Game.Log(GetName("Name") + " ate " +
-                item.GetName("a") + "."
+            Game.Log(
+                string.Format("{0} ate {1}.",
+                GetName("Name"),
+                item.GetName("a"))
             );
 
-            EdibleComponent ec =
-                (EdibleComponent)
-                item.GetComponent("cEdible");
+            EdibleComponent ec = item.GetComponent<EdibleComponent>();
 
             AddFood(ec.Nutrition);
 

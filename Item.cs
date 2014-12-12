@@ -68,12 +68,11 @@ namespace ODB
         //wraps
         public bool Stacking { get { return Definition.Stacking; } }
         public int Type { get { return Definition.Type; } }
-        public bool HasComponent(string s) {
-            return Definition.HasComponent(s);
-        }
-        public Component GetComponent(string s) {
-            return Definition.GetComponent(s);
-        }
+
+        public bool HasComponent<T>() where T : Component
+            { return Definition.HasComponent<T>(); }
+        public T GetComponent<T>() where T : Component
+            { return Definition.GetComponent<T>(); }
 
         //SPAWNING a NEW item
         public Item(
@@ -90,7 +89,7 @@ namespace ODB
             if (mods != null) Mods.AddRange(mods);
 
             Charged = !Definition.Stacking && count > 0;
-            if (Definition.HasComponent("cContainer"))
+            if (Definition.HasComponent<ContainerComponent>())
                 InventoryManager.ContainerIDs.Add(ID, new List<int>());
         }
 
@@ -207,7 +206,7 @@ namespace ODB
         {
             int hands;
 
-            LauncherComponent lc = (LauncherComponent)GetComponent("cLauncher");
+            LauncherComponent lc = GetComponent<LauncherComponent>();
 
             if (lc != null) hands = 2;
             //360 decagram, i.e. 3.6kg, or ~8lb
@@ -225,7 +224,7 @@ namespace ODB
             int weight = Definition.Weight;
             if (Stacking) weight *= Count;
 
-            if (!HasComponent("cContainer")) return weight;
+            if (!HasComponent<ContainerComponent>()) return weight;
 
             weight += InventoryManager.Containers[ID]
                 .Sum(item => item.GetWeight());
@@ -329,7 +328,7 @@ namespace ODB
         public void MoveTo(Level newLevel)
         {
             LevelID = newLevel.ID;
-            if (!HasComponent("cContainer")) return;
+            if (!HasComponent<ContainerComponent>()) return;
 
             foreach (Item it in InventoryManager.Containers[ID])
                 it.MoveTo(newLevel);

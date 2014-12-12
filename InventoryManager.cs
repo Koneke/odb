@@ -83,7 +83,8 @@ namespace ODB
 
             for (int i = (int)Bind.Inv_Jump_0; i <= (int)Bind.Inv_Jump_23; i++)
                 if (KeyBindings.Pressed((Bind)i))
-                    Selection = i - (int)Bind.Inv_Jump_0;
+                    if(i - (int)Bind.Inv_Jump_0 < CurrentContents.Count)
+                        Selection = i - (int)Bind.Inv_Jump_0;
         }
 
         public void InventoryInput()
@@ -116,7 +117,8 @@ namespace ODB
                     if (KeyBindings.Pressed(Bind.Inv_Select))
                     {
                         if (SelectedItem == null) break;
-                        if (!SelectedItem.HasComponent("cContainer")) break;
+                        if (!SelectedItem.HasComponent<ContainerComponent>())
+                            break;
 
                         if (SelectedItem == _selected)
                         {
@@ -160,7 +162,7 @@ namespace ODB
             if (SelectedItem == null) return;
 
             if (KeyBindings.Pressed(Bind.Inv_Select))
-                if (SelectedItem.HasComponent("cContainer"))
+                if (SelectedItem.HasComponent<ContainerComponent>())
                 {
                     CurrentContainer = SelectedItem.ID;
                     Selection = 0;
@@ -275,7 +277,7 @@ namespace ODB
 
         private static void CheckWear(Item item)
         {
-            if (!item.HasComponent("cWearable"))
+            if (!item.HasComponent<WearableComponent>())
             {
                 Game.Log("You can't wear that!");
                 return;
@@ -335,7 +337,7 @@ namespace ODB
             {
                 Game.QpAnswerStack.Push(IO.Indexes[Selection] + "");
                 if (Game.Player.IsEquipped(item) &&
-                    item.HasComponent("cWearable"))
+                    item.HasComponent<WearableComponent>())
                     PlayerResponses.Remove();
             }
             else
@@ -344,7 +346,7 @@ namespace ODB
 
         private static void CheckEat(Item item)
         {
-            if (!item.HasComponent("cEdible")) return;
+            if (!item.HasComponent<EdibleComponent>()) return;
 
             Game.Player.Eat(item);
             Game.Player.Pass();
@@ -352,8 +354,8 @@ namespace ODB
 
         private static void CheckRead(Item item)
         {
-            if (!item.HasComponent("cReadable") &&
-                !item.HasComponent("cLearnable")) return;
+            if (!item.HasComponent<ReadableComponent>() &&
+                !item.HasComponent<LearnableComponent>()) return;
 
             Game.QpAnswerStack.Push(
                 IO.Indexes[Game.Player.Inventory.IndexOf(item)] + ""

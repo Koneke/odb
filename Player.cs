@@ -204,7 +204,7 @@ namespace ODB
 
             List<Item> wearable = Game.Player.Inventory
                 .Where(x => !Game.Player.GetEquippedItems().Contains(x))
-                .Where(item => item.Definition.HasComponent("cWearable"))
+                .Where(item => item.HasComponent<WearableComponent>())
                 .ToList();
 
             if (wearable.Count <= 0)
@@ -280,7 +280,7 @@ namespace ODB
             List<Item> worn = (
                     from bp in Game.Player.PaperDoll
                     where bp.Item != null
-                    where bp.Item.HasComponent("cWearable")
+                    where bp.Item.HasComponent<WearableComponent>()
                     select bp.Item
                 ).ToList();
 
@@ -373,7 +373,7 @@ namespace ODB
             IO.AcceptedInput.Clear();
             IO.AcceptedInput.AddRange(
                 Game.Player.Inventory
-                    .Where(item => item.HasComponent("cUsable"))
+                    .Where(item => item.HasComponent<UsableComponent>())
                     .Select(item => Game.Player.Inventory.IndexOf(item))
                     .Select(index => IO.Indexes[index])
             );
@@ -421,13 +421,12 @@ namespace ODB
             LauncherComponent lc = null;
 
             if (Game.Player.GetEquippedItems().Any(
-                x => x.HasComponent("cLauncher")))
+                x => x.HasComponent<LauncherComponent>()))
             {
                 weapon = Game.Player.GetEquippedItems()
-                    .Where(x => x.HasComponent("cLauncher"))
+                    .Where(x => x.HasComponent<LauncherComponent>())
                     .ToList()[0];
-                lc = (LauncherComponent)
-                    weapon.GetComponent("cLauncher");
+                lc = weapon.GetComponent<LauncherComponent>();
             }
 
             bool throwing;
@@ -504,7 +503,7 @@ namespace ODB
             foreach (
                 char index in
                     from item in Game.Player.Inventory
-                    where item.HasComponent("cEdible")
+                    where item.HasComponent<EdibleComponent>()
                 select IO.Indexes[Game.Player.Inventory.IndexOf(item)]
                 ) {
                     question += index;
@@ -564,8 +563,8 @@ namespace ODB
 
             List<Item> readable = Game.Player.Inventory
                 .Where(item =>
-                    item.HasComponent(ReadableComponent.Type) ||
-                    item.HasComponent(LearnableComponent.Type))
+                    item.HasComponent<ReadableComponent>() ||
+                    item.HasComponent<LearnableComponent>())
                 .ToList();
 
             if (readable.Count <= 0)

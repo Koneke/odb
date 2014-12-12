@@ -183,9 +183,9 @@ namespace ODB
             }
 
             item.Count -= count;
-            Item stack = new Item(item.WriteItem().ToString());
-            stack.Count = count;
-            stack.ID = Item.IDCounter++;
+            Item stack = new Item(item.WriteItem().ToString()) {
+                Count = count, ID = Item.IDCounter++
+            };
             World.AllItems.Add(stack);
 
             if (container == -1)
@@ -231,8 +231,7 @@ namespace ODB
             bool canEquip = true;
 
             WearableComponent wc =
-                (WearableComponent)
-                it.Definition.GetComponent("cWearable");
+                it.Definition.GetComponent<WearableComponent>();
 
             if (!Game.Player.CanEquip(wc.EquipSlots))
             {
@@ -403,7 +402,10 @@ namespace ODB
             int index = IO.Indexes.IndexOf(answer[0]);
             Spell spell = Game.Player.Spellbook[index];
 
-            Cast(spell);
+            if (Game.Player.MpCurrent >= spell.Cost)
+                Cast(spell);
+            else
+                Game.Log("You need more energy to cast that.");
         }
 
         private static void Cast(Spell spell)
@@ -425,6 +427,7 @@ namespace ODB
                 if (IO.AcceptedInput.Count <= 0)
                 {
                     Game.Log("You have nothing to cast that on.");
+                    Game.Caster = null;
                     return;
                 }
 
@@ -479,8 +482,7 @@ namespace ODB
             IO.UsedItem = item;
 
             UsableComponent uc =
-                (UsableComponent)
-                item.GetComponent("cUsable");
+                item.GetComponent<UsableComponent>();
 
             //LH-021214: if uc is null here, we failed an earlier check.
             Debug.Assert(uc != null);
@@ -636,8 +638,7 @@ namespace ODB
             Game.Log("You read {1}...", item.GetName("name"));
 
             ReadableComponent rc =
-                (ReadableComponent)
-                item.GetComponent(ReadableComponent.Type);
+                item.GetComponent<ReadableComponent>();
 
             if (rc != null)
             {
@@ -650,14 +651,14 @@ namespace ODB
             }
 
             LearnableComponent lc =
-                (LearnableComponent)
-                item.GetComponent(LearnableComponent.Type);
+                item.GetComponent<LearnableComponent>();
 
             Spell spell = Spell.Spells[lc.Spell];
 
             Game.Log("You feel knowledgable about {1}!", spell.Name);
             item.Identify();
             Game.Player.LearnSpell(spell);
+            Game.Player.Pass();
         }
     }
 }
