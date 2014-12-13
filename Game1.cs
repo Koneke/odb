@@ -155,7 +155,6 @@ namespace ODB
             Engine.Update(gameTime, IsActive);
             IO.Update(false);
 
-            #region ui interaction
             if (KeyBindings.Pressed(Bind.Exit))
             {
                 if (WizMode)
@@ -189,16 +188,7 @@ namespace ODB
                 }
             }
 
-            /*if (KeyBindings.Pressed(Bind.Log_Size_Up))
-                _logSize = Math.Min(_logConsole.ViewArea.Height, ++_logSize);
-
-            if (KeyBindings.Pressed(Bind.Log_Size_Down))
-                _logSize = Math.Max(0, --_logSize);
-
-            _logConsole.Position = new xnaPoint(
-                0, -_logConsole.ViewArea.Height + _logSize
-            );*/
-            #endregion
+            UI.Input();
 
             if (WizMode) Wizard.WmInput();
             else
@@ -300,15 +290,14 @@ namespace ODB
             //auto tele to (a) pair of stairs
             //so hint for now: don't have more stairs, it gets weird
             for (int x = 0; x < Level.Size.x; x++)
-                for (int y = 0; y < Level.Size.y; y++)
-                    if (Level.Map[x, y] != null)
-                        if (
-                            (Level.Map[x, y].Stairs == Stairs.Up &&
-                                downwards) ||
-                            (Level.Map[x, y].Stairs == Stairs.Down &&
-                                !downwards)
-                        )
-                            Player.xy = new Point(x, y);
+            for (int y = 0; y < Level.Size.y; y++)
+            {
+                TileInfo ti = Game.Level.At(x, y);
+                if (ti == null) continue;
+                if ((ti.Stairs == Stairs.Up && downwards) ||
+                    (ti.Stairs == Stairs.Down && !downwards))
+                    Player.xy = new Point(x, y);
+            }
         }
 
         private static void SetupMagic()
@@ -540,11 +529,12 @@ namespace ODB
         //LH-011214: NPC is a perfectly fine acronym thank you
         public void ProcessNPCs()
         {
-            while(Game.Player.Cooldown > 0)
+            while(Player.Cooldown > 0 && Player.IsAlive)
             {
                 foreach (Brain b in Brains
-                    .Where(
-                        b => b.MeatPuppet.Cooldown <= 0 && b.MeatPuppet.Awake))
+                    .Where(b =>
+                        b.MeatPuppet.Cooldown <= 0 &&
+                        b.MeatPuppet.Awake))
                     b.Tick();
 
                 foreach (Actor a in

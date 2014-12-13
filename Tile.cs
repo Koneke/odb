@@ -1,7 +1,64 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Xna.Framework;
 
 namespace ODB
 {
+    public class TileInfo
+    {
+        public Level Level;
+
+        public Point Position;
+
+        public Tile Tile
+        {
+            get { return Level.Map[Position.x, Position.y]; }
+            set { Level.Map[Position.x, Position.y] = value; }
+        }
+
+        public bool Blood
+        {
+            get { return Level.Blood[Tile.Position.x, Tile.Position.y]; }
+            set { Level.Blood[Tile.Position.x, Tile.Position.y] = value; }
+        }
+        public bool Seen
+        {
+            get { return Level.Seen[Tile.Position.x, Tile.Position.y]; }
+            set { Level.Seen[Tile.Position.x, Tile.Position.y] = value; }
+        }
+
+        public bool Solid { get { return Tile.Solid; } }
+
+        public List<Item> Items;
+        public Actor Actor;
+
+        public List<TileInfo> Neighbours
+        {
+            get
+            {
+                List<TileInfo> neighbours = new List<TileInfo>();
+                for (int x = -1; x <= 1; x++)
+                for (int y = -1; y <= 1; y++)
+                    neighbours.Add(Level.At(Tile.Position + new Point(x, y)));
+                return neighbours
+                    .Where(ti => ti != null)
+                    .Where(ti => ti != this)
+                    .ToList();
+            }
+        }
+
+        public Door Door {
+            get { return Tile.Door; }
+            set { Tile.Door = value; }
+        }
+        public Stairs Stairs { get { return Tile.Stairs; } }
+
+        public TileInfo(Level level)
+        {
+            Level = level;
+        }
+    }
+
     public enum Door
     {
         None,
@@ -125,6 +182,23 @@ namespace ODB
             Stairs = (Stairs)stream.ReadHex(1);
             Engraving = stream.ReadString();
             return stream;
+        }
+
+        //todo: would be nice to have a string class with colours
+        //      like, text + "this bit has this bgfg, this bit has this bgfg"
+        public string Render()
+        {
+            string tileToDraw = Character;
+
+            if (Engraving != "") tileToDraw = RenderEngraving();
+
+            if (Door == Door.Closed) tileToDraw = "+";
+            if (Door == Door.Open) tileToDraw = "/";
+
+            if (Stairs == Stairs.Down) tileToDraw = ">";
+            if (Stairs == Stairs.Up) tileToDraw = "<";
+
+            return tileToDraw;
         }
 
         public string RenderEngraving()

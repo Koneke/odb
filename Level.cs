@@ -12,6 +12,9 @@ namespace ODB
 
         public Point Size;
 
+        //notice: These are public, BUT, should in reality only ever be accesed
+        //        by the TileInfo class. In part because it is neater that way,
+        //        in part because it is ten thousand times as convenient.
         public Tile[,] Map;
         public bool[,] Seen;
         public bool[,] Blood;
@@ -64,6 +67,28 @@ namespace ODB
             Rooms = new List<Room>();
         }
 
+        public TileInfo At(Point p)
+        {
+            if (p.x >= Size.x ||
+                p.y >= Size.y ||
+                p.x < 0 ||
+                p.y < 0)
+                return null;
+
+            if (Map[p.x, p.y] == null) return null;
+
+            return new TileInfo(this)
+            {
+                Position = p,
+                Items = ItemsOnTile(p),
+                Actor = ActorOnTile(p)
+            };
+        }
+        public TileInfo At(int x, int y)
+        {
+            return At(new Point(x, y));
+        }
+
         public Tile TileAt(Point p)
         {
             return Map[p.x, p.y];
@@ -81,15 +106,10 @@ namespace ODB
                         return ActorOnTile(new Point(x, y));
             return null;
         }
-        public Actor ActorOnTile(Point xy, int? level = null)
+        public Actor ActorOnTile(Point xy)
         {
             return World.WorldActors
-                .Where(a => a.LevelID == (
-                    level == null
-                        ? Util.Game.Level.ID
-                        : level.Value
-                    )
-                )
+                .Where(a => a.LevelID == ID)
                 .FirstOrDefault(actor => actor.xy == xy);
         }
         public List<Item> ItemsOnTile(Point xy)
@@ -405,7 +425,7 @@ namespace ODB
             List<Tile> nonStairs = nonDoor
                 .Where(t => t.Door == Door.None).ToList();
             List<Tile> nonActor = nonStairs
-                .Where(t => ActorOnTile(t.Position, ID) == null)
+                .Where(t => ActorOnTile(t.Position) == null)
                 .ToList();
             // ReSharper disable once UnusedVariable
             Point p = nonActor.SelectRandom().Position;
@@ -416,7 +436,7 @@ namespace ODB
                 .Where(t => !t.Solid)
                 .Where(t => t.Door == Door.None)
                 .Where(t => t.Stairs == Stairs.None)
-                .Where(t => ActorOnTile(t.Position, ID) == null)
+                .Where(t => ActorOnTile(t.Position) == null)
                 .ToList()
                 .SelectRandom().Position;
         }

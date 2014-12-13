@@ -342,16 +342,12 @@ namespace ODB
             if (answer.Length <= 0) return;
 
             Point offset = Game.NumpadToDirection(answer[0]);
-            Tile t = 
-                Game.Level.Map[
-                    Game.Player.xy.x + offset.x,
-                    Game.Player.xy.y + offset.y
-                ];
+            TileInfo ti = Game.Level.At(Game.Player.xy + offset);
 
-            if(t != null)
-                if (t.Door == Door.Closed)
+            if(ti != null)
+                if (ti.Door == Door.Closed)
                 {
-                    t.Door = Door.Open;
+                    ti.Door = Door.Open;
                     Game.Log("You opened the door.");
 
                     //counted as a movement action at the moment, based
@@ -368,18 +364,15 @@ namespace ODB
             if (answer.Length <= 0) return;
 
             Point offset = Game.NumpadToDirection(answer[0]);
-            Point p = new Point(
-                Game.Player.xy.x + offset.x,
-                Game.Player.xy.y + offset.y);
-            Tile t = Game.Level.Map[p.x, p.y];
+            TileInfo ti = Game.Level.At(Game.Player.xy + offset);
 
-            if(t != null)
-                if (t.Door == Door.Open)
+            if(ti != null)
+                if (ti.Door == Door.Open)
                 {
                     //first check if something's in the way
-                    if (Game.Level.ItemsOnTile(p).Count <= 0)
+                    if (ti.Items.Count <= 0)
                     {
-                        t.Door = Door.Closed;
+                        ti.Door = Door.Closed;
                         Game.Log("You closed the door.");
 
                         //counted as a movement action at the moment, based
@@ -516,32 +509,37 @@ namespace ODB
 
         public static void Examine(bool verbose = false)
         {
-            Tile t = Game.Level.Map[Game.Target.x, Game.Target.y];
+            TileInfo ti = Game.Level.At(Game.Target);
 
             string distString =
                 (Util.Distance(Game.Player.xy, Game.Target) > 0 ?
                     " there. " : " here. ");
 
-            if (t == null || !Game.Level.Seen[Game.Target.x, Game.Target.y])
+            bool nonSeen = false;
+            if (ti == null) nonSeen = true;
+            else if (!ti.Seen) nonSeen = true;
+
+            if (nonSeen)
             {
                 Game.Log(
                     "You see nothing" + distString
                 );
                 return;
             }
-            if (t.Solid)
+
+            if (ti.Solid)
             {
                 Game.Log("You see a dungeon wall" + distString);
                 return;
             }
 
-            List<Item> items = Game.Level.ItemsOnTile(Game.Target);
+            List<Item> items = ti.Items;
             string str = "";
 
             if (verbose)
             {
-                if (t.Door != Door.None) str = "You see a door. ";
-                else if (t.Stairs != Stairs.None)
+                if (ti.Door != Door.None) str = "You see a door. ";
+                else if (ti.Stairs != Stairs.None)
                     str = "You see a set of stairs.";
                 else str = "You see the dungeon floor. ";
             }
@@ -549,14 +547,15 @@ namespace ODB
 
             if (Game.Player.Vision[Game.Target.x, Game.Target.y])
             {
-                if (t.Engraving != "")
-                    str += "\"" + t.Engraving + "\" is written on the floor" +
+                if (ti.Tile.Engraving != "")
+                    str += "\"" + ti.Tile.Engraving +
+                        "\" is written on the floor" +
                         distString;
 
-                Actor a;
-                if ((a = Game.Level.ActorOnTile(t)) != null)
-                    if(a != Game.Player)
-                        str += "You see " + a.GetName("a") + distString;
+                if (ti.Actor != null)
+                    if(ti.Actor != Game.Player)
+                        str += "You see " + ti.Actor.GetName("a") + distString;
+
                 if (items.Count > 0)
                 {
                     if (items.Count == 1)
@@ -616,7 +615,7 @@ namespace ODB
         public static void Engrave()
         {
             string answer = Game.QpAnswerStack.Pop();
-            Game.Level.TileAt(Game.Player.xy).Engraving = answer;
+            Game.Level.At(Game.Player.xy).Tile.Engraving = answer;
             Game.Log("You wrote \""+answer+"\" on the dungeon floor.");
         }
 

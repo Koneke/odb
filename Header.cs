@@ -141,9 +141,9 @@ namespace ODB
         {
             List<Tile> tiles = new List<Tile>();
             foreach (Rect rect in Rects)
-                for(int x = 0; x < rect.wh.x; x++)
+                for (int x = 0; x < rect.wh.x; x++)
                 for (int y = 0; y < rect.wh.y; y++)
-                tiles.Add(Level.Map[rect.xy.x + x, rect.xy.y + y]);
+                tiles.Add(Level.At(rect.xy + new Point(x, y)).Tile);
             return tiles;
         }
 
@@ -314,7 +314,7 @@ namespace ODB
         {
             Actor caster = Util.Game.Caster;
             Util.Game.Caster.MpCurrent -= Cost;
-            if (Util.Roll("1d20") + caster.Get(Stat.Intelligence) >
+            if (Util.Roll("1d20") + caster.Get(Stat.Intelligence) >=
                 CastDifficulty)
                 Effect();
             else
@@ -408,13 +408,13 @@ namespace ODB
                 Moved++;
                 CalculatePosition();
             }
-            if (Util.Game.Level.Map[xy.x, xy.y] == null)
+            if (Util.Game.Level.At(xy) == null)
             {
                 Moved--;
                 CalculatePosition();
                 Die = true;
             }
-            else if (Util.Game.Level.Map[xy.x, xy.y].Solid)
+            else if (Util.Game.Level.At(xy).Solid)
             {
                 //unmove
                 Moved--;

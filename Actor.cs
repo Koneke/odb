@@ -460,7 +460,7 @@ namespace ODB
                     mod - multiWeaponPenalty;
                 int hitRoll = roll + totalModifier;
 
-                if (hitRoll <= targetDefense)
+                if (hitRoll < targetDefense)
                 {
                     message += String.Format(
                         "{0} {1} {2}in the air. ",
@@ -649,14 +649,12 @@ namespace ODB
             if (d <= 0) return;
             if (HpCurrent <= 0) return;
 
-            Game.Level.Blood[xy.x, xy.y] = true;
-            for(int x = -1; x <= 1; x++)
-            for(int y = -1; y <= 1; y++)
-                if (Util.Random.Next(0, 4) >= 3)
-                    if( xy.x + x > 0 && xy.x + x < Game.Level.Size.x &&
-                        xy.x + y > 0 && xy.y + y < Game.Level.Size.y)
-                        if(!Game.Level.Map[xy.x + x, xy.y + y].Solid)
-                            Game.Level.Blood[xy.x + x, xy.y + y] = true;
+            TileInfo ti = Game.Level.At(xy);
+            ti.Blood = true;
+            ti.Neighbours
+                .Where(n => !n.Solid)
+                .Where(n => Util.Random.Next(0, 4) >= 3)
+                .ToList().ForEach(n => n.Blood = true);
 
             HpCurrent -= d;
             if (HpCurrent > 0) return;
@@ -800,34 +798,15 @@ namespace ODB
 
         public List<Point> GetPossibleMoves(bool disallowActorTiles = false)
         {
-            List<Point> possibleMoves = new List<Point>();
-
-            for (int xx = -1; xx <= 1; xx++)
-            {
-                for (int yy = -1; yy <= 1; yy++)
-                {
-                    if(
-                        xy.x + xx < 0 ||
-                        xy.x + xx >= Game.Level.Size.x ||
-                        xy.y + yy < 0 ||
-                        xy.y + yy >= Game.Level.Size.y
-                    ) continue;
-
-                    bool legal = true;
-                    Tile t = Game.Level.Map[xy.x + xx, xy.y + yy];
-
-                    if (t == null) legal = false;
-                    else if (t.Solid) legal = false;
-                    else if (t.Door == Door.Closed) legal = false;
-
-                    if(disallowActorTiles)
-                        if (Game.Level.ActorOnTile(t) != null) legal = false;
-
-                    if (legal) possibleMoves.Add(new Point(xx, yy));
-                }
-            }
-
-            return possibleMoves;
+            return
+                Game.Level.At(xy)
+                .Neighbours
+                .Where(ti => !ti.Solid)
+                .Where(ti => ti.Door != Door.Closed)
+                .Where(ti => ti.Actor == null || !disallowActorTiles)
+                .Select(ti => ti.Position - xy)
+                .ToList()
+            ;
         }
         //will atm only be called by the player,
         //but should, I guess, be called by monsters as well in the future
@@ -854,10 +833,7 @@ namespace ODB
 
             bool moved = false;
 
-            Tile target = Game.Level.Map[
-                xy.x + offset.x,
-                xy.y + offset.y
-            ];
+            Tile target = Game.Level.At(xy + offset).Tile;
 
             if (Game.Level.ActorOnTile(target) == null)
             {
@@ -903,11 +879,8 @@ namespace ODB
                             rr.xy.y + y
                         ] = true;
 
-                        if(this == Game.Player)
-                            Game.Level.Seen[
-                                rr.xy.x + x,
-                                rr.xy.y + y
-                            ] = true;
+                        if (this == Game.Player)
+                            Game.Level.At(rr.xy + new Point(x, y)).Seen = true;
                     }
         }
 

@@ -58,9 +58,7 @@ namespace ODB
         {
             #region stairs
             if (KeyBindings.Pressed(Bind.Down))
-                if (Game.Level.Map[
-                    Game.Player.xy.x,
-                    Game.Player.xy.y].Stairs == Stairs.Down)
+                if (Game.Level.At(Game.Player.xy).Stairs == Stairs.Down)
                 {
                     int depth = Game.Levels.IndexOf(Game.Level);
                     if (depth + 1 > Game.Levels.Count - 1)
@@ -73,9 +71,7 @@ namespace ODB
                 }
 
             if (KeyBindings.Pressed(Bind.Up))
-                if (Game.Level.Map[
-                    Game.Player.xy.x,
-                    Game.Player.xy.y].Stairs == Stairs.Up)
+                if (Game.Level.At(Game.Player.xy).Stairs == Stairs.Down)
                 {
                     int depth = Game.Levels.IndexOf(Game.Level);
                     if (depth - 1 >= 0)
@@ -524,7 +520,7 @@ namespace ODB
         {
             if (!KeyBindings.Pressed(Bind.Engrave)) return;
 
-            if (Game.Level.TileAt(Game.Player.xy).Stairs != Stairs.None)
+            if(Game.Level.At(Game.Player.xy).Stairs != Stairs.None)
             {
                 Game.Log("You can't engrave here.");
                 return;

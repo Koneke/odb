@@ -5,6 +5,8 @@ using Microsoft.Xna.Framework;
 using SadConsole;
 using Console = SadConsole.Consoles.Console;
 
+using Bind = ODB.KeyBindings.Bind;
+
 namespace ODB
 {
     public class UI
@@ -21,6 +23,8 @@ namespace ODB
         private Console _inputRowConsole;
         private Console _inventoryConsole;
         private Console _statRowConsole;
+
+        private int _logSize = 3;
 
         private List<Font> _fonts;
 
@@ -121,35 +125,23 @@ namespace ODB
             for (int x = 0; x < ScreenSize.X; x++)
                 for (int y = 0; y < ScreenSize.Y; y++)
                 {
-                    Tile t = Game.Level.Map[x + Camera.x, y + Camera.y];
+                    TileInfo ti = Game.Level.At(Camera + new Point(x, y));
 
-                    if (t == null) continue;
-                    if (!(Game.Level.Seen[x + Camera.x, y + Camera.y] ||
-                        Game.WizMode)
-                        ) continue;
+                    if (ti == null) continue;
+                    if(!(ti.Seen | Game.WizMode)) continue;
 
                     bool inVision = Game.Player.Vision
                         [x + Camera.x, y + Camera.y] || Game.WizMode;
 
-                    Color background = t.Background;
-                    if (Game.Level.Blood[x, y]) background = Color.DarkRed;
-
-                    string tileToDraw = t.Character;
-                    //doors override the normal tile
-                    //which shouldn't be a problem
-                    //if it is a problem, it's not, it's something else
-                    if (t.Engraving != "") tileToDraw = t.RenderEngraving();
-                    if (t.Door == Door.Closed) tileToDraw = "+";
-                    if (t.Door == Door.Open) tileToDraw = "/";
-                    if (t.Stairs == Stairs.Down) tileToDraw = ">";
-                    if (t.Stairs == Stairs.Up) tileToDraw = "<";
+                    Color background = ti.Tile.Background;
+                    if (ti.Blood) background = Color.DarkRed;
 
                     DrawToScreen(
                         new Point(x, y),
                         background,
-                        t.Foreground * (inVision ? 1f : 0.6f),
-                        tileToDraw
-                        );
+                        ti.Tile.Foreground * (inVision ? 1f : 0.6f),
+                        ti.Tile.Render()
+                    );
                 }
         }
 
@@ -220,12 +212,12 @@ namespace ODB
                 int i = Game.LogText.Count, n = 0;
                 i > 0 && n < _logConsole.ViewArea.Height;
                 i--, n++
-                ) {
-                    _logConsole.CellData.Print(
-                        0, _logConsole.ViewArea.Height - (n + 1),
-                        Game.LogText[i - 1]
-                        );
-                }
+            ) {
+                _logConsole.CellData.Print(
+                    0, _logConsole.ViewArea.Height - (n + 1),
+                    Game.LogText[i - 1]
+                );
+            }
         }
 
         private void RenderPrompt()
@@ -639,23 +631,34 @@ namespace ODB
                 );
         }
 
+        public void Input()
+        {
+            if (KeyBindings.Pressed(Bind.Log_Size_Up))
+                _logSize = Math.Min(_logConsole.ViewArea.Height, ++_logSize);
+
+            if (KeyBindings.Pressed(Bind.Log_Size_Down))
+                _logSize = Math.Max(0, --_logSize);
+
+            _logConsole.Position = new Microsoft.Xna.Framework.Point(
+                0, -_logConsole.ViewArea.Height + _logSize
+            );
+        }
+
         public void UpdateCamera()
         {
-            if (KeyBindings.Pressed(KeyBindings.Bind.Camera_Right)) _cameraOffset.x++;
-            if (KeyBindings.Pressed(KeyBindings.Bind.Camera_Left)) _cameraOffset.x--;
-            if (KeyBindings.Pressed(KeyBindings.Bind.Camera_Down)) _cameraOffset.y++;
-            if (KeyBindings.Pressed(KeyBindings.Bind.Camera_Up)) _cameraOffset.y--;
+            if (KeyBindings.Pressed(Bind.Camera_Right)) _cameraOffset.x++;
+            if (KeyBindings.Pressed(Bind.Camera_Left)) _cameraOffset.x--;
+            if (KeyBindings.Pressed(Bind.Camera_Down)) _cameraOffset.y++;
+            if (KeyBindings.Pressed(Bind.Camera_Up)) _cameraOffset.y--;
 
             Camera.x = Game.Player.xy.x - 40;
             Camera.y = Game.Player.xy.y - 12;
             Camera += _cameraOffset;
 
             Camera.x = Math.Max(0, Camera.x);
-            Camera.x = Math.Min(
-                Game.Level.Size.x - ScreenSize.X, Camera.x);
+            Camera.x = Math.Min(Game.Level.Size.x - ScreenSize.X, Camera.x);
             Camera.y = Math.Max(0, Camera.y);
-            Camera.y = Math.Min(
-                Game.Level.Size.y - ScreenSize.Y, Camera.y);
+            Camera.y = Math.Min(Game.Level.Size.y - ScreenSize.Y, Camera.y);
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 
 namespace ODB
 {
@@ -134,7 +135,7 @@ namespace ODB
         public static void BleedEffect(Actor holder)
         {
             holder.Damage(Util.Roll("2d3"), null);
-            Util.Game.Level.Blood[holder.xy.x, holder.xy.y] = true;
+            Util.Game.Level.At(holder.xy).Blood = true;
 
             if(holder == Util.Game.Player || Util.Game.Player.Sees(holder))
                 Util.Game.Log(

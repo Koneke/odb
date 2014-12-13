@@ -248,25 +248,25 @@ namespace ODB
                     #endregion
                 case "lv-door":
                     #region door
-                    if (Game.Level.Map[WmCursor.x, WmCursor.y] != null)
+                    if (Game.Level.At(WmCursor) != null)
                     {
-                        Tile t = Game.Level.Map[WmCursor.x, WmCursor.y];
+                        Tile t = Game.Level.At(WmCursor).Tile;
                         t.Door = (Door)((((int)t.Door) + 1) % 3);
                     }
                     break;
                     #endregion
                 case "lv-stairs":
                     #region stairs
-                    if (Game.Level.Map[WmCursor.x, WmCursor.y] != null)
+                    if (Game.Level.At(WmCursor) != null)
                     {
-                        Tile t = Game.Level.Map[WmCursor.x, WmCursor.y];
+                        Tile t = Game.Level.At(WmCursor).Tile;
                         t.Stairs = (Stairs)((((int)t.Stairs) + 1) % 3);
                     }
                     break;
                     #endregion
                 case "lv-deltile":
                     #region deltile
-                    Game.Level.Map[WmCursor.x, WmCursor.y] = null;
+                    Game.Level.At(WmCursor).Tile = null;
                     break;
                     #endregion
                 case "lv-delroom":
@@ -278,7 +278,7 @@ namespace ODB
                     #endregion
                 case "lv-settile":
                     #region settile
-                    Game.Level.Map[WmCursor.x, WmCursor.y].Definition =
+                    Game.Level.At(WmCursor).Tile.Definition =
                         Util.TileDefinitionByName(IO.ReadHex(args[0]));
                     break;
                     #endregion
@@ -345,7 +345,7 @@ namespace ODB
                     #endregion
                 case "lv-engrave":
                     #region engrave
-                    Game.Level.Map[WmCursor.x, WmCursor.y].Engraving = args[0];
+                    Game.Level.At(WmCursor).Tile.Engraving = args[0];
                     break;
                     #endregion
                 case "lv-name":

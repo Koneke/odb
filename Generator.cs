@@ -228,9 +228,9 @@ namespace ODB
 
             foreach (Point p in Doors)
             {
-                newLevel.Map[p.x, p.y].Definition =
+                newLevel.At(p).Tile.Definition =
                     TileDefinition.Definitions[0];
-                newLevel.Map[p.x, p.y].Door = Door.Closed;
+                newLevel.At(p).Door = Door.Closed;
             }
 
             newLevel.Rooms

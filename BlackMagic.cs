@@ -6,27 +6,22 @@
         {
             string engraving = "";
 
+            if (Util.Game.Level.At(actor.xy).Neighbours.Count < 8)
+            {
+                Util.Game.Log("Nothing happens.");
+                return;
+            }
+
             for (int y = -1; y <= 1; y++)
             {
                 for (int x = -1; x <= 1; x++)
                 {
-                    Point center = actor.xy;
+                    TileInfo ti = Util.Game.Level.At(actor.xy);
+                    engraving +=
+                        ti.Blood
+                        ? ti.Tile.Engraving.ToLower()+","
+                        : "0,";
 
-                    if (x + center.x < 0 || y + center.y < 0 ||
-                        x + center.x > Util.Game.Level.Size.x ||
-                        y + center.y > Util.Game.Level.Size.y)
-                    {
-                        Util.Game.Log("Nothing happens.");
-                        return;
-                    }
-
-                    bool blood = Util.Game.Level.Blood
-                        [x + center.x, y + center.y];
-
-                    string e = 
-                        Util.Game.Level.Map[x + center.x, y + center.y]
-                            .Engraving.ToLower();
-                    engraving += ((e == "" || !blood) ? "0" : e) + ",";
                 }
                 engraving = engraving.Substring(0, engraving.Length - 1);
                 engraving += " ";
