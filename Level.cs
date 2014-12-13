@@ -21,6 +21,25 @@ namespace ODB
         public Dictionary<Room, List<Actor>> ActorPositions;
         public Dictionary<Actor, List<Room>> ActorRooms;
 
+        public List<Actor> Actors {
+            get
+            {
+                return World.WorldActors.Where(a => a.LevelID == ID).ToList();
+            }
+        }
+        public List<Item> WorldItems {
+            get
+            {
+                return World.WorldItems.Where(i => i.LevelID == ID).ToList();
+            }
+        }
+        public List<Item> AllItems {
+            get
+            {
+                return World.AllItems.Where(i => i.LevelID == ID).ToList();
+            }
+        }
+
         public Level(
             int levelWidth, int levelHeight
         ) {
@@ -381,12 +400,13 @@ namespace ODB
             List<Tile> tiles = r.GetTiles();
             List<Tile> nonSolid = tiles
                 .Where(t => !t.Solid).ToList();
-            List<Tile> nonDoor =
-                nonSolid.Where(t => t.Door == Door.None).ToList();
-            List<Tile> nonStairs =
-                nonDoor.Where(t => t.Door == Door.None).ToList();
-            List<Tile> nonActor =
-                nonStairs.Where(t => ActorOnTile(t.Position) == null).ToList();
+            List<Tile> nonDoor = nonSolid
+                .Where(t => t.Door == Door.None).ToList();
+            List<Tile> nonStairs = nonDoor
+                .Where(t => t.Door == Door.None).ToList();
+            List<Tile> nonActor = nonStairs
+                .Where(t => ActorOnTile(t.Position, ID) == null)
+                .ToList();
             // ReSharper disable once UnusedVariable
             Point p = nonActor.SelectRandom().Position;
 

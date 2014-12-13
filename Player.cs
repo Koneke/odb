@@ -108,7 +108,7 @@ namespace ODB
         {
             if (!KeyBindings.Pressed(Bind.Get)) return;
 
-            if (Game.Player.Inventory.Count >= 23)
+            if (Game.Player.Inventory.Count >= InventoryManager.InventorySize)
             {
                 Game.Log("You are carrying too much!");
                 return;

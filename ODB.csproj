@@ -140,6 +140,7 @@
     <Compile Include="Stream.cs" />
     <Compile Include="TickingEffect.cs" />
     <Compile Include="Tile.cs" />
+    <Compile Include="UI.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="Wizard.cs" />
   </ItemGroup>

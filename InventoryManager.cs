@@ -8,6 +8,8 @@ namespace ODB
 {
     public class InventoryManager
     {
+        public static int InventorySize = 21;
+
         public InventoryManager()
         {
             CurrentContainer = -1;
@@ -216,7 +218,7 @@ namespace ODB
 
         private static void CheckSplit(Item item)
         {
-            if (Game.Player.Inventory.Count >= 23)
+            if (Game.Player.Inventory.Count >= InventorySize)
             {
                 Game.Log("You are carrying too much!");
                 return;
