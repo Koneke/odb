@@ -50,30 +50,6 @@ namespace ODB
             if (KeyBindings.Pressed(KeyBindings.Bind.Wm_NorthWest))
                 { WmCursor.Nudge(-1, -1); b = true; }
 
-            if (KeyBindings.Pressed(KeyBindings.Bind.Down))
-            {
-                if (Game.Levels.IndexOf(Game.Level) == Game.Levels.Count - 1)
-                {
-                    Level l;
-                    Game.Levels.Add(l = new Level(80, 25));
-                    Game.Level = l;
-                    Game.Log("Spawning new level.");
-                }
-                else
-                {
-                    Game.Level = Game.Levels
-                        [Game.Levels.IndexOf(Game.Level) + 1];
-                    Game.Log("Descending stairs.");
-                }
-            }
-
-            if (KeyBindings.Pressed(KeyBindings.Bind.Up))
-            {
-                if (Game.Levels.IndexOf(Game.Level) > 0)
-                    Game.Level = Game.Levels
-                        [Game.Levels.IndexOf(Game.Level) - 1];
-            }
-
             if (b) return; //so we don't get numbers in the prompt when we
             //try to target stuff
 

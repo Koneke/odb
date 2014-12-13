@@ -4,11 +4,25 @@ using System.Linq;
 
 namespace ODB
 {
+    public class LevelConnector
+    {
+        public Point Position;
+        public Level Target;
+        //public blabla theme, for more interesting forks
+
+        public LevelConnector(Point position, Level target = null)
+        {
+            Position = position;
+            Target = target;
+        }
+    }
+
     public class Level
     {
         public static int IDCounter = 0;
         public string Name;
         public int ID;
+        public int Depth;
 
         public Point Size;
 
@@ -20,11 +34,14 @@ namespace ODB
         public bool[,] Blood;
         public List<Room> Rooms;
 
+        public List<LevelConnector> Connectors; 
+
         //should not be saved
         public Dictionary<Room, List<Actor>> ActorPositions;
         public Dictionary<Actor, List<Room>> ActorRooms;
 
-        public List<Actor> Actors {
+        public List<Actor> Actors
+        {
             get
             {
                 return World.WorldActors.Where(a => a.LevelID == ID).ToList();
@@ -51,12 +68,15 @@ namespace ODB
             ActorPositions = new Dictionary<Room, List<Actor>>();
             ActorRooms = new Dictionary<Actor, List<Room>>();
             ID = IDCounter++;
+            Connectors = new List<LevelConnector>();
         }
         public Level(string s)
         {
             LoadLevelSave(s);
             ActorPositions = new Dictionary<Room, List<Actor>>();
             ActorRooms = new Dictionary<Actor, List<Room>>();
+            //todo: SHOULD BE SAVED
+            Connectors = new List<LevelConnector>();
         }
 
         public void Clear()
@@ -429,8 +449,9 @@ namespace ODB
                 .ToList();
             // ReSharper disable once UnusedVariable
             Point p = nonActor.SelectRandom().Position;
+            return p;
 
-            return Rooms
+            /*return Rooms
                 .SelectRandom()
                 .GetTiles()
                 .Where(t => !t.Solid)
@@ -438,7 +459,7 @@ namespace ODB
                 .Where(t => t.Stairs == Stairs.None)
                 .Where(t => ActorOnTile(t.Position) == null)
                 .ToList()
-                .SelectRandom().Position;
+                .SelectRandom().Position;*/
         }
     }
 }

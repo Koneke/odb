@@ -136,16 +136,16 @@ namespace ODB
                 return new Point(
                     Util.Random.Next(min, max),
                     Util.Random.Next(3, 3)
-                    );
+                );
             if(r == 1)
                 return new Point(
                     Util.Random.Next(3, 3),
                     Util.Random.Next(min, Math.Max(max-2, min))
-                    );
+                );
             return new Point(
                 Util.Random.Next(min, max),
                 Util.Random.Next(min, Math.Max(max-2, min))
-                );
+            );
         }
 
         public GenRoom GenerateRoom(List<GenRoom> others = null)
@@ -186,9 +186,11 @@ namespace ODB
         //        those (resulting in two separate room "blobs").
         //      Occasionally generates doors in corners, which should not be
         //        possible.
-        public Level Generate(int depth)
+        public Level Generate(Level sourceLevel, int depth)
         {
-            Level newLevel = new Level(80, 25);
+            Level newLevel = new Level(80, 25) {
+                Depth = depth
+            };
 
             Rooms = new List<GenRoom>();
             Doors = new List<Point>();
@@ -233,22 +235,52 @@ namespace ODB
                 newLevel.At(p).Door = Door.Closed;
             }
 
+            Tile tile = 
             newLevel.Rooms
                 .SelectRandom()
                 .GetTiles()
                 .Where(t => t.Solid == false)
                 .Where(t => t.Door == Door.None)
                 .ToList()
-                .SelectRandom().Stairs = Stairs.Down;
+                .SelectRandom();
+            tile.Stairs = Stairs.Down;
+            newLevel.Connectors.Add(new LevelConnector(tile.Position));
 
-            newLevel.Rooms
-                .SelectRandom()
-                .GetTiles()
-                .Where(t => t.Solid == false)
-                .Where(t => t.Door == Door.None)
-                .Where(t => t.Stairs == Stairs.None)
-                .ToList()
-                .SelectRandom().Stairs = Stairs.Up;
+            //small chance to generate a generic fork
+            //in the future, generate some fun, themed stuff instead
+            if (Util.Random.Next(0, 8) == 7)
+            {
+                tile =
+                    newLevel.Rooms
+                        .SelectRandom()
+                        .GetTiles()
+                        .Where(t => t.Solid == false)
+                        .Where(t => t.Door == Door.None)
+                        .ToList()
+                        .SelectRandom();
+                tile.Stairs = Stairs.Down;
+                newLevel.Connectors.Add(new LevelConnector(tile.Position));
+            }
+
+            if (sourceLevel != null)
+            {
+                tile =
+                    newLevel.Rooms
+                        .SelectRandom()
+                        .GetTiles()
+                        .Where(t => t.Solid == false)
+                        .Where(t => t.Door == Door.None)
+                        .Where(t => t.Stairs == Stairs.None)
+                        .ToList()
+                        .SelectRandom();
+                tile.Stairs = Stairs.Up;
+                newLevel.Connectors.Add(
+                    new LevelConnector(
+                        tile.Position,
+                        sourceLevel
+                    )
+                );
+            }
 
             float difficulty = Util.Game.Player.Level + depth + 1;
 
@@ -326,7 +358,7 @@ namespace ODB
                 loot -= amount;
             }
 
-            newLevel.Name = "Dungeon:" + (depth + 1);
+            newLevel.Name = "Dungeon:" + depth;
 
             return newLevel;
         }

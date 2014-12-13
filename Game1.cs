@@ -108,14 +108,17 @@ namespace ODB
 
             InvMan = new InventoryManager();
 
-            Levels.Add(new Generator().Generate(0));
-            Level = Levels[0];
+            Levels.Add(Level = new Generator().Generate(null, 1));
 
             Level.Spawn(Player);
             Player.xy =
                 Level.Rooms
-                .SelectMany(r => r.GetTiles())
-                .First(t => t.Stairs == Stairs.Up).Position;
+                    .SelectMany(r => r.GetTiles())
+                    .Where(t => !t.Solid)
+                    .Where(t => t.Door == Door.None)
+                    .Where(t => Level.At(t.Position).Actor == null)
+                    .ToList()
+                    .SelectRandom().Position;
 
             //todo: these should probably not be lastingeffects
             //      they probably should be hardcoded really.
@@ -266,8 +269,12 @@ namespace ODB
 
         public void SwitchLevel(Level newLevel, bool gotoStairs = false)
         {
+            //assuming only one connector
+            Point target = newLevel.Connectors
+                .First(lc => lc.Target == Game.Level).Position;
+
             bool downwards =
-                Game.Levels.IndexOf(newLevel) > Game.Levels.IndexOf(Level);
+                newLevel.Depth > Level.Depth;
 
             Game.Player.LevelID = newLevel.ID;
 
@@ -275,8 +282,7 @@ namespace ODB
             foreach (Item item in Player.Inventory)
                 item.MoveTo(newLevel);
 
-            foreach (Actor a in World.WorldActors
-                .Where(a => a.LevelID == Level.ID))
+            foreach (Actor a in Level.Actors)
             {
                 //reset vision, incase the level we moved to is a different size
                 a.Vision = null;
@@ -286,18 +292,7 @@ namespace ODB
             SetupBrains();
 
             if (!gotoStairs) return;
-
-            //auto tele to (a) pair of stairs
-            //so hint for now: don't have more stairs, it gets weird
-            for (int x = 0; x < Level.Size.x; x++)
-            for (int y = 0; y < Level.Size.y; y++)
-            {
-                TileInfo ti = Game.Level.At(x, y);
-                if (ti == null) continue;
-                if ((ti.Stairs == Stairs.Up && downwards) ||
-                    (ti.Stairs == Stairs.Down && !downwards))
-                    Player.xy = new Point(x, y);
-            }
+            Game.Player.xy = target;
         }
 
         private static void SetupMagic()

@@ -450,7 +450,7 @@ namespace ODB
                 str += " (" + Wizard.WmCursor.x + " ; " +
                     Wizard.WmCursor.y + ") ";
 
-                str += "D:" + (Game.Levels.IndexOf(Game.Level) + 1) + "0M";
+                str += "D:" + Game.Level.Depth + "0M";
                 str += " (" + Game.Level.Name + ")";
 
                 _statRowConsole.CellData.Print(
@@ -478,7 +478,8 @@ namespace ODB
                     (
                         lastingEffect.Type == StatusType.None
                             ? ""
-                            : " " + LastingEffect.EffectNames[lastingEffect.Type]
+                            : " " + LastingEffect.EffectNames
+                                [lastingEffect.Type]
                         )
                 );
 
@@ -512,7 +513,7 @@ namespace ODB
             statrow += string.Format("{0:F1}", Game.GameTick / 10f);
 
             statrow += " ";
-            statrow += "D:" + (Game.Levels.IndexOf(Game.Level) + 1) + "0M";
+            statrow += "D:" + Game.Level.Depth + "0M";
 
             statrow += " (" + Game.Level.Name + ")";
 

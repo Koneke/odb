@@ -57,29 +57,42 @@ namespace ODB
         private static bool MovementInput()
         {
             #region stairs
-            if (KeyBindings.Pressed(Bind.Down))
-                if (Game.Level.At(Game.Player.xy).Stairs == Stairs.Down)
-                {
-                    int depth = Game.Levels.IndexOf(Game.Level);
-                    if (depth + 1 > Game.Levels.Count - 1)
+
+            bool descending =
+                (KeyBindings.Pressed(Bind.Down) &&
+                    Game.Level.At(Game.Player.xy).Stairs == Stairs.Down);
+            bool ascending = 
+                (KeyBindings.Pressed(Bind.Up) &&
+                Game.Level.At(Game.Player.xy).Stairs == Stairs.Up);
+
+            if (descending || ascending)
+            {
+                //there should always be a connector at the stairs,
+                //so we assume there is one.
+                LevelConnector connector = Game.Level.Connectors
+                    .First(lc => lc.Position == Game.Player.xy);
+                
+                if(descending)
+                    if (connector.Target == null)
                     {
                         Generator g = new Generator();
-                        Game.Levels.Add(g.Generate(depth + 1));
+                        connector.Target = g.Generate(
+                            Game.Level,
+                            Game.Level.Depth + 1
+                        );
+                        Game.Levels.Add(connector.Target);
                     }
-                    Game.SwitchLevel(Game.Levels[depth + 1], true);
-                    Game.Log("You descend the stairs...");
-                }
 
-            if (KeyBindings.Pressed(Bind.Up))
-                if (Game.Level.At(Game.Player.xy).Stairs == Stairs.Down)
-                {
-                    int depth = Game.Levels.IndexOf(Game.Level);
-                    if (depth - 1 >= 0)
-                    {
-                        Game.SwitchLevel(Game.Levels[depth - 1], true);
-                        Game.Log("You ascend the stairs...");
-                    }
-                }
+                if (connector.Target == null) return false;
+
+                Game.SwitchLevel(connector.Target, true);
+                Game.Log(
+                    "You {1} the stairs...",
+                    descending
+                    ? "descend"
+                    : "ascend"
+                );
+            }
             #endregion
 
             Point offset = new Point(0, 0);
