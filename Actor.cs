@@ -229,6 +229,9 @@ namespace ODB
         }
         public void Wield(Item item)
         {
+            if (item.HasComponent<AttackComponent>())
+                item.Identify();
+
             List<DollSlot> slots = item.GetHands(this);
 
             foreach (DollSlot ds in slots)
@@ -243,9 +246,10 @@ namespace ODB
                 }
             }
         }
-        public void Wear(Item it)
+        public void Wear(Item item)
         {
-            WearableComponent wc = it.GetComponent<WearableComponent>();
+            WearableComponent wc = item.GetComponent<WearableComponent>();
+            item.Identify();
 
             foreach (DollSlot ds in wc.EquipSlots)
             {
@@ -254,7 +258,7 @@ namespace ODB
                 foreach (BodyPart bp in PaperDoll
                     .Where(bp => bp.Type == ds && bp.Item == null))
                 {
-                    bp.Item = it;
+                    bp.Item = item;
                     break;
                 }
             }
@@ -524,12 +528,12 @@ namespace ODB
                 totalDamage += damage;
                 if (weapon == null) continue;
 
-                if (Util.Random.Next(0, Materials.MaxHardness+1) >=
+                if (Util.Random.Next(0, Materials.MaxHardness+1) <
                     Materials.GetHardness(weapon.Material))
                     continue;
 
                 Game.Log(
-                    "{1} {2} is damaged by the impact.",
+                    "{1} #ff0000{2} #ffffffis #ff0000damaged by the impact.",
                     Util.Capitalize(Genitive()),
                     weapon.GetName("name")
                 );
@@ -575,7 +579,8 @@ namespace ODB
                 }
                 if (weapon.Health <= 1)
                 {
-                    Game.Log(weapon.GetName("The") + " falls to pieces!");
+                    message += "#ff0000" + weapon.GetName("The") +
+                        " falls to pieces!";
                     weapon.Health--;
                     Game.Level.Despawn(weapon);
                 }

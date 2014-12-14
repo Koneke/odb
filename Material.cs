@@ -17,7 +17,7 @@ namespace ODB
     public class Materials
     {
         public static Dictionary<Material, List<string>> DamageStrings
-            = new Dictionary<Material, List<string>>()
+            = new Dictionary<Material, List<string>>
         {
             { Material.Metal, new List<string> {
                 "scratched", "dented", "battered" }},
@@ -34,12 +34,12 @@ namespace ODB
         public const int MaxHardness = 40;
 
         //likelyness to take damage when thrown/bashed
-        private const int OrganicHardness = 15;
-        private const int MetalHardness = 29;
-        private const int WoodHardness = 27;
-        private const int LeatherHardness = 24;
-        private const int PaperHardness = 9;
-        private const int ClothHardness = 22;
+        private const int OrganicHardness = 20;
+        private const int MetalHardness = 39;
+        private const int WoodHardness = 35;
+        private const int LeatherHardness = 32;
+        private const int PaperHardness = 15;
+        private const int ClothHardness = 29;
         private const int GlassHardness = 0; //guaranteed
 
         public static int GetHardness(Material m)

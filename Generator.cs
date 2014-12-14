@@ -219,7 +219,6 @@ namespace ODB
                 }
             }
 
-            //foreach(GenRoom g in rooms)
             foreach (GenRoom room in Rooms)
                 newLevel.CreateRoom(
                     newLevel,
@@ -235,8 +234,19 @@ namespace ODB
                 newLevel.At(p).Door = Door.Closed;
             }
 
+            GenerateStairs(sourceLevel, newLevel);
+            GenerateMonsters(newLevel);
+            GenerateLoot(newLevel);
+
+            newLevel.Name = "Dungeon:" + depth;
+
+            return newLevel;
+        }
+
+        private void GenerateStairs(Level source, Level level)
+        {
             Tile tile = 
-            newLevel.Rooms
+            level.Rooms
                 .SelectRandom()
                 .GetTiles()
                 .Where(t => t.Solid == false)
@@ -244,14 +254,14 @@ namespace ODB
                 .ToList()
                 .SelectRandom();
             tile.Stairs = Stairs.Down;
-            newLevel.Connectors.Add(new LevelConnector(tile.Position));
+            level.Connectors.Add(new LevelConnector(tile.Position));
 
             //small chance to generate a generic fork
             //in the future, generate some fun, themed stuff instead
             if (Util.Random.Next(0, 8) == 7)
             {
                 tile =
-                    newLevel.Rooms
+                    level.Rooms
                         .SelectRandom()
                         .GetTiles()
                         .Where(t => t.Solid == false)
@@ -259,38 +269,41 @@ namespace ODB
                         .ToList()
                         .SelectRandom();
                 tile.Stairs = Stairs.Down;
-                newLevel.Connectors.Add(new LevelConnector(tile.Position));
+                level.Connectors.Add(new LevelConnector(tile.Position));
             }
 
-            if (sourceLevel != null)
-            {
-                tile =
-                    newLevel.Rooms
-                        .SelectRandom()
-                        .GetTiles()
-                        .Where(t => t.Solid == false)
-                        .Where(t => t.Door == Door.None)
-                        .Where(t => t.Stairs == Stairs.None)
-                        .ToList()
-                        .SelectRandom();
-                tile.Stairs = Stairs.Up;
-                newLevel.Connectors.Add(
-                    new LevelConnector(
-                        tile.Position,
-                        sourceLevel
+            if (source == null) return;
+
+            tile =
+                level.Rooms
+                    .SelectRandom()
+                    .GetTiles()
+                    .Where(t => t.Solid == false)
+                    .Where(t => t.Door == Door.None)
+                    .Where(t => t.Stairs == Stairs.None)
+                    .ToList()
+                    .SelectRandom();
+            tile.Stairs = Stairs.Up;
+            level.Connectors.Add(
+                new LevelConnector(
+                    tile.Position,
+                    source
                     )
                 );
-            }
+        }
 
-            float difficulty = Util.Game.Player.Level + depth + 1;
+        private void GenerateMonsters(Level level)
+        {
+            float difficulty = Util.Game.Player.Level + level.Depth + 1;
 
             List<ActorDefinition> possibleMonsters =
                 Monster.MonstersByDifficulty
-                .Where(kvp => kvp.Key <= difficulty)
-                .Where(kvp => kvp.Key * 4 >= difficulty)
-                .SelectMany(kvp => kvp.Value)
-                .Where(ad => ad.Type != 0) //no playermonsters, please, thanks.
-                .ToList();
+                    .Where(kvp => kvp.Key <= difficulty)
+                    .Where(kvp => kvp.Key * 4 >= difficulty)
+                    .SelectMany(kvp => kvp.Value)
+                    //no playermonsters, please, thanks.
+                    .Where(ad => ad.Type != 0)
+                    .ToList();
 
             const int monsterCount = 10;
             for (int i = 0; i < monsterCount; i++)
@@ -298,17 +311,20 @@ namespace ODB
                 ActorDefinition monster =
                     possibleMonsters.SelectRandom();
 
-                newLevel.Spawn(
+                level.Spawn(
                     new Actor(
-                        newLevel.RandomOpenPoint(),
-                        newLevel.ID,
+                        level.RandomOpenPoint(),
+                        level.ID,
                         monster,
-                        (int)Math.Floor(difficulty/2f)
+                        (int)Math.Floor(difficulty / 2f)
                     )
                 );
             }
+        }
 
-            int loot = (depth + 1) * 25;
+        private void GenerateLoot(Level level)
+        {
+            int loot = (level.Depth) * 25;
             List<ItemDefinition> possibleItems =
                 ItemDefinition.ItemDefinitions
                     .Where(itd => itd != null)
@@ -321,8 +337,8 @@ namespace ODB
 
                 loot -= itemd.Value;
                 Item item = new Item(
-                    newLevel.RandomOpenPoint(),
-                    newLevel.ID,
+                    level.RandomOpenPoint(),
+                    level.ID,
                     itemd,
                     //todo: Stacking items should be able to spawn in stacks
                     //      otherwise they are fairly useless, lol.
@@ -333,7 +349,7 @@ namespace ODB
                     : 0
                 );
 
-                newLevel.Spawn(item);
+                level.Spawn(item);
 
                 possibleItems =
                     ItemDefinition.ItemDefinitions
@@ -349,18 +365,14 @@ namespace ODB
                 ItemDefinition gold = ItemDefinition.ItemDefinitions[0x8000];
                 int amount = Util.Random.Next(1, loot + 1);
                 Item item = new Item(
-                    newLevel.RandomOpenPoint(),
-                    newLevel.ID,
+                    level.RandomOpenPoint(),
+                    level.ID,
                     gold,
                     amount * 3 + Util.Random.Next(0, 3)
                 );
-                newLevel.Spawn(item);
+                level.Spawn(item);
                 loot -= amount;
             }
-
-            newLevel.Name = "Dungeon:" + depth;
-
-            return newLevel;
         }
     }
 }

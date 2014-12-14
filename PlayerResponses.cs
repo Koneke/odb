@@ -214,7 +214,6 @@ namespace ODB
             {
                 Game.Log("Wielded " + item.GetName("a") + ".");
                 Game.Player.Wield(item);
-                item.Identify();
                 Game.Player.Pass();
             }
         }
@@ -226,12 +225,12 @@ namespace ODB
             string answer = Game.QpAnswerStack.Pop();
 
             int i = IO.Indexes.IndexOf(answer[0]);
-            Item it = Game.Player.Inventory[i];
+            Item item = Game.Player.Inventory[i];
 
             bool canEquip = true;
 
             WearableComponent wc =
-                it.Definition.GetComponent<WearableComponent>();
+                item.Definition.GetComponent<WearableComponent>();
 
             if (!Game.Player.CanEquip(wc.EquipSlots))
             {
@@ -242,24 +241,23 @@ namespace ODB
             if (!canEquip) return;
 
             //make sure we're not equipping "2x ..."
-            if (it.Definition.Stacking && it.Count > 1)
+            if (item.Definition.Stacking && item.Count > 1)
             {
                 Item clone = new Item(
                     //clone
-                    it.WriteItem().ToString()
+                    item.WriteItem().ToString()
                 ) {
                     //no dupe ids pls
                     ID = Item.IDCounter++
                 };
 
                 clone.Count--;
-                it.Count = 1;
+                item.Count = 1;
                 Game.Player.Inventory.Add(clone);
                 World.AllItems.Add(clone);
             }
-            Game.Player.Wear(it);
-            it.Identify();
-            Game.Log("Wore " + it.GetName("a") + ".");
+            Game.Player.Wear(item);
+            Game.Log("Wore " + item.GetName("a") + ".");
 
             Game.Player.Pass();
         }
@@ -274,9 +272,6 @@ namespace ODB
             Item selected = Game.Player.Inventory[i];
             Game.Player.Quiver = selected;
 
-            //todo: should we really identify on quiver?
-            //      or should we rather do it on fire?
-            selected.Identify();
             Game.Log("Quivered "+ selected.GetName("count") + ".");
 
             Game.Player.Pass();

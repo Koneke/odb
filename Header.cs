@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Xna.Framework;
 
 namespace ODB
 {
@@ -533,5 +534,63 @@ namespace ODB
         public static List<Item> AllItems = new List<Item>();
         public static List<Item> WorldItems = new List<Item>();
         public static List<Actor> WorldActors = new List<Actor>();
+    }
+
+    public class ColorString
+    {
+        public string String;
+        public List<Tuple<int, Color>> ColorPoints;
+
+        private ColorString()
+        {
+        }
+
+        public ColorString(string s)
+        {
+            ColorPoints = new List<Tuple<int, Color>>();
+
+            int p;
+            while ((p = s.IndexOf('#')) != -1)
+            {
+                Color color = IO.ReadColor(s.Substring(p+1, 6));
+                s = s.Remove(p, 7);
+                ColorPoints.Add(new Tuple<int, Color>(p, color));
+            }
+
+            String = s;
+        }
+
+        public void SubString(int index, int length)
+        {
+            if (index + length > String.Length)
+                length = String.Length - index;
+
+            String = String.Substring(index, length);
+            ColorPoints.RemoveAll(
+                cp =>
+                    cp.Item1 < index ||
+                    cp.Item1 >= index + length
+            );
+
+            List<Tuple<int, Color>> newColorPoints =
+                new List<Tuple<int, Color>>();
+
+            foreach (Tuple<int, Color> cp in ColorPoints)
+            {
+                newColorPoints.Add(new Tuple<int, Color>(
+                    cp.Item1 - index, cp.Item2));
+            }
+
+            ColorPoints = newColorPoints;
+        }
+
+        public ColorString Clone()
+        {
+            return new ColorString
+            {
+                String = String,
+                ColorPoints = new List<Tuple<int, Color>>(ColorPoints)
+            };
+        }
     }
 }

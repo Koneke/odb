@@ -47,7 +47,7 @@ namespace ODB
         public Actor Player;
 
         public int LogSize;
-        public List<string> LogText;
+        public List<ColorString> LogText;
 
         //LH-021214: Currently casting actor (so that our spell casting system
         //           can use the same Question-system as other commands.
@@ -140,8 +140,10 @@ namespace ODB
             SetupBrains();
 
             LogSize = 3;
-            LogText = new List<string>();
-            Log("Welcome!");
+            LogText = new List<ColorString>();
+            Log(
+                "#ff0000" + "Welcome!"
+            );
 
             QpAnswerStack = new Stack<string>();
 
@@ -502,15 +504,31 @@ namespace ODB
 
         public void Log(string s)
         {
-            List<string> rows = new List<string>();
-            while (s.Length > 80)
+            //always reset colouring
+            s = s + "#ffffff";
+
+            List<ColorString> rows = new List<ColorString>();
+            ColorString cs = new ColorString(s);
+            int x = 0;
+            while(x < cs.String.Length)
             {
-                rows.Add(s.Substring(0, 80));
-                s = s.Substring(80, s.Length - 80);
+                ColorString row = cs.Clone();
+                row.SubString(x, 80);
+                rows.Add(row);
+                x += 80;
+                if (cs.String.Length - x <= 0) continue;
+
+                if (row.ColorPoints.Count > 0)
+                {
+                    cs.ColorPoints.Add(
+                        new Tuple<int, Color>(
+                            x, row.ColorPoints.Last().Item2
+                        )
+                    );
+                }
             }
-            rows.Add(s);
-            foreach (string ss in rows)
-                LogText.Add(ss);
+            foreach (ColorString c in rows)
+                LogText.Add(c);
         }
         public void Log(params object[] args)
         {

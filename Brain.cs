@@ -59,11 +59,11 @@ namespace ODB
                     MeatPuppet.Get(Stat.Intelligence) &&
                     spell.Range >= 1);
 
-            if (touchAttack == null) MeatPuppet.Attack(Game.Player);
+            if (touchAttack == null) MeatPuppet.Attack(target);
             else
             {
                 Game.Caster = MeatPuppet;
-                Game.QpAnswerStack.Push(IO.Write(Game.Player.xy));
+                Game.QpAnswerStack.Push(IO.Write(target.xy));
                 touchAttack.Cast();
             }
         }

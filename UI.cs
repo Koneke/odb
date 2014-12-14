@@ -213,10 +213,25 @@ namespace ODB
                 i > 0 && n < _logConsole.ViewArea.Height;
                 i--, n++
             ) {
-                _logConsole.CellData.Print(
-                    0, _logConsole.ViewArea.Height - (n + 1),
-                    Game.LogText[i - 1]
-                );
+                ColorString cs = Game.LogText[i - 1];
+                for (int j = -1; j < cs.ColorPoints.Count; j++)
+                {
+                    int current = j == -1
+                        ? 0
+                        : cs.ColorPoints[j].Item1;
+
+                    int next = j == cs.ColorPoints.Count - 1
+                        ? cs.String.Length
+                        : cs.ColorPoints[j + 1].Item1;
+
+                    _logConsole.CellData.Print(
+                        current, _logConsole.ViewArea.Height - (n + 1),
+                        cs.String.Substring(current, next-current),
+                        j == -1
+                            ? Color.White
+                            : cs.ColorPoints[j].Item2
+                    );
+                }
             }
         }
 
@@ -260,7 +275,7 @@ namespace ODB
                     new Point(inventoryW, inventoryH)),
                 Color.Black,
                 Color.DarkGray
-                );
+            );
 
             const int offset = 14;
 
@@ -341,7 +356,7 @@ namespace ODB
 
             _inventoryConsole.CellData.Print(
                 2, _inventoryConsole.ViewArea.Height-1,
-                Game.LogText[Game.LogText.Count-1],
+                Game.LogText[Game.LogText.Count-1].String,
                 Color.White);
             //end border texts
 

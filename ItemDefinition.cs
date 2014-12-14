@@ -78,6 +78,8 @@ namespace ODB
         public static List<int> IdentifiedDefs = new List<int>();
 
         public bool Stacking;
+        public int GenerationLowBound;
+        public int GenerationHighBound;
         public int Category;
         public int Weight;
         public int Value;
@@ -136,6 +138,8 @@ namespace ODB
             Stream stream = ReadGObjectDefinition(s);
 
             Stacking = stream.ReadBool();
+            GenerationLowBound = stream.ReadInt();
+            GenerationHighBound = stream.ReadInt();
             Category = stream.ReadHex(2);
             Weight = stream.ReadInt();
             Value = stream.ReadInt();
