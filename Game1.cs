@@ -308,33 +308,18 @@ namespace ODB
         private static void SetupMagic()
         {
             //ReSharper disable once ObjectCreationAsStatement
-            new Spell("foo bar")
+            new Spell("potion of healing")
             {
-                CastType = InputType.QuestionPromptSingle,
+                CastType = InputType.None,
                 Effect = () =>
                 {
-                    string answer = Game.QpAnswerStack.Pop();
-                    Item it = Game.Player.Inventory
-                        [IO.Indexes.IndexOf(answer[0])];
-
-                    Game.Log("You suddenly feel very dizzy...");
-                    Game.Player.DropItem(it);
-                    Game.Log("You drop your " + it.GetName("name") + ".");
-                    Game.Player.AddEffect(StatusType.Confusion, 100);
-                },
-                SetupAcceptedInput = () =>
-                {
-                    IO.AcceptedInput.Clear();
-                    foreach (Item item in Game.Player.Inventory)
-                    {
-                        IO.AcceptedInput.Add(
-                            IO.Indexes[Game.Player.Inventory.IndexOf(item)]
-                        );
-                    }
-                },
-                CastDifficulty = 0,
-                Cost = 1,
-                Range = 0
+                    Game.Log(
+                        Game.Caster.GetName("Name") + " " +
+                        Game.Caster.Verb("#feel") + " " +
+                        "better!"
+                    );
+                    Util.Game.Caster.Heal(Util.Roll("3d3"));
+                }
             };
 
             //ReSharper disable once ObjectCreationAsStatement

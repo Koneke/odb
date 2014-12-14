@@ -469,7 +469,7 @@ namespace ODB
             List<Tile> nonDoor = nonSolid
                 .Where(t => t.Door == Door.None).ToList();
             List<Tile> nonStairs = nonDoor
-                .Where(t => t.Door == Door.None).ToList();
+                .Where(t => t.Stairs == Stairs.None).ToList();
             List<Tile> nonActor = nonStairs
                 .Where(t => ActorOnTile(t.Position) == null)
                 .ToList();

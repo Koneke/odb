@@ -265,6 +265,23 @@ namespace ODB
             Game.Player.Pass();
         }
 
+        public static void Quaff()
+        {
+            string answer = Game.QpAnswerStack.Pop();
+            if (answer.Length <= 0) return;
+
+            int index = IO.Indexes.IndexOf(answer[0]);
+            Item selected = Game.Player.Inventory[index];
+
+            Game.Log("You drank " + selected.GetName("a"));
+            DrinkableComponent dc = selected.GetComponent<DrinkableComponent>();
+            Game.Caster = Game.Player;
+            Spell.Spells[dc.Effect].Cast();
+            selected.Identify();
+
+            Game.Player.Pass();
+        }
+
         public static void Quiver()
         {
             string answer = Game.QpAnswerStack.Pop();

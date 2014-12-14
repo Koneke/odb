@@ -184,8 +184,6 @@ namespace ODB
         //todo: Current issues:
         //      Sometimes generates nonconnected rooms, and keeps working on
         //        those (resulting in two separate room "blobs").
-        //      Occasionally generates doors in corners, which should not be
-        //        possible.
         public Level Generate(Level sourceLevel, int depth)
         {
             Level newLevel = new Level(80, 25) {
@@ -243,7 +241,7 @@ namespace ODB
             return newLevel;
         }
 
-        private void GenerateStairs(Level source, Level level)
+        private static void GenerateStairs(Level source, Level level)
         {
             Tile tile = 
             level.Rooms
@@ -288,11 +286,11 @@ namespace ODB
                 new LevelConnector(
                     tile.Position,
                     source
-                    )
-                );
+                )
+            );
         }
 
-        private void GenerateMonsters(Level level)
+        private static void GenerateMonsters(Level level)
         {
             float difficulty = Util.Game.Player.Level + level.Depth + 1;
 
@@ -322,7 +320,7 @@ namespace ODB
             }
         }
 
-        private void GenerateLoot(Level level)
+        private static void GenerateLoot(Level level)
         {
             int loot = (level.Depth) * 25;
             List<ItemDefinition> possibleItems =

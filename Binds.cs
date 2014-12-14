@@ -61,6 +61,7 @@ namespace ODB
             Inventory,
             Look,
             Open,
+            Quaff,
             Quiver,
             Read,
             Remove,

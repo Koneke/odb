@@ -51,6 +51,7 @@ namespace ODB
             CheckEngrave();
             CheckChant();
             CheckRead();
+            CheckQuaff();
         }
 
         //return whether we moved or not
@@ -477,6 +478,32 @@ namespace ODB
                     .First();
         }
 
+        private static void CheckQuaff()
+        {
+            if (!KeyBindings.Pressed(Bind.Quaff)) return;
+
+            IO.AcceptedInput.Clear();
+            foreach (int index in Game.Player.Inventory
+                .Where(item => item.HasComponent<DrinkableComponent>())
+                .Select(it => Game.Player.Inventory.IndexOf(it))
+            ) {
+                IO.AcceptedInput.Add(IO.Indexes[index]);
+            }
+
+            string question = "Drink what? [";
+            question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
+            question += "]";
+
+            if (IO.AcceptedInput.Count > 0)
+                IO.AskPlayer(
+                    question,
+                    InputType.QuestionPromptSingle,
+                    PlayerResponses.Quaff
+                );
+            else Game.Log("You have nothing to drink.");
+
+        }
+
         private static void CheckQuiver()
         {
             //todo: like mentioned in the checkwield comment
@@ -494,8 +521,7 @@ namespace ODB
             }
 
             string question = "Quiver what? [";
-            question += IO.AcceptedInput.Aggregate(
-                "", (c, n) => c + n);
+            question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
             question += "]";
 
             if (IO.AcceptedInput.Count > 0)

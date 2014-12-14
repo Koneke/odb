@@ -44,6 +44,7 @@ quiver				=	s:q;
 read				=	:r;
 remove				=	s:r;
 sheath				=	s:s;
+quaff				=	:q;
 wear				=	s:w;
 wield				=	:w;
 zap					=	:z;

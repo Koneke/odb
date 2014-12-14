@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace ODB
@@ -26,10 +27,9 @@ namespace ODB
                 case "cEdible": return EdibleComponent.Create(content);
                 case "cContainer": return ContainerComponent.Create(content);
                 case "cEffect": return EffectComponent.Create(content);
-                case ReadableComponent.Type:
-                    return ReadableComponent.Create(content);
-                case LearnableComponent.Type:
-                    return LearnableComponent.Create(content);
+                case "cReadable": return ReadableComponent.Create(content);
+                case "cLearnable": return LearnableComponent.Create(content);
+                case "cDrinkable": return DrinkableComponent.Create(content);
                 default: throw new ArgumentException();
             }
         }
@@ -380,6 +380,36 @@ namespace ODB
             stream.Write(Spell, 4);
             stream.Write("}", false);
             return stream;
+        }
+    }
+
+    public class DrinkableComponent : Component
+    {
+        public override string GetComponentType()
+        {
+            return "cDrinkable";
+        }
+
+        public int Effect;
+
+        public override Stream WriteComponent()
+        {
+            Stream stream = new Stream();
+            stream.Write(GetComponentType());
+            stream.Write("{", false);
+            stream.Write(Effect);
+            stream.Write("}", false);
+            return stream;
+        }
+
+        public static DrinkableComponent Create(string content)
+        {
+            Stream stream = new Stream(content);
+            int effect = stream.ReadInt();
+            return new DrinkableComponent
+            {
+                Effect = effect
+            };
         }
     }
 }
