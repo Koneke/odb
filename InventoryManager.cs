@@ -47,7 +47,7 @@ namespace ODB
             }
         }
 
-        public static Game1 Game;
+        public static ODBGame Game;
 
         public static int Selection;
         private static Item _selected;

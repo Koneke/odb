@@ -18,12 +18,12 @@ using Bind = ODB.KeyBindings.Bind;
 
 namespace ODB
 {
-    public class Game1 : Game
+    public class ODBGame : Game
     {
         public UI UI;
-        public static Game1 Game;
+        public static ODBGame Game;
 
-        public Game1()
+        public ODBGame()
         {
             UI.Graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
@@ -58,7 +58,7 @@ namespace ODB
         public Action QuestionReaction;
         public Stack<string> QpAnswerStack;
 
-        public int StandardActionLength = 10;
+        public const int StandardActionLength = 10;
 
         protected override void Initialize()
         {

@@ -114,7 +114,7 @@ namespace ODB
             return hashCode;
         }
 
-        public static Game1 Game;
+        public static ODBGame Game;
 
         //ReSharper disable InconsistentNaming
         public Point xy;

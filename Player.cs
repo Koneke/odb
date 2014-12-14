@@ -9,7 +9,7 @@ namespace ODB
 {
     public class Player
     {
-        public static Game1 Game;
+        public static ODBGame Game;
 
         public static void PlayerInput()
         {
@@ -18,7 +18,7 @@ namespace ODB
             //since we do the same thing for brains
             if (Game.Player.HasEffect(StatusType.Stun))
             {
-                Game.Player.Pass(Game.StandardActionLength);
+                Game.Player.Pass(ODBGame.StandardActionLength);
                 return;
             }
 
@@ -34,24 +34,24 @@ namespace ODB
             }
             #endregion
 
-            CheckGet();
-            CheckDrop();
-            CheckWield();
-            CheckWear();
-            CheckSheath();
-            CheckRemove();
-            CheckOpen();
-            CheckClose();
-            CheckZap();
             CheckApply();
-            CheckFire();
-            CheckQuiver();
-            CheckLook();
+            CheckChant();
+            CheckClose();
+            CheckDrop();
             CheckEat();
             CheckEngrave();
-            CheckChant();
-            CheckRead();
+            CheckFire();
+            CheckGet();
+            CheckLook();
+            CheckOpen();
             CheckQuaff();
+            CheckQuiver();
+            CheckRead();
+            CheckRemove();
+            CheckSheath();
+            CheckWield();
+            CheckWear();
+            CheckZap();
         }
 
         //return whether we moved or not

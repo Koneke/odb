@@ -15,7 +15,7 @@ namespace ODB
 
         public static GraphicsDeviceManager Graphics;
 
-        public static Game1 Game;
+        public static ODBGame Game;
 
         private List<Console> _consoles;
         private Console _dfc;

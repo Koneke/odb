@@ -23,7 +23,7 @@ namespace ODB
 
     public class IO
     {
-        public static Game1 Game;
+        public static ODBGame Game;
 
         static KeyboardState _ks, _oks;
         public static bool ShiftState;

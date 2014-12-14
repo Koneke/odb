@@ -7,7 +7,7 @@ namespace ODB
 {
     class PlayerResponses
     {
-        public static Game1 Game;
+        public static ODBGame Game;
 
         private static void Cast(Spell spell)
         {

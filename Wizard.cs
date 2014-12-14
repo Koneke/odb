@@ -6,7 +6,7 @@ namespace ODB
 {
     class Wizard
     {
-        public static Game1 Game;
+        public static ODBGame Game;
 
         public static Point WmCursor;
         public static List<string> WmHistory = new List<string>();

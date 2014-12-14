@@ -46,7 +46,7 @@ namespace ODB
     {
         //todo: find the odd refs to this hanging around
         //      due to me being a lazy bum
-        public static Game1 Game;
+        public static ODBGame Game;
         public static Random Random;
 
         public static void SetSeed(int seed)

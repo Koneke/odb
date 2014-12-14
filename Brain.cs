@@ -9,7 +9,7 @@ namespace ODB
         //maybe I should stop littering these Game1s about
         //but they are comf... conv(enient)-y..?
         //coinin' it. convy.
-        public static Game1 Game;
+        public static ODBGame Game;
         public Actor MeatPuppet;
 
         public Brain(Actor meatPuppet)
@@ -115,7 +115,7 @@ namespace ODB
 
             if (MeatPuppet.HasEffect(StatusType.Stun))
             {
-                MeatPuppet.Pass(Game.StandardActionLength);
+                MeatPuppet.Pass(ODBGame.StandardActionLength);
                 return;
             }
 

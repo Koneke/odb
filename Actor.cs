@@ -885,7 +885,7 @@ namespace ODB
         public void Pass(bool movement = false)
         {
             //switch this to +=? could mean setting cd to -10 = free action
-            Cooldown = Game.StandardActionLength -
+            Cooldown = ODBGame.StandardActionLength -
                 (movement ? Get(Stat.Speed) : Get(Stat.Quickness));
         }
         public void Pass(int length)
