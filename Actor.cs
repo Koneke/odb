@@ -645,7 +645,7 @@ namespace ODB
             //-2, items are more likely to be damaged when shot/thrown than
             //when used in melee
             if (Util.Random.Next(0, Materials.MaxHardness+1) >=
-                Materials.GetHardness(ammo.Material) - 2)
+                Materials.GetHardness(ammo.Material) - 4)
             {
                 Game.Log(
                     projectile.GetName("The") + " is damaged by the impact."
@@ -1115,7 +1115,10 @@ namespace ODB
             switch (neo)
             {
                 case FoodStatus.Starving:
-                    message = Definition.Name + " needs food, badly!";
+                    message =
+                        "#ff0000" +
+                        Util.Capitalize(Definition.Name) +
+                        " needs food, badly!";
                     break;
                 case FoodStatus.Hungry:
                     message = "You are starting to feel peckish.";

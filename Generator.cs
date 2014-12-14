@@ -338,13 +338,9 @@ namespace ODB
                     level.RandomOpenPoint(),
                     level.ID,
                     itemd,
-                    //todo: Stacking items should be able to spawn in stacks
-                    //      otherwise they are fairly useless, lol.
-                    //      Same goes for charged items.
-                    //ReSharper disable once RedundantArgumentDefaultValue
-                    itemd.Stacking
-                    ? Util.Roll("3d3")
-                    : 0
+                    Util.Random.Next(
+                        itemd.GenerationLowBound,
+                        itemd.GenerationHighBound)
                 );
 
                 level.Spawn(item);

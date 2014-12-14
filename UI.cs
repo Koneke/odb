@@ -24,7 +24,8 @@ namespace ODB
         private Console _inventoryConsole;
         private Console _statRowConsole;
 
-        private int _logSize = 3;
+        public int LogSize = 3;
+        public List<ColorString> Log; 
 
         private List<Font> _fonts;
 
@@ -37,6 +38,8 @@ namespace ODB
 
             Camera = new Point(0, 0);
             _cameraOffset = new Point(0, 0);
+
+            Log = new List<ColorString>();
         }
 
         public void Load()
@@ -209,10 +212,10 @@ namespace ODB
             _logConsole.CellData.Clear();
             _logConsole.CellData.Fill(Color.White, Color.Black, ' ', null);
 
-            int hidden = Game.MessagesLoggedSincePlayerControl - Game.LogSize;
+            int hidden = Game.MessagesLoggedSincePlayerControl - LogSize;
 
             List<ColorString> log =
-                Game.LogText.Take(Game.LogText.Count - hidden)
+                Log.Take(Log.Count - hidden)
                 .ToList();
 
             for (
@@ -259,7 +262,8 @@ namespace ODB
 
             if (!_inputRowConsole.IsVisible) return;
 
-            _inputRowConsole.Position = new Microsoft.Xna.Framework.Point(0, Game.LogSize);
+            _inputRowConsole.Position = new Microsoft.Xna.Framework.Point(
+                0, LogSize);
             _inputRowConsole.CellData.Fill(
                 //Color.WhiteSmoke,
                 Color.Black,
@@ -373,7 +377,7 @@ namespace ODB
 
             _inventoryConsole.CellData.Print(
                 2, _inventoryConsole.ViewArea.Height-1,
-                Game.LogText[Game.LogText.Count-1].String,
+                Log[Log.Count-1].String,
                 Color.White);
             //end border texts
 
@@ -667,13 +671,13 @@ namespace ODB
         public void Input()
         {
             if (KeyBindings.Pressed(Bind.Log_Size_Up))
-                _logSize = Math.Min(_logConsole.ViewArea.Height, ++_logSize);
+                LogSize = Math.Min(_logConsole.ViewArea.Height, ++LogSize);
 
             if (KeyBindings.Pressed(Bind.Log_Size_Down))
-                _logSize = Math.Max(0, --_logSize);
+                LogSize = Math.Max(0, --LogSize);
 
             _logConsole.Position = new Microsoft.Xna.Framework.Point(
-                0, -_logConsole.ViewArea.Height + _logSize
+                0, -_logConsole.ViewArea.Height + LogSize
             );
         }
 

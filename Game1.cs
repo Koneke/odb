@@ -47,8 +47,6 @@ namespace ODB
         public Actor Player;
 
         public int MessagesLoggedSincePlayerControl;
-        public int LogSize;
-        public List<ColorString> LogText;
 
         //LH-021214: Currently casting actor (so that our spell casting system
         //           can use the same Question-system as other commands.
@@ -140,8 +138,6 @@ namespace ODB
 
             SetupBrains();
 
-            LogSize = 3;
-            LogText = new List<ColorString>();
             Log("#ff0000" + "Welcome!");
 
             QpAnswerStack = new Stack<string>();
@@ -201,8 +197,8 @@ namespace ODB
                 {
                     case InputType.Splash:
                         if (KeyBindings.Pressed(Bind.Accept))
-                            MessagesLoggedSincePlayerControl -= LogSize;
-                        if (MessagesLoggedSincePlayerControl <= LogSize)
+                            MessagesLoggedSincePlayerControl -= UI.LogSize;
+                        if (MessagesLoggedSincePlayerControl <= UI.LogSize)
                             IO.IOState = InputType.PlayerInput;
                         break;
                     case InputType.QuestionPromptSingle:
@@ -213,7 +209,7 @@ namespace ODB
                         IO.TargetInput();
                         break;
                     case InputType.PlayerInput:
-                        if (MessagesLoggedSincePlayerControl > LogSize)
+                        if (MessagesLoggedSincePlayerControl > UI.LogSize)
                         {
                             IO.IOState = InputType.Splash;
                             break;
@@ -526,7 +522,7 @@ namespace ODB
                 }
             }
             foreach (ColorString c in rows)
-                LogText.Add(c);
+                UI.Log.Add(c);
         }
         public void Log(params object[] args)
         {
