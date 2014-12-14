@@ -11,9 +11,6 @@ namespace ODB
         Potion = 0x00,
         Scroll = 0x01,
         Book = 0x02,
-        Bag = 0x03,
-        Longsword = 0x10,
-        Twohander = 0x11,
     }
 
     public class ItemDefinition : gObjectDefinition
@@ -75,15 +72,6 @@ namespace ODB
                     "glittering tome",
                     "alluring booklet",
                     "silvery pamphlet",
-                }},
-                {(int)ItemCategory.Bag, new List<string>{
-                    "bag",
-                }},
-                {(int)ItemCategory.Longsword, new List<string>{
-                    "long blade",
-                }},
-                {(int)ItemCategory.Twohander, new List<string>{
-                    "huge sword",
                 }},
             };
         #endregion

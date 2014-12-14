@@ -386,6 +386,18 @@ namespace ODB
                     Despawn(it);
             World.WorldItems.Remove(item);
             World.AllItems.Remove(item);
+
+            //properly despawn from every actor as well.
+            foreach (BodyPart bp in Actors
+                .SelectMany(a => a.PaperDoll)
+                .Where(bp => bp.Item != null)
+                .Where(bp => bp.Item.ID == item.ID))
+                bp.Item = null;
+            foreach (Actor a in
+                Actors.Where(a => a.Inventory.Contains(item)))
+                a.Inventory.Remove(item);
+            foreach (Actor a in Actors.Where(a => a.Quiver != null))
+                if (a.Quiver == item) a.Quiver = null;
         }
 
         public Room CreateRoom(

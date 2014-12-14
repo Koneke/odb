@@ -522,6 +522,64 @@ namespace ODB
                 }
 
                 totalDamage += damage;
+                if (weapon == null) continue;
+
+                if (Util.Random.Next(0, Materials.MaxHardness+1) >=
+                    Materials.GetHardness(weapon.Material))
+                    continue;
+
+                Game.Log(
+                    "{1} {2} is damaged by the impact.",
+                    Util.Capitalize(Genitive()),
+                    weapon.GetName("name")
+                );
+                if (weapon.Stacking)
+                {
+                    //spawn a stack of every item in the stack that wasn't the
+                    //wielded one
+                    Item stack = new Item(weapon.WriteItem().ToString())
+                    {
+                        ID = Item.IDCounter++,
+                        Count = weapon.Count - 1,
+                        xy = xy,
+                        LevelID = Game.Level.ID
+                    };
+                    weapon.Count = 1;
+
+                    //if the wielded falls apart, or we have more than enough
+                    //space in the inventory, put it there
+                    if (stack.Count > 0)
+                    {
+                        Game.Level.Spawn(stack);
+                        if (Game.Player.Inventory.Count <
+                            InventoryManager.InventorySize ||
+                            weapon.Health <= 1)
+                        {
+                            Game.Player.Inventory.Add(stack);
+                            World.WorldItems.Remove(stack);
+                        }
+                            //otherwise, drop it into the world
+                        else
+                        {
+                            message +=
+                                string.Format(
+                                    "{0} {1} and {2} {3} {4}. ",
+                                    GetName("Name"),
+                                    Verb("fumble"),
+                                    Verb("drop"),
+                                    Genitive(),
+                                    stack.GetName("name")
+                                );
+                        }
+                    }
+                }
+                if (weapon.Health <= 1)
+                {
+                    Game.Log(weapon.GetName("The") + " falls to pieces!");
+                    weapon.Health--;
+                    Game.Level.Despawn(weapon);
+                }
+                else weapon.Health--;
             }
 
             Game.Log(message);
@@ -553,7 +611,7 @@ namespace ODB
                 throwing = !lc.AmmoTypes.Contains(ammo.Type);
             else throwing = true;
 
-            int roll = Util.Roll("1d20");
+            int roll = Util.Roll("1d30");
 
             int dexBonus = Get(Stat.Dexterity);
             int distanceModifier = 1;
@@ -579,30 +637,24 @@ namespace ODB
                 LevelID = Game.Level.ID
             };
 
-            if (hitRoll >= targetArmor)
+            //-2, items are more likely to be damaged when shot/thrown than
+            //when used in melee
+            if (Util.Random.Next(0, Materials.MaxHardness+1) >=
+                Materials.GetHardness(ammo.Material) - 2)
             {
-                if (Util.Roll("1d20") >= Materials
-                    .GetHardness(projectile.Material))
-                {
-                    Game.Log(
-                        projectile.GetName("The") + " is damaged by the impact."
-                    );
-                    if (projectile.Health <= 1)
-                        Game.Log(
-                            projectile.GetName("The") + " falls to pieces!"
-                        );
+                Game.Log(
+                    projectile.GetName("The") + " is damaged by the impact."
+                );
+                if (projectile.Health <= 1) {
+                    Game.Log(projectile.GetName("The") + " falls to pieces!");
                     projectile.Health--;
-                }
+                    Game.Level.Despawn(projectile);
+                } else projectile.Health--;
             }
             if (projectile.Health > 0) Game.Level.Spawn(projectile);
 
             ammo.Count--;
-            if(ammo.Count <= 0)
-            {
-                Quiver = null;
-                World.AllItems.Remove(ammo);
-                Game.Player.Inventory.Remove(ammo);
-            }
+            if(ammo.Count <= 0) Game.Level.Despawn(ammo);
 
             if(hitRoll >= targetArmor) {
                 int ammoDamage;

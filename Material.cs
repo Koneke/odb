@@ -31,16 +31,15 @@ namespace ODB
                 "leaky", "mashed" }},
         };
 
+        public const int MaxHardness = 40;
+
         //likelyness to take damage when thrown/bashed
-        //d20 >= value
-        //very early test values, to be tweaked, maybe go to d40 or something,
-        //we'll see.
-        private const int OrganicHardness = 10;
-        private const int MetalHardness = 20;
-        private const int WoodHardness = 16;
-        private const int LeatherHardness = 18;
-        private const int PaperHardness = 7;
-        private const int ClothHardness = 20;
+        private const int OrganicHardness = 15;
+        private const int MetalHardness = 29;
+        private const int WoodHardness = 27;
+        private const int LeatherHardness = 24;
+        private const int PaperHardness = 9;
+        private const int ClothHardness = 22;
         private const int GlassHardness = 0; //guaranteed
 
         public static int GetHardness(Material m)

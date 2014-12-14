@@ -136,14 +136,11 @@ namespace ODB
                     ? Definition.Name
                     : UnknownApperance;
 
-            int damage = Definition.Health - Health;
-
-            if (damage != 0)
+            if (Health != Definition.Health)
             {
-                int damageStrings =
-                    Materials.DamageStrings[Material].Count;
+                int damageStrings = Materials.DamageStrings[Material].Count;
                 int start = damageStrings - Definition.Health;
-                start--;
+                int damage = Definition.Health - Health;
                 appearance =
                     Materials.DamageStrings[Material][start + damage] + " " +
                         appearance;
