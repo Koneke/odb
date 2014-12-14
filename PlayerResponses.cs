@@ -34,6 +34,7 @@ namespace ODB
 
                 if (stack != null)
                 {
+                    Game.Log("Picked up " + it.GetName("count") + ".");
                     stack.Stack(it);
                     //so we can get the right char below
                     it = stack;

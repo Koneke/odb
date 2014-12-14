@@ -462,6 +462,19 @@ namespace ODB
                 InputType.Targeting,
                 PlayerResponses.Fire
             );
+
+            List<Actor> visible =
+                Game.Level.Actors
+                .Where(a => a != Game.Player)
+                .Where(a => Game.Player.Sees(a.xy))
+                .ToList();
+
+            if(visible.Count > 0)
+                Game.Target =
+                    visible
+                    .OrderBy(a => Util.Distance(a.xy, Game.Player.xy))
+                    .Select(a => a.xy)
+                    .First();
         }
 
         private static void CheckQuiver()

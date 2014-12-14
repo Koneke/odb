@@ -1036,9 +1036,9 @@ namespace ODB
             return result;
         }
 
-        public bool Sees(Actor other)
+        public bool Sees(Point other)
         {
-            return Vision[other.xy.x, other.xy.y];
+            return Vision[other.x, other.y];
         }
 
         public void Chant(string chant)

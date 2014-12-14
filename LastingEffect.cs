@@ -136,7 +136,7 @@ namespace ODB
             holder.Damage(Util.Roll("2d3"), null);
             Util.Game.Level.At(holder.xy).Blood = true;
 
-            if(holder == Util.Game.Player || Util.Game.Player.Sees(holder))
+            if(holder == Util.Game.Player || Util.Game.Player.Sees(holder.xy))
                 Util.Game.Log(
                     holder.GetName("Name") + " " +
                     holder.Verb("bleed") + "!"
