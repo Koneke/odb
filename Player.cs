@@ -255,18 +255,20 @@ namespace ODB
             if (wielded.Count > 0 || Game.Player.Quiver != null)
             {
                 IO.AcceptedInput.Clear();
-                for(int i = 0; i < wielded.Count; i++)
-                    IO.AcceptedInput.Add(IO.Indexes[i]);
+
+                foreach(Item item in wielded)
+                    IO.AcceptedInput.Add(IO.Indexes
+                        [Game.Player.Inventory.IndexOf(item)]
+                    );
 
                 if(Game.Player.Quiver != null)
-                    IO.AcceptedInput.Add(
-                        IO.Indexes
+                    IO.AcceptedInput.Add(IO.Indexes
                         [Game.Player.Inventory.IndexOf(Game.Player.Quiver)]
                     );
 
                 string question = "Sheath what? [";
                 question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
-                question += "] ";
+                question += "]";
 
                 IO.AskPlayer(
                     question,

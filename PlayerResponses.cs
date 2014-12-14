@@ -16,9 +16,7 @@ namespace ODB
 
             int i = IO.Indexes.IndexOf(answer[0]);
             
-            List<Item> onTile = Game.Level.ItemsOnTile(
-                Game.Player.xy
-            );
+            List<Item> onTile = Game.Level.ItemsOnTile(Game.Player.xy);
 
             Item it = onTile[i];
             World.WorldItems.Remove(it);
@@ -34,15 +32,19 @@ namespace ODB
                 Item stack = Game.Player.Inventory
                     .FirstOrDefault(item => item.CanStack(it));
 
-                if(stack != null) stack.Stack(it);
-                //if (!alreadyHolding)
+                if (stack != null)
+                {
+                    stack.Stack(it);
+                    //so we can get the right char below
+                    it = stack;
+                }
                 else Game.Player.Inventory.Add(it);
             }
-            else
-            {
-                Game.Player.Inventory.Add(it);
-            }
-            Util.Game.Log("Picked up " + it.GetName("count") + ".");
+            else Game.Player.Inventory.Add(it);
+
+            char index = IO.Indexes[Game.Player.Inventory.IndexOf(it)];
+            Util.Game.Log(index + " - "  + it.GetName("count") + ".");
+
             Game.Player.Pass();
         }
 
