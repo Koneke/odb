@@ -206,7 +206,7 @@ namespace ODB
             string prename = GetName("the");
             ItemDefinition.IdentifiedDefs.Add(Type);
             if (!silent)
-                Game.Log("You identified " +
+                Game.UI.Log("You identified " +
                     prename + " as " + GetName("count") + ".");
         }
 
@@ -256,7 +256,7 @@ namespace ODB
                 //LH-021214: Spent last of stacking item -> Remove it.
                 //todo: this is player-centric and dumb
                 Game.Player.Inventory.Remove(this);
-                Game.Level.Despawn(this);
+                World.Level.Despawn(this);
             }
             else
             {
@@ -271,7 +271,7 @@ namespace ODB
 
                 //todo: this is player-centric and dumb
                 Game.Player.Inventory.Remove(this);
-                Game.Level.Despawn(this);
+                World.Level.Despawn(this);
             }
         }
 
@@ -286,7 +286,7 @@ namespace ODB
         public void Stack(Item other)
         {
             Count += other.Count;
-            Game.Level.Despawn(other);
+            World.Level.Despawn(other);
         }
 
         public Stream WriteItem()

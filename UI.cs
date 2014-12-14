@@ -25,7 +25,8 @@ namespace ODB
         private Console _statRowConsole;
 
         public int LogSize = 3;
-        public List<ColorString> Log; 
+        public List<ColorString> LogText; 
+        public int LoggedSincePlayerInput;
 
         private List<Font> _fonts;
 
@@ -39,7 +40,18 @@ namespace ODB
             Camera = new Point(0, 0);
             _cameraOffset = new Point(0, 0);
 
-            Log = new List<ColorString>();
+            LogText = new List<ColorString>();
+        }
+
+        public bool CheckMorePrompt()
+        {
+            if (LoggedSincePlayerInput > LogSize)
+            {
+                IO.IOState = InputType.Splash;
+                return true;
+            }
+            LoggedSincePlayerInput = 0;
+            return false;
         }
 
         public void Load()
@@ -128,7 +140,7 @@ namespace ODB
             for (int x = 0; x < ScreenSize.X; x++)
                 for (int y = 0; y < ScreenSize.Y; y++)
                 {
-                    TileInfo ti = Game.Level.At(Camera + new Point(x, y));
+                    TileInfo ti = World.Level.At(Camera + new Point(x, y));
 
                     if (ti == null) continue;
                     if(!(ti.Seen | Game.WizMode)) continue;
@@ -153,16 +165,16 @@ namespace ODB
             Rect screen = new Rect(Camera, new Point(80, 25));
 
             int[,] itemCount = new int[
-                Game.Level.Size.x,
-                Game.Level.Size.y
+                World.Level.Size.x,
+                World.Level.Size.y
                 ];
 
             foreach (Item i in World.WorldItems
-                .Where(it => it.LevelID == Game.Level.ID))
+                .Where(it => it.LevelID == World.Level.ID))
                 itemCount[i.xy.x, i.xy.y]++;
 
             foreach (Item i in World.WorldItems
-                .Where(i => i.LevelID == Game.Level.ID)
+                .Where(i => i.LevelID == World.Level.ID)
                 .Where(i => Game.Player.Vision[i.xy.x, i.xy.y] || Game.WizMode)
                 .Where(i => screen.ContainsPoint(i.xy)))
             {
@@ -183,16 +195,16 @@ namespace ODB
             Rect screen = new Rect(Camera, new Point(80, 25));
 
             int[,] actorCount = new int[
-                Game.Level.Size.x,
-                Game.Level.Size.y
+                World.Level.Size.x,
+                World.Level.Size.y
                 ];
 
             foreach (Actor a in World.WorldActors
-                .Where(a => a.LevelID == Game.Level.ID))
+                .Where(a => a.LevelID == World.Level.ID))
                 actorCount[a.xy.x, a.xy.y]++;
 
             foreach (Actor a in World.WorldActors
-                .Where(a => a.LevelID == Game.Level.ID)
+                .Where(a => a.LevelID == World.Level.ID)
                 .Where(a => Game.Player.Vision[a.xy.x, a.xy.y] || Game.WizMode)
                 .Where(a => screen.ContainsPoint(a.xy)))
             {
@@ -212,10 +224,10 @@ namespace ODB
             _logConsole.CellData.Clear();
             _logConsole.CellData.Fill(Color.White, Color.Black, ' ', null);
 
-            int hidden = Game.MessagesLoggedSincePlayerControl - LogSize;
+            int hidden = LoggedSincePlayerInput - LogSize;
 
             List<ColorString> log =
-                Log.Take(Log.Count - hidden)
+                LogText.Take(LogText.Count - hidden)
                 .ToList();
 
             for (
@@ -377,7 +389,7 @@ namespace ODB
 
             _inventoryConsole.CellData.Print(
                 2, _inventoryConsole.ViewArea.Height-1,
-                Log[Log.Count-1].String,
+                LogText[LogText.Count-1].String,
                 Color.White);
             //end border texts
 
@@ -486,8 +498,8 @@ namespace ODB
                 str += " (" + Wizard.WmCursor.x + " ; " +
                     Wizard.WmCursor.y + ") ";
 
-                str += "D:" + Game.Level.Depth + "0M";
-                str += " (" + Game.Level.Name + ")";
+                str += "D:" + World.Level.Depth + "0M";
+                str += " (" + World.Level.Name + ")";
 
                 _statRowConsole.CellData.Print(
                     0, 0, str 
@@ -549,9 +561,9 @@ namespace ODB
             statrow += string.Format("{0:F1}", Game.GameTick / 10f);
 
             statrow += " ";
-            statrow += "D:" + Game.Level.Depth + "0M";
+            statrow += "D:" + World.Level.Depth + "0M";
 
-            statrow += " (" + Game.Level.Name + ")";
+            statrow += " (" + World.Level.Name + ")";
 
             float playerHealthPcnt =
                 Game.Player.HpCurrent /
@@ -693,9 +705,45 @@ namespace ODB
             Camera += _cameraOffset;
 
             Camera.x = Math.Max(0, Camera.x);
-            Camera.x = Math.Min(Game.Level.Size.x - ScreenSize.X, Camera.x);
+            Camera.x = Math.Min(World.Level.Size.x - ScreenSize.X, Camera.x);
             Camera.y = Math.Max(0, Camera.y);
-            Camera.y = Math.Min(Game.Level.Size.y - ScreenSize.Y, Camera.y);
+            Camera.y = Math.Min(World.Level.Size.y - ScreenSize.Y, Camera.y);
+        }
+
+        public void Log(string s)
+        {
+            LoggedSincePlayerInput++;
+
+            //always reset colouring
+            s = s + "#ffffff";
+
+            List<ColorString> rows = new List<ColorString>();
+            ColorString cs = new ColorString(s);
+            int x = 0;
+            while(x < cs.String.Length)
+            {
+                ColorString row = cs.Clone();
+                row.SubString(x, 80);
+                rows.Add(row);
+                x += 80;
+                if (cs.String.Length - x <= 0) continue;
+
+                if (row.ColorPoints.Count > 0)
+                {
+                    cs.ColorPoints.Add(
+                        new Tuple<int, Color>(
+                            x, row.ColorPoints.Last().Item2
+                            )
+                        );
+                }
+            }
+            foreach (ColorString c in rows)
+                LogText.Add(c);
+        }
+
+        public void Log(params object[] args)
+        {
+            Log(String.Format((string)args[0], args));
         }
     }
 }

@@ -292,7 +292,11 @@ namespace ODB
 
         private static void GenerateMonsters(Level level)
         {
-            float difficulty = Util.Game.Player.Level + level.Depth + 1;
+            float difficulty =
+                (ODBGame.Game.Player == null
+                    ? 1
+                    : Util.Game.Player.Level)
+                + level.Depth + 1;
 
             List<ActorDefinition> possibleMonsters =
                 Monster.MonstersByDifficulty

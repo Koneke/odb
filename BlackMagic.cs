@@ -6,9 +6,9 @@
         {
             string engraving = "";
 
-            if (Util.Game.Level.At(actor.xy).Neighbours.Count < 8)
+            if (World.Level.At(actor.xy).Neighbours.Count < 8)
             {
-                Util.Game.Log("Nothing happens.");
+                Util.Game.UI.Log("Nothing happens.");
                 return;
             }
 
@@ -16,7 +16,7 @@
             {
                 for (int x = -1; x <= 1; x++)
                 {
-                    TileInfo ti = Util.Game.Level.At(actor.xy);
+                    TileInfo ti = World.Level.At(actor.xy);
                     engraving +=
                         ti.Blood
                         ? ti.Tile.Engraving.ToLower()+","
@@ -34,10 +34,10 @@
                 case "0,tor,0 zok,0,khr 0,bal,0":
                     if (chant.ToLower() != "tor zok khr bal") break;
 
-                    Util.Game.Log("Darkness envelopes " +
+                    Util.Game.UI.Log("Darkness envelopes " +
                         actor.GetName("name") +
                         "...");
-                    Util.Game.Log(
+                    Util.Game.UI.Log(
                         actor.GetName("Name") + " " +
                         actor.Verb("#feel") + " " +
                         "good.");
@@ -45,7 +45,7 @@
                     break;
 
                 default:
-                    Util.Game.Log("Nothing happens.");
+                    Util.Game.UI.Log("Nothing happens.");
                     break;
             }
         }

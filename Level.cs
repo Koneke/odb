@@ -460,35 +460,20 @@ namespace ODB
             return room;
         }
 
-        public Point RandomOpenPoint()
-        {
-            //todo: making this more verbose because of occasional crashes
-            //      this is less of a "to do" and more of a "don't forget this";
+        public Point RandomOpenPoint() {
 
             Room r = Rooms.SelectRandom();
-            List<Tile> tiles = r.GetTiles();
-            List<Tile> nonSolid = tiles
-                .Where(t => !t.Solid).ToList();
-            List<Tile> nonDoor = nonSolid
-                .Where(t => t.Door == Door.None).ToList();
-            List<Tile> nonStairs = nonDoor
-                .Where(t => t.Stairs == Stairs.None).ToList();
-            List<Tile> nonActor = nonStairs
-                .Where(t => ActorOnTile(t.Position) == null)
-                .ToList();
-            // ReSharper disable once UnusedVariable
-            Point p = nonActor.SelectRandom().Position;
-            return p;
 
-            /*return Rooms
-                .SelectRandom()
-                .GetTiles()
+            List<TileInfo> tiles = r.GetTiles()
+                .Select(t => At(t.Position))
                 .Where(t => !t.Solid)
                 .Where(t => t.Door == Door.None)
                 .Where(t => t.Stairs == Stairs.None)
-                .Where(t => ActorOnTile(t.Position) == null)
-                .ToList()
-                .SelectRandom().Position;*/
+                .Where(t => t.Actor == null)
+                .Where(t => t.Items.Count == 0)
+                .ToList();
+            
+            return tiles.SelectRandom().Position;
         }
     }
 }

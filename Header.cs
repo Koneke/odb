@@ -319,7 +319,7 @@ namespace ODB
                 CastDifficulty)
                 Effect();
             else
-                Util.Game.Log(
+                Util.Game.UI.Log(
                     caster.GetName("Name") + " " +
                     caster.Verb("whiff") + " " +
                     "the spell!"
@@ -409,13 +409,13 @@ namespace ODB
                 Moved++;
                 CalculatePosition();
             }
-            if (Util.Game.Level.At(xy) == null)
+            if (World.Level.At(xy) == null)
             {
                 Moved--;
                 CalculatePosition();
                 Die = true;
             }
-            else if (Util.Game.Level.At(xy).Solid)
+            else if (World.Level.At(xy).Solid)
             {
                 //unmove
                 Moved--;
@@ -425,7 +425,7 @@ namespace ODB
             if (Moved >= Range) Die = true;
 
             if(!Die)
-                if (Util.Game.Level.ActorOnTile(xy) != null)
+                if (World.Level.ActorOnTile(xy) != null)
                     Die = true; //explode without unmoving
 
             if (Die)
@@ -531,6 +531,8 @@ namespace ODB
 
     public class World
     {
+        public static Level Level;
+        public static List<Level> Levels = new List<Level>(); 
         public static List<Item> AllItems = new List<Item>();
         public static List<Item> WorldItems = new List<Item>();
         public static List<Actor> WorldActors = new List<Actor>();

@@ -544,11 +544,10 @@ namespace ODB
                     Materials.GetHardness(weapon.Material))
                     continue;
 
-                Game.Log(
+                Game.UI.Log(
                     "{1} #ff0000{2} #ffffffis #ff0000damaged by the impact.",
                     Util.Capitalize(Genitive()),
-                    weapon.GetName("name")
-                );
+                    weapon.GetName("name"), Game);
                 if (weapon.Stacking)
                 {
                     //spawn a stack of every item in the stack that wasn't the
@@ -558,7 +557,7 @@ namespace ODB
                         ID = Item.IDCounter++,
                         Count = weapon.Count - 1,
                         xy = xy,
-                        LevelID = Game.Level.ID
+                        LevelID = World.Level.ID
                     };
                     weapon.Count = 1;
 
@@ -566,7 +565,7 @@ namespace ODB
                     //space in the inventory, put it there
                     if (stack.Count > 0)
                     {
-                        Game.Level.Spawn(stack);
+                        World.Level.Spawn(stack);
                         if (Game.Player.Inventory.Count <
                             InventoryManager.InventorySize ||
                             weapon.Health <= 1)
@@ -594,12 +593,12 @@ namespace ODB
                     message += "#ff0000" + weapon.GetName("The") +
                         " falls to pieces!";
                     weapon.Health--;
-                    Game.Level.Despawn(weapon);
+                    World.Level.Despawn(weapon);
                 }
                 else weapon.Health--;
             }
 
-            Game.Log(message);
+            Game.UI.Log(message);
             target.Damage(totalDamage, this);
         }
         public void Shoot(Actor target)
@@ -651,7 +650,7 @@ namespace ODB
                 ID = Item.IDCounter++,
                 Count = ammo.Stacking ? 1 : 0,
                 xy = target.xy,
-                LevelID = Game.Level.ID
+                LevelID = World.Level.ID
             };
 
             //-2, items are more likely to be damaged when shot/thrown than
@@ -659,19 +658,19 @@ namespace ODB
             if (Util.Random.Next(0, Materials.MaxHardness+1) >=
                 Materials.GetHardness(ammo.Material) - 4)
             {
-                Game.Log(
+                Game.UI.Log(
                     projectile.GetName("The") + " is damaged by the impact."
                 );
                 if (projectile.Health <= 1) {
-                    Game.Log(projectile.GetName("The") + " falls to pieces!");
+                    Game.UI.Log(projectile.GetName("The") + " falls to pieces!");
                     projectile.Health--;
-                    Game.Level.Despawn(projectile);
+                    World.Level.Despawn(projectile);
                 } else projectile.Health--;
             }
-            if (projectile.Health > 0) Game.Level.Spawn(projectile);
+            if (projectile.Health > 0) World.Level.Spawn(projectile);
 
             ammo.Count--;
-            if(ammo.Count <= 0) Game.Level.Despawn(ammo);
+            if(ammo.Count <= 0) World.Level.Despawn(ammo);
 
             if(hitRoll >= targetArmor) {
                 int ammoDamage;
@@ -734,11 +733,11 @@ namespace ODB
                         );
             }
 
-            Game.Log(message);
+            Game.UI.Log(message);
             if(totalDamage > 0)
                 target.Damage(totalDamage, this);
 
-            Game.Level.MakeNoise(1, target.xy);
+            World.Level.MakeNoise(1, target.xy);
             Pass();
         }
         public void Damage(int d, Actor attacker)
@@ -746,7 +745,7 @@ namespace ODB
             if (d <= 0) return;
             if (HpCurrent <= 0) return;
 
-            TileInfo ti = Game.Level.At(xy);
+            TileInfo ti = World.Level.At(xy);
             ti.Blood = true;
             ti.Neighbours
                 .Where(n => !n.Solid)
@@ -756,7 +755,7 @@ namespace ODB
             HpCurrent -= d;
             if (HpCurrent > 0) return;
 
-            Game.Log(GetName("Name") + " " + Verb("die") + "!");
+            Game.UI.Log(GetName("Name") + " " + Verb("die") + "!");
             Item corpse = new Item(
                 xy,
                 LevelID,
@@ -766,7 +765,7 @@ namespace ODB
             //should always be ided
             //or maybe not..? could be a mechanic in and of itself
             corpse.Identify(true);
-            Game.Level.Spawn(corpse);
+            World.Level.Spawn(corpse);
             Game.Brains.RemoveAll(b => b.MeatPuppet == this);
 
             if(attacker != null)
@@ -781,10 +780,9 @@ namespace ODB
 
             if (LevelFromExperience(ExperiencePoints) == lPre) return;
 
-            Game.Log(
+            Game.UI.Log(
                 "{1} stronger",
-                this == Game.Player ? "You feel" : GetName("Name") + " looks"
-            );
+                this == Game.Player ? "You feel" : GetName("Name") + " looks", Game);
             HpMax += Util.Roll(Definition.HitDie);
             MpMax += Util.Roll(Definition.ManaDie);
             Level = LevelFromExperience(ExperiencePoints);
@@ -842,10 +840,10 @@ namespace ODB
             else
             {
                 Inventory.Remove(item);
-                Game.Level.Despawn(item);
+                World.Level.Despawn(item);
             }
 
-            Game.Log(
+            Game.UI.Log(
                 string.Format("{0} ate {1}.",
                 GetName("Name"),
                 item.GetName("a"))
@@ -896,7 +894,7 @@ namespace ODB
         public List<Point> GetPossibleMoves(bool disallowActorTiles = false)
         {
             return
-                Game.Level.At(xy)
+                World.Level.At(xy)
                 .Neighbours
                 .Where(ti => !ti.Solid)
                 .Where(ti => ti.Door != Door.Closed)
@@ -915,7 +913,7 @@ namespace ODB
             {
                 if (Util.Roll("1d3") > 1)
                 {
-                    if (this == Game.Player) Game.Log("You stumble...");
+                    if (this == Game.Player) Game.UI.Log("You stumble...");
                     offset = possiblesMoves
                         [Util.Random.Next(0, possiblesMoves.Count)];
                 }
@@ -923,32 +921,32 @@ namespace ODB
 
             if (!GetPossibleMoves().Contains(offset))
             {
-                if(this == Game.Player) Game.Log("Bump!");
+                if(this == Game.Player) Game.UI.Log("Bump!");
                 //else "... bumps into a wall..?"
                 return false;
             }
 
             bool moved = false;
 
-            Tile target = Game.Level.At(xy + offset).Tile;
+            Tile target = World.Level.At(xy + offset).Tile;
 
-            if (Game.Level.ActorOnTile(target) == null)
+            if (World.Level.ActorOnTile(target) == null)
             {
                 xy.Nudge(offset.x, offset.y);
                 moved = true;
                 Pass(true);
 
                 //walking noise
-                Game.Level.CalculateActorPositions();
-                Game.Level.MakeNoise(0, xy);
+                World.Level.CalculateActorPositions();
+                World.Level.MakeNoise(0, xy);
             }
             else
             {
-                Attack(Game.Level.ActorOnTile(target));
+                Attack(World.Level.ActorOnTile(target));
                 Pass();
 
                 //combat noise
-                Game.Level.MakeNoise(1, xy);
+                World.Level.MakeNoise(1, xy);
             }
 
             return moved;
@@ -958,11 +956,11 @@ namespace ODB
         {
             if (Vision == null)
                 Vision = new bool[
-                    Game.Level.Size.x,
-                    Game.Level.Size.y
+                    World.Level.Size.x,
+                    World.Level.Size.y
                 ];
-            for (int x = 0; x < Game.Level.Size.x; x++)
-                for (int y = 0; y < Game.Level.Size.y; y++)
+            for (int x = 0; x < World.Level.Size.x; x++)
+                for (int y = 0; y < World.Level.Size.y; y++)
                     Vision[x, y] = false;
         }
         public void AddRoomToVision(Room r)
@@ -977,7 +975,7 @@ namespace ODB
                         ] = true;
 
                         if (this == Game.Player)
-                            Game.Level.At(rr.xy + new Point(x, y)).Seen = true;
+                            World.Level.At(rr.xy + new Point(x, y)).Seen = true;
                     }
         }
 
@@ -1114,7 +1112,7 @@ namespace ODB
                     message = "Eugh, not even a mint'd go down now.";
                     break;
             }
-            Game.Log(message);
+            Game.UI.Log(message);
         }
         public void RemoveFood(int amount)
         {
@@ -1140,7 +1138,7 @@ namespace ODB
                     break;
             }
             if(message != "")
-                Game.Log(message);
+                Game.UI.Log(message);
         }
 
         public Stream WriteActor()

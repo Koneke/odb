@@ -123,7 +123,7 @@ namespace ODB
         public static void PoisonEffect(Actor holder)
         {
             holder.Damage(Util.Roll("1d4"), null);
-            Util.Game.Log(
+            Util.Game.UI.Log(
                 (holder == Util.Game.Player
                     ? "You feel "
                     : (holder.GetName("Name") + " looks ")) +
@@ -134,10 +134,10 @@ namespace ODB
         public static void BleedEffect(Actor holder)
         {
             holder.Damage(Util.Roll("2d3"), null);
-            Util.Game.Level.At(holder.xy).Blood = true;
+            World.Level.At(holder.xy).Blood = true;
 
             if(holder == Util.Game.Player || Util.Game.Player.Sees(holder.xy))
-                Util.Game.Log(
+                Util.Game.UI.Log(
                     holder.GetName("Name") + " " +
                     holder.Verb("bleed") + "!"
                 );

@@ -111,10 +111,7 @@ namespace ODB
 
         public static List<Room> GetRooms(Point xy)
         {
-            return
-                Game.Level.Rooms.Where(
-                    r => r.ContainsPoint(xy)
-                ).ToList();
+            return World.Level.Rooms.Where(r => r.ContainsPoint(xy)).ToList();
         }
 
         public static List<Room> GetRooms(gObject go)
@@ -189,7 +186,7 @@ namespace ODB
                                 rr.xy.y + y
                             );
                             if (!route[n].ContainsPoint(np)) continue;
-                            if (Game.Level.At(np).Solid) continue;
+                            if (World.Level.At(np).Solid) continue;
 
                             //if we're actually going anywhere...
                             if (np != xy) return np;

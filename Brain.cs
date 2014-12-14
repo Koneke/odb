@@ -42,7 +42,7 @@ namespace ODB
 
         private bool CanAttack(Actor target)
         {
-            return Game.Level
+            return World.Level
                 .At(MeatPuppet.xy).Neighbours
                 .Any(ti => ti.Actor == target);
         }
@@ -77,7 +77,7 @@ namespace ODB
 
             Func<Point, bool> isValid = p =>
                 possibleMoves.Contains(p) ||
-                Game.Level.At(MeatPuppet.xy + p).Door == Door.Closed
+                World.Level.At(MeatPuppet.xy + p).Door == Door.Closed
             ;
 
             bool xy = isValid(offset);
@@ -91,12 +91,12 @@ namespace ODB
 
             if (!xy && !x && !y) return;
 
-            if(Game.Level.At(moveTo).Door == Door.Closed)
+            if(World.Level.At(moveTo).Door == Door.Closed)
             {
-                Game.Level.At(moveTo).Door = Door.Open;
+                World.Level.At(moveTo).Door = Door.Open;
                 if (Game.Player.Vision[moveTo.x, moveTo.y])
                 {
-                    Game.Log(
+                    Game.UI.Log(
                         MeatPuppet.GetName("Name") +
                             " opens a door."
                         );
@@ -107,7 +107,7 @@ namespace ODB
 
         public void Tick()
         {
-            if (MeatPuppet.LevelID != Game.Level.ID)
+            if (MeatPuppet.LevelID != World.Level.ID)
                 return;
 
             if (!MeatPuppet.Awake) return;

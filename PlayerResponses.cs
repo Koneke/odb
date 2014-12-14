@@ -27,7 +27,7 @@ namespace ODB
 
                 if (IO.AcceptedInput.Count <= 0)
                 {
-                    Game.Log("You have nothing to cast that on.");
+                    Game.UI.Log("You have nothing to cast that on.");
                     Game.Caster = null;
                     return;
                 }
@@ -62,8 +62,8 @@ namespace ODB
         public static void Chant()
         {
             string answer = Game.QpAnswerStack.Pop();
-            Game.Log("You chant...");
-            Game.Log("\"" + Util.Capitalize(answer) + "...\"");
+            Game.UI.Log("You chant...");
+            Game.UI.Log("\"" + Util.Capitalize(answer) + "...\"");
             Game.Player.Chant(answer);
         }
 
@@ -73,7 +73,7 @@ namespace ODB
             if (answer.Length <= 0) return;
 
             Point offset = Game.NumpadToDirection(answer[0]);
-            TileInfo ti = Game.Level.At(Game.Player.xy + offset);
+            TileInfo ti = World.Level.At(Game.Player.xy + offset);
 
             if(ti != null)
                 if (ti.Door == Door.Open)
@@ -82,7 +82,7 @@ namespace ODB
                     if (ti.Items.Count <= 0)
                     {
                         ti.Door = Door.Closed;
-                        Game.Log("You closed the door.");
+                        Game.UI.Log("You closed the door.");
 
                         //counted as a movement action at the moment, based
                         //on the dnd rules.
@@ -90,10 +90,10 @@ namespace ODB
                         return;
                     }
 
-                    Game.Log("There's something in the way.");
+                    Game.UI.Log("There's something in the way.");
                     return;
                 }
-            Game.Log("There's no open door there.");
+            Game.UI.Log("There's no open door there.");
         }
 
         public static void Drop()
@@ -148,7 +148,7 @@ namespace ODB
             Game.Player.Inventory.Remove(it);
 
             List<Item> iot;
-            if ((iot = Game.Level.ItemsOnTile(Game.Player.xy))
+            if ((iot = World.Level.ItemsOnTile(Game.Player.xy))
                 .Any(item => item.CanStack(it)))
             {
                 Item stack = iot.First(item => item.CanStack(it));
@@ -166,7 +166,7 @@ namespace ODB
             if (Game.Player.Quiver == it)
                 Game.Player.Quiver = null;
 
-            Game.Log("Dropped " + it.GetName("count") + ".");
+            Game.UI.Log("Dropped " + it.GetName("count") + ".");
 
             Game.Player.Pass();
         }
@@ -178,7 +178,7 @@ namespace ODB
 
             if (count > it.Count)
             {
-                Game.Log("You don't have that many.");
+                Game.UI.Log("You don't have that many.");
             }
             else if (count == it.Count)
             {
@@ -203,15 +203,15 @@ namespace ODB
                 it.Count -= count;
 
                 List<Item> iot;
-                if ((iot = Game.Level.ItemsOnTile(Game.Player.xy))
+                if ((iot = World.Level.ItemsOnTile(Game.Player.xy))
                     .Any(item => item.CanStack(droppedStack)))
                 {
                     Item stack = iot.First(item => item.CanStack(droppedStack));
                     stack.Stack(droppedStack);
                 }
-                else Game.Level.Spawn(droppedStack);
+                else World.Level.Spawn(droppedStack);
 
-                Game.Log("Dropped " +
+                Game.UI.Log("Dropped " +
                     droppedStack.GetName("count") + "."
                 );
 
@@ -251,13 +251,13 @@ namespace ODB
         public static void Engrave()
         {
             string answer = Game.QpAnswerStack.Pop();
-            Game.Level.At(Game.Player.xy).Tile.Engraving = answer;
-            Game.Log("You wrote \""+answer+"\" on the dungeon floor.");
+            World.Level.At(Game.Player.xy).Tile.Engraving = answer;
+            Game.UI.Log("You wrote \""+answer+"\" on the dungeon floor.");
         }
 
         public static void Examine(bool verbose = false)
         {
-            TileInfo ti = Game.Level.At(Game.Target);
+            TileInfo ti = World.Level.At(Game.Target);
 
             string distString =
                 (Util.Distance(Game.Player.xy, Game.Target) > 0 ?
@@ -269,7 +269,7 @@ namespace ODB
 
             if (nonSeen)
             {
-                Game.Log(
+                Game.UI.Log(
                     "You see nothing" + distString
                 );
                 return;
@@ -277,7 +277,7 @@ namespace ODB
 
             if (ti.Solid)
             {
-                Game.Log("You see a dungeon wall" + distString);
+                Game.UI.Log("You see a dungeon wall" + distString);
                 return;
             }
 
@@ -328,7 +328,7 @@ namespace ODB
             }
 
             if(str != "")
-                Game.Log(str);
+                Game.UI.Log(str);
         }
 
         public static void Fire()
@@ -336,14 +336,14 @@ namespace ODB
             if (!Game.Player.Vision[
                 Game.Target.x, Game.Target.y
             ]) {
-                Game.Log("You can't see that place.");
+                Game.UI.Log("You can't see that place.");
                 return;
             }
-            Actor a = Game.Level.ActorOnTile(Game.Target);
+            Actor a = World.Level.ActorOnTile(Game.Target);
             //todo: allow firing anyways..?
             if (a == null)
             {
-                Game.Log("Nothing there to fire upon.");
+                Game.UI.Log("Nothing there to fire upon.");
                 return;
             }
 
@@ -357,7 +357,7 @@ namespace ODB
 
             int i = IO.Indexes.IndexOf(answer[0]);
             
-            List<Item> onTile = Game.Level.ItemsOnTile(Game.Player.xy);
+            List<Item> onTile = World.Level.ItemsOnTile(Game.Player.xy);
 
             Item it = onTile[i];
             World.WorldItems.Remove(it);
@@ -375,7 +375,7 @@ namespace ODB
 
                 if (stack != null)
                 {
-                    Game.Log("Picked up " + it.GetName("count") + ".");
+                    Game.UI.Log("Picked up " + it.GetName("count") + ".");
                     stack.Stack(it);
                     //so we can get the right char below
                     it = stack;
@@ -385,7 +385,7 @@ namespace ODB
             else Game.Player.Inventory.Add(it);
 
             char index = IO.Indexes[Game.Player.Inventory.IndexOf(it)];
-            Util.Game.Log(index + " - "  + it.GetName("count") + ".");
+            Util.Game.UI.Log(index + " - "  + it.GetName("count") + ".");
 
             Game.Player.Pass();
         }
@@ -401,20 +401,20 @@ namespace ODB
             if (answer.Length <= 0) return;
 
             Point offset = Game.NumpadToDirection(answer[0]);
-            TileInfo ti = Game.Level.At(Game.Player.xy + offset);
+            TileInfo ti = World.Level.At(Game.Player.xy + offset);
 
             if(ti != null)
                 if (ti.Door == Door.Closed)
                 {
                     ti.Door = Door.Open;
-                    Game.Log("You opened the door.");
+                    Game.UI.Log("You opened the door.");
 
                     //counted as a movement action at the moment, based
                     //on the dnd rules.
                     Game.Player.Pass(true);
                     return;
                 }
-            Game.Log("There's no closed door there.");
+            Game.UI.Log("There's no closed door there.");
         }
 
         public static void Quaff()
@@ -425,7 +425,7 @@ namespace ODB
             int index = IO.Indexes.IndexOf(answer[0]);
             Item selected = Game.Player.Inventory[index];
 
-            Game.Log("You drank " + selected.GetName("a"));
+            Game.UI.Log("You drank " + selected.GetName("a"));
             DrinkableComponent dc = selected.GetComponent<DrinkableComponent>();
             Game.Caster = Game.Player;
             Spell.Spells[dc.Effect].Cast();
@@ -444,7 +444,7 @@ namespace ODB
             Item selected = Game.Player.Inventory[i];
             Game.Player.Quiver = selected;
 
-            Game.Log("Quivered "+ selected.GetName("count") + ".");
+            Game.UI.Log("Quivered "+ selected.GetName("count") + ".");
 
             Game.Player.Pass();
         }
@@ -456,7 +456,7 @@ namespace ODB
 
             Item item = Game.Player.Inventory[index];
 
-            Game.Log("You read {1}...", item.GetName("name"));
+            Game.UI.Log("You read {1}...", item.GetName("name"), Game);
 
             ReadableComponent rc =
                 item.GetComponent<ReadableComponent>();
@@ -476,7 +476,7 @@ namespace ODB
 
             Spell spell = Spell.Spells[lc.Spell];
 
-            Game.Log("You feel knowledgable about {1}!", spell.Name);
+            Game.UI.Log("You feel knowledgable about {1}!", spell.Name, Game);
             item.Identify();
             Game.Player.LearnSpell(spell);
             Game.Player.Pass();
@@ -494,7 +494,7 @@ namespace ODB
                 .Where(bp => bp.Item == it))
                 bp.Item = null;
 
-            Game.Log("Removed " + it.GetName("a") + ".");
+            Game.UI.Log("Removed " + it.GetName("a") + ".");
 
             Item stack =  Game.Player.Inventory.Find(
                 item => item != it && item.Type == it.Type);
@@ -524,13 +524,13 @@ namespace ODB
                     .Where(bp => bp.Item == it))
                     bp.Item = null;
 
-                Util.Game.Log("Sheathed " + it.GetName("a") + ".");
+                Util.Game.UI.Log("Sheathed " + it.GetName("a") + ".");
             }
             //it's our quivered item
             else
             {
                 Game.Player.Quiver = null;
-                Util.Game.Log("Unreadied " + it.GetName("count") + ".");
+                Util.Game.UI.Log("Unreadied " + it.GetName("count") + ".");
             }
 
             Game.Player.Pass();
@@ -545,7 +545,7 @@ namespace ODB
             Item item = Util.GetItemByID(id);
             if (count > item.Count)
             {
-                Game.Log("You don't have that many.");
+                Game.UI.Log("You don't have that many.");
                 return;
             }
 
@@ -574,7 +574,7 @@ namespace ODB
             {
                 //Note: This can never happen with stacking items, since there
                 //      wouldn't be any of them to select.
-                Game.Log(item.GetName("The") + " lacks charges.");
+                Game.UI.Log(item.GetName("The") + " lacks charges.");
                 return;
             }
 
@@ -608,10 +608,10 @@ namespace ODB
             List<DollSlot> equipSlots = item.GetHands(Game.Player);
 
             if (!Game.Player.CanEquip(equipSlots))
-                Game.Log("You'd need more hands to do that!");
+                Game.UI.Log("You'd need more hands to do that!");
             else
             {
-                Game.Log("Wielded " + item.GetName("a") + ".");
+                Game.UI.Log("Wielded " + item.GetName("a") + ".");
                 Game.Player.Wield(item);
                 Game.Player.Pass();
             }
@@ -634,7 +634,7 @@ namespace ODB
             if (!Game.Player.CanEquip(wc.EquipSlots))
             {
                 canEquip = false;
-                Game.Log("You need to remove something first.");
+                Game.UI.Log("You need to remove something first.");
             }
 
             if (!canEquip) return;
@@ -656,7 +656,7 @@ namespace ODB
                 World.AllItems.Add(clone);
             }
             Game.Player.Wear(item);
-            Game.Log("Wore " + item.GetName("a") + ".");
+            Game.UI.Log("Wore " + item.GetName("a") + ".");
 
             Game.Player.Pass();
         }
@@ -672,7 +672,7 @@ namespace ODB
             if (Game.Player.MpCurrent >= spell.Cost)
                 Cast(spell);
             else
-                Game.Log("You need more energy to cast that.");
+                Game.UI.Log("You need more energy to cast that.");
         }
 
     }

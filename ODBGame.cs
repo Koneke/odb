@@ -34,10 +34,6 @@ namespace ODB
         public int GameTick;
         public int Seed;
 
-        //LH-101214: Move these two world?
-        public List<Level> Levels;
-        public Level Level;
-
         public List<Brain> Brains;
 
         public bool OpenRolls = false;
@@ -46,7 +42,6 @@ namespace ODB
 
         public Actor Player;
 
-        public int MessagesLoggedSincePlayerControl;
 
         //LH-021214: Currently casting actor (so that our spell casting system
         //           can use the same Question-system as other commands.
@@ -60,10 +55,8 @@ namespace ODB
 
         public const int StandardActionLength = 10;
 
-        protected override void Initialize()
+        private void GameReferences()
         {
-            #region engineshit
-            //this is starting to look dumb
             InventoryManager.Game = 
             PlayerResponses.Game =
             ODB.Player.Game =
@@ -74,58 +67,56 @@ namespace ODB
             IO.Game =
             UI.Game =
             Game = this;
+        }
 
-            IsMouseVisible = true;
-            IsFixedTimeStep = false;
-
-            UI = new UI();
-            UI.ScreenSize = new xnaPoint(80, 25);
-            #endregion
-
+        private void Load()
+        {
             SetupMagic(); //essentially magic defs, but we hardcode magic
             SetupTickingEffects(); //same as magic, cba to add scripting
             SaveIO.ReadActorDefinitionsFromFile("Data/actors.def");
             SaveIO.ReadItemDefinitionsFromFile("Data/items.def");
             SaveIO.ReadTileDefinitionsFromFile("Data/tiles.def");
             KeyBindings.ReadBinds(SaveIO.ReadFromFile("Data/keybindings.kb"));
+        }
 
+        private void SetupSeed()
+        {
             Seed = Guid.NewGuid().GetHashCode();
             Util.SetSeed(Seed);
+        }
 
-            //todo: probably should go back to using this?
-            //IO.Load(); //load entire game (except definitions atm)
+        protected override void Initialize()
+        {
+            #region engineshit
+            GameReferences();
 
-            Game.Levels = new List<Level>();
+            IsMouseVisible = true;
+            IsFixedTimeStep = false;
 
-            Player = new Actor(
-                new Point(0, 0),
-                0,
-                Util.ADefByName("Moribund"),
-                1
-            ) { Awake = true };
+            UI = new UI { ScreenSize = new xnaPoint(80, 25) };
+            #endregion
+
+            Load();
+            SetupSeed();
 
             InvMan = new InventoryManager();
 
-            Levels.Add(Level = new Generator().Generate(null, 1));
+            QpAnswerStack = new Stack<string>();
 
-            Level.Spawn(Player);
-            Player.xy =
-                Level.Rooms
-                    .SelectMany(r => r.GetTiles())
-                    .Where(t => !t.Solid)
-                    .Where(t => t.Door == Door.None)
-                    .Where(t => Level.At(t.Position).Actor == null)
-                    .ToList()
-                    .SelectRandom().Position;
+            Player = new Actor(
+                new Point(0, 0),
+                0, Util.ADefByName("Moribund"), 1)
+            { Awake = true };
+
+            World.Levels.Add(World.Level = new Generator().Generate(null, 1));
+
+            Player.xy = World.Level.RandomOpenPoint();
+
+            World.Level.Spawn(Player);
 
             SetupBrains();
 
-            Log("Welcome!");
-
-            QpAnswerStack = new Stack<string>();
-
-            //wiz
-            Wizard.WmCursor = Game.Player.xy;
+            UI.Log("Welcome!");
 
             base.Initialize();
         }
@@ -177,8 +168,8 @@ namespace ODB
                 {
                     case InputType.Splash:
                         if (KeyBindings.Pressed(Bind.Accept))
-                            MessagesLoggedSincePlayerControl -= UI.LogSize;
-                        if (MessagesLoggedSincePlayerControl <= UI.LogSize)
+                            UI.LoggedSincePlayerInput -= UI.LogSize;
+                        if (UI.LoggedSincePlayerInput <= UI.LogSize)
                             IO.IOState = InputType.PlayerInput;
                         break;
                     case InputType.QuestionPromptSingle:
@@ -189,14 +180,7 @@ namespace ODB
                         IO.TargetInput();
                         break;
                     case InputType.PlayerInput:
-                        if (MessagesLoggedSincePlayerControl > UI.LogSize)
-                        {
-                            IO.IOState = InputType.Splash;
-                            break;
-                        }
-                        MessagesLoggedSincePlayerControl = 0;
-                        if (KeyBindings.Pressed(Bind.Inventory) && !WizMode)
-                            IO.IOState = InputType.Inventory;
+                        if (UI.CheckMorePrompt()) break;
                         if (Player.Cooldown == 0)
                             ODB.Player.PlayerInput();
                         else ProcessNPCs(); //mind: also ticks gameclock
@@ -214,7 +198,7 @@ namespace ODB
 
             //should probably find a better place to tick this
             foreach (Actor a in World.WorldActors
-                .Where(a => a.LevelID == Level.ID))
+                .Where(a => a.LevelID == World.Level.ID))
             {
                 a.ResetVision();
                 foreach (Room r in Util.GetRooms(a))
@@ -249,7 +233,7 @@ namespace ODB
             if(Brains == null) Brains = new List<Brain>();
             else Brains.Clear();
             foreach (Actor actor in World.WorldActors
-                .Where(a => a.LevelID == Game.Level.ID))
+                .Where(a => a.LevelID == World.Level.ID))
                 //shouldn't be needed, but
                 //what did i even mean with that comment
                 if (actor.ID == 0) Game.Player = actor;
@@ -260,15 +244,15 @@ namespace ODB
         {
             //assuming only one connector
             Point target = newLevel.Connectors
-                .First(lc => lc.Target == Game.Level).Position;
+                .First(lc => lc.Target == World.Level).Position;
 
             Game.Player.LevelID = newLevel.ID;
 
-            Level = newLevel;
+            World.Level = newLevel;
             foreach (Item item in Player.Inventory)
                 item.MoveTo(newLevel);
 
-            foreach (Actor a in Level.Actors)
+            foreach (Actor a in World.Level.Actors)
             {
                 //reset vision, incase the level we moved to is a different size
                 a.Vision = null;
@@ -289,7 +273,7 @@ namespace ODB
                 CastType = InputType.None,
                 Effect = () =>
                 {
-                    Game.Log(
+                    Game.UI.Log(
                         Game.Caster.GetName("Name") + " " +
                         Game.Caster.Verb("#feel") + " " +
                         "better!"
@@ -304,16 +288,14 @@ namespace ODB
                 CastType = InputType.Targeting,
                 Effect = () =>
                 {
-                    Actor target = Game.Level.ActorOnTile(Game.Target);
+                    Actor target = World.Level.ActorOnTile(Game.Target);
                     if (target == null)
                     {
-                        Game.Log("The bolt fizzles in the air.");
+                        Game.UI.Log("The bolt fizzles in the air.");
                         return;
                     }
-                    Game.Log(
-                        "The forcebolt hits {1}.",
-                        target.GetName("the")
-                    );
+                    Game.UI.Log("The forcebolt hits {1}.",
+                        target.GetName("the"));
                     target.Damage(Util.Roll("2d4"), Game.Caster);
                 },
                 CastDifficulty = 10,
@@ -366,7 +348,7 @@ namespace ODB
                     //though, so that's neat.
                     //ReSharper disable once UnusedVariable
                     string answer = Game.QpAnswerStack.Pop();
-                    Game.Log(
+                    Game.UI.Log(
                         Game.Player.GetName("Name") +
                         " " +
                         Game.Player.Verb("is") +
@@ -380,7 +362,7 @@ namespace ODB
 
                     if (Game.Player.HasEffect(StatusType.Bleed)) return;
 
-                    Game.Log(
+                    Game.UI.Log(
                         Game.Player.GetName("Name") +
                         Game.Player.Verb("start") + " bleeding!"
                     );
@@ -431,9 +413,9 @@ namespace ODB
                 delegate(Actor holder)
                 {
                     if(holder == Game.Player)
-                        Game.Log("Your wound bleeds!");
+                        Game.UI.Log("Your wound bleeds!");
                     else
-                        Game.Log(
+                        Game.UI.Log(
                             holder.GetName("Name")+"'s wound bleeds!"
                         );
                     //todo: getting killed by this effect does currently
@@ -466,41 +448,6 @@ namespace ODB
             return p;
         }
 
-        public void Log(string s)
-        {
-            MessagesLoggedSincePlayerControl++;
-
-            //always reset colouring
-            s = s + "#ffffff";
-
-            List<ColorString> rows = new List<ColorString>();
-            ColorString cs = new ColorString(s);
-            int x = 0;
-            while(x < cs.String.Length)
-            {
-                ColorString row = cs.Clone();
-                row.SubString(x, 80);
-                rows.Add(row);
-                x += 80;
-                if (cs.String.Length - x <= 0) continue;
-
-                if (row.ColorPoints.Count > 0)
-                {
-                    cs.ColorPoints.Add(
-                        new Tuple<int, Color>(
-                            x, row.ColorPoints.Last().Item2
-                        )
-                    );
-                }
-            }
-            foreach (ColorString c in rows)
-                UI.Log.Add(c);
-        }
-        public void Log(params object[] args)
-        {
-            Game.Log(String.Format((string)args[0], args));
-        }
-
         //ReSharper disable once InconsistentNaming
         //LH-011214: NPC is a perfectly fine acronym thank you
         public void ProcessNPCs()
@@ -515,7 +462,7 @@ namespace ODB
 
                 foreach (Actor a in
                     World.WorldActors
-                    .Where(a => a.LevelID == Level.ID)
+                    .Where(a => a.LevelID == World.Level.ID)
                     .Where(a => a.Awake)
                 )
                     a.Cooldown--;
@@ -529,6 +476,7 @@ namespace ODB
                         a.HpCurrent = Math.Min(a.HpMax, a.HpCurrent + 1);
                         a.HpRegCooldown = 100;
                     }
+                    // ReSharper disable once InvertIf
                     if (a.MpRegCooldown == 0)
                     {
                         a.MpCurrent = Math.Min(a.MpMax, a.MpCurrent + 1);

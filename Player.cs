@@ -34,6 +34,9 @@ namespace ODB
             }
             #endregion
 
+            if (KeyBindings.Pressed(Bind.Inventory) && !Game.WizMode)
+                IO.IOState = InputType.Inventory;
+
             CheckApply();
             CheckChant();
             CheckClose();
@@ -61,16 +64,16 @@ namespace ODB
 
             bool descending =
                 (KeyBindings.Pressed(Bind.Down) &&
-                    Game.Level.At(Game.Player.xy).Stairs == Stairs.Down);
+                    World.Level.At(Game.Player.xy).Stairs == Stairs.Down);
             bool ascending = 
                 (KeyBindings.Pressed(Bind.Up) &&
-                Game.Level.At(Game.Player.xy).Stairs == Stairs.Up);
+                World.Level.At(Game.Player.xy).Stairs == Stairs.Up);
 
             if (descending || ascending)
             {
                 //there should always be a connector at the stairs,
                 //so we assume there is one.
-                LevelConnector connector = Game.Level.Connectors
+                LevelConnector connector = World.Level.Connectors
                     .First(lc => lc.Position == Game.Player.xy);
                 
                 if(descending)
@@ -78,21 +81,20 @@ namespace ODB
                     {
                         Generator g = new Generator();
                         connector.Target = g.Generate(
-                            Game.Level,
-                            Game.Level.Depth + 1
+                            World.Level,
+                            World.Level.Depth + 1
                         );
-                        Game.Levels.Add(connector.Target);
+                        World.Levels.Add(connector.Target);
                     }
 
                 if (connector.Target == null) return false;
 
                 Game.SwitchLevel(connector.Target, true);
-                Game.Log(
+                Game.UI.Log(
                     "You {1} the stairs...",
                     descending
                     ? "descend"
-                    : "ascend"
-                );
+                    : "ascend", Game);
             }
             #endregion
 
@@ -132,7 +134,7 @@ namespace ODB
 
             if (IO.AcceptedInput.Count <= 0)
             {
-                Game.Log("You don't have anything to apply or use.");
+                Game.UI.Log("You don't have anything to apply or use.");
                 return;
             }
 
@@ -186,7 +188,7 @@ namespace ODB
 
             if (IO.AcceptedInput.Count <= 0)
             {
-                Game.Log("You have nothing you can drop.");
+                Game.UI.Log("You have nothing you can drop.");
                 return;
             }
 
@@ -225,16 +227,16 @@ namespace ODB
                     InputType.QuestionPromptSingle,
                     PlayerResponses.Eat
                 );
-            else Game.Log("You have nothing to eat.");
+            else Game.UI.Log("You have nothing to eat.");
         }
 
         private static void CheckEngrave()
         {
             if (!KeyBindings.Pressed(Bind.Engrave)) return;
 
-            if(Game.Level.At(Game.Player.xy).Stairs != Stairs.None)
+            if(World.Level.At(Game.Player.xy).Stairs != Stairs.None)
             {
-                Game.Log("You can't engrave here.");
+                Game.UI.Log("You can't engrave here.");
                 return;
             }
 
@@ -259,7 +261,7 @@ namespace ODB
 
             if (ammo == null)
             {
-                Game.Log("You need something to fire.");
+                Game.UI.Log("You need something to fire.");
                 return;
             }
 
@@ -307,7 +309,7 @@ namespace ODB
             );
 
             List<Actor> visible =
-                Game.Level.Actors
+                World.Level.Actors
                 .Where(a => a != Game.Player)
                 .Where(a => Game.Player.Sees(a.xy))
                 .ToList();
@@ -326,11 +328,11 @@ namespace ODB
 
             if (Game.Player.Inventory.Count >= InventoryManager.InventorySize)
             {
-                Game.Log("You are carrying too much!");
+                Game.UI.Log("You are carrying too much!");
                 return;
             }
 
-            List<Item> onFloor = Game.Level.ItemsOnTile(Game.Player.xy);
+            List<Item> onFloor = World.Level.ItemsOnTile(Game.Player.xy);
             if (onFloor.Count > 1)
             {
                 IO.AcceptedInput.Clear();
@@ -406,7 +408,7 @@ namespace ODB
                     InputType.QuestionPromptSingle,
                     PlayerResponses.Quaff
                 );
-            else Game.Log("You have nothing to drink.");
+            else Game.UI.Log("You have nothing to drink.");
 
         }
 
@@ -436,7 +438,7 @@ namespace ODB
                     InputType.QuestionPromptSingle,
                     PlayerResponses.Quiver
                 );
-            else Game.Log("You have nothing to quiver.");
+            else Game.UI.Log("You have nothing to quiver.");
         }
 
         private static void CheckRead()
@@ -451,7 +453,7 @@ namespace ODB
 
             if (readable.Count <= 0)
             {
-                Game.Log("You have nothing to read.");
+                Game.UI.Log("You have nothing to read.");
                 return;
             }
 
@@ -505,7 +507,7 @@ namespace ODB
             }
             else
             {
-                Game.Log("You have nothing to remove, you shameless beast!");
+                Game.UI.Log("You have nothing to remove, you shameless beast!");
             }
         }
 
@@ -548,7 +550,7 @@ namespace ODB
             }
             else
             {
-                Game.Log("You don't have anything quivered or wielded!");
+                Game.UI.Log("You don't have anything quivered or wielded!");
             }
         }
 
@@ -562,7 +564,7 @@ namespace ODB
 
             if(wieldable.Count <= 0)
             {
-                Game.Log("You have nothing to wield.");
+                Game.UI.Log("You have nothing to wield.");
                 return;
             }
 
@@ -595,7 +597,7 @@ namespace ODB
 
             if (wearable.Count <= 0)
             {
-                Game.Log("You have nothing to wear.");
+                Game.UI.Log("You have nothing to wear.");
                 return;
             }
 
@@ -626,7 +628,7 @@ namespace ODB
 
             if (IO.AcceptedInput.Count <= 0)
             {
-                Game.Log("You don't know any spells.");
+                Game.UI.Log("You don't know any spells.");
                 return;
             }
 

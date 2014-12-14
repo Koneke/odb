@@ -97,7 +97,7 @@ namespace ODB
             } else log += "";
             args = args ?? new string[0];
 
-            Game.Log(log);
+            Game.UI.Log(log);
 
             bool realcmd = false;
 
@@ -115,7 +115,7 @@ namespace ODB
                 case "lv": realcmd = LevelCommands(cmd, args); break;
             }
 
-            if (!realcmd) Game.Log("No such command: " + cmd);
+            if (!realcmd) Game.UI.Log("No such command: " + cmd);
 
             IO.Answer = "";
         }
@@ -126,14 +126,14 @@ namespace ODB
             {
                 case "togglerolls":
                     Game.OpenRolls = !Game.OpenRolls;
-                    Game.Log("=> " + Game.OpenRolls);
+                    Game.UI.Log("=> " + Game.OpenRolls);
                     break;
                 //get item definition (id) (by name)
                 case "gid":
-                    Game.Log(IO.WriteHex(Util.ItemDefByName(args[0]).Type, 4));
+                    Game.UI.Log(IO.WriteHex(Util.ItemDefByName(args[0]).Type, 4));
                     break;
                 case "gad":
-                    Game.Log(IO.WriteHex(Util.ADefByName(args[0]).Type, 4));
+                    Game.UI.Log(IO.WriteHex(Util.ADefByName(args[0]).Type, 4));
                     break;
                 case "sa":
                 case "spawnactor":
@@ -141,12 +141,12 @@ namespace ODB
 
                     if (args.Length < 1)
                     {
-                        Game.Log("");
+                        Game.UI.Log("");
                         break;
                     }
                     Actor act = new Actor(
                         WmCursor,
-                        Game.Level.ID,
+                        World.Level.ID,
                         Util.ADefByName(args[0]),
                         args.Length > 1
                         ? IO.ReadHex(args[1])
@@ -154,7 +154,7 @@ namespace ODB
                     );
                     World.WorldActors.Add(act);
                     Game.Brains.Add(new Brain(act));
-                    Game.Level.CalculateActorPositions();
+                    World.Level.CalculateActorPositions();
                     break;
                     #endregion
                 case "si":
@@ -162,7 +162,7 @@ namespace ODB
                     #region spawnitem
                     Item it = new Item(
                         WmCursor,
-                        Game.Level.ID,
+                        World.Level.ID,
                         Util.ItemDefByName(args[0]),
                         IO.ReadHex(args[1])
                     );
@@ -184,7 +184,7 @@ namespace ODB
                 case "sp":
                 case "setplayer":
                     #region setplayer
-                    Game.Player = Game.Level.ActorOnTile(
+                    Game.Player = World.Level.ActorOnTile(
                         new Point(WmCursor.x, WmCursor.y));
                     break;
                     #endregion
@@ -195,7 +195,7 @@ namespace ODB
                 case "printseed":
                 case "prints":
                 case "ps":
-                    Game.Log(Game.Seed + "");
+                    Game.UI.Log(Game.Seed + "");
                     break;
                 case "save":
                     SaveIO.Save();
@@ -212,49 +212,39 @@ namespace ODB
         {
             switch (cmd)
             {
-                case "lv-moveup":
-                    #region mu
-                    int depth = Game.Levels.IndexOf(Game.Level);
-                    if (depth > 0)
-                    {
-                        Game.Levels.Remove(Game.Level);
-                        Game.Levels.Insert(depth - 1, Game.Level);
-                    }
-                    break;
-                    #endregion
                 case "lv-door":
                     #region door
-                    if (Game.Level.At(WmCursor) != null)
+                    if (World.Level.At(WmCursor) != null)
                     {
-                        Tile t = Game.Level.At(WmCursor).Tile;
+                        Tile t = World.Level.At(WmCursor).Tile;
                         t.Door = (Door)((((int)t.Door) + 1) % 3);
                     }
                     break;
                     #endregion
                 case "lv-stairs":
                     #region stairs
-                    if (Game.Level.At(WmCursor) != null)
+                    if (World.Level.At(WmCursor) != null)
                     {
-                        Tile t = Game.Level.At(WmCursor).Tile;
+                        Tile t = World.Level.At(WmCursor).Tile;
                         t.Stairs = (Stairs)((((int)t.Stairs) + 1) % 3);
                     }
                     break;
                     #endregion
                 case "lv-deltile":
                     #region deltile
-                    Game.Level.At(WmCursor).Tile = null;
+                    World.Level.At(WmCursor).Tile = null;
                     break;
                     #endregion
                 case "lv-delroom":
                     #region delroom
                     List<Room> roomsAtCursor =
                         Util.GetRooms(new Point(WmCursor.x, WmCursor.y));
-                    Game.Level.Rooms.RemoveAll(roomsAtCursor.Contains);
+                    World.Level.Rooms.RemoveAll(roomsAtCursor.Contains);
                     break;
                     #endregion
                 case "lv-settile":
                     #region settile
-                    Game.Level.At(WmCursor).Tile.Definition =
+                    World.Level.At(WmCursor).Tile.Definition =
                         Util.TileDefinitionByName(IO.ReadHex(args[0]));
                     break;
                     #endregion
@@ -263,8 +253,8 @@ namespace ODB
                     #region createroom
                     if (args.Length >= 5)
                     {
-                        Game.Level.CreateRoom(
-                            Game.Level,
+                        World.Level.CreateRoom(
+                            World.Level,
                             new Rect(
                                 new Point(
                                     IO.ReadHex(args[0]),
@@ -280,53 +270,47 @@ namespace ODB
                                 ? Util.TileDefinitionByName(IO.ReadHex(args[5]))
                                 : null
                         );
-                        Game.Level.CalculateRoomLinks();
+                        World.Level.CalculateRoomLinks();
                     }
                     break;
                     #endregion
                 case "lv-mr":
                 case "lv-mergerooms":
-                    Room a = Util.Game.Level.Rooms[IO.ReadHex(args[0])];
-                    Room b = Util.Game.Level.Rooms[IO.ReadHex(args[1])];
+                    Room a = World.Level.Rooms[IO.ReadHex(args[0])];
+                    Room b = World.Level.Rooms[IO.ReadHex(args[1])];
                     a.Rects.AddRange(b.Rects);
-                    Game.Level.Rooms.Remove(b);
-                    Game.Level.CalculateRoomLinks();
-                    Game.Level.CalculateActorPositions();
+                    World.Level.Rooms.Remove(b);
+                    World.Level.CalculateRoomLinks();
+                    World.Level.CalculateActorPositions();
                     break;
                 case "lv-rid":
-                    Game.Log(Util.GetRooms(WmCursor).Aggregate(
+                    Game.UI.Log(Util.GetRooms(WmCursor).Aggregate(
                         "Rooms at cursor:",
-                        (c, n) => c + " " + Game.Level.Rooms.IndexOf(n))
+                        (c, n) => c + " " + World.Level.Rooms.IndexOf(n))
                     );
                     break;
                 case "lv-savelvl":
                 case "lv-sl":
                     #region save
-                    Game.Level.WriteLevelSave("Save/" + args[0]);
+                    World.Level.WriteLevelSave("Save/" + args[0]);
                     break;
                     #endregion
                 case "lv-loadlvl":
                 case "lv-ll":
                     #region load
-                    Game.Level.LoadLevelSave("Save/" + args[0]);
+                    World.Level.LoadLevelSave("Save/" + args[0]);
                     Game.SetupBrains();
-                    Game.Level.CalculateActorPositions();
-                    break;
-                    #endregion
-                case "lv-cl":
-                case "lv-countlvl":
-                    #region countlevel
-                    Game.Log(Game.Levels.Count + "");
+                    World.Level.CalculateActorPositions();
                     break;
                     #endregion
                 case "lv-engrave":
                     #region engrave
-                    Game.Level.At(WmCursor).Tile.Engraving = args[0];
+                    World.Level.At(WmCursor).Tile.Engraving = args[0];
                     break;
                     #endregion
                 case "lv-name":
                     #region name
-                    Game.Level.Name = args[0];
+                    World.Level.Name = args[0];
                     break;
                     #endregion
                 default: return false;
@@ -336,11 +320,11 @@ namespace ODB
 
         private static bool ActorDefinitionCommands(string cmd, string[] args)
         {
-            ActorDefinition adef = Game.Level.ActorOnTile(WmCursor).Definition;
+            ActorDefinition adef = World.Level.ActorOnTile(WmCursor).Definition;
 
             if (adef == null)
             {
-                Game.Log("No actor on tile.");
+                Game.UI.Log("No actor on tile.");
                 return true;
             }
 
@@ -350,7 +334,7 @@ namespace ODB
                 case "ad-get":
                     break;
                 case "ad-p":
-                    Game.Log(adef.WriteActorDefinition().ToString());
+                    Game.UI.Log(adef.WriteActorDefinition().ToString());
                     break;
                 case "ad-bg":
                     adef.Background = IO.ReadNullableColor(args[0]);
@@ -413,12 +397,12 @@ namespace ODB
 
         private static bool ItemDefinitionCommands(string cmd, string[] args)
         {
-            ItemDefinition idef = Game.Level.ItemsOnTile(WmCursor)
+            ItemDefinition idef = World.Level.ItemsOnTile(WmCursor)
                 [0].Definition;
 
             if (idef == null)
             {
-                Game.Log("No item on tile");
+                Game.UI.Log("No item on tile");
                 return true; //no need to log bad cmd err, already logging this
             }
 
@@ -429,12 +413,12 @@ namespace ODB
                     #region get
                     switch (args[0])
                     {
-                        case "bg": Game.Log(IO.Write(idef.Background)); break;
-                        case "fg": Game.Log(IO.Write(idef.Background)); break;
-                        case "tile": Game.Log(idef.Tile); break;
-                        case "name": Game.Log(idef.Name); break;
-                        case "stacking": Game.Log(idef.Stacking+""); break;
-                        case "cat": Game.Log(IO.WriteHex(idef.Category, 4));
+                        case "bg": Game.UI.Log(IO.Write(idef.Background)); break;
+                        case "fg": Game.UI.Log(IO.Write(idef.Background)); break;
+                        case "tile": Game.UI.Log(idef.Tile); break;
+                        case "name": Game.UI.Log(idef.Name); break;
+                        case "stacking": Game.UI.Log(idef.Stacking+""); break;
+                        case "cat": Game.UI.Log(IO.WriteHex(idef.Category, 4));
                             break;
                     }
                     break;
@@ -443,7 +427,7 @@ namespace ODB
                     ItemDefinition.IdentifiedDefs.Add(idef.Type);
                     break;
                 case "id-p":
-                    Game.Log(idef.WriteItemDefinition().ToString());
+                    Game.UI.Log(idef.WriteItemDefinition().ToString());
                     break;
                 case "id-bg":
                     idef.Background = IO.ReadNullableColor(args[0]);
@@ -473,11 +457,11 @@ namespace ODB
 
         private static bool ActorInstanceCommands(string cmd, string[] args)
         {
-            Actor a = Game.Level.ActorOnTile(WmCursor);
+            Actor a = World.Level.ActorOnTile(WmCursor);
 
             if (a == null)
             {
-                Game.Log("No actor on tile");
+                Game.UI.Log("No actor on tile");
                 return true;
             }
 
@@ -494,15 +478,15 @@ namespace ODB
                 case "ai-p":
                 case "ai-print":
                     #region pa
-                    Game.Log(
-                        Game.Level.ActorOnTile(WmCursor).WriteActor().ToString()
+                    Game.UI.Log(
+                        World.Level.ActorOnTile(WmCursor).WriteActor().ToString()
                     );
                     break;
                     #endregion
                 case "ai-pd":
                 case "ai-pdef":
                     #region pad
-                    Game.Log(
+                    Game.UI.Log(
                         a.Definition.WriteActorDefinition().ToString()
                     );
                     break;
@@ -569,10 +553,10 @@ namespace ODB
 
         private static bool ItemInstanceCommands(string cmd, string[] args)
         {
-            List<Item> items = Game.Level.ItemsOnTile(WmCursor);
+            List<Item> items = World.Level.ItemsOnTile(WmCursor);
 
             if (items.Count <= 0) {
-                Game.Log("No item on tile.");
+                Game.UI.Log("No item on tile.");
                 return true;
             }
 
@@ -583,15 +567,15 @@ namespace ODB
                     break;
                 case "ii-sdef":
                 case "ii-setdef":
-                    foreach (Item it in Game.Level.ItemsOnTile(WmCursor))
+                    foreach (Item it in World.Level.ItemsOnTile(WmCursor))
                         it.Definition = ItemDefinition.ItemDefinitions
                             [IO.ReadHex(args[0])];
                     break;
                 case "ii-p":
                 case "ii-print":
                     #region pi
-                    foreach(Item it in Game.Level.ItemsOnTile(WmCursor))
-                        Game.Log(
+                    foreach(Item it in World.Level.ItemsOnTile(WmCursor))
+                        Game.UI.Log(
                             it.WriteItem().ToString()
                         );
                     break;
@@ -599,28 +583,28 @@ namespace ODB
                 case "ii-pd":
                 case "ii-pdef":
                     #region pid
-                    foreach(Item piditem in Game.Level.ItemsOnTile(WmCursor))
-                        Game.Log(
+                    foreach(Item piditem in World.Level.ItemsOnTile(WmCursor))
+                        Game.UI.Log(
                             piditem.Definition.WriteItemDefinition().ToString()
                         );
                     break;
                     #endregion
                 case "ii-id":
                     #region id
-                    foreach (Item iditem in Game.Level.ItemsOnTile(WmCursor))
+                    foreach (Item iditem in World.Level.ItemsOnTile(WmCursor))
                         iditem.Identify();
                     break;
                     #endregion
                 case "ii-unid":
                     #region unid
-                    foreach (Item iditem in Game.Level.ItemsOnTile(WmCursor))
+                    foreach (Item iditem in World.Level.ItemsOnTile(WmCursor))
                         ItemDefinition.IdentifiedDefs.Remove(iditem.Type);
                     break;
                     #endregion
                 case "ii-am":
                 case "ii-addmod":
                     #region addmod
-                    foreach (Item item in Game.Level.ItemsOnTile(WmCursor))
+                    foreach (Item item in World.Level.ItemsOnTile(WmCursor))
                     {
                         item.Mods.Add(
                             new Mod(
@@ -637,7 +621,7 @@ namespace ODB
                 case "rm": case "remmod": case "removemod":
                     #region remove mod
                     bool removed = false;
-                    foreach (Item item in Game.Level.ItemsOnTile(WmCursor))
+                    foreach (Item item in World.Level.ItemsOnTile(WmCursor))
                     {
                         if (removed) break;
                         for (int i = 0; i < item.Mods.Count; i++)

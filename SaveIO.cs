@@ -11,11 +11,11 @@ namespace ODB
         public static void Save()
         {
             Stream stream = new Stream();
-            stream.Write(IO.Game.Levels.Count, 2);
+            stream.Write(World.Levels.Count, 2);
             stream.Write(IO.Game.Player.LevelID, 2);
 
-            for (int i = 0; i < IO.Game.Levels.Count; i++)
-                IO.Game.Levels[i].WriteLevelSave("Save/level" + i + ".sv");
+            for (int i = 0; i < World.Levels.Count; i++)
+                World.Levels[i].WriteLevelSave("Save/level" + i + ".sv");
 
             //okay, so I really don't think anyone's going to hit
             //gametick 0xFFFFFFFF, that'd be ludicrous.
@@ -59,20 +59,20 @@ namespace ODB
             int levels = stream.ReadHex(2);
             int playerLocation = stream.ReadHex(2);
 
-            if (IO.Game.Levels != null)
+            if (World.Levels != null)
             {
-                for (int i = 0; i < IO.Game.Levels.Count; i++)
-                    IO.Game.Levels[i] = null;
-                IO.Game.Levels.Clear();
-            } else IO.Game.Levels = new List<Level>();
+                for (int i = 0; i < World.Levels.Count; i++)
+                    World.Levels[i] = null;
+                World.Levels.Clear();
+            } else World.Levels = new List<Level>();
 
             for (int i = 0; i < levels; i++)
-                IO.Game.Levels.Add(new Level("Save/level" + i + ".sv"));
+                World.Levels.Add(new Level("Save/level" + i + ".sv"));
 
             Util.Game.GameTick = stream.ReadHex(8);
             Util.Game.Seed = stream.ReadHex(8);
             //Util.Game.Food = stream.ReadHex(8);
-            Util.Game.Level = Util.Game.Levels[playerLocation];
+            World.Level = World.Levels[playerLocation];
 
             string containers = stream.ReadString();
             List<int> containerItems = new List<int>();
@@ -146,7 +146,7 @@ namespace ODB
             }
             catch (UnauthorizedAccessException)
             {
-                IO.Game.Log(
+                IO.Game.UI.Log(
                     "~ERROR~: Could not write to file " +
                         cwd + "/" + path + " (Unauthorized access)."
                     );

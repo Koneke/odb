@@ -96,7 +96,7 @@ namespace ODB
                 if (State != InventoryState.Browsing)
                 {
                     State = InventoryState.Browsing;
-                    Game.Log("Nevermind.");
+                    Game.UI.Log("Nevermind.");
                 }
                 IO.IOState = InputType.PlayerInput;
             }
@@ -113,7 +113,7 @@ namespace ODB
                     if (KeyBindings.Pressed(Bind.Inv_Cancel))
                     {
                         State = InventoryState.Browsing;
-                        Game.Log("Nevermind.");
+                        Game.UI.Log("Nevermind.");
                     }
 
                     if (KeyBindings.Pressed(Bind.Inv_Select))
@@ -124,7 +124,7 @@ namespace ODB
 
                         if (SelectedItem == _selected)
                         {
-                            Game.Log("You can't bend space and/or time!");
+                            Game.UI.Log("You can't bend space and/or time!");
                             break;
                         }
 
@@ -136,7 +136,7 @@ namespace ODB
                     if (KeyBindings.Pressed(Bind.Inv_Cancel))
                     {
                         State = InventoryState.Browsing;
-                        Game.Log("Nevermind.");
+                        Game.UI.Log("Nevermind.");
                     }
 
                     if (KeyBindings.Pressed(Bind.Inv_Select))
@@ -186,7 +186,7 @@ namespace ODB
             {
                 _selected = SelectedItem;
                 State = InventoryState.Inserting;
-                Game.Log("Put " + SelectedItem.GetName("name") + " into what?");
+                Game.UI.Log("Put " + SelectedItem.GetName("name") + " into what?");
             }
 
             if (CurrentContainer != -1) return;
@@ -207,7 +207,7 @@ namespace ODB
 
                 State = InventoryState.Joining;
                 _selected = SelectedItem;
-                Game.Log("Join " + _selected.GetName("count") +
+                Game.UI.Log("Join " + _selected.GetName("count") +
                     " with what?");
                 Selection--;
             }
@@ -220,7 +220,7 @@ namespace ODB
         {
             if (Game.Player.Inventory.Count >= InventorySize)
             {
-                Game.Log("You are carrying too much!");
+                Game.UI.Log("You are carrying too much!");
                 return;
             }
 
@@ -246,8 +246,8 @@ namespace ODB
             else
             {
                 if (Game.Player.IsWielded(item))
-                    Game.Log("You have to sheath that first.");
-                else Game.Log("You have to remove that first");
+                    Game.UI.Log("You have to sheath that first.");
+                else Game.UI.Log("You have to remove that first");
             }
         }
 
@@ -263,13 +263,13 @@ namespace ODB
         {
             if (Game.Player.IsWorn(item))
             {
-                Game.Log("You are busy wearing that.");
+                Game.UI.Log("You are busy wearing that.");
                 return;
             }
 
             if (Game.Player.IsWielded(item))
             {
-                Game.Log("You are already wielding that.");
+                Game.UI.Log("You are already wielding that.");
                 return;
             }
 
@@ -281,19 +281,19 @@ namespace ODB
         {
             if (!item.HasComponent<WearableComponent>())
             {
-                Game.Log("You can't wear that!");
+                Game.UI.Log("You can't wear that!");
                 return;
             }
 
             if (Game.Player.IsWorn(item))
             {
-                Game.Log("You are already wearing that.");
+                Game.UI.Log("You are already wearing that.");
                 return;
             }
 
             if (Game.Player.IsWielded(item))
             {
-                Game.Log("You are busy wielding that.");
+                Game.UI.Log("You are busy wielding that.");
                 return;
             }
 
@@ -303,7 +303,7 @@ namespace ODB
 
         private static void PutInto(Item item, int container)
         {
-            Game.Log(
+            Game.UI.Log(
                 "Put " +
                     item.GetName("name") + " into " +
                     Util.GetItemByID(container).GetName("name") + "."
@@ -330,7 +330,7 @@ namespace ODB
                     PlayerResponses.Sheath();
             }
             else
-                Game.Log("You are not wielding that.");
+                Game.UI.Log("You are not wielding that.");
         }
 
         private static void CheckRemove(Item item)
@@ -343,7 +343,7 @@ namespace ODB
                     PlayerResponses.Remove();
             }
             else
-                Game.Log("You are not wearing that.");
+                Game.UI.Log("You are not wearing that.");
         }
 
         private static void CheckEat(Item item)
@@ -371,7 +371,7 @@ namespace ODB
             if (State != InventoryState.Browsing)
             {
                 State = InventoryState.Browsing;
-                Game.Log("Nevermind.");
+                Game.UI.Log("Nevermind.");
             }
             else IO.IOState = InputType.PlayerInput;
         }
