@@ -55,7 +55,6 @@ namespace ODB
         //           worry about this being rewritten as we do stuff.
         public Actor Caster;
         public Point Target;
-        public Spell TargetedSpell;
         public Action QuestionReaction;
         public Stack<string> QpAnswerStack;
 
@@ -80,7 +79,6 @@ namespace ODB
             IsFixedTimeStep = false;
 
             UI = new UI();
-
             UI.ScreenSize = new xnaPoint(80, 25);
             #endregion
 
@@ -89,6 +87,7 @@ namespace ODB
             SaveIO.ReadActorDefinitionsFromFile("Data/actors.def");
             SaveIO.ReadItemDefinitionsFromFile("Data/items.def");
             SaveIO.ReadTileDefinitionsFromFile("Data/tiles.def");
+            KeyBindings.ReadBinds(SaveIO.ReadFromFile("Data/keybindings.kb"));
 
             Seed = Guid.NewGuid().GetHashCode();
             Util.SetSeed(Seed);
@@ -119,33 +118,14 @@ namespace ODB
                     .ToList()
                     .SelectRandom().Position;
 
-            //todo: these should probably not be lastingeffects
-            //      they probably should be hardcoded really.
-            LastingEffect le = new LastingEffect(
-                Player.ID,
-                StatusType.None,
-                -1,
-                Util.TickingEffectDefinitionByName("passive hp regeneration")
-            );
-            Game.Player.AddEffect(le);
-            le = new LastingEffect(
-                Player.ID,
-                StatusType.None,
-                -1,
-                Util.TickingEffectDefinitionByName("passive mp regeneration")
-            );
-            Game.Player.AddEffect(le);
-
             SetupBrains();
 
-            Log("#ff0000" + "Welcome!");
+            Log("Welcome!");
 
             QpAnswerStack = new Stack<string>();
 
             //wiz
             Wizard.WmCursor = Game.Player.xy;
-
-            KeyBindings.ReadBinds(SaveIO.ReadFromFile("Data/keybindings.kb"));
 
             base.Initialize();
         }
@@ -471,22 +451,14 @@ namespace ODB
             Point p;
             switch (c)
             {
-                case 'y':
-                case (char)Keys.D7: p = new Point(-1, -1); break;
-                case 'k':
-                case (char)Keys.D8: p = new Point(0, -1); break;
-                case 'u':
-                case (char)Keys.D9: p = new Point(1, -1); break;
-                case 'h':
-                case (char)Keys.D4: p = new Point(-1, 0); break;
-                case 'l':
-                case (char)Keys.D6: p = new Point(1, 0); break;
-                case 'b':
-                case (char)Keys.D1: p = new Point(-1, 1); break;
-                case 'j':
-                case (char)Keys.D2: p = new Point(0, 1); break;
-                case 'n':
-                case (char)Keys.D3: p = new Point(1, 1); break;
+                case 'y': case (char)Keys.D7: p = new Point(-1, -1); break;
+                case 'k': case (char)Keys.D8: p = new Point(0, -1); break;
+                case 'u': case (char)Keys.D9: p = new Point(1, -1); break;
+                case 'h': case (char)Keys.D4: p = new Point(-1, 0); break;
+                case 'l': case (char)Keys.D6: p = new Point(1, 0); break;
+                case 'b': case (char)Keys.D1: p = new Point(-1, 1); break;
+                case 'j': case (char)Keys.D2: p = new Point(0, 1); break;
+                case 'n': case (char)Keys.D3: p = new Point(1, 1); break;
                 default: throw new Exception(
                         "Bad input (expected numpad keycode, " +
                         "got something weird instead).");
@@ -547,6 +519,23 @@ namespace ODB
                     .Where(a => a.Awake)
                 )
                     a.Cooldown--;
+
+                foreach (Actor a in World.WorldActors)
+                {
+                    a.HpRegCooldown--;
+                    a.MpRegCooldown--;
+                    if (a.HpRegCooldown == 0)
+                    {
+                        a.HpCurrent = Math.Min(a.HpMax, a.HpCurrent + 1);
+                        a.HpRegCooldown = 100;
+                    }
+                    if (a.MpRegCooldown == 0)
+                    {
+                        a.MpCurrent = Math.Min(a.MpMax, a.MpCurrent + 1);
+                        a.MpRegCooldown = 300 -
+                            a.Get(Stat.Intelligence) * 10;
+                    }
+                }
 
                 //todo: should apply to everyone?
                 Game.Player.RemoveFood(1);

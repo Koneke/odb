@@ -100,6 +100,9 @@ namespace ODB
         public int Cooldown;
         private int _food;
 
+        public int HpRegCooldown;
+        public int MpRegCooldown;
+
         public List<BodyPart> PaperDoll;
         public List<Item> Inventory;
         public List<LastingEffect> LastingEffects;
@@ -169,6 +172,9 @@ namespace ODB
             Intrinsics = new List<Mod>(Definition.SpawnIntrinsics);
             Awake = false;
             LastingEffects = new List<LastingEffect>();
+
+            HpRegCooldown = 10;
+            MpRegCooldown = 30 - _intelligence;
         }
 
         public Actor(string s) : base(s)
@@ -1252,6 +1258,7 @@ namespace ODB
 
             LastingEffects = new List<LastingEffect>();
             string lasting = stream.ReadString();
+
             foreach (string effect in lasting.Split(',')
                 .Where(effect => effect != ""))
             {
@@ -1260,6 +1267,7 @@ namespace ODB
 
             Intrinsics = new List<Mod>();
             string intr = stream.ReadString();
+
             foreach (string mod in intr.Split(',')
                 .Where(mod => mod != ""))
             {
