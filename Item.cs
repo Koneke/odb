@@ -75,6 +75,8 @@ namespace ODB
         public T GetComponent<T>() where T : Component
             { return Definition.GetComponent<T>(); }
 
+        public Material Material { get { return Definition.Material; } }
+
         //SPAWNING a NEW item
         public Item(
             Point xy,
@@ -126,12 +128,26 @@ namespace ODB
                     ];
             }
         }
+
         public string GetName(string format)
         {
-            string apperance =
+            string appearance =
                 Known
                     ? Definition.Name
                     : UnknownApperance;
+
+            int damage = Definition.Health - Health;
+
+            if (damage != 0)
+            {
+                int damageStrings =
+                    Materials.DamageStrings[Material].Count;
+                int start = damageStrings - Definition.Health;
+                start--;
+                appearance =
+                    Materials.DamageStrings[Material][start + damage] + " " +
+                        appearance;
+            }
 
             string result;
 
@@ -144,31 +160,31 @@ namespace ODB
             switch (format.ToLower())
             {
                 case "name":
-                    result = apperance;
+                    result = appearance;
                     break;
                 case "a":
                     result =
-                        Util.Article(apperance) +
+                        Util.Article(appearance) +
                         " " +
-                        apperance;
+                        appearance;
                     break;
                 case "the":
                     if(Stacking && Count > 1)
                         result =
                             "the " +
                             Count + "x " +
-                            apperance + "s";
+                            appearance + "s";
                     else
                         result =
                             "the" +
                             " " +
-                            apperance;
+                            appearance;
                     break;
                 case "count":
                     result =
                         Count +
                         "x " +
-                        apperance +
+                        appearance +
                         "s"; //Handled the single, stacking item above
                     break;
                 default:

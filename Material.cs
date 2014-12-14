@@ -20,7 +20,15 @@ namespace ODB
             = new Dictionary<Material, List<string>>()
         {
             { Material.Metal, new List<string> {
-                "scratched", "dented", "battered" }}
+                "scratched", "dented", "battered" }},
+            { Material.Wood, new List<string> {
+                "scratched", "splintered", "cracked" }},
+            { Material.Cloth, new List<string> {
+                "torn" }},
+            { Material.Paper, new List<string> {
+                "ripped" }},
+            { Material.Organic, new List<string> {
+                "leaky", "mashed" }},
         };
 
         //likelyness to take damage when thrown/bashed
@@ -29,7 +37,7 @@ namespace ODB
         //we'll see.
         private const int OrganicHardness = 10;
         private const int MetalHardness = 20;
-        private const int WoodHardness = 19;
+        private const int WoodHardness = 16;
         private const int LeatherHardness = 18;
         private const int PaperHardness = 7;
         private const int ClothHardness = 20;

@@ -553,23 +553,6 @@ namespace ODB
                 throwing = !lc.AmmoTypes.Contains(ammo.Type);
             else throwing = true;
 
-            Item projectile = new Item(ammo.WriteItem().ToString())
-            {
-                ID = Item.IDCounter++,
-                Count = 1,
-                xy = target.xy,
-                LevelID = Game.Level.ID
-            };
-            Game.Level.Spawn(projectile);
-
-            ammo.Count--;
-            if(ammo.Count <= 0)
-            {
-                Quiver = null;
-                World.AllItems.Remove(ammo);
-                Game.Player.Inventory.Remove(ammo);
-            }
-
             int roll = Util.Roll("1d20");
 
             int dexBonus = Get(Stat.Dexterity);
@@ -583,12 +566,43 @@ namespace ODB
             int totalModifier = dexBonus + mod - distancePenalty;
 
             int targetArmor = target.GetArmor();
-
             int hitRoll = roll + totalModifier;
 
             string message = "";
-
             int totalDamage = 0;
+
+            Item projectile = new Item(ammo.WriteItem().ToString())
+            {
+                ID = Item.IDCounter++,
+                Count = ammo.Stacking ? 1 : 0,
+                xy = target.xy,
+                LevelID = Game.Level.ID
+            };
+
+            if (hitRoll >= targetArmor)
+            {
+                if (Util.Roll("1d20") >= Materials
+                    .GetHardness(projectile.Material))
+                {
+                    Game.Log(
+                        projectile.GetName("The") + " is damaged by the impact."
+                    );
+                    if (projectile.Health <= 1)
+                        Game.Log(
+                            projectile.GetName("The") + " falls to pieces!"
+                        );
+                    projectile.Health--;
+                }
+            }
+            if (projectile.Health > 0) Game.Level.Spawn(projectile);
+
+            ammo.Count--;
+            if(ammo.Count <= 0)
+            {
+                Quiver = null;
+                World.AllItems.Remove(ammo);
+                Game.Player.Inventory.Remove(ammo);
+            }
 
             if(hitRoll >= targetArmor) {
                 int ammoDamage;
