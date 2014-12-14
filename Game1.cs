@@ -103,7 +103,7 @@ namespace ODB
                 0,
                 Util.ADefByName("Moribund"),
                 1
-            );
+            ) { Awake = true };
 
             InvMan = new InventoryManager();
 
@@ -543,7 +543,9 @@ namespace ODB
 
                 foreach (Actor a in
                     World.WorldActors
-                    .Where(a => a.LevelID == Level.ID))
+                    .Where(a => a.LevelID == Level.ID)
+                    .Where(a => a.Awake)
+                )
                     a.Cooldown--;
 
                 //todo: should apply to everyone?

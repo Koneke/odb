@@ -87,9 +87,9 @@ namespace ODB
         }
 
         public static int IDCounter = 0;
-        public int ID;
 
         public new ActorDefinition Definition;
+        public int ID;
         private int _strength, _dexterity, _intelligence;
         public int HpCurrent;
         public int MpCurrent;
@@ -106,7 +106,13 @@ namespace ODB
         public List<Mod> Intrinsics;
 
         public bool Awake;
-        public Item Quiver;
+        private int? _quiver;
+        public Item Quiver {
+            get { return _quiver == null
+                ? null
+                : Util.GetItemByID(_quiver.Value); }
+            set { _quiver = value.ID; }
+        }
 
         #region temporary/cached (nonwritten)
         public bool[,] Vision;
@@ -1135,15 +1141,24 @@ namespace ODB
         {
             Stream stream = WriteGObject();
             stream.Write(Definition.Type, 4);
+
             stream.Write(ID, 4);
+
             stream.Write(_strength, 2);
             stream.Write(_dexterity, 2);
             stream.Write(_intelligence, 2);
+
             stream.Write(HpCurrent, 2);
             stream.Write(HpMax, 2);
             stream.Write(MpCurrent, 2);
             stream.Write(MpMax, 2);
+
+            stream.Write(Level);
+            stream.Write(ExperiencePoints);
+
             stream.Write(Cooldown, 2);
+            stream.Write(_food);
+            stream.Write(_quiver);
 
             foreach (BodyPart bp in PaperDoll)
             {
@@ -1179,8 +1194,6 @@ namespace ODB
 
             stream.Write(Awake);
 
-            //todo: Write quiver to file
-
             return stream;
         }
         public Stream ReadActor(string s)
@@ -1192,14 +1205,22 @@ namespace ODB
                 ];
 
             ID = stream.ReadHex(4);
+
             _strength = stream.ReadHex(2);
             _dexterity = stream.ReadHex(2);
             _intelligence = stream.ReadHex(2);
+
             HpCurrent = stream.ReadHex(2);
             HpMax = stream.ReadHex(2);
             MpCurrent = stream.ReadHex(2);
             MpMax = stream.ReadHex(2);
+
+            Level = stream.ReadInt();
+            ExperiencePoints = stream.ReadInt();
+
             Cooldown = stream.ReadHex(2);
+            _food = stream.ReadInt();
+            _quiver = stream.ReadInt();
 
             PaperDoll = new List<BodyPart>();
             foreach (string ss in

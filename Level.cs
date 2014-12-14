@@ -243,6 +243,7 @@ namespace ODB
              * Header
                  * Name
                  * Dimensions
+                 * Depth
                  * ID
              * Body
                  * Level itself
@@ -253,6 +254,7 @@ namespace ODB
 
             stream.Write(Size);
             stream.Write(Name);
+            stream.Write(Depth);
             stream.Write(ID, 2);
             stream.Write("</HEADER>", false);
 
@@ -296,6 +298,7 @@ namespace ODB
             Clear();
 
             Name = stream.ReadString();
+            Depth = stream.ReadInt();
             ID = stream.ReadHex(2);
 
             string levelSection =

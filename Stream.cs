@@ -6,6 +6,12 @@ namespace ODB
     public class Stream
     {
         string _stream;
+
+        private string SoFar 
+        {
+            get { return _stream.Substring(0, Read); }
+        }
+
         public int Read;
 
         public Stream()
@@ -69,6 +75,15 @@ namespace ODB
         public void Write(int i)
         {
             string s = i + ";";
+            Read += s.Length;
+            _stream += s;
+        }
+
+        public void Write(int? i)
+        {
+            string s;
+            if (i.HasValue) s = i + ";";
+            else s = "X;";
             Read += s.Length;
             _stream += s;
         }
@@ -151,6 +166,13 @@ namespace ODB
         public int ReadInt()
         {
             string s = ReadString();
+            return int.Parse(s);
+        }
+
+        public int? ReadNInt()
+        {
+            string s = ReadString();
+            if (s.Contains("X")) return null;
             return int.Parse(s);
         }
 
