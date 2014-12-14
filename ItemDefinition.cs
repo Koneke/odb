@@ -93,6 +93,8 @@ namespace ODB
         public int Category;
         public int Weight;
         public int Value;
+        public Material Material;
+        public int Health;
 
         public List<Component> Components; 
 
@@ -119,15 +121,22 @@ namespace ODB
 
         public void AddComponent<T>(T component) where T : Component
         {
-            //Only one of each kind of component, please and thanks
-            if(HasComponent<T>())
-                throw new InvalidOperationException();
-
-            Components.Add(component);
+            //NOTE: IF YOU DON'T FIRST CHECK WHETHER OR NOT WE HAVE A
+            //      COMPONENT OF THIS KIND FIRST, YOU'RE IN FOR A BAD TIME.
+            if (!HasComponent(component.GetType()))
+                Components.Add(component);
+            else throw new Exception();
         }
         public bool HasComponent<T>() where T : Component
         {
             return Components.Any(c => c is T);
+        }
+        //reason this is here because calling a <T> where T : Component from
+        //another with the same sig-bit at the end made all T show up as
+        //Component, which meant that no item could have two components, ever...
+        public bool HasComponent(Type t)
+        {
+            return Components.Any(t.IsInstanceOfType);
         }
         public T GetComponent<T>() where T : Component
         {
@@ -142,17 +151,21 @@ namespace ODB
             Category = stream.ReadHex(2);
             Weight = stream.ReadInt();
             Value = stream.ReadInt();
+            Material = Materials.ReadMaterial(stream.ReadString());
+            Health = stream.ReadInt();
 
             ItemDefinitions[Type] = this;
 
             Components = new List<Component>();
             while (!stream.AtFinish)
+            {
                 AddComponent(
                     Component.CreateComponent(
                         stream.ReadString(),
                         stream.ReadBlock()
                     )
                 );
+            }
 
             return stream;
         }
@@ -164,6 +177,8 @@ namespace ODB
             stream.Write(Category, 2);
             stream.Write(Weight);
             stream.Write(Value);
+            stream.Write(Materials.WriteMaterial(Material));
+            stream.Write(Health);
 
             foreach (Component c in Components)
                 stream.Write(c.WriteComponent(), false);

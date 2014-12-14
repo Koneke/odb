@@ -53,6 +53,7 @@ namespace ODB
         //can be used as charges for non-stacking?
         //-1 should be inf. charges?
         public int Count;
+        public int Health;
         public new ItemDefinition Definition;
         public List<Mod> Mods;
 
@@ -85,6 +86,7 @@ namespace ODB
             ID = IDCounter++;
             Count = count;
             Definition = definition;
+            Health = definition.Health;
             Mods = new List<Mod>();
             if (mods != null) Mods.AddRange(mods);
 
@@ -263,11 +265,10 @@ namespace ODB
         public bool CanStack(Item other)
         {
             if (!Stacking) return false;
-            return Type == other.Type;
-                /* &&
-                //todo: should not just check with the player really
-                !Game.Player.IsEquipped(this) &&
-                !Game.Player.IsEquipped(other);*/
+            return
+                Type == other.Type &&
+                Health == other.Health
+            ;
         }
         public void Stack(Item other)
         {
@@ -283,6 +284,7 @@ namespace ODB
             stream.Write(ID, 4);
             stream.Write(Mod, 2);
             stream.Write(Count, 2);
+            stream.Write(Health);
 
             foreach (Mod m in Mods)
             {
@@ -306,6 +308,7 @@ namespace ODB
             ID = stream.ReadHex(4);
             Mod = stream.ReadHex(2);
             Count = stream.ReadHex(2);
+            Health = stream.ReadInt();
 
             Mods = new List<Mod>();
             List<string> mods = stream.ReadString().Split(

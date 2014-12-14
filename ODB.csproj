@@ -131,6 +131,7 @@
     <Compile Include="ItemDefinition.cs" />
     <Compile Include="LastingEffect.cs" />
     <Compile Include="Level.cs" />
+    <Compile Include="Material.cs" />
     <Compile Include="Player.cs" />
     <Compile Include="PlayerResponses.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

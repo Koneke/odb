@@ -356,6 +356,20 @@ namespace ODB
         public void Spawn(Item item)
         {
             item.LevelID = ID;
+
+            bool stacked = false;
+            if (item.Stacking)
+            {
+                List<Item> iot = ItemsOnTile(item.xy);
+                Item stack = iot.FirstOrDefault(it => it.CanStack(item));
+                if (stack != null)
+                {
+                    stack.Stack(item);
+                    stacked = true;
+                }
+            }
+            if (stacked) return;
+
             World.WorldItems.Add(item);
             World.AllItems.Add(item);
         }

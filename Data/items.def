@@ -1,22 +1,23 @@
-8000XXXXXXFFFF00	24	gold coin;		1	ff	   1;	65536;	##
+8000XXXXXXFFFF00	24	gold coin;		1	ff	   1;	65536;	mt_metal;	4;	##
 
-8001XXXXXXFFC0CB	5b	apron;			0	ff	 200;	10;	cWearable;{torso,;1;}##
-8002XXXXXXA52A2A	18	arrow;			1	ff	   2;	5;	cProjectile;{1d2;}##
-8003XXXXXXA52A2A	29	bow;			0	ff	  90;	20;	cLauncher;{8002,;1d6;}##
-8004XXXXXXD3D3D3	29	longsword;		0	10	 180;	15;	cAttack;{1d8;at_slash;{}}##
-8005XXXXXXA52A2A	28	cloth bag;		0	03	   5;	5;	cContainer;{}##
-8006XXXXXXA52A2A	29	zweihander;		0	11	 440;	20;	cAttack;{2d6+1;at_slash;{}}##
-8007XXXXXXA52A2A	5b	chainmail;		0	ff	1800;	25;	cWearable;{torso,;3;}##
-8008XXXXXX996633	29	club;			0	ff	 300;	10;	cAttack;{1d6;at_bash;{}}##
+8001XXXXXXFFC0CB	5b	apron;			0	ff	 200;	10;	mt_cloth;	2;	cWearable;{torso,;1;}##
+8002XXXXXXA52A2A	18	arrow;			1	ff	   2;	5;	mt_wood;	1;	cProjectile;{1d2;}##
+8003XXXXXXA52A2A	29	bow;			0	ff	  90;	20;	mt_wood;	2;	cLauncher;{8002,;1d6;}##
+8004XXXXXXD3D3D3	29	longsword;		0	10	 180;	15;	mt_metal;	3;	cAttack;{1d8;at_slash;{}}##
+8005XXXXXXA52A2A	28	cloth bag;		0	03	   5;	5;	mt_cloth;	2;	cContainer;{}##
+8006XXXXXXA52A2A	29	zweihander;		0	11	 440;	20;	mt_metal;	4;	cAttack;{2d6+1;at_slash;{}}##
+8007XXXXXXA52A2A	5b	chainmail;		0	ff	1800;	25;	mt_metal;	4;	cWearable;{torso,;3;}##
+8008XXXXXX996633	29	club;			0	ff	 300;	10;	mt_wood;	4;	cAttack;{1d6;at_bash;{}}##
+8009XXXXXX996633	29	spear;			0	ff	 300;	15;	mt_wood;	3;	cAttack;{1d6;at_pierce;{}}cProjectile;{1d4;}##
 
-8100XXXXXXFFFFFF	3f	scroll of forcebolt;	0	01	   1;	15;	cReadable;{0001}##
-8101XXXXXXFFFFFF	3f	scroll of identify;	0	01	   1;	15;	cReadable;{0002}##
-8200XXXXXXFFFF00	2b	tome of forcebolt;	0	02	  50;	65;	cLearnable;{0001}##
-8201XXXXXXFFFF00	2b	tome of identify;	0	02	  50;	80;	cLearnable;{0002}##
+8100XXXXXXFFFFFF	3f	scroll of forcebolt;	0	01	   1;	15;	mt_paper;	1;	cReadable;{0001}##
+8101XXXXXXFFFFFF	3f	scroll of identify;	0	01	   1;	15;	mt_paper;	1;	cReadable;{0002}##
+8200XXXXXXFFFF00	2b	tome of forcebolt;	0	02	  50;	65;	mt_paper;	2;	cLearnable;{0001}##
+8201XXXXXXFFFF00	2b	tome of identify;	0	02	  50;	80;	mt_paper;	2;	cLearnable;{0002}##
 
-8600XXXXXXFFCC99	25	ration;			1	ff	 300;   10;	cEdible;{1500}##
+8600XXXXXXFFCC99	25	ration;			1	ff	 300;   10;	mt_organic;	1;	cEdible;{1500}##
 
-8800XXXXXXFF0000	25	moribund corpse;	0	00	7000;	65536;	cEdible;{2500;}##
-8801XXXXXXFF0000	25	rat corpse;		0	00	 200;	65536;	cEdible;{700;}##
-8802XXXXXXFF0000	25	newt corpse;		0	00	 200;	65536;	cEdible;{700;}##
-8803XXXXXXFF0000	25	kobold corpse;		0	00	1300;	65536;	cEdible;{1000;}##
+8800XXXXXXFF0000	25	moribund corpse;	0	00	7000;	65536;	mt_organic;	3;	cEdible;{2500;}##
+8801XXXXXXFF0000	25	rat corpse;		0	00	 200;	65536;	mt_organic;	3;	cEdible;{700;}##
+8802XXXXXXFF0000	25	newt corpse;		0	00	 200;	65536;	mt_organic;	3;	cEdible;{700;}##
+8803XXXXXXFF0000	25	kobold corpse;		0	00	1300;	65536;	mt_organic;	3;	cEdible;{1000;}##

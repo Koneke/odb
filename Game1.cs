@@ -273,9 +273,6 @@ namespace ODB
             Point target = newLevel.Connectors
                 .First(lc => lc.Target == Game.Level).Position;
 
-            bool downwards =
-                newLevel.Depth > Level.Depth;
-
             Game.Player.LevelID = newLevel.ID;
 
             Level = newLevel;

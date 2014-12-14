@@ -553,6 +553,15 @@ namespace ODB
                 throwing = !lc.AmmoTypes.Contains(ammo.Type);
             else throwing = true;
 
+            Item projectile = new Item(ammo.WriteItem().ToString())
+            {
+                ID = Item.IDCounter++,
+                Count = 1,
+                xy = target.xy,
+                LevelID = Game.Level.ID
+            };
+            Game.Level.Spawn(projectile);
+
             ammo.Count--;
             if(ammo.Count <= 0)
             {
@@ -579,6 +588,8 @@ namespace ODB
 
             string message = "";
 
+            int totalDamage = 0;
+
             if(hitRoll >= targetArmor) {
                 int ammoDamage;
                 int launcherDamage = 0;
@@ -598,6 +609,7 @@ namespace ODB
                 }
 
                 int damageRoll = ammoDamage + launcherDamage;
+                totalDamage += damageRoll;
 
                 message += target.GetName("Name") + " is hit! ";
                 if (Game.OpenRolls)
@@ -622,7 +634,6 @@ namespace ODB
                             damageRoll
                         );
                 }
-                target.Damage(damageRoll, this);
             }
             else
             {
@@ -639,7 +650,10 @@ namespace ODB
                             targetArmor
                         );
             }
+
             Game.Log(message);
+            if(totalDamage > 0)
+                target.Damage(totalDamage, this);
 
             Game.Level.MakeNoise(1, target.xy);
             Pass();
