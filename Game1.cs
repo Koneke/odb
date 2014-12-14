@@ -46,6 +46,7 @@ namespace ODB
 
         public Actor Player;
 
+        public int MessagesLoggedSincePlayerControl;
         public int LogSize;
         public List<ColorString> LogText;
 
@@ -141,9 +142,7 @@ namespace ODB
 
             LogSize = 3;
             LogText = new List<ColorString>();
-            Log(
-                "#ff0000" + "Welcome!"
-            );
+            Log("#ff0000" + "Welcome!");
 
             QpAnswerStack = new Stack<string>();
 
@@ -200,6 +199,12 @@ namespace ODB
             {
                 switch (IO.IOState)
                 {
+                    case InputType.Splash:
+                        if (KeyBindings.Pressed(Bind.Accept))
+                            MessagesLoggedSincePlayerControl -= LogSize;
+                        if (MessagesLoggedSincePlayerControl <= LogSize)
+                            IO.IOState = InputType.PlayerInput;
+                        break;
                     case InputType.QuestionPromptSingle:
                     case InputType.QuestionPrompt:
                         IO.QuestionPromptInput();
@@ -208,6 +213,12 @@ namespace ODB
                         IO.TargetInput();
                         break;
                     case InputType.PlayerInput:
+                        if (MessagesLoggedSincePlayerControl > LogSize)
+                        {
+                            IO.IOState = InputType.Splash;
+                            break;
+                        }
+                        MessagesLoggedSincePlayerControl = 0;
                         if (KeyBindings.Pressed(Bind.Inventory) && !WizMode)
                             IO.IOState = InputType.Inventory;
                         if (Player.Cooldown == 0)
@@ -504,6 +515,8 @@ namespace ODB
 
         public void Log(string s)
         {
+            MessagesLoggedSincePlayerControl++;
+
             //always reset colouring
             s = s + "#ffffff";
 

@@ -15,6 +15,7 @@ namespace ODB
         QuestionPromptSingle,
         Targeting,
         PlayerInput,
+        Splash, //splash screen or --more-- prompt
         //LH-021214: Should essentially only be used for spells,
         //           where it means "none-targeted", pretty much.
         None

@@ -208,12 +208,19 @@ namespace ODB
         {
             _logConsole.CellData.Clear();
             _logConsole.CellData.Fill(Color.White, Color.Black, ' ', null);
+
+            int hidden = Game.MessagesLoggedSincePlayerControl - Game.LogSize;
+
+            List<ColorString> log =
+                Game.LogText.Take(Game.LogText.Count - hidden)
+                .ToList();
+
             for (
-                int i = Game.LogText.Count, n = 0;
+                int i = log.Count, n = 0;
                 i > 0 && n < _logConsole.ViewArea.Height;
                 i--, n++
             ) {
-                ColorString cs = Game.LogText[i - 1];
+                ColorString cs = log[i - 1];
                 for (int j = -1; j < cs.ColorPoints.Count; j++)
                 {
                     int current = j == -1
@@ -232,13 +239,23 @@ namespace ODB
                             : cs.ColorPoints[j].Item2
                     );
                 }
+                if(hidden > 0)
+                    _logConsole.CellData.Print(
+                        _logConsole.ViewArea.Width - 3,
+                        _logConsole.ViewArea.Height - 1,
+                        "<"+(char)27+">", Color.White
+                    );
             }
         }
 
         private void RenderPrompt()
         {
             _inputRowConsole.IsVisible =
-                (IO.IOState != InputType.PlayerInput) || Game.WizMode;
+                IO.IOState == InputType.QuestionPrompt ||
+                IO.IOState == InputType.QuestionPromptSingle ||
+                IO.IOState == InputType.Targeting ||
+                Game.WizMode
+            ;
 
             if (!_inputRowConsole.IsVisible) return;
 
@@ -249,7 +266,7 @@ namespace ODB
                 Color.WhiteSmoke,
                 ' ',
                 null
-                );
+            );
 
             _inputRowConsole.CellData.Print(
                 0, 0, (Game.WizMode ? "" : IO.Question + " ") + IO.Answer + "_");

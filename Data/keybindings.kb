@@ -1,4 +1,6 @@
-﻿west				=	:h, :left, :numpad4;
+﻿accept				=	:enter;
+
+west				=	:h, :left, :numpad4;
 east				=	:l, :right, :numpad6;
 north				=	:k, :up, :numpad8;
 south				=	:j, :down, :numpad2;

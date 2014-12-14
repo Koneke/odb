@@ -33,6 +33,13 @@ namespace ODB
         {
             return l[Util.Random.Next(0, l.Count)];
         }
+
+        public static IEnumerable<T> TakeLast<T>(
+            this List<T> coll,
+            int n
+        ) {
+            return coll.Skip(Math.Max(0, coll.Count() - n)).Take(n);
+        }
     }
 
     public class Util

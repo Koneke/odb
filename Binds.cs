@@ -25,6 +25,8 @@ namespace ODB
         public enum Bind
         {
 // ReSharper disable InconsistentNaming
+            Accept,
+
             East, West, North, South,
             NorthEast, NorthWest,
             SouthEast, SouthWest,
