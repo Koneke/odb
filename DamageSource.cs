@@ -2,6 +2,7 @@ using System.Collections.Generic;
 
 namespace ODB
 {
+    //HOW the damage is dealt
     public enum AttackType
     {
         Slash,
@@ -11,6 +12,7 @@ namespace ODB
         Magic
     }
 
+    //WHAT KIND of damage is dealt
     public enum DamageType
     {
         Physical,

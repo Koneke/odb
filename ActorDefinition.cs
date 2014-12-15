@@ -150,10 +150,10 @@ namespace ODB
             Stream stream = WriteGObjectDefinition();
 
             stream.Write(Named);
-            stream.Write(HitDie);
-            stream.Write(ManaDie);
             stream.Write(Experience, 2); //xp per level
             stream.Write(Difficulty, 2);
+            stream.Write(HitDie);
+            stream.Write(ManaDie);
             stream.Write(Strength);
             stream.Write(Dexterity);
             stream.Write(Intelligence);
@@ -195,10 +195,10 @@ namespace ODB
             Stream stream = ReadGObjectDefinition(s);
 
             Named = stream.ReadBool();
-            HitDie = stream.ReadString();
-            ManaDie = stream.ReadString();
             Experience = stream.ReadHex(2);
             Difficulty = stream.ReadHex(2);
+            HitDie = stream.ReadString();
+            ManaDie = stream.ReadString();
             Strength = stream.ReadString();
             Dexterity = stream.ReadString();
             Intelligence = stream.ReadString();

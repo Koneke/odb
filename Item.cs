@@ -289,6 +289,63 @@ namespace ODB
             World.Level.Despawn(other);
         }
 
+        public void Damage(int mod = 0)
+        {
+            if (Util.Random.Next(0, Materials.MaxHardness+1) + mod <
+                Materials.GetHardness(Material))
+                return;
+
+            Game.UI.Log(
+                "#ff0000{1}#ffffff is #ffffffdamaged by the impact#ffffff!",
+                GetName("The")
+            );
+            if (Stacking)
+            {
+                //spawn a stack of every item in the stack that wasn't the
+                //wielded one
+                Item stack = new Item(WriteItem().ToString())
+                {
+                    ID = IDCounter++,
+                    Count = Count - 1,
+                    xy = xy,
+                    LevelID = World.Level.ID
+                };
+                Count = 1;
+
+                //if the wielded falls apart, or we have more than enough
+                //space in the inventory, put it there
+                if (stack.Count > 0)
+                {
+                    World.Level.Spawn(stack);
+                    if (Game.Player.Inventory.Count <
+                        InventoryManager.InventorySize ||
+                        Health <= 1)
+                    {
+                        Game.Player.Inventory.Add(stack);
+                        World.WorldItems.Remove(stack);
+                    }
+                    //otherwise, drop it into the world
+                    else
+                    {
+                        Game.UI.Log(
+                            "{1} is dropped to the ground.",
+                            GetName("The")
+                        );
+                    }
+                }
+            }
+            if (Health <= 1)
+            {
+                Game.UI.Log(
+                    "#ff0000{1} falls to pieces!",
+                    GetName("The")
+                );
+                Health--;
+                World.Level.Despawn(this);
+            }
+            else Health--;
+        }
+
         public Stream WriteItem()
         {
             Stream stream = WriteGObject();
