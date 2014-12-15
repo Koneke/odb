@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
 namespace ODB
@@ -291,8 +290,7 @@ namespace ODB
 
     public class EffectComponent : Component
     {
-        public const string Type = "cEffect";
-        public override string GetComponentType() { return Type; }
+        public override string GetComponentType() { return "cEffect"; }
 
         public StatusType EffectType;
         public int Chance;
@@ -312,7 +310,7 @@ namespace ODB
         public override Stream WriteComponent()
         {
             Stream stream = new Stream();
-            stream.Write(Type);
+            stream.Write(GetComponentType());
             stream.Write("{", false);
             stream.Write(LastingEffect.WriteStatusType(EffectType));
             stream.Write(Chance, 2);
@@ -335,8 +333,7 @@ namespace ODB
 
     public class ReadableComponent : Component
     {
-        public const string Type = "cReadable";
-        public override string GetComponentType() { return Type; }
+        public override string GetComponentType() { return "cReadable"; }
 
         public int Effect;
 
@@ -352,7 +349,7 @@ namespace ODB
         public override Stream WriteComponent()
         {
             Stream stream = new Stream();
-            stream.Write(Type);
+            stream.Write(GetComponentType());
             stream.Write("{", false);
             stream.Write(Effect, 4);
             stream.Write("}", false);

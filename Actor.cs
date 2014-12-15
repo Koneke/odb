@@ -138,8 +138,7 @@ namespace ODB
             int levelid,
             ActorDefinition definition,
             int level
-        ) : base(xy, levelid, definition)
-        {
+        ) : base(xy, levelid, definition) {
             ID = IDCounter++;
             Definition = definition;
 
@@ -575,10 +574,7 @@ namespace ODB
             ProjectileComponent pc =
                 ammo.GetComponent<ProjectileComponent>();
 
-            bool throwing;
-            if (weapon != null && lc != null)
-                throwing = !lc.AmmoTypes.Contains(ammo.Type);
-            else throwing = true;
+            if(lc != null) if(!lc.AmmoTypes.Contains(ammo.Type)) lc = null;
 
             int roll = Util.Roll("1d20");
 
@@ -596,7 +592,6 @@ namespace ODB
             int hitRoll = roll + totalModifier;
 
             string message = "";
-            int totalDamage = 0;
 
             Item projectile = new Item(ammo.WriteItem().ToString())
             {
@@ -616,28 +611,19 @@ namespace ODB
             DamageSource ds = null;
 
             if(hitRoll >= targetArmor) {
-                int ammoDamage;
-                int launcherDamage = 0;
+                int ammoDamage = pc == null
+                    ? Util.Roll("1d4")
+                    : Util.Roll(pc.Damage);
 
-                if (throwing)
-                {
-                    if(pc != null)
-                        ammoDamage = Util.Roll(pc.Damage);
-                    else
-                        ammoDamage = Util.Roll("1d4");
-                }
-                else
-                {
-                    launcherDamage = Util.Roll(lc.Damage);
-                    Debug.Assert(pc != null, "pc != null");
-                    ammoDamage = Util.Roll(pc.Damage);
-                }
+                int launcherDamage = lc == null
+                    ? 0
+                    : Util.Roll(lc.Damage);
 
                 int damageRoll = ammoDamage + launcherDamage;
-                totalDamage += damageRoll;
+
                 ds = new DamageSource
                 {
-                    Damage = totalDamage,
+                    Damage = damageRoll,
                     AttackType = AttackType.Pierce,
                     DamageType = DamageType.Physical,
                     Source = this,
@@ -645,10 +631,13 @@ namespace ODB
                 };
 
                 message += target.GetName("Name") + " is hit! ";
+
+                #region rolls to log
                 if (Game.OpenRolls)
                 {
                     message +=
-                        String.Format(
+                        String.Format
+                        (
                             "d20+{0} ({1}+{2}-{3}), " +
                                 "{4}+{0}, {5} vs. {6}. ",
                             totalModifier,
@@ -658,7 +647,8 @@ namespace ODB
                             targetArmor
                         );
                     message +=
-                        String.Format(
+                        String.Format
+                        (
                             "{0}{1}, {2}{3}, {4} hit points damage.",
                             pc == null ? "1d4" : pc.Damage,
                             lc == null ? "" : ("+" + lc.Damage),
@@ -667,13 +657,17 @@ namespace ODB
                             damageRoll
                         );
                 }
+                #endregion
             }
             else
             {
                 message += GetName("Name") + " " + Verb("miss") + ". ";
+
+                #region rolls to log
                 if (Game.OpenRolls)
                     message +=
-                        String.Format(
+                        String.Format
+                        (
                             "d20+{0} ({1}+{2}-{3}), " +
                                 "{4}+{0}, {5} vs. {6}. ",
                             totalModifier,
@@ -682,11 +676,11 @@ namespace ODB
                             hitRoll,
                             targetArmor
                         );
+                #endregion
             }
 
             Game.UI.Log(message);
-            if(totalDamage > 0)
-                target.Damage(ds);
+            if(ds != null) target.Damage(ds);
 
             World.Level.MakeNoise(1, target.xy);
             Pass();
