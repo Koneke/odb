@@ -87,10 +87,12 @@ namespace ODB
             switch (Type)
             {
                 case StatusType.Poison:
-                    if (Life % 10 == 0) PoisonEffect(Util.GetActorByID(Holder));
+                    if (Life % 100 == 0)
+                        PoisonEffect(Util.GetActorByID(Holder));
                     break;
                 case StatusType.Bleed:
-                    if (Life % 10 == 0) BleedEffect(Util.GetActorByID(Holder));
+                    if (Life % 100 == 0)
+                        BleedEffect(Util.GetActorByID(Holder));
                     break;
             }
 
@@ -128,12 +130,21 @@ namespace ODB
                     : (holder.GetName("Name") + " looks ")) +
                 "sick..."
             );
-            holder.Damage(Util.Roll("1d4"), null);
+            DamageSource ds = new DamageSource
+            {
+                //todo: at_poison, dt_poison
+                Damage = Util.Roll("1d4"),
+                AttackType = AttackType.Bash,
+                DamageType = DamageType.Physical,
+                Source = null,
+                Target = holder
+            };
+            //holder.Damage(Util.Roll("1d4"), null);
+            holder.Damage(ds);
         }
 
         public static void BleedEffect(Actor holder)
         {
-            holder.Damage(Util.Roll("2d3"), null);
             World.Level.At(holder.xy).Blood = true;
 
             if(holder == Util.Game.Player || Util.Game.Player.Sees(holder.xy))
@@ -141,6 +152,16 @@ namespace ODB
                     holder.GetName("Name") + " " +
                     holder.Verb("bleed") + "!"
                 );
+            DamageSource ds = new DamageSource
+            {
+                //todo: at_?, dt_bleed?
+                Damage = Util.Roll("2d3"),
+                AttackType = AttackType.Bash,
+                DamageType = DamageType.Physical,
+                Source = null,
+                Target = holder
+            };
+            holder.Damage(ds);
         }
     }
 }

@@ -468,9 +468,8 @@ namespace ODB
 
         public Point RandomOpenPoint() {
 
-            Room r = Rooms.SelectRandom();
-
-            List<TileInfo> tiles = r.GetTiles()
+            List<TileInfo> tiles =
+                Rooms.SelectMany(r => r.GetTiles())
                 .Select(t => At(t.Position))
                 .Where(t => !t.Solid)
                 .Where(t => t.Door == Door.None)

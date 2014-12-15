@@ -687,6 +687,8 @@ namespace ODB
             ammo.Count--;
             if(ammo.Count <= 0) World.Level.Despawn(ammo);
 
+            DamageSource ds = null;
+
             if(hitRoll >= targetArmor) {
                 int ammoDamage;
                 int launcherDamage = 0;
@@ -707,6 +709,14 @@ namespace ODB
 
                 int damageRoll = ammoDamage + launcherDamage;
                 totalDamage += damageRoll;
+                ds = new DamageSource
+                {
+                    Damage = totalDamage,
+                    AttackType = AttackType.Pierce,
+                    DamageType = DamageType.Physical,
+                    Source = this,
+                    Target = target
+                };
 
                 message += target.GetName("Name") + " is hit! ";
                 if (Game.OpenRolls)
@@ -750,24 +760,25 @@ namespace ODB
 
             Game.UI.Log(message);
             if(totalDamage > 0)
-                target.Damage(totalDamage, this);
+                target.Damage(ds);
 
             World.Level.MakeNoise(1, target.xy);
             Pass();
         }
-        public void Damage(int d, Actor attacker)
+        public void Damage(DamageSource ds)
         {
-            if (d <= 0) return;
+            //Damage(ds.Damage, ds.Source);
+            if (ds.Damage <= 0) return;
             if (HpCurrent <= 0) return;
 
-            TileInfo ti = World.Level.At(xy);
-            ti.Blood = true;
-            ti.Neighbours
+            TileInfo tileInfo = World.Level.At(xy);
+            tileInfo.Blood = true;
+            tileInfo.Neighbours
                 .Where(n => !n.Solid)
                 .Where(n => Util.Random.Next(0, 4) >= 3)
                 .ToList().ForEach(n => n.Blood = true);
 
-            HpCurrent -= d;
+            HpCurrent -= ds.Damage;
             if (HpCurrent > 0) return;
 
             Game.UI.Log(GetName("Name") + " " + Verb("die") + "!");
@@ -783,15 +794,13 @@ namespace ODB
             World.Level.Spawn(corpse);
             Game.Brains.RemoveAll(b => b.MeatPuppet == this);
 
-            if(attacker != null)
-                attacker.GiveExperience(Definition.Experience * Level);
-        }
-        public void Damage(DamageSource ds)
-        {
-            Damage(ds.Damage, ds.Source);
+            if(ds.Source != null)
+                ds.Source.GiveExperience(Definition.Experience * Level);
+
             switch (ds.DamageType)
             {
                 case DamageType.Ratking:
+                    Debug.Assert(ds.Source != null, "ds.Source != null");
                     List<TileInfo> neighbours =
                         World.Level.At(ds.Source.xy).Neighbours
                         .Where(ti => ti.Actor == null)

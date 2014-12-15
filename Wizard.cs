@@ -468,7 +468,15 @@ namespace ODB
             switch (cmd)
             {
                 case "ai-hurt":
-                    a.Damage(IO.ReadHex(args[0]), null);
+                    DamageSource ds = new DamageSource
+                    {
+                        Damage = Util.Roll(args[0]),
+                        AttackType = AttackType.Magic,
+                        DamageType = DamageType.Physical,
+                        Source = null,
+                        Target = a
+                    };
+                    a.Damage(ds);
                     break;
                 case "ai-sdef":
                 case "ai-setdef":

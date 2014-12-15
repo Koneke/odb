@@ -7,7 +7,8 @@ namespace ODB
         Slash,
         Pierce,
         Bash,
-        Bite
+        Bite,
+        Magic
     }
 
     public enum DamageType

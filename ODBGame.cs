@@ -299,7 +299,15 @@ namespace ODB
                     }
                     Game.UI.Log("The forcebolt hits {1}.",
                         target.GetName("the"));
-                    target.Damage(Util.Roll("2d4"), Game.Caster);
+                    DamageSource ds = new DamageSource
+                    {
+                        Damage = Util.Roll("2d4"),
+                        AttackType = AttackType.Magic,
+                        DamageType = DamageType.Physical,
+                        Source = Game.Caster,
+                        Target = target
+                    };
+                    target.Damage(ds);
                 },
                 CastDifficulty = 10,
                 Cost = 3,
@@ -330,58 +338,6 @@ namespace ODB
                 CastDifficulty = 15,
                 Cost = 7
             };
-
-            //ReSharper disable once ObjectCreationAsStatement
-            //LH-011214: registered to the spelldefinition list in constructor.
-            new Spell("fiery touch")
-            {
-                CastType = InputType.None,
-                Effect = () => {
-                    //I'm guessing monsters will have to use the qpstack as
-                    //well as the player, atleast for now?
-                    //Shouldn't be a problem as long as we're responsibly
-                    //pushing and popping right everywhere.
-
-                    //Should be the /point/ we're doing this attack on,
-                    //alternaticely target ID (that's actually a pretty good
-                    //idea, huh).
-                    //Currently not doing anything with it since we know that
-                    //this is a monster attack, so it's always targetting
-                    //the player. Game.Caster still refers to the right caster
-                    //though, so that's neat.
-                    //ReSharper disable once UnusedVariable
-                    string answer = Game.QpAnswerStack.Pop();
-                    Game.UI.Log(
-                        Game.Player.GetName("Name") +
-                        " " +
-                        Game.Player.Verb("is") +
-                        " burned by " +
-                        Game.Caster.Definition.Name + "'s touch!"
-                    );
-                    Game.Player.Damage(Util.Roll("6d2"), Game.Caster);
-
-                    if (!Game.Player.IsAlive) return;
-                    if (Util.Roll("1d6") < 5) return;
-
-                    if (Game.Player.HasEffect(StatusType.Bleed)) return;
-
-                    Game.UI.Log(
-                        Game.Player.GetName("Name") +
-                        Game.Player.Verb("start") + " bleeding!"
-                    );
-                    Game.Player.AddEffect(
-                        new LastingEffect(
-                            Game.Player.ID,
-                            StatusType.Bleed,
-                            -1,
-                            Util.TickingEffectDefinitionByName("bleed")
-                        )
-                    );
-                },
-                CastDifficulty = 0,
-                Range = 1,
-                Cost = 0
-            };
         }
 
         public static void SetupTickingEffects()
@@ -406,27 +362,6 @@ namespace ODB
                 {
                     if (holder.MpCurrent < holder.MpMax)
                         holder.MpCurrent++;
-                }
-            );
-
-            //ReSharper disable once ObjectCreationAsStatement
-            new TickingEffectDefinition(
-                "bleed",
-                25,
-                delegate(Actor holder)
-                {
-                    if(holder == Game.Player)
-                        Game.UI.Log("Your wound bleeds!");
-                    else
-                        Game.UI.Log(
-                            holder.GetName("Name")+"'s wound bleeds!"
-                        );
-                    //todo: getting killed by this effect does currently
-                    //      NOT GRANT EXPERIENCE!
-                    //      this since it's not directly from another actor,
-                    //      but indirectly via the effect. this has to be
-                    //      changed.
-                    holder.Damage(Util.Roll("2d3"), null);
                 }
             );
         }
