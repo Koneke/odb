@@ -1126,6 +1126,10 @@ namespace ODB
                 Game.UI.Log(message);
         }
 
+        //should maybe/probably/most likely be moved to separate functions,
+        //like PlayerResponses.FinalizeZap, or FinalizeUse, or whatever,
+        //which should finish generating the command, and subsequently pass it
+        //to the player.
         public void Do()
         {
             if (ID != Game.Player.ID)
@@ -1133,21 +1137,22 @@ namespace ODB
             switch (Game.CurrentCommand.Type)
             {
                 case "cast":
-                    Spell spell = (Spell)Game.CurrentCommand.Data["spell"];
+                case "use":
+                    Spell spell = (Spell)Game.CurrentCommand.Get("spell");
                     switch (spell.CastType)
                     {
                         case InputType.QuestionPrompt:
-                            Game.CurrentCommand.Data.Add(
+                            Game.CurrentCommand.Add(
                                 "target", Game.CurrentCommand.Answer
                             );
                             break;
                         case InputType.QuestionPromptSingle:
-                            Game.CurrentCommand.Data.Add(
+                            Game.CurrentCommand.Add(
                                 "target", Game.CurrentCommand.Answer[0]
                             );
                             break;
                         case InputType.Targeting:
-                            Game.CurrentCommand.Data.Add(
+                            Game.CurrentCommand.Add(
                                 "target", Game.CurrentCommand.Target
                             );
                             break;
@@ -1158,14 +1163,53 @@ namespace ODB
             Do(Game.CurrentCommand);
         }
 
+        private void HandleCast(Command cmd)
+        {
+            //we can trust the "spell" key to always be a spell,
+            //because if it isn't, the blame isn't here, it's somewhere
+            //earlier in the chain
+            Spell spell = (Spell)cmd.Get("spell");
+
+            //always spend energy, no matter if we succeed or not
+            MpCurrent -= spell.Cost;
+
+            if (Util.Roll("1d20") + Get(Stat.Intelligence) >=
+                spell.CastDifficulty)
+            {
+                //target-less spells can just ignore the passed
+                //target-data. others parse it to the right type
+                //(string/point/whatever)
+                spell.Cast(this, cmd.Get("target"));
+            }
+            else
+            {
+                Game.UI.Log(
+                    "{1} {2} and {3}, but nothing happens!",
+                    GetName("Name"),
+                    Verb("mumble"),
+                    Verb("wave")
+                );
+            }
+
+            Pass();
+        }
+
+        private void HandleUse(Command cmd)
+        {
+            Spell spell = (Spell)cmd.Get("spell");
+            Item item = (Item)cmd.Get("item");
+            item.SpendCharge();
+            spell.Cast(this, cmd.Get("target"));
+        }
+
         public void Do(Command cmd)
         {
-            if (cmd.Type == "cast")
+            switch(cmd.Type)
             {
-                Spell spell = (Spell)cmd.Data["spell"];
-                spell.Cast(this, cmd.Data["target"]);
+                case "cast": HandleCast(cmd); break;
+                case "use": HandleUse(cmd); break;
+                default: throw new ArgumentException();
             }
-            else throw new Exception();
         }
 
         public Stream WriteActor()
@@ -1231,9 +1275,8 @@ namespace ODB
         {
             Stream stream = ReadGObject(s);
             Definition =
-                ActorDefinition.ActorDefinitions[
-                    stream.ReadHex(4)
-                ];
+                ActorDefinition.ActorDefinitions
+                [stream.ReadHex(4)];
 
             ID = stream.ReadHex(4);
 

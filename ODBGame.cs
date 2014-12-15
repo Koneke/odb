@@ -291,25 +291,29 @@ namespace ODB
             new Spell("forcebolt")
             {
                 CastType = InputType.Targeting,
-                Effect = (c, t) =>
+                Effect = (caster, target) =>
                 {
-                    Actor target = World.Level.ActorOnTile(Game.Target);
-                    if (target == null)
+                    //Actor target = World.Level.ActorOnTile(Game.Target);
+                    Actor targetActor = World.Level.ActorOnTile(
+                        (Point)target
+                    );
+
+                    if (targetActor == null)
                     {
                         Game.UI.Log("The bolt fizzles in the air.");
                         return;
                     }
                     Game.UI.Log("The forcebolt hits {1}.",
-                        target.GetName("the"));
+                        targetActor.GetName("the"));
                     DamageSource ds = new DamageSource
                     {
                         Damage = Util.Roll("2d4"),
                         AttackType = AttackType.Magic,
                         DamageType = DamageType.Physical,
                         Source = Game.Caster,
-                        Target = target
+                        Target = targetActor
                     };
-                    target.Damage(ds);
+                    targetActor.Damage(ds);
                 },
                 CastDifficulty = 10,
                 Cost = 3,
@@ -330,11 +334,11 @@ namespace ODB
                     );
 
                 },
-                Effect = (c, t) =>
+                Effect = (caster, target) =>
                 {
                     //string answer = Game.QpAnswerStack.Pop();
-                    Command cmd = (Command)t;
-                    string answer = (string)cmd.Data["answer"];
+                    Command cmd = (Command)target;
+                    string answer = (string)cmd.Get("answer");
                     int index = IO.Indexes.IndexOf(answer[0]);
                     Item item = Game.Caster.Inventory[index];
                     item.Identify();

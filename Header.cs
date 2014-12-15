@@ -311,21 +311,12 @@ namespace ODB
             Spells[ID] = this;
         }
 
-        public void Cast(Actor castr, object target)
+        public void Cast(Actor caster, object target)
         {
-            /*Actor caster = Util.Game.Caster;
-            Util.Game.Caster.MpCurrent -= Cost;
-            if (Util.Roll("1d20") + caster.Get(Stat.Intelligence) >=
-                CastDifficulty)*/
-                Effect(castr, target);
-            /*else
-                Util.Game.UI.Log(
-                    caster.GetName("Name") + " " +
-                    caster.Verb("whiff") + " " +
-                    "the spell!"
-                );
-            Util.Game.Caster.Pass();
-            Util.Game.Caster = null;*/
+            //target is currently usually either a string or a point,
+            //but if we need to, we really could pass an entire Command in.
+            
+            Effect(caster, target);
         }
     }
 
@@ -514,15 +505,25 @@ namespace ODB
     public class Command
     {
         public string Type;
-        public Dictionary<string, object> Data;
+        private readonly Dictionary<string, object> _data;
 
         public string Answer;
         public Point Target;
 
         public Command(string type)
         {
-            Type = type;
-            Data = new Dictionary<string, object>();
+            Type = type.ToLower();
+            _data = new Dictionary<string, object>();
+        }
+
+        public void Add(string key, object value)
+        {
+            _data.Add(key.ToLower(), value);
+        }
+
+        public object Get(string key)
+        {
+            return _data[key.ToLower()];
         }
     }
 }

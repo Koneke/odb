@@ -583,6 +583,39 @@ namespace ODB
                 return;
             }
 
+            Spell useEffect =
+                Spell.Spells
+                [item.GetComponent<UsableComponent>().UseEffect];
+
+            Game.CurrentCommand.Add(
+                "spell",
+                useEffect
+            );
+
+            Game.CurrentCommand.Add(
+                "item",
+                item
+            );
+
+            if (useEffect.CastType == InputType.None)
+            {
+                Game.Player.Do(Game.CurrentCommand);
+                return;
+            }
+            else
+            {
+                if (useEffect.SetupAcceptedInput != null)
+                    useEffect.SetupAcceptedInput();
+
+                IO.AskPlayer(
+                    //todo: switch to appropriate On what/Where here
+                    "foo bar",
+                    useEffect.CastType,
+                    Game.Player.Do
+                );
+                return;
+            }
+
             //LH-021214: Note! Because we're spending a charge here, I've set it
             //           up so that we can't actually cancel the question we
             //           set up (unless the effect has InputType.None).
@@ -673,22 +706,37 @@ namespace ODB
             string answer = Game.QpAnswerStack.Peek();
             if (answer.Length <= 0) return;
 
+            //Player:CheckZap asks a qps question, so current cmd
+            //has been feed a string into ccmd.Answer, read index from it
             int index = IO.Indexes.IndexOf(
                 Game.CurrentCommand.Answer[0]
             );
             Spell spell = Game.Player.Spellbook[index];
 
-            ODBGame.Game.CurrentCommand.Data.Add(
+            //save the spell to be cast using that index to the ccmd
+            ODBGame.Game.CurrentCommand.Add(
                 "spell",
                 spell
             );
 
+            //no more data required, gogo
             if (spell.CastType == InputType.None)
                 Game.Player.Do(Game.CurrentCommand);
+            //or ask for a target
+            //Game.Player.Do() handles Do specifically for the player
+            //automatically promotes the Answer/Target to a "real" key
+            //AI never does this, since they generate a complete cmd on the spot
             else
             {
-                spell.SetupAcceptedInput();
+                //qp/qps spells setup their own input
+                //where they filter OK targets (i.e. say we can only cast on
+                //weapons, or something). targetted spells doesn't need this,
+                //so check if it's null.
+                if(spell.SetupAcceptedInput != null)
+                    spell.SetupAcceptedInput();
+
                 IO.AskPlayer(
+                    //todo: switch to appropriate On what/Where here
                     "foo bar",
                     spell.CastType,
                     Game.Player.Do

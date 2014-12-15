@@ -138,6 +138,8 @@ namespace ODB
                 return;
             }
 
+            Game.CurrentCommand = new Command("use");
+
             IO.AskPlayer(
                 question,
                 InputType.QuestionPromptSingle,
@@ -637,7 +639,8 @@ namespace ODB
                 "", (c, n) => c + n);
             question += "]";
 
-            ODBGame.Game.CurrentCommand = new Command("cast");
+            //setup cmd, no info yet other than type
+            Game.CurrentCommand = new Command("cast");
 
             IO.AskPlayer(
                 question,

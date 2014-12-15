@@ -43,7 +43,9 @@ namespace ODB
         public static UsableComponent Create(string content)
         {
             Stream stream = new Stream(content);
-            return new UsableComponent { UseEffect = stream.ReadHex(4) };
+            return new UsableComponent {
+                UseEffect = stream.ReadInt()
+            };
         }
 
         public override Stream WriteComponent()
@@ -51,7 +53,7 @@ namespace ODB
             Stream stream = new Stream();
             stream.Write(GetComponentType());
             stream.Write("{", false);
-            stream.Write(UseEffect, 4);
+            stream.Write(UseEffect);
             stream.Write("}", false);
             return stream;
         }
