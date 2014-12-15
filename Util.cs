@@ -10,8 +10,10 @@ using Microsoft.Xna.Framework;
 
 namespace ODB
 {
-    public static class Extensions {
-        public static List<T> Shuffle<T>(this List<T> l) {
+    public static class Extensions
+    {
+        public static List<T> Shuffle<T>(this List<T> l)
+        {
             //we create a new one everytime so the shuffle returns
             //the same result every time for the same input and gameseed
             Random rng = new Random(Util.Game.Seed);
