@@ -1126,6 +1126,48 @@ namespace ODB
                 Game.UI.Log(message);
         }
 
+        public void Do()
+        {
+            if (ID != Game.Player.ID)
+                throw new Exception("You're doing it wrong");
+            switch (Game.CurrentCommand.Type)
+            {
+                case "cast":
+                    Spell spell = (Spell)Game.CurrentCommand.Data["spell"];
+                    switch (spell.CastType)
+                    {
+                        case InputType.QuestionPrompt:
+                            Game.CurrentCommand.Data.Add(
+                                "target", Game.CurrentCommand.Answer
+                            );
+                            break;
+                        case InputType.QuestionPromptSingle:
+                            Game.CurrentCommand.Data.Add(
+                                "target", Game.CurrentCommand.Answer[0]
+                            );
+                            break;
+                        case InputType.Targeting:
+                            Game.CurrentCommand.Data.Add(
+                                "target", Game.CurrentCommand.Target
+                            );
+                            break;
+                    }
+                    break;
+            }
+
+            Do(Game.CurrentCommand);
+        }
+
+        public void Do(Command cmd)
+        {
+            if (cmd.Type == "cast")
+            {
+                Spell spell = (Spell)cmd.Data["spell"];
+                spell.Cast(this, cmd.Data["target"]);
+            }
+            else throw new Exception();
+        }
+
         public Stream WriteActor()
         {
             Stream stream = WriteGObject();

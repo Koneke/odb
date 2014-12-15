@@ -52,6 +52,8 @@ namespace ODB
         public Action QuestionReaction;
         public Stack<string> QpAnswerStack;
 
+        public Command CurrentCommand = new Command("foo");
+
         public const int StandardActionLength = 10;
 
         private void GameReferences()
@@ -107,7 +109,7 @@ namespace ODB
 
             Player = new Actor(
                 new Point(0, 0),
-                0, Util.ADefByName("Moribund"), 1)
+                0, Util.ADefByName("Moribund"), 10)
             { Awake = true };
 
             World.Levels.Add(World.Level = new Generator().Generate(null, 1));
@@ -274,7 +276,7 @@ namespace ODB
             new Spell("potion of healing")
             {
                 CastType = InputType.None,
-                Effect = () =>
+                Effect = (c, t) =>
                 {
                     Game.UI.Log(
                         Game.Caster.GetName("Name") + " " +
@@ -289,7 +291,7 @@ namespace ODB
             new Spell("forcebolt")
             {
                 CastType = InputType.Targeting,
-                Effect = () =>
+                Effect = (c, t) =>
                 {
                     Actor target = World.Level.ActorOnTile(Game.Target);
                     if (target == null)
@@ -328,9 +330,11 @@ namespace ODB
                     );
 
                 },
-                Effect = () =>
+                Effect = (c, t) =>
                 {
-                    string answer = Game.QpAnswerStack.Pop();
+                    //string answer = Game.QpAnswerStack.Pop();
+                    Command cmd = (Command)t;
+                    string answer = (string)cmd.Data["answer"];
                     int index = IO.Indexes.IndexOf(answer[0]);
                     Item item = Game.Caster.Inventory[index];
                     item.Identify();

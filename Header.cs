@@ -286,7 +286,7 @@ namespace ODB
         //           Also means that we can have spells going through several
         //           questions, like multi-targetting and similar, the same way
         //           dropping a certain number of things works right now.
-        public Action Effect;
+        public Action<Actor, object> Effect;
 
         //LH-021214: Since we're using the standard question system we will at
         //           times need to populate the accepted input, so we need an
@@ -311,21 +311,21 @@ namespace ODB
             Spells[ID] = this;
         }
 
-        public void Cast()
+        public void Cast(Actor castr, object target)
         {
-            Actor caster = Util.Game.Caster;
+            /*Actor caster = Util.Game.Caster;
             Util.Game.Caster.MpCurrent -= Cost;
             if (Util.Roll("1d20") + caster.Get(Stat.Intelligence) >=
-                CastDifficulty)
-                Effect();
-            else
+                CastDifficulty)*/
+                Effect(castr, target);
+            /*else
                 Util.Game.UI.Log(
                     caster.GetName("Name") + " " +
                     caster.Verb("whiff") + " " +
                     "the spell!"
                 );
             Util.Game.Caster.Pass();
-            Util.Game.Caster = null;
+            Util.Game.Caster = null;*/
         }
     }
 
@@ -508,6 +508,21 @@ namespace ODB
                 String = String,
                 ColorPoints = new List<Tuple<int, Color>>(ColorPoints)
             };
+        }
+    }
+
+    public class Command
+    {
+        public string Type;
+        public Dictionary<string, object> Data;
+
+        public string Answer;
+        public Point Target;
+
+        public Command(string type)
+        {
+            Type = type;
+            Data = new Dictionary<string, object>();
         }
     }
 }

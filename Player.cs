@@ -637,12 +637,13 @@ namespace ODB
                 "", (c, n) => c + n);
             question += "]";
 
+            ODBGame.Game.CurrentCommand = new Command("cast");
+
             IO.AskPlayer(
                 question,
                 InputType.QuestionPromptSingle,
                 PlayerResponses.Zap
             );
         }
-
     }
 }

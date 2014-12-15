@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 //using Microsoft.Xna.Framework.Input;
@@ -9,11 +10,12 @@ namespace ODB
     {
         public static ODBGame Game;
 
-        private static void Cast(Spell spell)
+        /*private static void Cast(Spell spell)
         {
             //LH-021214: If the spells is nontargetted, just trigger the effect
             //           instantly.
-            if (spell.CastType == InputType.None) spell.Cast();
+            if (spell.CastType == InputType.None)
+                spell.Cast(Game.Player, null);
             //LH-021214: Otherwise, ask a player of the spell's kind.
             //           Flexible, fancy, and reuses code! Woo!
             else
@@ -57,7 +59,7 @@ namespace ODB
                     spell.Cast
                 );
             }
-        }
+        }*/
 
         public static void Chant()
         {
@@ -419,6 +421,8 @@ namespace ODB
 
         public static void Quaff()
         {
+            throw new NotImplementedException();
+
             string answer = Game.QpAnswerStack.Pop();
             if (answer.Length <= 0) return;
 
@@ -428,7 +432,7 @@ namespace ODB
             Game.UI.Log("You drank " + selected.GetName("a"));
             DrinkableComponent dc = selected.GetComponent<DrinkableComponent>();
             Game.Caster = Game.Player;
-            Spell.Spells[dc.Effect].Cast();
+            //Spell.Spells[dc.Effect].Cast();
             selected.Identify();
 
             Game.Player.Pass();
@@ -467,7 +471,8 @@ namespace ODB
                 IO.UsedItem = item;
                 item.Identify();
 
-                Cast(Spell.Spells[rc.Effect]);
+                throw new NotImplementedException();
+                //Cast(Spell.Spells[rc.Effect]);
                 return;
             }
 
@@ -592,7 +597,9 @@ namespace ODB
             //LH-021214: if uc is null here, we failed an earlier check.
             Debug.Assert(uc != null);
 
-            Cast(Spell.Spells[uc.UseEffect]);
+            throw new NotImplementedException();
+
+            //Cast(Spell.Spells[uc.UseEffect]);
         }
 
         public static void Wield()
@@ -666,13 +673,32 @@ namespace ODB
             string answer = Game.QpAnswerStack.Peek();
             if (answer.Length <= 0) return;
 
-            int index = IO.Indexes.IndexOf(answer[0]);
+            int index = IO.Indexes.IndexOf(
+                Game.CurrentCommand.Answer[0]
+            );
             Spell spell = Game.Player.Spellbook[index];
 
-            if (Game.Player.MpCurrent >= spell.Cost)
+            ODBGame.Game.CurrentCommand.Data.Add(
+                "spell",
+                spell
+            );
+
+            if (spell.CastType == InputType.None)
+                Game.Player.Do(Game.CurrentCommand);
+            else
+            {
+                spell.SetupAcceptedInput();
+                IO.AskPlayer(
+                    "foo bar",
+                    spell.CastType,
+                    Game.Player.Do
+                );
+            }
+
+            /*if (Game.Player.MpCurrent >= spell.Cost)
                 Cast(spell);
             else
-                Game.UI.Log("You need more energy to cast that.");
+                Game.UI.Log("You need more energy to cast that.");*/
         }
 
     }

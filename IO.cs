@@ -76,10 +76,12 @@ namespace ODB
                 case InputType.QuestionPromptSingle:
                     Game.QpAnswerStack.Push(Answer);
                     IOState = InputType.PlayerInput;
+                    Game.CurrentCommand.Answer = Answer;
                     Game.QuestionReaction();
                     break;
                 case InputType.Targeting:
                     IOState = InputType.PlayerInput;
+                    Game.CurrentCommand.Target = Game.Target;
                     Game.QuestionReaction();
                     break;
             }
