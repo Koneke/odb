@@ -122,13 +122,13 @@ namespace ODB
 
         public static void PoisonEffect(Actor holder)
         {
-            holder.Damage(Util.Roll("1d4"), null);
             Util.Game.UI.Log(
                 (holder == Util.Game.Player
                     ? "You feel "
                     : (holder.GetName("Name") + " looks ")) +
                 "sick..."
             );
+            holder.Damage(Util.Roll("1d4"), null);
         }
 
         public static void BleedEffect(Actor holder)

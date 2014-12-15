@@ -158,8 +158,8 @@ namespace ODB
             HpCurrent = HpMax;
             MpCurrent = MpMax;
 
-            Level = 1;
-            ExperiencePoints = 0;
+            Level = level;
+            ExperiencePoints = RequiredExperienceForLevel(level);
 
             Cooldown = 0;
 
@@ -194,9 +194,7 @@ namespace ODB
         {
             string result;
 
-            if (Definition.Named && format[0] > 'Z')
-                format = "name";
-            else if (Definition.Named)
+            if (Definition.Named && ID != 0)
                 format = "Name";
 
             switch (format.ToLower())
@@ -444,7 +442,11 @@ namespace ODB
             int targetDefense = target.GetArmor();
 
             AttackComponent bash = new AttackComponent
-                { AttackType = AttackType.Bash, Damage = "1d4" };
+            {
+                Damage = "1d4",
+                AttackType = AttackType.Bash,
+                DamageType = DamageType.Physical
+            };
 
             List<Tuple<Item, AttackComponent>> attacks =
                 new List<Tuple<Item, AttackComponent>>();
@@ -459,6 +461,8 @@ namespace ODB
 
             string message = "";
             int totalDamage = 0;
+
+            List<DamageSource> damageSources = new List<DamageSource>();
 
             //foreach (Item weapon in GetWieldedItems())
             foreach(Tuple<Item, AttackComponent> attack in attacks)
@@ -538,6 +542,15 @@ namespace ODB
                 }
 
                 totalDamage += damage;
+                damageSources.Add(new DamageSource
+                {
+                    Damage = damage,
+                    AttackType = ac.AttackType,
+                    DamageType = ac.DamageType,
+                    Source = this,
+                    Target = target
+                });
+
                 if (weapon == null) continue;
 
                 if (Util.Random.Next(0, Materials.MaxHardness+1) <
@@ -573,7 +586,7 @@ namespace ODB
                             Game.Player.Inventory.Add(stack);
                             World.WorldItems.Remove(stack);
                         }
-                            //otherwise, drop it into the world
+                        //otherwise, drop it into the world
                         else
                         {
                             message +=
@@ -599,7 +612,9 @@ namespace ODB
             }
 
             Game.UI.Log(message);
-            target.Damage(totalDamage, this);
+            //target.Damage(totalDamage, this);
+            foreach (DamageSource ds in damageSources)
+                target.Damage(ds);
         }
         public void Shoot(Actor target)
         {
@@ -771,6 +786,32 @@ namespace ODB
             if(attacker != null)
                 attacker.GiveExperience(Definition.Experience * Level);
         }
+        public void Damage(DamageSource ds)
+        {
+            Damage(ds.Damage, ds.Source);
+            switch (ds.DamageType)
+            {
+                case DamageType.Ratking:
+                    List<TileInfo> neighbours =
+                        World.Level.At(ds.Source.xy).Neighbours
+                        .Where(ti => ti.Actor == null)
+                        .Where(ti => !ti.Solid)
+                        .Where(ti => ti.Door != Door.Closed)
+                        .ToList();
+
+                    if (neighbours.Any(ti => ti.Actor == null))
+                    {
+                        Point p = neighbours
+                            .SelectRandom()
+                            .Position;
+                        Actor rat = new Actor(
+                            p, World.Level.ID, Util.ADefByName("rat"),
+                            ds.Source.Level);
+                        World.Level.Spawn(rat);
+                    }
+                    break;
+            }
+        }
 
         public void GiveExperience(int amount)
         {
@@ -782,10 +823,25 @@ namespace ODB
 
             Game.UI.Log(
                 "{1} stronger",
-                this == Game.Player ? "You feel" : GetName("Name") + " looks", Game);
+                this == Game.Player
+                    ? "You feel" :
+                    GetName("Name") + " looks", Game
+            );
             HpMax += Util.Roll(Definition.HitDie);
             MpMax += Util.Roll(Definition.ManaDie);
             Level = LevelFromExperience(ExperiencePoints);
+        }
+
+        public int RequiredExperienceForLevel(int target)
+        {
+            int level = 1;
+            int xp = 0;
+            while (level < target)
+            {
+                xp++;
+                level = LevelFromExperience(xp);
+            }
+            return xp;
         }
 
         public int LevelFromExperience(int amount)
@@ -818,7 +874,8 @@ namespace ODB
         }
         public void AddEffect(LastingEffect le)
         {
-            LastingEffects.Add(le);
+            if(!HasEffect(le.Type))
+                LastingEffects.Add(le);
         }
         public void AddEffect(
             StatusType type,

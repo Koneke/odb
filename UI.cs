@@ -98,7 +98,7 @@ namespace ODB
                 new Microsoft.Xna.Framework.Point(
                     _dfc.ViewArea.Width - _inventoryConsole.ViewArea.Width,
                     0
-                    );
+                );
 
             _statRowConsole = new Console(80, 2) {
                 Position = new Microsoft.Xna.Framework.Point(0, 23)

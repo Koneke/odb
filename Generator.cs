@@ -326,7 +326,7 @@ namespace ODB
 
         private static void GenerateLoot(Level level)
         {
-            int loot = (level.Depth) * 25;
+            int loot = (level.Depth) * 30;
             List<ItemDefinition> possibleItems =
                 ItemDefinition.ItemDefinitions
                     .Where(itd => itd != null)

@@ -352,6 +352,12 @@ namespace ODB
 
         public void Spawn(Actor actor)
         {
+            if(actor.ID != 0)
+                //no brain? give it one
+                //'cuz we nice like that
+                if(ODBGame.Game.Brains.All(b => b.MeatPuppet != actor))
+                    ODBGame.Game.Brains.Add(new Brain(actor));
+
             actor.LevelID = ID;
             World.WorldActors.Add(actor);
             CalculateActorPositions();

@@ -64,6 +64,7 @@ namespace ODB
 
         public string Damage;
         public AttackType AttackType;
+        public DamageType DamageType;
         public List<EffectComponent> Effects;
 
         public AttackComponent()
@@ -77,6 +78,7 @@ namespace ODB
 
             string damage = stream.ReadString();
             AttackType attackType = Util.ReadAttackType(stream.ReadString());
+            DamageType damageType = Util.ReadDamageType(stream.ReadString());
 
             List<EffectComponent> effects = new List<EffectComponent>();
             Stream effectsBlock = new Stream(stream.ReadBlock());
@@ -90,6 +92,7 @@ namespace ODB
             return new AttackComponent {
                 Damage = damage,
                 AttackType = attackType,
+                DamageType = damageType,
                 Effects = effects
             };
         }
@@ -101,6 +104,7 @@ namespace ODB
             stream.Write("{", false);
             stream.Write(Damage);
             stream.Write(Util.WriteAttackType(AttackType));
+            stream.Write(Util.WriteDamageType(DamageType));
             stream.Write("{", false);
             foreach (EffectComponent ec in Effects)
                 stream.Write(ec.WriteComponent(), false);
@@ -412,4 +416,8 @@ namespace ODB
             };
         }
     }
+
+    //armor component
+    //ac
+    //armor type
 }

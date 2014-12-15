@@ -354,6 +354,26 @@ namespace ODB
             }
         }
 
+        public static DamageType ReadDamageType(string s)
+        {
+            switch (s.ToLower())
+            {
+                case "dt_physical": return DamageType.Physical;
+                case "dt_ratking": return DamageType.Ratking;
+                default: throw new ArgumentException();
+            }
+        }
+
+        public static string WriteDamageType(DamageType type)
+        {
+            switch (type)
+            {
+                case DamageType.Physical: return "dt_physical";
+                case DamageType.Ratking: return "dt_ratking";
+                default: throw new ArgumentException();
+            }
+        }
+
         //for every y points of source, return x
         //e.g., 1 per 2, strength, one point for every two points of strength
         public static int XperY(int x, int y, int source)

@@ -523,6 +523,12 @@ namespace ODB
         Bite
     }
 
+    public enum DamageType
+    {
+        Physical,
+        Ratking
+    }
+
     public class Monster
     {
         public static Dictionary<int, List<ActorDefinition>>
@@ -594,5 +600,13 @@ namespace ODB
                 ColorPoints = new List<Tuple<int, Color>>(ColorPoints)
             };
         }
+    }
+
+    public class DamageSource
+    {
+        public int Damage;
+        public AttackType AttackType;
+        public DamageType DamageType;
+        public Actor Source, Target;
     }
 }

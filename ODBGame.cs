@@ -42,7 +42,6 @@ namespace ODB
 
         public Actor Player;
 
-
         //LH-021214: Currently casting actor (so that our spell casting system
         //           can use the same Question-system as other commands.
         //           Since there should never possibly pass a tick between an
@@ -77,6 +76,9 @@ namespace ODB
             SaveIO.ReadItemDefinitionsFromFile("Data/items.def");
             SaveIO.ReadTileDefinitionsFromFile("Data/tiles.def");
             KeyBindings.ReadBinds(SaveIO.ReadFromFile("Data/keybindings.kb"));
+
+            //todo: mig this later
+            Brains = new List<Brain>();
         }
 
         private void SetupSeed()
@@ -219,6 +221,7 @@ namespace ODB
                     IO.Answer = "";
                     IO.IOState = InputType.PlayerInput;
                 }
+                else Wizard.WmCursor = Player.xy;
                 WizMode = !WizMode;
             }
             #endregion
@@ -454,7 +457,7 @@ namespace ODB
         {
             while(Player.Cooldown > 0 && Player.IsAlive)
             {
-                foreach (Brain b in Brains
+                foreach (Brain b in new List<Brain>(Brains)
                     .Where(b =>
                         b.MeatPuppet.Cooldown <= 0 &&
                         b.MeatPuppet.Awake))
@@ -492,6 +495,7 @@ namespace ODB
 
                 foreach (Actor a in World.WorldActors)
                 {
+                    if (!a.IsAlive) continue;
                     foreach (LastingEffect effect in a.LastingEffects)
                         effect.Tick();
                     a.LastingEffects.RemoveAll(
