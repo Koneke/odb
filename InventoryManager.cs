@@ -297,8 +297,12 @@ namespace ODB
                 return;
             }
 
-            Game.QpAnswerStack.Push(IO.Indexes[Selection] + "");
-            PlayerResponses.Wear();
+            /*Game.QpAnswerStack.Push(IO.Indexes[Selection] + "");
+            PlayerResponses.Wear();*/
+            Game.Player.Do(
+                new Command("wear")
+                .Add("item", item)
+            );
         }
 
         private static void PutInto(Item item, int container)

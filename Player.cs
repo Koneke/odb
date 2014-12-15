@@ -613,6 +613,8 @@ namespace ODB
                 "", (c, n) => c + n);
             question += "]";
 
+            Game.CurrentCommand = new Command("wear");
+
             IO.AskPlayer(
                 question,
                 InputType.QuestionPromptSingle,

@@ -254,12 +254,6 @@ namespace ODB
                 if (Count > 0) return;
 
                 //LH-021214: Spent last of stacking item -> Remove it.
-
-                //LH-151214: pretty sure it is no longer needed,
-                //           despawn should handle removing from actor
-                //           inventories.
-                //Game.Player.Inventory.Remove(this);
-
                 World.Level.Despawn(this);
             }
             else

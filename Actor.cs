@@ -1202,12 +1202,25 @@ namespace ODB
             spell.Cast(this, cmd.Get("target"));
         }
 
+        private void HandleWear(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+            Wear(item);
+
+            if (this == Game.Player)
+                Game.UI.Log(
+                    "Wore {1}.",
+                    item.GetName("a")
+                );
+        }
+
         public void Do(Command cmd)
         {
             switch(cmd.Type)
             {
                 case "cast": HandleCast(cmd); break;
                 case "use": HandleUse(cmd); break;
+                case "wear": HandleWear(cmd); break;
                 default: throw new ArgumentException();
             }
         }

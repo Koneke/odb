@@ -10,57 +10,6 @@ namespace ODB
     {
         public static ODBGame Game;
 
-        /*private static void Cast(Spell spell)
-        {
-            //LH-021214: If the spells is nontargetted, just trigger the effect
-            //           instantly.
-            if (spell.CastType == InputType.None)
-                spell.Cast(Game.Player, null);
-            //LH-021214: Otherwise, ask a player of the spell's kind.
-            //           Flexible, fancy, and reuses code! Woo!
-            else
-            {
-                Game.Caster = Game.Player;
-                IO.AcceptedInput.Clear();
-                if (spell.CastType != InputType.Targeting)
-                    spell.SetupAcceptedInput();
-                else
-                    for (char c = '0'; c <= '9'; c++) IO.AcceptedInput.Add(c);
-
-                if (IO.AcceptedInput.Count <= 0)
-                {
-                    Game.UI.Log("You have nothing to cast that on.");
-                    Game.Caster = null;
-                    return;
-                }
-
-                string question = "Cast " + spell.Name;
-                switch (spell.CastType)
-                {
-                    case InputType.QuestionPrompt:
-                    case InputType.QuestionPromptSingle:
-                        question += " on what? ";
-                        break;
-                    case InputType.Targeting:
-                        question += " where? ";
-                        break;
-                }
-
-                if (spell.CastType != InputType.Targeting)
-                {
-                    question += "[";
-                    question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
-                    question += "]";
-                }
-
-                IO.AskPlayer(
-                    question,
-                    spell.CastType,
-                    spell.Cast
-                );
-            }
-        }*/
-
         public static void Chant()
         {
             string answer = Game.QpAnswerStack.Pop();
@@ -605,7 +554,7 @@ namespace ODB
             else
             {
                 if (useEffect.SetupAcceptedInput != null)
-                    useEffect.SetupAcceptedInput();
+                    useEffect.SetupAcceptedInput(Game.Player);
 
                 IO.AskPlayer(
                     //todo: switch to appropriate On what/Where here
@@ -679,8 +628,16 @@ namespace ODB
 
             if (!canEquip) return;
 
+            Game.CurrentCommand.Add("item", item);
+            Game.Player.Do(Game.CurrentCommand);
+
+            //LH-151214: This check should never be needed, because no
+            //           wearable item should be stacking. Either way,
+            //           if they are, that should no longer be handled here.
+            //           Leaving it here for one commit just so this comment
+            //           is saved ;)
             //make sure we're not equipping "2x ..."
-            if (item.Definition.Stacking && item.Count > 1)
+            /*if (item.Definition.Stacking && item.Count > 1)
             {
                 Item clone = new Item(
                     //clone
@@ -694,11 +651,12 @@ namespace ODB
                 item.Count = 1;
                 Game.Player.Inventory.Add(clone);
                 World.AllItems.Add(clone);
-            }
-            Game.Player.Wear(item);
+            }*/
+
+            /*Game.Player.Wear(item);
             Game.UI.Log("Wore " + item.GetName("a") + ".");
 
-            Game.Player.Pass();
+            Game.Player.Pass();*/
         }
 
         public static void Zap()
@@ -733,20 +691,16 @@ namespace ODB
                 //weapons, or something). targetted spells doesn't need this,
                 //so check if it's null.
                 if(spell.SetupAcceptedInput != null)
-                    spell.SetupAcceptedInput();
+                    spell.SetupAcceptedInput(Game.Player);
 
                 IO.AskPlayer(
-                    //todo: switch to appropriate On what/Where here
-                    "foo bar",
+                    spell.CastType == InputType.Targeting
+                        ? "Where?"
+                        : "On what?",
                     spell.CastType,
                     Game.Player.Do
                 );
             }
-
-            /*if (Game.Player.MpCurrent >= spell.Cost)
-                Cast(spell);
-            else
-                Game.UI.Log("You need more energy to cast that.");*/
         }
 
     }

@@ -72,7 +72,7 @@ namespace ODB
 
         private void Load()
         {
-            SetupMagic(); //essentially magic defs, but we hardcode magic
+            Spell.SetupMagic(); //essentially magic defs, but we hardcode magic
             SetupTickingEffects(); //same as magic, cba to add scripting
             SaveIO.ReadActorDefinitionsFromFile("Data/actors.def");
             SaveIO.ReadItemDefinitionsFromFile("Data/items.def");
@@ -109,7 +109,7 @@ namespace ODB
 
             Player = new Actor(
                 new Point(0, 0),
-                0, Util.ADefByName("Moribund"), 10)
+                0, Util.ADefByName("Moribund"), 1)
             { Awake = true };
 
             World.Levels.Add(World.Level = new Generator().Generate(null, 1));
@@ -268,84 +268,6 @@ namespace ODB
 
             if (!gotoStairs) return;
             Game.Player.xy = target;
-        }
-
-        private static void SetupMagic()
-        {
-            //ReSharper disable once ObjectCreationAsStatement
-            new Spell("potion of healing")
-            {
-                CastType = InputType.None,
-                Effect = (c, t) =>
-                {
-                    Game.UI.Log(
-                        Game.Caster.GetName("Name") + " " +
-                        Game.Caster.Verb("#feel") + " " +
-                        "better!"
-                    );
-                    Util.Game.Caster.Heal(Util.Roll("3d3"));
-                }
-            };
-
-            //ReSharper disable once ObjectCreationAsStatement
-            new Spell("forcebolt")
-            {
-                CastType = InputType.Targeting,
-                Effect = (caster, target) =>
-                {
-                    //Actor target = World.Level.ActorOnTile(Game.Target);
-                    Actor targetActor = World.Level.ActorOnTile(
-                        (Point)target
-                    );
-
-                    if (targetActor == null)
-                    {
-                        Game.UI.Log("The bolt fizzles in the air.");
-                        return;
-                    }
-                    Game.UI.Log("The forcebolt hits {1}.",
-                        targetActor.GetName("the"));
-                    DamageSource ds = new DamageSource
-                    {
-                        Damage = Util.Roll("2d4"),
-                        AttackType = AttackType.Magic,
-                        DamageType = DamageType.Physical,
-                        Source = Game.Caster,
-                        Target = targetActor
-                    };
-                    targetActor.Damage(ds);
-                },
-                CastDifficulty = 10,
-                Cost = 3,
-                Range = 5
-            };
-
-            new Spell("identify")
-            {
-                CastType = InputType.QuestionPromptSingle,
-                SetupAcceptedInput = () =>
-                {
-                    IO.AcceptedInput.Clear();
-                    IO.AcceptedInput.AddRange(
-                        Game.Caster.Inventory
-                            .Where(it => !it.Known)
-                            .Select(item => Game.Caster.Inventory.IndexOf(item))
-                            .Select(index => IO.Indexes[index])
-                    );
-
-                },
-                Effect = (caster, target) =>
-                {
-                    //string answer = Game.QpAnswerStack.Pop();
-                    Command cmd = (Command)target;
-                    string answer = (string)cmd.Get("answer");
-                    int index = IO.Indexes.IndexOf(answer[0]);
-                    Item item = Game.Caster.Inventory[index];
-                    item.Identify();
-                },
-                CastDifficulty = 15,
-                Cost = 7
-            };
         }
 
         public static void SetupTickingEffects()

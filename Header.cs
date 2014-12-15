@@ -269,57 +269,6 @@ namespace ODB
         }
     }
 
-    public class Spell
-    {
-        public static Spell[] Spells = new Spell[0xFFFF];
-        public static int IDCounter = 0;
-        public int ID;
-
-        public string Name;
-        //0 should mean self-cast..? (or just non-targetted)
-        //projectile should explode without moving, so should be on self
-        public int Range;
-        public int Cost;
-        public int CastDifficulty;
-
-        //LH-021214: Spelleffects use the QpStack like other question-reactions.
-        //           Also means that we can have spells going through several
-        //           questions, like multi-targetting and similar, the same way
-        //           dropping a certain number of things works right now.
-        public Action<Actor, object> Effect;
-
-        //LH-021214: Since we're using the standard question system we will at
-        //           times need to populate the accepted input, so we need an
-        //           action for that as well.
-
-        public Action SetupAcceptedInput;
-
-        //LH-021214: Add variable to keep the questio string as well?
-        //           Like, identify might have "Identify what?", instead of
-        //           the automatic "Casting identify".
-        public InputType CastType;
-
-        //LH-011214: (Almost) empty constructor to be used with initalizer
-        //           blocks. Using them simply because it is easier to skim
-        //           quickly if you have both the value and what it actually is
-        //           (i.e. castcost or what not).
-        public Spell(string name)
-        {
-            Name = name;
-
-            ID = IDCounter++;
-            Spells[ID] = this;
-        }
-
-        public void Cast(Actor caster, object target)
-        {
-            //target is currently usually either a string or a point,
-            //but if we need to, we really could pass an entire Command in.
-            
-            Effect(caster, target);
-        }
-    }
-
     //should probably make this a gObj?
     public class Projectile
     {
@@ -516,9 +465,12 @@ namespace ODB
             _data = new Dictionary<string, object>();
         }
 
-        public void Add(string key, object value)
+        public Command Add(string key, object value)
         {
             _data.Add(key.ToLower(), value);
+
+            //so we can do nice inlining stuff for readability
+            return this;
         }
 
         public object Get(string key)
