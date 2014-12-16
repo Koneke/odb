@@ -20,7 +20,7 @@ namespace ODB
         public UI UI;
         public static ODBGame Game;
 
-        public static AppState State;
+        private AppState _state;
 
         public ODBGame()
         {
@@ -72,14 +72,12 @@ namespace ODB
 
         protected override void Initialize()
         {
-            #region engineshit
             GameReferences();
 
             IsMouseVisible = true;
             IsFixedTimeStep = false;
 
             UI = new UI { ScreenSize = new xnaPoint(80, 25) };
-            #endregion
 
             Load();
             SetupSeed();
@@ -100,7 +98,7 @@ namespace ODB
 
             UI.Log("Welcome!");
 
-            State = new GameState(this);
+            SwitchState(new MenuState(this));
 
             base.Initialize();
         }
@@ -110,13 +108,12 @@ namespace ODB
             Engine.Update(gameTime, IsActive);
             IO.Update(false);
 
-            State.Update();
-            State.Draw();
+            _state.Update();
+            _state.Draw();
 
             IO.Update(true);
             base.Update(gameTime);
         }
-
 
         public void SetupBrains() {
             if(Brains == null) Brains = new List<Brain>();
@@ -127,6 +124,12 @@ namespace ODB
                 //what did i even mean with that comment
                 if (actor.ID == 0) Game.Player = actor;
                 else Brains.Add(new Brain(actor));
+        }
+
+        public void SwitchState(AppState state)
+        {
+            _state = state;
+            state.SwitchTo();
         }
 
         public void SwitchLevel(Level newLevel, bool gotoStairs = false)

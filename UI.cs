@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using SadConsole;
+using SadConsole.Consoles;
 using Console = SadConsole.Consoles.Console;
 
 using Bind = ODB.KeyBindings.Bind;
@@ -17,7 +18,7 @@ namespace ODB
 
         public static ODBGame Game;
 
-        private List<Console> _consoles;
+        public ConsoleList Consoles;
         private Console _dfc;
         private Console _logConsole;
         private Console _inputRowConsole;
@@ -70,14 +71,14 @@ namespace ODB
 
             Engine.DefaultFont.ResizeGraphicsDeviceManager(
                 Graphics, 80, 25, 0, 0
-                );
+            );
 
             SetupConsoles();
         }
 
         public void SetupConsoles()
         {
-            _consoles = new List<Console>();
+            Consoles = new ConsoleList();
 
             _dfc = new Console(80, 25);
             Engine.ActiveConsole = _dfc;
@@ -104,18 +105,13 @@ namespace ODB
                 Position = new Microsoft.Xna.Framework.Point(0, 23)
             };
 
-            _consoles.Add(_dfc);
-            _consoles.Add(_logConsole);
-            _consoles.Add(_inputRowConsole);
-            _consoles.Add(_statRowConsole);
-            _consoles.Add(_inventoryConsole);
+            Consoles.Add(_dfc);
+            Consoles.Add(_logConsole);
+            Consoles.Add(_inputRowConsole);
+            Consoles.Add(_statRowConsole);
+            Consoles.Add(_inventoryConsole);
 
-            //draw order
-            Engine.ConsoleRenderStack.Add(_dfc);
-            Engine.ConsoleRenderStack.Add(_logConsole);
-            Engine.ConsoleRenderStack.Add(_inputRowConsole);
-            Engine.ConsoleRenderStack.Add(_statRowConsole);
-            Engine.ConsoleRenderStack.Add(_inventoryConsole);
+            Engine.ConsoleRenderStack = Consoles;
         }
 
         public void RenderConsoles()
@@ -668,7 +664,6 @@ namespace ODB
             }
         }
 
-
         public void DrawToScreen(Point xy, Color? bg, Color fg, String tile)
         {
             if (bg != null)
@@ -708,12 +703,14 @@ namespace ODB
             int i = _fonts.IndexOf(Engine.DefaultFont);
             i++;
             i = i % _fonts.Count;
+
             Engine.DefaultFont = _fonts[i];
-            foreach (Console c in _consoles)
+            foreach (Console c in Consoles)
                 c.Font = Engine.DefaultFont;
+
             Engine.DefaultFont.ResizeGraphicsDeviceManager(
                 Graphics, ScreenSize.X, ScreenSize.Y, 0, 0
-                );
+            );
         }
 
         public void Input()

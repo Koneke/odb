@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
+using Console = SadConsole.Consoles.Console;
+
 /*
  * Mainly for just storing general, loose utility functions.
  * Classes/enums/structs live in Header.cs
  */
-using Microsoft.Xna.Framework.Input;
 
 namespace ODB
 {
@@ -52,6 +54,31 @@ namespace ODB
                 ? StringSplitOptions.RemoveEmptyEntries
                 : StringSplitOptions.None)
             .ToList();
+        }
+
+        public static void DrawColorString(
+            this Console console,
+            int x, int y,
+            ColorString cs)
+        {
+            for (int j = -1; j < cs.ColorPoints.Count; j++)
+            {
+                int current = j == -1
+                    ? 0
+                    : cs.ColorPoints[j].Item1;
+
+                int next = j == cs.ColorPoints.Count - 1
+                    ? cs.String.Length
+                    : cs.ColorPoints[j + 1].Item1;
+
+                console.CellData.Print(
+                    x + current, y,
+                    cs.String.Substring(current, next - current),
+                    j == -1
+                        ? Color.White
+                        : cs.ColorPoints[j].Item2
+                );
+            }
         }
     }
 

@@ -1,28 +1,32 @@
 using System.Collections.Generic;
 using System.Linq;
+using SadConsole;
 
 namespace ODB
 {
     public abstract class AppState
     {
+        protected ODBGame Game;
+
+        protected AppState(ODBGame game)
+        {
+            Game = game;
+        }
+
         public abstract void Update();
         public abstract void Draw();
+        public abstract void SwitchTo();
     }
 
     public class GameState : AppState
     {
-        private readonly ODBGame _game;
-
-        public GameState(ODBGame game)
-        {
-            _game = game;
-        }
+        public GameState(ODBGame game) : base(game) { }
 
         public void SetupBrains() {
-            if(_game.Brains == null)
-                _game.Brains = new List<Brain>();
+            if(Game.Brains == null)
+                Game.Brains = new List<Brain>();
             else
-                _game.Brains.Clear();
+                Game.Brains.Clear();
 
             //note: this means that we only act with actors on the same
             //      floor as the player, might want to change this in the future
@@ -30,18 +34,18 @@ namespace ODB
                 .Where(a => a.LevelID == World.Level.ID))
             {
                 if (actor.ID == 0)
-                    _game.Player = actor;
+                    Game.Player = actor;
                 else
-                    _game.Brains.Add(new Brain(actor));
+                    Game.Brains.Add(new Brain(actor));
             }
         }
 
 // ReSharper disable once InconsistentNaming
         private void ProcessNPCs()
         {
-            while(_game.Player.Cooldown > 0 && _game.Player.IsAlive)
+            while(Game.Player.Cooldown > 0 && Game.Player.IsAlive)
             {
-                foreach (Brain b in _game.Brains
+                foreach (Brain b in Game.Brains
                     .Where( b =>
                         b.MeatPuppet.Cooldown <= 0 &&
                         b.MeatPuppet.Awake))
@@ -71,9 +75,9 @@ namespace ODB
                 }
 
                 //todo: should apply to everyone?
-                _game.Player.RemoveFood(1);
+                Game.Player.RemoveFood(1);
 
-                _game.GameTick++;
+                Game.GameTick++;
 
                 foreach (Actor a in World.WorldActors)
                 {
@@ -93,9 +97,9 @@ namespace ODB
         {
             if (KeyBindings.Pressed(KeyBindings.Bind.Exit))
             {
-                if (_game.WizMode)
+                if (Game.WizMode)
                 {
-                    _game.WizMode = false;
+                    Game.WizMode = false;
                     IO.IOState = InputType.PlayerInput;
                 }
                 else
@@ -106,7 +110,7 @@ namespace ODB
                             ODBGame.Game.Exit();
                             break;
                         case InputType.Inventory:
-                            _game.InvMan.HandleCancel();
+                            Game.InvMan.HandleCancel();
                             break;
                         default:
                             IO.IOState = InputType.PlayerInput;
@@ -115,17 +119,17 @@ namespace ODB
                 }
             }
 
-            _game.UI.Input();
+            Game.UI.Input();
 
-            if (_game.WizMode) Wizard.WmInput();
+            if (Game.WizMode) Wizard.WmInput();
             else
             {
                 switch (IO.IOState)
                 {
                     case InputType.Splash:
                         if (KeyBindings.Pressed(KeyBindings.Bind.Accept))
-                            _game.UI.LoggedSincePlayerInput -= _game.UI.LogSize;
-                        if (_game.UI.LoggedSincePlayerInput <= _game.UI.LogSize)
+                            Game.UI.LoggedSincePlayerInput -= Game.UI.LogSize;
+                        if (Game.UI.LoggedSincePlayerInput <= Game.UI.LogSize)
                             IO.IOState = InputType.PlayerInput;
                         break;
 
@@ -139,21 +143,21 @@ namespace ODB
                         break;
 
                     case InputType.PlayerInput:
-                        if (_game.UI.CheckMorePrompt()) break;
-                        if (_game.Player.Cooldown == 0)
+                        if (Game.UI.CheckMorePrompt()) break;
+                        if (Game.Player.Cooldown == 0)
                             Player.PlayerInput();
                         else ProcessNPCs(); //mind: also ticks gameclock
                         break;
 
                     case InputType.Inventory:
-                        _game.InvMan.InventoryInput();
+                        Game.InvMan.InventoryInput();
                         break;
 
                     default: throw new System.Exception("");
                 }
             }
 
-            _game.UI.UpdateCamera();
+            Game.UI.UpdateCamera();
 
             //should probably find a better place to tick this
             foreach (Actor a in World.WorldActors
@@ -165,23 +169,28 @@ namespace ODB
             }
 
             if (KeyBindings.Pressed(KeyBindings.Bind.Window_Size))
-                _game.UI.CycleFont();
+                Game.UI.CycleFont();
 
             if (KeyBindings.Pressed(KeyBindings.Bind.Dev_ToggleConsole))
             {
-                if (_game.WizMode)
+                if (Game.WizMode)
                 {
                     IO.Answer = "";
                     IO.IOState = InputType.PlayerInput;
                 }
-                else Wizard.WmCursor = _game.Player.xy;
-                _game.WizMode = !_game.WizMode;
+                else Wizard.WmCursor = Game.Player.xy;
+                Game.WizMode = !Game.WizMode;
             }
         }
 
         public override void Draw()
         {
-            _game.UI.RenderConsoles();
+            Game.UI.RenderConsoles();
+        }
+
+        public override void SwitchTo()
+        {
+            Engine.ConsoleRenderStack = Game.UI.Consoles;
         }
     }
 }
