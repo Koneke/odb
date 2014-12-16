@@ -411,10 +411,20 @@ namespace ODB
                     if (effect.SetupAcceptedInput != null)
                         effect.SetupAcceptedInput(Game.Player);
 
+                    if (IO.AcceptedInput.Count <= 0)
+                    {
+                        Game.UI.Log("You have nothing to cast that on.");
+                        return;
+                    }
+
+                    string question = effect.CastType == InputType.Targeting
+                            ? "Where? ["
+                            : "On what? [";
+                    question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
+                    question += "]";
+
                     IO.AskPlayer(
-                        effect.CastType == InputType.Targeting
-                            ? "Where?"
-                            : "On what?",
+                        question,
                         effect.CastType,
                         Game.Player.Do
                     );
@@ -560,10 +570,20 @@ namespace ODB
                 if (useEffect.SetupAcceptedInput != null)
                     useEffect.SetupAcceptedInput(Game.Player);
 
+                if (IO.AcceptedInput.Count <= 0)
+                {
+                    Game.UI.Log("You have nothing to cast that on.");
+                    return;
+                }
+
+                string question = useEffect.CastType == InputType.Targeting
+                        ? "Where? ["
+                        : "On what? [";
+                question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
+                question += "]";
+
                 IO.AskPlayer(
-                    useEffect.CastType == InputType.Targeting
-                        ? "Where?"
-                        : "On what?",
+                    question,
                     useEffect.CastType,
                     Game.Player.Do
                 );
@@ -583,13 +603,12 @@ namespace ODB
             List<DollSlot> equipSlots = item.GetHands(Game.Player);
 
             if (!Game.Player.CanEquip(equipSlots))
-                Game.UI.Log("You'd need more hands to do that!");
-            else
             {
-                Game.UI.Log("Wielded " + item.GetName("a") + ".");
-                Game.Player.Wield(item);
-                Game.Player.Pass();
+                Game.UI.Log("You'd need more hands to do that!");
+                return;
             }
+
+            Game.Player.Do(new Command("wield").Add("item", item));
         }
 
         public static void Wear()
@@ -614,8 +633,7 @@ namespace ODB
 
             if (!canEquip) return;
 
-            Game.CurrentCommand.Add("item", item);
-            Game.Player.Do(Game.CurrentCommand);
+            Game.Player.Do(new Command("wear").Add("item", item));
         }
 
         public static void Zap()
@@ -630,11 +648,14 @@ namespace ODB
             );
             Spell spell = Game.Player.Spellbook[index];
 
+            if (Game.Player.MpCurrent < spell.Cost)
+            {
+                Game.UI.Log("You need more energy to do that.");
+                return;
+            }
+
             //save the spell to be cast using that index to the ccmd
-            ODBGame.Game.CurrentCommand.Add(
-                "spell",
-                spell
-            );
+            ODBGame.Game.CurrentCommand.Add("spell", spell);
 
             //no more data required, gogo
             if (spell.CastType == InputType.None)
@@ -653,15 +674,24 @@ namespace ODB
                 if(spell.SetupAcceptedInput != null)
                     spell.SetupAcceptedInput(Game.Player);
 
+                if (IO.AcceptedInput.Count <= 0)
+                {
+                    Game.UI.Log("You have nothing to cast that on.");
+                    return;
+                }
+
+                string question = spell.CastType == InputType.Targeting
+                        ? "Where? ["
+                        : "On what? [";
+                question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
+                question += "]";
+
                 IO.AskPlayer(
-                    spell.CastType == InputType.Targeting
-                        ? "Where?"
-                        : "On what?",
+                    question,
                     spell.CastType,
                     Game.Player.Do
                 );
             }
         }
-
     }
 }

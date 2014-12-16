@@ -1126,40 +1126,8 @@ namespace ODB
                 Game.UI.Log(message);
         }
 
-        //should maybe/probably/most likely be moved to separate functions,
-        //like PlayerResponses.FinalizeZap, or FinalizeUse, or whatever,
-        //which should finish generating the command, and subsequently pass it
-        //to the player.
         public void Do()
         {
-            if (ID != Game.Player.ID)
-                throw new Exception("You're doing it wrong");
-            switch (Game.CurrentCommand.Type)
-            {
-                case "cast":
-                case "use":
-                    Spell spell = (Spell)Game.CurrentCommand.Get("spell");
-                    switch (spell.CastType)
-                    {
-                        case InputType.QuestionPrompt:
-                            Game.CurrentCommand.Add(
-                                "target", Game.CurrentCommand.Answer
-                            );
-                            break;
-                        case InputType.QuestionPromptSingle:
-                            Game.CurrentCommand.Add(
-                                "target", Game.CurrentCommand.Answer[0]
-                            );
-                            break;
-                        case InputType.Targeting:
-                            Game.CurrentCommand.Add(
-                                "target", Game.CurrentCommand.Target
-                            );
-                            break;
-                    }
-                    break;
-            }
-
             Do(Game.CurrentCommand);
         }
 
@@ -1176,7 +1144,10 @@ namespace ODB
             if (Util.Roll("1d20") + Get(Stat.Intelligence) >=
                 spell.CastDifficulty)
             {
-                spell.Cast(this, cmd.Get("target"));
+                if(spell.CastType == InputType.Targeting)
+                    spell.Cast(this, cmd.Get("target"));
+                else
+                    spell.Cast(this, cmd.Get("answer"));
             }
             else
             {
@@ -1198,7 +1169,10 @@ namespace ODB
                 [item.GetComponent<UsableComponent>().UseEffect];
             item.SpendCharge();
 
-            spell.Cast(this, cmd.Get("target"));
+            if(spell.CastType == InputType.Targeting)
+                spell.Cast(this, cmd.Get("target"));
+            else
+                spell.Cast(this, cmd.Get("answer"));
 
             Pass();
         }
@@ -1211,6 +1185,20 @@ namespace ODB
             if (this == Game.Player)
                 Game.UI.Log(
                     "Wore {1}.",
+                    item.GetName("a")
+                );
+
+            Pass();
+        }
+
+        private void HandleWield(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+            Wield(item);
+
+            if (this == Game.Player)
+                Game.UI.Log(
+                    "Wielded {1}.",
                     item.GetName("a")
                 );
 
@@ -1248,8 +1236,8 @@ namespace ODB
 
             if (this == Game.Player)
                 Game.UI.Log(
-                    "You read {1}.",
-                    item.GetName("a")
+                    "You read {1}...",
+                    item.GetName("the")
                 );
 
             item.Identify();
@@ -1258,7 +1246,10 @@ namespace ODB
             Spell spell = Spell.Spells
                 [item.GetComponent<ReadableComponent>().Effect];
 
-            spell.Cast(this, cmd.Get("target"));
+            if(spell.CastType == InputType.Targeting)
+                spell.Cast(this, cmd.Get("target"));
+            else
+                spell.Cast(this, cmd.Get("answer"));
 
             Pass();
         }
@@ -1267,11 +1258,8 @@ namespace ODB
         {
             Item item = (Item)cmd.Get("item");
 
-            if( this == Game.Player)
-                Game.UI.Log(
-                    "You read {1}.",
-                    item.GetName("name")
-                );
+            if (this == Game.Player)
+                Game.UI.Log("You read {1}...",item.GetName("the"));
 
             item.Identify();
 
@@ -1280,6 +1268,9 @@ namespace ODB
 
             LearnSpell(spell);
 
+            if (this == Game.Player)
+                Game.UI.Log("You feel knowledgable about {1}!", spell.Name);
+
             Pass();
         }
 
@@ -1287,13 +1278,14 @@ namespace ODB
         {
             switch(cmd.Type)
             {
-                case "cast": HandleCast(cmd); break;
+                case "cast": HandleCast(cmd); break; //zap
                 case "learn": HandleLearn(cmd); break;
                 case "quaff": HandleQuaff(cmd); break;
                 case "quiver": HandleQuiver(cmd); break;
                 case "read": HandleRead(cmd); break;
                 case "use": HandleUse(cmd); break;
                 case "wear": HandleWear(cmd); break;
+                case "wield": HandleWield(cmd); break;
                 default: throw new ArgumentException();
             }
         }
