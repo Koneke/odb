@@ -51,7 +51,7 @@ namespace ODB
             CheckQuiver();
             CheckRead();
             CheckRemove();
-            CheckSheath();
+            CheckSheathe();
             CheckWield();
             CheckWear();
             CheckZap();
@@ -513,7 +513,7 @@ namespace ODB
             }
         }
 
-        private static void CheckSheath()
+        private static void CheckSheathe()
         {
             if (!KeyBindings.Pressed(Bind.Sheath)) return;
 
@@ -540,14 +540,14 @@ namespace ODB
                         [Game.Player.Inventory.IndexOf(Game.Player.Quiver)]
                     );
 
-                string question = "Sheath what? [";
+                string question = "Sheathe what? [";
                 question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
                 question += "]";
 
                 IO.AskPlayer(
                     question,
                     InputType.QuestionPromptSingle,
-                    PlayerResponses.Sheath
+                    PlayerResponses.Sheathe
                 );
             }
             else

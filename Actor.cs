@@ -333,9 +333,16 @@ namespace ODB
         public void DropItem(Item item)
         {
             World.WorldItems.Add(item);
+
+            item.xy = xy;
+
             Inventory.Remove(item);
+
             foreach (BodyPart bp in PaperDoll.Where(bp => bp.Item == item))
                 bp.Item = null;
+
+            if (Quiver == item)
+                Quiver = null;
         }
 
         public int Get(Stat stat, bool modded = true)
@@ -1198,7 +1205,7 @@ namespace ODB
 
             if (this == Game.Player)
                 Game.UI.Log(
-                    "Wielded {1}.",
+                    "You wield {1}.",
                     item.GetName("a")
                 );
 
@@ -1274,15 +1281,180 @@ namespace ODB
             Pass();
         }
 
+        private void HandleSheathe(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+
+            if (IsWielded(item))
+            {
+                foreach (BodyPart bp in PaperDoll.Where(bp => bp.Item == item))
+                    bp.Item = null;
+
+                if (this == Game.Player)
+                    Game.UI.Log(
+                        "You sheathe your {1}.",
+                        item.GetName("name")
+                    );
+            }
+            else
+            {
+                Quiver = null;
+
+                if (this == Game.Player)
+                    Game.UI.Log(
+                        "You quiver your {1}.",
+                        item.GetName("count")
+                    );
+            }
+
+            Pass();
+        }
+
+        public void HandleRemove(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+
+            foreach (BodyPart bp in PaperDoll.Where(bp => bp.Item == item))
+                bp.Item = null;
+
+            if (this == Game.Player)
+                Game.UI.Log(
+                    "You remove your {1}.",
+                    item.GetName("name")
+                );
+
+            Pass();
+        }
+
+        private void HandleOpen(Command cmd)
+        {
+            TileInfo targetTile = (TileInfo)cmd.Get("door");
+
+            Game.UI.Log("You open the door.");
+
+            targetTile.Door = Door.Open;
+        }
+
+        private void HandleGet(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+
+            World.WorldItems.Remove(item);
+
+            Item stack = Inventory.FirstOrDefault(it => it.CanStack(item));
+
+            if (stack != null)
+            {
+                Game.UI.Log("Picked up " + item.GetName("count") + ".");
+                stack.Stack(item);
+                //so we can get the right char below
+                item = stack;
+            }
+            else Game.Player.Inventory.Add(item);
+
+            char index = IO.Indexes[Inventory.IndexOf(item)];
+            if(this == Game.Player)
+                Util.Game.UI.Log(index + " - "  + item.GetName("count") + ".");
+
+            Pass();
+        }
+
+        private void HandleShoot(Command cmd)
+        {
+            Actor target = (Actor)cmd.Get("actor");
+            Shoot(target);
+        }
+
+        private void HandleEngrave(Command cmd)
+        {
+            string answer = (string)cmd.Get("answer");
+
+            World.Level.At(Game.Player.xy).Tile.Engraving = answer;
+
+            if(this == Game.Player)
+                Game.UI.Log(
+                    "You wrote \"{1}\" on the dungeon floor.",
+                    answer
+                );
+        }
+
+        private void HandleEat(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+            int index = Inventory.IndexOf(item);
+
+            if (item.Definition.Stacking)
+            {
+                if (item.Count > 1)
+                {
+                    item.Count--;
+                    Eat(item);
+                }
+                else
+                {
+                    Inventory.RemoveAt(index);
+                    Eat(item);
+                }
+            }
+            else
+            {
+                Inventory.RemoveAt(index);
+                Eat(item);
+            }
+
+            Pass();
+        }
+
+        private void HandleDrop(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+            int count = (int)cmd.Get("count");
+
+            if (count != item.Count)
+            {
+                Item clone = new Item(item.WriteItem().ToString()) {
+                    ID = Item.IDCounter++,
+                    Count = count
+                };
+                item.Count -= count;
+
+                item = clone;
+            }
+
+            Item stack = World.Level.At(xy).Items
+                .FirstOrDefault(it => it.CanStack(item));
+
+            if (stack != null)
+                stack.Stack(item);
+            else DropItem(item);
+
+            Game.UI.Log(
+                "{1} {2} {3}.",
+                GetName("Name"),
+                Verb("drop"),
+                item.GetName("count")
+            );
+
+            Pass();
+        }
+
         public void Do(Command cmd)
         {
             switch(cmd.Type)
             {
                 case "cast": HandleCast(cmd); break; //zap
+                case "drop": HandleDrop(cmd); break;
+                case "eat": HandleEat(cmd); break;
+                case "engrave": HandleEngrave(cmd); break;
+                case "get": HandleGet(cmd); break;
                 case "learn": HandleLearn(cmd); break;
+                case "open": HandleOpen(cmd); break;
                 case "quaff": HandleQuaff(cmd); break;
                 case "quiver": HandleQuiver(cmd); break;
                 case "read": HandleRead(cmd); break;
+                case "remove": HandleRemove(cmd); break;
+                case "sheathe": HandleSheathe(cmd); break;
+                case "shoot": HandleShoot(cmd); break;
                 case "use": HandleUse(cmd); break;
                 case "wear": HandleWear(cmd); break;
                 case "wield": HandleWield(cmd); break;

@@ -56,9 +56,11 @@ namespace ODB
 
             int i = IO.Indexes.IndexOf(answer[0]);
 
-            Item it = Game.Player.Inventory[i];
+            Item item = Game.Player.Inventory[i];
 
-            if (it.Definition.Stacking && it.Count > 1)
+            Game.CurrentCommand = new Command("drop").Add("item", item);
+
+            if (item.Definition.Stacking && item.Count > 1)
             {
                 IO.AcceptedInput.Clear();
                 IO.AcceptedInput.AddRange(IO.Numbers.ToList());
@@ -70,99 +72,20 @@ namespace ODB
                 );
             }
             //just do a full drop, no splitting necessary
-            else DoDrop(i);
-
-            Game.Player.Pass();
+            else Game.Player.Do(Game.CurrentCommand.Add("count", 0));
         }
 
         public static void DropCount()
         {
-            string count = Game.QpAnswerStack.Pop();
-            string index = Game.QpAnswerStack.Pop();
-            int i = IO.Indexes.IndexOf(index[0]);
-            int c = int.Parse(count);
-            DoDrop(i, c);
-        }
+            int count = int.Parse(IO.Answer);
 
-        static void DoDrop(int index)
-        {
-            //make sure that we actually pop since we only peeked before
-            Game.QpAnswerStack.Pop();
-
-            Item it = Game.Player.Inventory[index];
-
-            Game.Player.Inventory.Remove(it);
-
-            List<Item> iot;
-            if ((iot = World.Level.ItemsOnTile(Game.Player.xy))
-                .Any(item => item.CanStack(it)))
-            {
-                Item stack = iot.First(item => item.CanStack(it));
-                stack.Stack(it);
-            }
-            else World.WorldItems.Add(it);
-
-            it.xy = Game.Player.xy;
-
-            //actually make sure to unwield/unwear as well
-            foreach (BodyPart bp in Game.Player.PaperDoll
-                .Where(bp => bp.Item == it))
-                bp.Item = null;
-
-            if (Game.Player.Quiver == it)
-                Game.Player.Quiver = null;
-
-            Game.UI.Log("Dropped " + it.GetName("count") + ".");
-
-            Game.Player.Pass();
-        }
-
-        static void DoDrop(int index, int count)
-        {
-            Item it = Game.Player.Inventory[index];
-            if (!it.Definition.Stacking || it.Count <= 1) return;
-
-            if (count > it.Count)
+            if (count > ((Item)Game.CurrentCommand.Get("item")).Count)
             {
                 Game.UI.Log("You don't have that many.");
+                return;
             }
-            else if (count == it.Count)
-            {
-                //falling through to the normal itemdropping
-                Game.QpAnswerStack.Push("");
-                DoDrop(index);
-            }
-            else
-            {
-                //copy the item
-                Item droppedStack =
-                    new Item(
-                        //clone item
-                        it.WriteItem().ToString()
-                    ) {
-                        xy = Game.Player.xy,
-                        //mod the essential stuff
-                        ID = Item.IDCounter++,
-                        Count = count
-                    };
 
-                it.Count -= count;
-
-                List<Item> iot;
-                if ((iot = World.Level.ItemsOnTile(Game.Player.xy))
-                    .Any(item => item.CanStack(droppedStack)))
-                {
-                    Item stack = iot.First(item => item.CanStack(droppedStack));
-                    stack.Stack(droppedStack);
-                }
-                else World.Level.Spawn(droppedStack);
-
-                Game.UI.Log("Dropped " +
-                    droppedStack.GetName("count") + "."
-                );
-
-                Game.Player.Pass();
-            }
+            Game.Player.Do(Game.CurrentCommand.Add("count", count));
         }
 
         public static void Eat()
@@ -170,35 +93,15 @@ namespace ODB
             string answer = Game.QpAnswerStack.Pop();
             int index = IO.Indexes.IndexOf(answer[0]);
 
-            Item it = Game.Player.Inventory[index];
+            Item item = Game.Player.Inventory[index];
 
-            if (it.Definition.Stacking)
-            {
-                if (it.Count > 1)
-                {
-                    it.Count--;
-                    Game.Player.Eat(it);
-                }
-                else
-                {
-                    Game.Player.Inventory.RemoveAt(index);
-                    Game.Player.Eat(it);
-                }
-            }
-            else
-            {
-                Game.Player.Inventory.RemoveAt(index);
-                Game.Player.Eat(it);
-            }
+            Game.Player.Do(new Command("eat").Add("item", item));
 
-            Game.Player.Pass();
         }
 
         public static void Engrave()
         {
-            string answer = Game.QpAnswerStack.Pop();
-            World.Level.At(Game.Player.xy).Tile.Engraving = answer;
-            Game.UI.Log("You wrote \""+answer+"\" on the dungeon floor.");
+            Game.Player.Do(new Command("engrave"));
         }
 
         public static void Examine(bool verbose = false)
@@ -279,13 +182,12 @@ namespace ODB
 
         public static void Fire()
         {
-            if (!Game.Player.Vision[
-                Game.Target.x, Game.Target.y
-            ]) {
+            if (!Game.Player.Sees(Game.Target)) {
                 Game.UI.Log("You can't see that place.");
                 return;
             }
             Actor a = World.Level.ActorOnTile(Game.Target);
+
             //todo: allow firing anyways..?
             if (a == null)
             {
@@ -293,7 +195,11 @@ namespace ODB
                 return;
             }
 
-            Game.Player.Shoot(a);
+            //can't use "target" here, since that crashes with the
+            //key used for InputType.Targeting.
+            //also, might want to do the choose weapon/ammo bits here,
+            //and add those as weapon/ammo keys to the command.
+            Game.Player.Do(new Command("shoot").Add("actor", a));
         }
 
         public static void Get()
@@ -302,38 +208,10 @@ namespace ODB
             if (answer.Length <= 0) return;
 
             int i = IO.Indexes.IndexOf(answer[0]);
-            
             List<Item> onTile = World.Level.ItemsOnTile(Game.Player.xy);
+            Item item = onTile[i];
 
-            Item it = onTile[i];
-            World.WorldItems.Remove(it);
-
-            if (it.Definition.Stacking)
-            {
-                //todo: I don't know how wanted this is?
-                //      We could either always add a new stack,
-                //      or just don't let the player split stacks,
-                //      and instead just ask the player how many they
-                //      want to move with P in the inventory screen.
-                //      For now, this is good enough.
-                Item stack = Game.Player.Inventory
-                    .FirstOrDefault(item => item.CanStack(it));
-
-                if (stack != null)
-                {
-                    Game.UI.Log("Picked up " + it.GetName("count") + ".");
-                    stack.Stack(it);
-                    //so we can get the right char below
-                    it = stack;
-                }
-                else Game.Player.Inventory.Add(it);
-            }
-            else Game.Player.Inventory.Add(it);
-
-            char index = IO.Indexes[Game.Player.Inventory.IndexOf(it)];
-            Util.Game.UI.Log(index + " - "  + it.GetName("count") + ".");
-
-            Game.Player.Pass();
+            Game.Player.Do(new Command("get").Add("item", item));
         }
 
         public static void Look()
@@ -352,12 +230,7 @@ namespace ODB
             if(ti != null)
                 if (ti.Door == Door.Closed)
                 {
-                    ti.Door = Door.Open;
-                    Game.UI.Log("You opened the door.");
-
-                    //counted as a movement action at the moment, based
-                    //on the dnd rules.
-                    Game.Player.Pass(true);
+                    Game.Player.Do(new Command("open").Add("door", ti));
                     return;
                 }
             Game.UI.Log("There's no closed door there.");
@@ -430,32 +303,7 @@ namespace ODB
                     );
                 }
             }
-            else
-                Game.Player.Do(new Command("learn").Add("item", item));
-
-            /*
-            Game.UI.Log("You read {1}...", item.GetName("name"), Game);
-
-            if (rc != null)
-            {
-                item.SpendCharge();
-                IO.UsedItem = item;
-                item.Identify();
-
-                throw new NotImplementedException();
-                //Cast(Spell.Spells[rc.Effect]);
-                return;
-            }
-
-            LearnableComponent lc =
-                item.GetComponent<LearnableComponent>();
-
-            Spell spell = Spell.Spells[lc.Spell];
-
-            Game.UI.Log("You feel knowledgable about {1}!", spell.Name, Game);
-            item.Identify();
-            Game.Player.LearnSpell(spell);
-            Game.Player.Pass();*/
+            else Game.Player.Do(new Command("learn").Add("item", item));
         }
 
         public static void Remove()
@@ -464,52 +312,20 @@ namespace ODB
             if (answer.Length <= 0) return;
 
             int i = IO.Indexes.IndexOf(answer[0]);
-            Item it = Game.Player.Inventory[i];
+            Item item = Game.Player.Inventory[i];
 
-            foreach (BodyPart bp in Game.Player.PaperDoll
-                .Where(bp => bp.Item == it))
-                bp.Item = null;
-
-            Game.UI.Log("Removed " + it.GetName("a") + ".");
-
-            Item stack =  Game.Player.Inventory.Find(
-                item => item != it && item.Type == it.Type);
-
-            if (stack == null) return;
-
-            stack.Count += it.Count;
-            Game.Player.Inventory.Remove(it);
-            World.AllItems.Remove(it);
-
-            Game.Player.Pass();
+            Game.Player.Do(new Command("remove").Add("item", item));
         }
 
-        public static void Sheath()
+        public static void Sheathe()
         {
             string answer = Game.QpAnswerStack.Pop();
             if (answer.Length <= 0) return;
 
             int i = IO.Indexes.IndexOf(answer[0]);
+            Item item = Game.Player.Inventory[i];
 
-            Item it = Game.Player.Inventory[i];
-
-            if (Game.Player.PaperDoll.Any(
-                x => x.Item == it))
-            {
-                foreach (BodyPart bp in Game.Player.PaperDoll
-                    .Where(bp => bp.Item == it))
-                    bp.Item = null;
-
-                Util.Game.UI.Log("Sheathed " + it.GetName("a") + ".");
-            }
-            //it's our quivered item
-            else
-            {
-                Game.Player.Quiver = null;
-                Util.Game.UI.Log("Unreadied " + it.GetName("count") + ".");
-            }
-
-            Game.Player.Pass();
+            Game.Player.Do(new Command("sheathe").Add("item", item));
         }
 
         public static void Split()

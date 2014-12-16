@@ -336,7 +336,7 @@ namespace ODB
             if (Game.Player.IsWielded(item))
             {
                 Game.QpAnswerStack.Push(IO.Indexes[Selection] + "");
-                    PlayerResponses.Sheath();
+                    PlayerResponses.Sheathe();
             }
             else
                 Game.UI.Log("You are not wielding that.");
