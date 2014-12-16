@@ -1,9 +1,22 @@
 8000XXXXXXFFFF00	24	gold coin;		1	0;0;	ff	   1;	65536;	mt_metal;	4;	##
 
-8001XXXXXXFFC0CB	5b	apron;			0	0;0;	ff	 200;	10;	mt_cloth;	2;	cWearable;{torso,;1;}##
-8002XXXXXXA52A2A	18	arrow;			1	3;9;	ff	   2;	5;	mt_wood;	1;	cProjectile;{1d2;}##
-8003XXXXXXA52A2A	29	bow;			0	0;0;	ff	  90;	20;	mt_wood;	2;	cLauncher;{8002,;1d6;}##
-8004XXXXXXD3D3D3	29	longsword;		0	0;0;	ff	 180;	15;	mt_metal;	3;	cAttack;{1d8+1;at_slash;dt_physical;{}}##
+8001XXXXXXFFC0CB	5b	apron;			0	0;0;	ff	 200;	10;	mt_cloth;	2;
+				cWearable;{torso,;1;}
+				##
+
+8002XXXXXXA52A2A	18	arrow;			1	3;9;	ff	   2;	5;	mt_wood;	1;
+				cProjectile;{1d2;}
+				##
+
+8003XXXXXXA52A2A	29	bow;			0	0;0;	ff	  90;	20;	mt_wood;	2;
+				cLauncher;{8002,;1d6;}
+				##
+
+8004XXXXXXD3D3D3	29	longsword;		0	0;0;	ff	 180;	15;	mt_metal;	3;
+				cAttack;{1d8+1;at_slash;dt_physical;{}}
+				cUsable;{1;}
+				##
+
 8005XXXXXXA52A2A	28	cloth bag;		0	0;0;	ff	   5;	5;	mt_cloth;	2;	cContainer;{}##
 8006XXXXXXA52A2A	29	zweihander;		0	0;0;	ff	 440;	20;	mt_metal;	4;	cAttack;{2d6+1;at_slash;dt_physical;{}}##
 8007XXXXXXA52A2A	5b	chainmail;		0	0;0;	ff	1800;	35;	mt_metal;	2;	cWearable;{torso,;3;}##

@@ -196,6 +196,7 @@ namespace ODB
             if (KeyBindings.Pressed(Bind.Wear)) CheckWear(SelectedItem);
             if (KeyBindings.Pressed(Bind.Sheath)) CheckSheath(SelectedItem);
             if (KeyBindings.Pressed(Bind.Remove)) CheckRemove(SelectedItem);
+            if (KeyBindings.Pressed(Bind.Quaff)) CheckQuaff(SelectedItem);
             if (KeyBindings.Pressed(Bind.Quiver)) CheckQuiver(SelectedItem);
             if (KeyBindings.Pressed(Bind.Split)) CheckSplit(SelectedItem);
             if (KeyBindings.Pressed(Bind.Eat)) CheckEat(SelectedItem);
@@ -224,11 +225,22 @@ namespace ODB
                 return;
             }
 
-            Game.QpAnswerStack.Push("" + CurrentContainer);
-            Game.QpAnswerStack.Push("" + item.ID);
+            if (!item.Stacking || (item.Stacking && item.Count < 2))
+            {
+                Game.UI.Log("You can't split that.");
+                return;
+            }
+
+            //not actually passing this to an actor, just using as a vessel
+            //to ferry things around.
+            IO.CurrentCommand = new Command("split")
+                .Add("container", CurrentContainer)
+                .Add("item-id", item.ID);
+
             IO.AcceptedInput.Clear();
             for (Keys k = Keys.D0; k <= Keys.D9; k++)
                 IO.AcceptedInput.Add((char)k);
+
             IO.AskPlayer(
                 "Split out how many?",
                 InputType.QuestionPrompt,
@@ -236,12 +248,18 @@ namespace ODB
             );
         }
 
+        private static void CheckQuaff(Item item)
+        {
+            if (item.HasComponent<DrinkableComponent>())
+                Game.Player.Do(new Command("quaff").Add("item", item));
+            else Game.UI.Log("You can't drink that.");
+        }
+
         private static void CheckQuiver(Item item)
         {
             if (!Game.Player.IsEquipped(item))
             {
-                Game.QpAnswerStack.Push(IO.Indexes[Selection] + "");
-                PlayerResponses.Quiver();
+                Game.Player.Do(new Command("quiver").Add("item", item));
             }
             else
             {
@@ -253,10 +271,25 @@ namespace ODB
 
         private static void CheckDrop(Item item)
         {
-            Game.QpAnswerStack.Push(IO.Indexes[Selection] + "");
-            if (item.Count > 1)
-                IO.IOState = InputType.PlayerInput;
-            PlayerResponses.Drop();
+            IO.CurrentCommand = new Command("drop").Add("item", item);
+
+            if (item.Stacking && item.Count > 1)
+            {
+
+                IO.AcceptedInput.Clear();
+                IO.AcceptedInput.AddRange(IO.Numbers.ToList());
+
+                IO.AskPlayer(
+                    "How many?",
+                    InputType.QuestionPrompt,
+                    PlayerResponses.DropCount
+                );
+            }
+            else
+            {
+                IO.CurrentCommand.Add("count", 0);
+                Game.Player.Do();
+            }
         }
 
         private static void CheckWield(Item item)
@@ -273,15 +306,14 @@ namespace ODB
                 return;
             }
 
-            Game.QpAnswerStack.Push(IO.Indexes[Selection] + "");
-            PlayerResponses.Wield();
+            Game.Player.Do(new Command("wield").Add("item", item));
         }
 
         private static void CheckWear(Item item)
         {
             if (!item.HasComponent<WearableComponent>())
             {
-                Game.UI.Log("You can't wear that!");
+                Game.UI.Log("You can't wear that.");
                 return;
             }
 
@@ -297,17 +329,19 @@ namespace ODB
                 return;
             }
 
-            Game.QpAnswerStack.Push(IO.Indexes[Selection] + "");
-            PlayerResponses.Wear();
+            Game.Player.Do(
+                new Command("wear")
+                .Add("item", item)
+            );
         }
 
         private static void PutInto(Item item, int container)
         {
             Game.UI.Log(
-                "Put " +
-                    item.GetName("name") + " into " +
-                    Util.GetItemByID(container).GetName("name") + "."
-                );
+                "Put {1} into {2}.",
+                item.GetName("name"),
+                Util.GetItemByID(container).GetName("name")
+            );
 
             if (GetParentContainer(container) == -1)
                 Game.Player.Inventory.Remove(item);
@@ -324,10 +358,9 @@ namespace ODB
 
         private static void CheckSheath(Item item)
         {
-            if (Game.Player.IsWielded(item))
+            if (Game.Player.IsWielded(item) || Game.Player.Quiver == item)
             {
-                Game.QpAnswerStack.Push(IO.Indexes[Selection] + "");
-                    PlayerResponses.Sheath();
+                Game.Player.Do(new Command("sheathe").Add("item", item));
             }
             else
                 Game.UI.Log("You are not wielding that.");
@@ -336,12 +369,7 @@ namespace ODB
         private static void CheckRemove(Item item)
         {
             if (Game.Player.IsWorn(item))
-            {
-                Game.QpAnswerStack.Push(IO.Indexes[Selection] + "");
-                if (Game.Player.IsEquipped(item) &&
-                    item.HasComponent<WearableComponent>())
-                    PlayerResponses.Remove();
-            }
+                Game.Player.Do(new Command("remove").Add("item", item));
             else
                 Game.UI.Log("You are not wearing that.");
         }
@@ -349,21 +377,63 @@ namespace ODB
         private static void CheckEat(Item item)
         {
             if (!item.HasComponent<EdibleComponent>()) return;
-
-            Game.Player.Eat(item);
-            Game.Player.Pass();
+            Game.Player.Do(new Command("eat").Add("item", item));
         }
 
         private static void CheckRead(Item item)
         {
             if (!item.HasComponent<ReadableComponent>() &&
-                !item.HasComponent<LearnableComponent>()) return;
+                !item.HasComponent<LearnableComponent>())
+            {
+                Game.UI.Log("You can't read that.");
+                return;
+            }
 
-            Game.QpAnswerStack.Push(
-                IO.Indexes[Game.Player.Inventory.IndexOf(item)] + ""
-            );
-            PlayerResponses.Read();
-            Game.Player.Pass();
+            ReadableComponent rc = item.GetComponent<ReadableComponent>();
+
+            if (rc != null)
+            {
+                Spell effect = Spell.Spells[rc.Effect];
+
+                IO.CurrentCommand = new Command("read").Add("item", item);
+
+                if (effect.CastType == InputType.None)
+                {
+                    Game.Player.Do(IO.CurrentCommand);
+                }
+                else
+                {
+                    if (effect.SetupAcceptedInput != null)
+                        effect.SetupAcceptedInput(Game.Player);
+
+                    if (IO.AcceptedInput.Count <= 0)
+                    {
+                        Game.UI.Log("You have nothing to cast that on.");
+                        return;
+                    }
+
+                    string question;
+
+                    if (effect.CastType == InputType.Targeting)
+                        question = "Where?";
+                    else
+                    {
+                        question = "On what? [";
+                        question += IO.AcceptedInput.Aggregate(
+                            "", (c, n) => c + n
+                        );
+                        question += "]";
+                    }
+
+                    IO.AskPlayer(
+                        question,
+                        effect.CastType,
+                        Game.Player.Do
+                    );
+                }
+            }
+            else
+                Game.Player.Do(new Command("learn").Add("item", item));
         }
 
         public void HandleCancel()

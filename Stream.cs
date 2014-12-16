@@ -7,6 +7,8 @@ namespace ODB
     {
         string _stream;
 
+        //ReSharper disable once UnusedMember.Local
+        //Makes debugging easier, since we can see how far we have read.
         private string SoFar 
         {
             get { return _stream.Substring(0, Read); }

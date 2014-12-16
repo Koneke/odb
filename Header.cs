@@ -269,66 +269,6 @@ namespace ODB
         }
     }
 
-    public class Spell
-    {
-        public static Spell[] Spells = new Spell[0xFFFF];
-        public static int IDCounter = 0;
-        public int ID;
-
-        public string Name;
-        //0 should mean self-cast..? (or just non-targetted)
-        //projectile should explode without moving, so should be on self
-        public int Range;
-        public int Cost;
-        public int CastDifficulty;
-
-        //LH-021214: Spelleffects use the QpStack like other question-reactions.
-        //           Also means that we can have spells going through several
-        //           questions, like multi-targetting and similar, the same way
-        //           dropping a certain number of things works right now.
-        public Action Effect;
-
-        //LH-021214: Since we're using the standard question system we will at
-        //           times need to populate the accepted input, so we need an
-        //           action for that as well.
-
-        public Action SetupAcceptedInput;
-
-        //LH-021214: Add variable to keep the questio string as well?
-        //           Like, identify might have "Identify what?", instead of
-        //           the automatic "Casting identify".
-        public InputType CastType;
-
-        //LH-011214: (Almost) empty constructor to be used with initalizer
-        //           blocks. Using them simply because it is easier to skim
-        //           quickly if you have both the value and what it actually is
-        //           (i.e. castcost or what not).
-        public Spell(string name)
-        {
-            Name = name;
-
-            ID = IDCounter++;
-            Spells[ID] = this;
-        }
-
-        public void Cast()
-        {
-            Actor caster = Util.Game.Caster;
-            Util.Game.Caster.MpCurrent -= Cost;
-            if (Util.Roll("1d20") + caster.Get(Stat.Intelligence) >=
-                CastDifficulty)
-                Effect();
-            else
-                Util.Game.UI.Log(
-                    caster.GetName("Name") + " " +
-                    caster.Verb("whiff") + " " +
-                    "the spell!"
-                );
-            Util.Game.Caster.Pass();
-            Util.Game.Caster = null;
-        }
-    }
-
     //should probably make this a gObj?
     public class Projectile
     {
@@ -508,6 +448,48 @@ namespace ODB
                 String = String,
                 ColorPoints = new List<Tuple<int, Color>>(ColorPoints)
             };
+        }
+    }
+
+    public class Command
+    {
+        public string Type;
+        private readonly Dictionary<string, object> _data;
+
+        public string Answer;
+        public Point Target;
+
+        public Command(string type)
+        {
+            Type = type.ToLower();
+            _data = new Dictionary<string, object>();
+        }
+
+        public Command Add(string key, object value)
+        {
+            //restricted
+            if (key.ToLower() == "target" || key.ToLower() == "answer")
+                throw new Exception();
+
+            _data.Add(key.ToLower(), value);
+
+            //so we can do nice inlining stuff for readability
+            return this;
+        }
+
+        public object Get(string key)
+        {
+            key = key.ToLower();
+
+            switch (key)
+            {
+                case "target":
+                    return Target;
+                case "answer":
+                    return Answer;
+                default:
+                    return _data[key];
+            }
         }
     }
 }

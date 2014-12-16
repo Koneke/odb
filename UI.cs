@@ -285,7 +285,8 @@ namespace ODB
             );
 
             _inputRowConsole.CellData.Print(
-                0, 0, (Game.WizMode ? "" : IO.Question + " ") + IO.Answer + "_");
+                0, 0, (Game.WizMode ? "" : IO.Question + " ") + IO.Answer + "_"
+            );
         }
 
         //todo: Needs tender love, care and attention.
@@ -602,7 +603,7 @@ namespace ODB
         {
             if (IO.IOState != InputType.Targeting) return;
 
-            Cell cs = _dfc.CellData[Game.Target.x, Game.Target.y];
+            Cell cs = _dfc.CellData[IO.Target.x, IO.Target.y];
 
             bool blink = (DateTime.Now.Millisecond%500 > 250);
 

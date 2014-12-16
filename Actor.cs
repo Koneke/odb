@@ -114,7 +114,11 @@ namespace ODB
             get { return _quiver == null
                 ? null
                 : Util.GetItemByID(_quiver.Value); }
-            set { _quiver = value.ID; }
+            set
+            {
+                if (value == null) _quiver = null;
+                else _quiver = value.ID;
+            }
         }
 
         #region temporary/cached (nonwritten)
@@ -333,9 +337,16 @@ namespace ODB
         public void DropItem(Item item)
         {
             World.WorldItems.Add(item);
+
+            item.xy = xy;
+
             Inventory.Remove(item);
+
             foreach (BodyPart bp in PaperDoll.Where(bp => bp.Item == item))
                 bp.Item = null;
+
+            if (Quiver == item)
+                Quiver = null;
         }
 
         public int Get(Stat stat, bool modded = true)
@@ -940,10 +951,7 @@ namespace ODB
         public void ResetVision()
         {
             if (Vision == null)
-                Vision = new bool[
-                    World.Level.Size.x,
-                    World.Level.Size.y
-                ];
+                Vision = new bool[World.Level.Size.x, World.Level.Size.y];
             for (int x = 0; x < World.Level.Size.x; x++)
                 for (int y = 0; y < World.Level.Size.y; y++)
                     Vision[x, y] = false;
@@ -954,10 +962,7 @@ namespace ODB
                 for (int x = 0; x < rr.wh.x; x++)
                     for (int y = 0; y < rr.wh.y; y++)
                     {
-                        Vision[
-                            rr.xy.x + x,
-                            rr.xy.y + y
-                        ] = true;
+                        Vision[rr.xy.x + x, rr.xy.y + y] = true;
 
                         if (this == Game.Player)
                             World.Level.At(rr.xy + new Point(x, y)).Seen = true;
@@ -1040,6 +1045,7 @@ namespace ODB
         {
             BlackMagic.CheckCircle(this, chant);
         }
+
         public void Heal(int amount)
         {
             HpCurrent += amount;
@@ -1126,6 +1132,369 @@ namespace ODB
                 Game.UI.Log(message);
         }
 
+        public void Do()
+        {
+            Do(IO.CurrentCommand);
+        }
+
+        private void HandleCast(Command cmd)
+        {
+            //we can trust the "spell" key to always be a spell,
+            //because if it isn't, the blame isn't here, it's somewhere
+            //earlier in the chain
+            Spell spell = (Spell)cmd.Get("spell");
+
+            //always spend energy, no matter if we succeed or not
+            MpCurrent -= spell.Cost;
+
+            if (Util.Roll("1d20") + Get(Stat.Intelligence) >=
+                spell.CastDifficulty)
+            {
+                if(spell.CastType == InputType.Targeting)
+                    spell.Cast(this, cmd.Get("target"));
+                else
+                    spell.Cast(this, cmd.Get("answer"));
+            }
+            else
+            {
+                Game.UI.Log(
+                    "{1} {2} and {3}, but nothing happens!",
+                    GetName("Name"),
+                    Verb("mumble"),
+                    Verb("wave")
+                );
+            }
+
+            Pass();
+        }
+
+        private void HandleChant(Command cmd)
+        {
+            string chant = (string)cmd.Get("chant");
+            Game.UI.Log(
+                "{1} {2}...",
+                GetName("Name"),
+                Verb("chant")
+            );
+            Game.UI.Log("\"{1}...\"", Util.Capitalize(chant));
+            Chant(chant);
+        }
+
+        private void HandleClose(Command cmd)
+        {
+            TileInfo targetTile = (TileInfo)cmd.Get("door");
+            if(Game.Player.Sees(xy))
+                Game.UI.Log(
+                    "{1} {2} {3} door.",
+                    GetName("Name"),
+                    Verb("close"),
+                    this == Game.Player ? "the" : "a"
+                );
+            targetTile.Door = Door.Closed;
+        }
+
+        private void HandleDrop(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+            int count = (int)cmd.Get("count");
+
+            if (count != item.Count)
+            {
+                Item clone = new Item(item.WriteItem().ToString()) {
+                    ID = Item.IDCounter++,
+                    Count = count
+                };
+                item.Count -= count;
+
+                item = clone;
+            }
+
+            Item stack = World.Level.At(xy).Items
+                .FirstOrDefault(it => it.CanStack(item));
+
+            if (stack != null)
+                stack.Stack(item);
+            else DropItem(item);
+
+            Game.UI.Log(
+                "{1} {2} {3}.",
+                GetName("Name"),
+                Verb("drop"),
+                item.GetName("count")
+            );
+
+            Pass();
+        }
+
+        private void HandleEat(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+            int index = Inventory.IndexOf(item);
+
+            if (item.Definition.Stacking)
+            {
+                if (item.Count > 1)
+                {
+                    item.Count--;
+                    Eat(item);
+                }
+                else
+                {
+                    Inventory.RemoveAt(index);
+                    Eat(item);
+                }
+            }
+            else
+            {
+                Inventory.RemoveAt(index);
+                Eat(item);
+            }
+
+            Pass();
+        }
+
+        private void HandleEngrave(Command cmd)
+        {
+            string answer = (string)cmd.Get("text");
+
+            World.Level.At(Game.Player.xy).Tile.Engraving = answer;
+
+            if(this == Game.Player)
+                Game.UI.Log(
+                    "You wrote \"{1}\" on the dungeon floor.",
+                    answer
+                );
+        }
+
+        private void HandleGet(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+
+            World.WorldItems.Remove(item);
+
+            Item stack = Inventory.FirstOrDefault(it => it.CanStack(item));
+
+            if (stack != null)
+            {
+                Game.UI.Log("Picked up " + item.GetName("count") + ".");
+                stack.Stack(item);
+                //so we can get the right char below
+                item = stack;
+            }
+            else Game.Player.Inventory.Add(item);
+
+            char index = IO.Indexes[Inventory.IndexOf(item)];
+            if(this == Game.Player)
+                Util.Game.UI.Log(index + " - "  + item.GetName("count") + ".");
+
+            Pass();
+        }
+
+        private void HandleLearn(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+
+            if (this == Game.Player)
+                Game.UI.Log("You read {1}...",item.GetName("the"));
+
+            item.Identify();
+
+            Spell spell = Spell.Spells
+                [item.GetComponent<LearnableComponent>().Spell];
+
+            LearnSpell(spell);
+
+            if (this == Game.Player)
+                Game.UI.Log("You feel knowledgable about {1}!", spell.Name);
+
+            Pass();
+        }
+
+        private void HandleOpen(Command cmd)
+        {
+            TileInfo targetTile = (TileInfo)cmd.Get("door");
+            if(Game.Player.Sees(xy))
+                Game.UI.Log(
+                    "{1} {2} {3} door.",
+                    GetName("Name"),
+                    Verb("open"),
+                    this == Game.Player ? "the" : "a"
+                );
+            targetTile.Door = Door.Open;
+        }
+
+        public void HandleQuaff(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+
+            if (this == Game.Player)
+                Game.UI.Log("Drank {1}.", item.GetName("a"));
+
+            DrinkableComponent dc = item.GetComponent<DrinkableComponent>();
+            Spell.Spells[dc.Effect].Cast(this, null);
+
+            item.SpendCharge();
+
+            Pass();
+        }
+
+        private void HandleQuiver(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+            Quiver = item;
+
+            if(this == Game.Player)
+                Game.UI.Log("Quivered {1}.", item.GetName("count"));
+
+            Pass();
+        }
+
+        //read is for scrolls, learn is for tomes
+        private void HandleRead(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+
+            if (this == Game.Player)
+                Game.UI.Log(
+                    "You read {1}...",
+                    item.GetName("the")
+                );
+
+            item.Identify();
+
+            Spell spell = Spell.Spells
+                [item.GetComponent<ReadableComponent>().Effect];
+
+            if(spell.CastType == InputType.Targeting)
+                spell.Cast(this, cmd.Get("target"));
+            else
+                spell.Cast(this, cmd.Get("answer"));
+
+            item.SpendCharge();
+
+            Pass();
+        }
+
+        public void HandleRemove(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+
+            foreach (BodyPart bp in PaperDoll.Where(bp => bp.Item == item))
+                bp.Item = null;
+
+            if (this == Game.Player)
+                Game.UI.Log(
+                    "You remove your {1}.",
+                    item.GetName("name")
+                );
+
+            Pass();
+        }
+
+        private void HandleSheathe(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+
+            if (IsWielded(item))
+            {
+                foreach (BodyPart bp in PaperDoll.Where(bp => bp.Item == item))
+                    bp.Item = null;
+
+                if (this == Game.Player)
+                    Game.UI.Log(
+                        "You sheathe your {1}.",
+                        item.GetName("name")
+                    );
+            }
+            else
+            {
+                Quiver = null;
+
+                if (this == Game.Player)
+                    Game.UI.Log(
+                        "You quiver your {1}.",
+                        item.GetName("count")
+                    );
+            }
+
+            Pass();
+        }
+
+        private void HandleShoot(Command cmd)
+        {
+            Actor target = (Actor)cmd.Get("actor");
+            Shoot(target);
+        }
+
+        private void HandleUse(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+            Spell spell = Spell.Spells
+                [item.GetComponent<UsableComponent>().UseEffect];
+            item.SpendCharge();
+
+            if(spell.CastType == InputType.Targeting)
+                spell.Cast(this, cmd.Get("target"));
+            else
+                spell.Cast(this, cmd.Get("answer"));
+
+            Pass();
+        }
+
+        private void HandleWear(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+            Wear(item);
+
+            if (this == Game.Player)
+                Game.UI.Log(
+                    "Wore {1}.",
+                    item.GetName("a")
+                );
+
+            Pass();
+        }
+
+        private void HandleWield(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+            Wield(item);
+
+            if (this == Game.Player)
+                Game.UI.Log(
+                    "You wield {1}.",
+                    item.GetName("a")
+                );
+
+            Pass();
+        }
+
+        public void Do(Command cmd)
+        {
+            switch(cmd.Type)
+            {
+                case "cast": HandleCast(cmd); break; //zap
+                case "chant": HandleChant(cmd); break;
+                case "close": HandleClose(cmd); break;
+                case "drop": HandleDrop(cmd); break;
+                case "eat": HandleEat(cmd); break;
+                case "engrave": HandleEngrave(cmd); break;
+                case "get": HandleGet(cmd); break;
+                case "learn": HandleLearn(cmd); break;
+                case "open": HandleOpen(cmd); break;
+                case "quaff": HandleQuaff(cmd); break;
+                case "quiver": HandleQuiver(cmd); break;
+                case "read": HandleRead(cmd); break;
+                case "remove": HandleRemove(cmd); break;
+                case "sheathe": HandleSheathe(cmd); break;
+                case "shoot": HandleShoot(cmd); break;
+                case "use": HandleUse(cmd); break;
+                case "wear": HandleWear(cmd); break;
+                case "wield": HandleWield(cmd); break;
+                default: throw new ArgumentException();
+            }
+        }
+
         public Stream WriteActor()
         {
             Stream stream = WriteGObject();
@@ -1189,9 +1558,8 @@ namespace ODB
         {
             Stream stream = ReadGObject(s);
             Definition =
-                ActorDefinition.ActorDefinitions[
-                    stream.ReadHex(4)
-                ];
+                ActorDefinition.ActorDefinitions
+                [stream.ReadHex(4)];
 
             ID = stream.ReadHex(4);
 

@@ -139,6 +139,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="ODBGame.cs" />
     <Compile Include="SaveIO.cs" />
+    <Compile Include="Spell.cs" />
     <Compile Include="Stream.cs" />
     <Compile Include="TickingEffect.cs" />
     <Compile Include="Tile.cs" />

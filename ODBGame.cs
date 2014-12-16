@@ -42,16 +42,6 @@ namespace ODB
 
         public Actor Player;
 
-        //LH-021214: Currently casting actor (so that our spell casting system
-        //           can use the same Question-system as other commands.
-        //           Since there should never possibly pass a tick between an
-        //           actor casting and targetting a spell, we shouldn't need to
-        //           worry about this being rewritten as we do stuff.
-        public Actor Caster;
-        public Point Target;
-        public Action QuestionReaction;
-        public Stack<string> QpAnswerStack;
-
         public const int StandardActionLength = 10;
 
         private void GameReferences()
@@ -70,7 +60,7 @@ namespace ODB
 
         private void Load()
         {
-            SetupMagic(); //essentially magic defs, but we hardcode magic
+            Spell.SetupMagic(); //essentially magic defs, but we hardcode magic
             SetupTickingEffects(); //same as magic, cba to add scripting
             SaveIO.ReadActorDefinitionsFromFile("Data/actors.def");
             SaveIO.ReadItemDefinitionsFromFile("Data/items.def");
@@ -102,8 +92,6 @@ namespace ODB
             SetupSeed();
 
             InvMan = new InventoryManager();
-
-            QpAnswerStack = new Stack<string>();
 
             Player = new Actor(
                 new Point(0, 0),
@@ -146,16 +134,7 @@ namespace ODB
                             InvMan.HandleCancel();
                             break;
                         default:
-                            //LH-021214: Temporary hack to make sure you can't
-                            //           cancel using an item or casting a spell
-                            //           without targeting. This is, well,
-                            //           okay-ish for now, if slightly annoying.
-                            //           This is mainly because a cancelled item
-                            //           use would otherwise spend a charge
-                            //           without doing anything. We'll see which
-                            //           way turns out the best.
-                            if (Caster == null)
-                                IO.IOState = InputType.PlayerInput;
+                            IO.IOState = InputType.PlayerInput;
                             break;
                     }
                 }
@@ -266,78 +245,6 @@ namespace ODB
 
             if (!gotoStairs) return;
             Game.Player.xy = target;
-        }
-
-        private static void SetupMagic()
-        {
-            //ReSharper disable once ObjectCreationAsStatement
-            new Spell("potion of healing")
-            {
-                CastType = InputType.None,
-                Effect = () =>
-                {
-                    Game.UI.Log(
-                        Game.Caster.GetName("Name") + " " +
-                        Game.Caster.Verb("#feel") + " " +
-                        "better!"
-                    );
-                    Util.Game.Caster.Heal(Util.Roll("3d3"));
-                }
-            };
-
-            //ReSharper disable once ObjectCreationAsStatement
-            new Spell("forcebolt")
-            {
-                CastType = InputType.Targeting,
-                Effect = () =>
-                {
-                    Actor target = World.Level.ActorOnTile(Game.Target);
-                    if (target == null)
-                    {
-                        Game.UI.Log("The bolt fizzles in the air.");
-                        return;
-                    }
-                    Game.UI.Log("The forcebolt hits {1}.",
-                        target.GetName("the"));
-                    DamageSource ds = new DamageSource
-                    {
-                        Damage = Util.Roll("2d4"),
-                        AttackType = AttackType.Magic,
-                        DamageType = DamageType.Physical,
-                        Source = Game.Caster,
-                        Target = target
-                    };
-                    target.Damage(ds);
-                },
-                CastDifficulty = 10,
-                Cost = 3,
-                Range = 5
-            };
-
-            new Spell("identify")
-            {
-                CastType = InputType.QuestionPromptSingle,
-                SetupAcceptedInput = () =>
-                {
-                    IO.AcceptedInput.Clear();
-                    IO.AcceptedInput.AddRange(
-                        Game.Caster.Inventory
-                            .Where(it => !it.Known)
-                            .Select(item => Game.Caster.Inventory.IndexOf(item))
-                            .Select(index => IO.Indexes[index])
-                    );
-
-                },
-                Effect = () =>
-                {
-                    string answer = Game.QpAnswerStack.Pop();
-                    int index = IO.Indexes.IndexOf(answer[0]);
-                    Item item = Game.Caster.Inventory[index];
-                    item.Identify();
-                },
-                CastDifficulty = 15,
-                Cost = 7
-            };
         }
 
         public static void SetupTickingEffects()
