@@ -76,10 +76,7 @@ namespace ODB
                 CastType = InputType.Targeting,
                 Effect = (caster, target) =>
                 {
-                    //Actor target = World.Level.ActorOnTile(Game.Target);
-                    Actor targetActor = World.Level.ActorOnTile(
-                        (Point)target
-                    );
+                    Actor targetActor = World.Level.ActorOnTile((Point)target);
 
                     if (targetActor == null)
                     {
@@ -87,13 +84,15 @@ namespace ODB
                         return;
                     }
                     ODBGame.Game.UI.Log("The forcebolt hits {1}.",
-                        targetActor.GetName("the"));
+                        targetActor.GetName("the")
+                    );
+
                     DamageSource ds = new DamageSource
                     {
                         Damage = Util.Roll("2d4"),
                         AttackType = AttackType.Magic,
                         DamageType = DamageType.Physical,
-                        Source = ODBGame.Game.Caster,
+                        Source = caster,
                         Target = targetActor
                     };
                     targetActor.Damage(ds);
@@ -108,10 +107,15 @@ namespace ODB
                 CastType = InputType.QuestionPromptSingle,
                 SetupAcceptedInput = (caster) =>
                 {
+                    Item readItem =
+                        (Item)ODBGame.Game.CurrentCommand.Get("item");
+
                     IO.AcceptedInput.Clear();
                     IO.AcceptedInput.AddRange(
                         caster.Inventory
                             .Where(it => !it.Known)
+                            //no casting from a scroll unto the scroll itself
+                            .Where(it => it != readItem)
                             .Select(item => caster.Inventory.IndexOf(item))
                             .Select(index => IO.Indexes[index])
                     );

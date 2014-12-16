@@ -354,10 +354,7 @@ namespace ODB
             }
             //just more convenient this way
             else if (onFloor.Count > 0)
-            {
-                Game.QpAnswerStack.Push("a");
-                PlayerResponses.Get();
-            }
+                Game.Player.Do(new Command("get").Add("item", onFloor[0]));
         }
 
         private static void CheckLook()
@@ -508,9 +505,7 @@ namespace ODB
                 );
             }
             else
-            {
                 Game.UI.Log("You have nothing to remove, you shameless beast!");
-            }
         }
 
         private static void CheckSheathe()

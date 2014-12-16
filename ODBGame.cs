@@ -42,15 +42,8 @@ namespace ODB
 
         public Actor Player;
 
-        //LH-021214: Currently casting actor (so that our spell casting system
-        //           can use the same Question-system as other commands.
-        //           Since there should never possibly pass a tick between an
-        //           actor casting and targetting a spell, we shouldn't need to
-        //           worry about this being rewritten as we do stuff.
-        public Actor Caster;
         public Point Target;
         public Action QuestionReaction;
-        public Stack<string> QpAnswerStack;
 
         public Command CurrentCommand = new Command("foo");
 
@@ -105,8 +98,6 @@ namespace ODB
 
             InvMan = new InventoryManager();
 
-            QpAnswerStack = new Stack<string>();
-
             Player = new Actor(
                 new Point(0, 0),
                 0, Util.ADefByName("Moribund"), 1)
@@ -148,16 +139,7 @@ namespace ODB
                             InvMan.HandleCancel();
                             break;
                         default:
-                            //LH-021214: Temporary hack to make sure you can't
-                            //           cancel using an item or casting a spell
-                            //           without targeting. This is, well,
-                            //           okay-ish for now, if slightly annoying.
-                            //           This is mainly because a cancelled item
-                            //           use would otherwise spend a charge
-                            //           without doing anything. We'll see which
-                            //           way turns out the best.
-                            if (Caster == null)
-                                IO.IOState = InputType.PlayerInput;
+                            IO.IOState = InputType.PlayerInput;
                             break;
                     }
                 }

@@ -70,21 +70,10 @@ namespace ODB
             //           themselves switch IOState..? Might be too clumsy and
             //           repetetive though, since most questions do /not/ chain.
 
-            switch (IOState)
-            {
-                case InputType.QuestionPrompt:
-                case InputType.QuestionPromptSingle:
-                    Game.QpAnswerStack.Push(Answer);
-                    IOState = InputType.PlayerInput;
-                    Game.CurrentCommand.Answer = Answer;
-                    Game.QuestionReaction();
-                    break;
-                case InputType.Targeting:
-                    IOState = InputType.PlayerInput;
-                    Game.CurrentCommand.Target = Game.Target;
-                    Game.QuestionReaction();
-                    break;
-            }
+            IOState = InputType.PlayerInput;
+            Game.CurrentCommand.Answer = Answer;
+            Game.CurrentCommand.Target = Game.Target;
+            Game.QuestionReaction();
         }
 
         public static void QuestionPromptInput()

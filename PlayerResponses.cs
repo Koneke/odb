@@ -14,10 +14,7 @@ namespace ODB
 
         public static void Close()
         {
-            string answer = Game.QpAnswerStack.Pop();
-            if (answer.Length <= 0) return;
-
-            Point offset = Game.NumpadToDirection(answer[0]);
+            Point offset = Game.NumpadToDirection(IO.Answer[0]);
             TileInfo ti = World.Level.At(Game.Player.xy + offset);
 
             if(ti != null)
@@ -31,15 +28,7 @@ namespace ODB
 
         public static void Drop()
         {
-            //NOTE, PEEK.
-            //BECAUSE WE NEED TO REUSE THE ANSWER LATER?
-            //not actually using the stack here yet, but we want
-            //to drop the string answer bit in the sign later...
-            //I think.
-            string answer = Game.QpAnswerStack.Peek();
-            if (answer.Length <= 0) return;
-
-            int i = IO.Indexes.IndexOf(answer[0]);
+            int i = IO.Indexes.IndexOf(IO.Answer[0]);
 
             Item item = Game.Player.Inventory[i];
 
@@ -75,18 +64,14 @@ namespace ODB
 
         public static void Eat()
         {
-            string answer = Game.QpAnswerStack.Pop();
-            int index = IO.Indexes.IndexOf(answer[0]);
-
+            int index = IO.Indexes.IndexOf(IO.Answer[0]);
             Item item = Game.Player.Inventory[index];
-
             Game.Player.Do(new Command("eat").Add("item", item));
-
         }
 
         public static void Engrave()
         {
-            Game.Player.Do(new Command("engrave"));
+            Game.Player.Do(new Command("engrave").Add("text", IO.Answer));
         }
 
         public static void Examine(bool verbose = false)
@@ -189,10 +174,7 @@ namespace ODB
 
         public static void Get()
         {
-            string answer = Game.QpAnswerStack.Pop();
-            if (answer.Length <= 0) return;
-
-            int i = IO.Indexes.IndexOf(answer[0]);
+            int i = IO.Indexes.IndexOf(IO.Answer[0]);
             List<Item> onTile = World.Level.ItemsOnTile(Game.Player.xy);
             Item item = onTile[i];
 
@@ -206,10 +188,7 @@ namespace ODB
 
         public static void Open()
         {
-            string answer = Game.QpAnswerStack.Pop();
-            if (answer.Length <= 0) return;
-
-            Point offset = Game.NumpadToDirection(answer[0]);
+            Point offset = Game.NumpadToDirection(IO.Answer[0]);
             TileInfo ti = World.Level.At(Game.Player.xy + offset);
 
             if(ti != null)
@@ -223,10 +202,7 @@ namespace ODB
 
         public static void Quaff()
         {
-            string answer = Game.QpAnswerStack.Pop();
-            if (answer.Length <= 0) return;
-
-            int index = IO.Indexes.IndexOf(answer[0]);
+            int index = IO.Indexes.IndexOf(IO.Answer[0]);
             Item item = Game.Player.Inventory[index];
 
             Game.Player.Do(new Command("quaff").Add("item", item));
@@ -234,10 +210,7 @@ namespace ODB
 
         public static void Quiver()
         {
-            string answer = Game.QpAnswerStack.Pop();
-            if (answer.Length <= 0) return;
-
-            int i = IO.Indexes.IndexOf(answer[0]);
+            int i = IO.Indexes.IndexOf(IO.Answer[0]);
             Item item = Game.Player.Inventory[i];
 
             Game.Player.Do(new Command("quiver").Add("item", item));
@@ -245,9 +218,7 @@ namespace ODB
 
         public static void Read()
         {
-            string answer = Game.QpAnswerStack.Pop();
-
-            int index = IO.Indexes.IndexOf(answer[0]);
+            int index = IO.Indexes.IndexOf(IO.Answer[0]);
             Item item = Game.Player.Inventory[index];
 
             ReadableComponent rc =
@@ -293,10 +264,7 @@ namespace ODB
 
         public static void Remove()
         {
-            string answer = Game.QpAnswerStack.Pop();
-            if (answer.Length <= 0) return;
-
-            int i = IO.Indexes.IndexOf(answer[0]);
+            int i = IO.Indexes.IndexOf(IO.Answer[0]);
             Item item = Game.Player.Inventory[i];
 
             Game.Player.Do(new Command("remove").Add("item", item));
@@ -304,20 +272,18 @@ namespace ODB
 
         public static void Sheathe()
         {
-            string answer = Game.QpAnswerStack.Pop();
-            if (answer.Length <= 0) return;
-
-            int i = IO.Indexes.IndexOf(answer[0]);
+            int i = IO.Indexes.IndexOf(IO.Answer[0]);
             Item item = Game.Player.Inventory[i];
 
             Game.Player.Do(new Command("sheathe").Add("item", item));
         }
 
+        //todo: mig this
         public static void Split()
         {
-            int count = int.Parse(Game.QpAnswerStack.Pop());
-            int id = int.Parse(Game.QpAnswerStack.Pop());
-            int container = int.Parse(Game.QpAnswerStack.Pop());
+            int count = int.Parse(IO.Answer);
+            int id = (int)Game.CurrentCommand.Get("item-id");
+            int container = (int)Game.CurrentCommand.Get("container");
 
             Item item = Util.GetItemByID(id);
             if (count > item.Count)
@@ -342,10 +308,8 @@ namespace ODB
 
         public static void Use()
         {
-            string answer = Game.QpAnswerStack.Peek();
-            if (answer.Length <= 0) return;
-
-            Item item = Game.Player.Inventory[IO.Indexes.IndexOf(answer[0])];
+            Item item = Game.Player.Inventory
+                [IO.Indexes.IndexOf(IO.Answer[0])];
 
             if (item.Count <= 0)
             {
@@ -395,10 +359,7 @@ namespace ODB
         {
             //todo: if the player can one-hand it, ask if they want to 2hand it
 
-            string answer = Game.QpAnswerStack.Pop();
-            if (answer.Length <= 0) return;
-
-            int i = IO.Indexes.IndexOf(answer[0]);
+            int i = IO.Indexes.IndexOf(IO.Answer[0]);
             Item item = Game.Player.Inventory[i];
 
             List<DollSlot> equipSlots = item.GetHands(Game.Player);
@@ -414,11 +375,7 @@ namespace ODB
 
         public static void Wear()
         {
-            //make sure we start using this instead
-            //so we can phase the argument out
-            string answer = Game.QpAnswerStack.Pop();
-
-            int i = IO.Indexes.IndexOf(answer[0]);
+            int i = IO.Indexes.IndexOf(IO.Answer[0]);
             Item item = Game.Player.Inventory[i];
 
             bool canEquip = true;
@@ -439,14 +396,11 @@ namespace ODB
 
         public static void Zap()
         {
-            string answer = Game.QpAnswerStack.Peek();
-            if (answer.Length <= 0) return;
-
             //Player:CheckZap asks a qps question, so current cmd
             //has been feed a string into ccmd.Answer, read index from it
-            int index = IO.Indexes.IndexOf(
-                Game.CurrentCommand.Answer[0]
-            );
+            //scratch that, we just read the answer ourselves.
+            int index = IO.Indexes.IndexOf(IO.Answer[0]);
+
             Spell spell = Game.Player.Spellbook[index];
 
             if (Game.Player.MpCurrent < spell.Cost)

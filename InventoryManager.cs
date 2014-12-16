@@ -225,11 +225,22 @@ namespace ODB
                 return;
             }
 
-            Game.QpAnswerStack.Push("" + CurrentContainer);
-            Game.QpAnswerStack.Push("" + item.ID);
+            if (!item.Stacking || (item.Stacking && item.Count < 2))
+            {
+                Game.UI.Log("You can't split that.");
+                return;
+            }
+
+            //not actually passing this to an actor, just using as a vessel
+            //to ferry things around.
+            Game.CurrentCommand = new Command("split")
+                .Add("container", CurrentContainer)
+                .Add("item-id", item.ID);
+
             IO.AcceptedInput.Clear();
             for (Keys k = Keys.D0; k <= Keys.D9; k++)
                 IO.AcceptedInput.Add((char)k);
+
             IO.AskPlayer(
                 "Split out how many?",
                 InputType.QuestionPrompt,
@@ -260,9 +271,8 @@ namespace ODB
 
         private static void CheckDrop(Item item)
         {
-            Game.QpAnswerStack.Push(IO.Indexes[Selection] + "");
-            if (item.Count > 1)
-                IO.IOState = InputType.PlayerInput;
+            //semi weird hack so we can reuse drop code
+            IO.Answer = IO.Indexes[Selection] + "";
             PlayerResponses.Drop();
         }
 
@@ -280,15 +290,14 @@ namespace ODB
                 return;
             }
 
-            Game.QpAnswerStack.Push(IO.Indexes[Selection] + "");
-            PlayerResponses.Wield();
+            Game.Player.Do(new Command("wield").Add("item", item));
         }
 
         private static void CheckWear(Item item)
         {
             if (!item.HasComponent<WearableComponent>())
             {
-                Game.UI.Log("You can't wear that!");
+                Game.UI.Log("You can't wear that.");
                 return;
             }
 
@@ -313,10 +322,10 @@ namespace ODB
         private static void PutInto(Item item, int container)
         {
             Game.UI.Log(
-                "Put " +
-                    item.GetName("name") + " into " +
-                    Util.GetItemByID(container).GetName("name") + "."
-                );
+                "Put {1} into {2}.",
+                item.GetName("name"),
+                Util.GetItemByID(container).GetName("name")
+            );
 
             if (GetParentContainer(container) == -1)
                 Game.Player.Inventory.Remove(item);
@@ -335,8 +344,7 @@ namespace ODB
         {
             if (Game.Player.IsWielded(item))
             {
-                Game.QpAnswerStack.Push(IO.Indexes[Selection] + "");
-                    PlayerResponses.Sheathe();
+                Game.Player.Do(new Command("sheathe").Add("item", item));
             }
             else
                 Game.UI.Log("You are not wielding that.");
@@ -345,12 +353,7 @@ namespace ODB
         private static void CheckRemove(Item item)
         {
             if (Game.Player.IsWorn(item))
-            {
-                Game.QpAnswerStack.Push(IO.Indexes[Selection] + "");
-                if (Game.Player.IsEquipped(item) &&
-                    item.HasComponent<WearableComponent>())
-                    PlayerResponses.Remove();
-            }
+                Game.Player.Do(new Command("remove").Add("item", item));
             else
                 Game.UI.Log("You are not wearing that.");
         }
@@ -358,21 +361,24 @@ namespace ODB
         private static void CheckEat(Item item)
         {
             if (!item.HasComponent<EdibleComponent>()) return;
-
-            Game.Player.Eat(item);
-            Game.Player.Pass();
+            Game.Player.Do(new Command("eat").Add("item", item));
         }
 
         private static void CheckRead(Item item)
         {
             if (!item.HasComponent<ReadableComponent>() &&
-                !item.HasComponent<LearnableComponent>()) return;
+                !item.HasComponent<LearnableComponent>())
+            {
+                Game.UI.Log("You can't read that.");
+                return;
+            }
 
-            Game.QpAnswerStack.Push(
-                IO.Indexes[Game.Player.Inventory.IndexOf(item)] + ""
-            );
-            PlayerResponses.Read();
-            Game.Player.Pass();
+            ReadableComponent rc = item.GetComponent<ReadableComponent>();
+
+            if(rc != null)
+                Game.Player.Do(new Command("read").Add("item", item));
+            else
+                Game.Player.Do(new Command("learn").Add("item", item));
         }
 
         public void HandleCancel()

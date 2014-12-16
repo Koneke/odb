@@ -62,10 +62,7 @@ namespace ODB
             if (touchAttack == null) MeatPuppet.Attack(target);
             else
             {
-                Game.Caster = MeatPuppet;
-                Game.QpAnswerStack.Push(IO.Write(target.xy));
-                throw new Exception();
-                //touchAttack.Cast();
+                throw new NotImplementedException();
             }
         }
 

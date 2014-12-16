@@ -1256,7 +1256,7 @@ namespace ODB
 
         private void HandleEngrave(Command cmd)
         {
-            string answer = (string)cmd.Get("answer");
+            string answer = (string)cmd.Get("text");
 
             World.Level.At(Game.Player.xy).Tile.Engraving = answer;
 
@@ -1316,7 +1316,7 @@ namespace ODB
             TileInfo targetTile = (TileInfo)cmd.Get("door");
             if(Game.Player.Sees(xy))
                 Game.UI.Log(
-                    "{0} {1} {2} door.",
+                    "{1} {2} {3} door.",
                     GetName("Name"),
                     Verb("open"),
                     this == Game.Player ? "the" : "a"
