@@ -1169,47 +1169,159 @@ namespace ODB
             Pass();
         }
 
-        private void HandleUse(Command cmd)
+        private void HandleChant(Command cmd)
+        {
+            string chant = (string)cmd.Get("chant");
+            Game.UI.Log(
+                "{1} {2}...",
+                GetName("Name"),
+                Verb("chant")
+            );
+            Game.UI.Log("\"{1}...\"", Util.Capitalize(chant));
+            Chant(chant);
+        }
+
+        private void HandleClose(Command cmd)
+        {
+            TileInfo targetTile = (TileInfo)cmd.Get("door");
+            if(Game.Player.Sees(xy))
+                Game.UI.Log(
+                    "{0} {1} {2} door.",
+                    GetName("Name"),
+                    Verb("close"),
+                    this == Game.Player ? "the" : "a"
+                );
+            targetTile.Door = Door.Closed;
+        }
+
+        private void HandleDrop(Command cmd)
         {
             Item item = (Item)cmd.Get("item");
-            Spell spell = Spell.Spells
-                [item.GetComponent<UsableComponent>().UseEffect];
-            item.SpendCharge();
+            int count = (int)cmd.Get("count");
 
-            if(spell.CastType == InputType.Targeting)
-                spell.Cast(this, cmd.Get("target"));
+            if (count != item.Count)
+            {
+                Item clone = new Item(item.WriteItem().ToString()) {
+                    ID = Item.IDCounter++,
+                    Count = count
+                };
+                item.Count -= count;
+
+                item = clone;
+            }
+
+            Item stack = World.Level.At(xy).Items
+                .FirstOrDefault(it => it.CanStack(item));
+
+            if (stack != null)
+                stack.Stack(item);
+            else DropItem(item);
+
+            Game.UI.Log(
+                "{1} {2} {3}.",
+                GetName("Name"),
+                Verb("drop"),
+                item.GetName("count")
+            );
+
+            Pass();
+        }
+
+        private void HandleEat(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+            int index = Inventory.IndexOf(item);
+
+            if (item.Definition.Stacking)
+            {
+                if (item.Count > 1)
+                {
+                    item.Count--;
+                    Eat(item);
+                }
+                else
+                {
+                    Inventory.RemoveAt(index);
+                    Eat(item);
+                }
+            }
             else
-                spell.Cast(this, cmd.Get("answer"));
+            {
+                Inventory.RemoveAt(index);
+                Eat(item);
+            }
 
             Pass();
         }
 
-        private void HandleWear(Command cmd)
+        private void HandleEngrave(Command cmd)
+        {
+            string answer = (string)cmd.Get("answer");
+
+            World.Level.At(Game.Player.xy).Tile.Engraving = answer;
+
+            if(this == Game.Player)
+                Game.UI.Log(
+                    "You wrote \"{1}\" on the dungeon floor.",
+                    answer
+                );
+        }
+
+        private void HandleGet(Command cmd)
         {
             Item item = (Item)cmd.Get("item");
-            Wear(item);
 
-            if (this == Game.Player)
-                Game.UI.Log(
-                    "Wore {1}.",
-                    item.GetName("a")
-                );
+            World.WorldItems.Remove(item);
+
+            Item stack = Inventory.FirstOrDefault(it => it.CanStack(item));
+
+            if (stack != null)
+            {
+                Game.UI.Log("Picked up " + item.GetName("count") + ".");
+                stack.Stack(item);
+                //so we can get the right char below
+                item = stack;
+            }
+            else Game.Player.Inventory.Add(item);
+
+            char index = IO.Indexes[Inventory.IndexOf(item)];
+            if(this == Game.Player)
+                Util.Game.UI.Log(index + " - "  + item.GetName("count") + ".");
 
             Pass();
         }
 
-        private void HandleWield(Command cmd)
+        private void HandleLearn(Command cmd)
         {
             Item item = (Item)cmd.Get("item");
-            Wield(item);
 
             if (this == Game.Player)
-                Game.UI.Log(
-                    "You wield {1}.",
-                    item.GetName("a")
-                );
+                Game.UI.Log("You read {1}...",item.GetName("the"));
+
+            item.Identify();
+
+            Spell spell = Spell.Spells
+                [item.GetComponent<LearnableComponent>().Spell];
+
+            LearnSpell(spell);
+
+            if (this == Game.Player)
+                Game.UI.Log("You feel knowledgable about {1}!", spell.Name);
 
             Pass();
+        }
+
+        private void HandleOpen(Command cmd)
+        {
+            TileInfo targetTile = (TileInfo)cmd.Get("door");
+            if(Game.Player.Sees(xy))
+                Game.UI.Log(
+                    "{0} {1} {2} door.",
+                    GetName("Name"),
+                    Verb("open"),
+                    this == Game.Player ? "the" : "a"
+                );
+            targetTile.Door = Door.Open;
         }
 
         public void HandleQuaff(Command cmd)
@@ -1261,22 +1373,18 @@ namespace ODB
             Pass();
         }
 
-        private void HandleLearn(Command cmd)
+        public void HandleRemove(Command cmd)
         {
             Item item = (Item)cmd.Get("item");
 
-            if (this == Game.Player)
-                Game.UI.Log("You read {1}...",item.GetName("the"));
-
-            item.Identify();
-
-            Spell spell = Spell.Spells
-                [item.GetComponent<LearnableComponent>().Spell];
-
-            LearnSpell(spell);
+            foreach (BodyPart bp in PaperDoll.Where(bp => bp.Item == item))
+                bp.Item = null;
 
             if (this == Game.Player)
-                Game.UI.Log("You feel knowledgable about {1}!", spell.Name);
+                Game.UI.Log(
+                    "You remove your {1}.",
+                    item.GetName("name")
+                );
 
             Pass();
         }
@@ -1310,130 +1418,51 @@ namespace ODB
             Pass();
         }
 
-        public void HandleRemove(Command cmd)
-        {
-            Item item = (Item)cmd.Get("item");
-
-            foreach (BodyPart bp in PaperDoll.Where(bp => bp.Item == item))
-                bp.Item = null;
-
-            if (this == Game.Player)
-                Game.UI.Log(
-                    "You remove your {1}.",
-                    item.GetName("name")
-                );
-
-            Pass();
-        }
-
-        private void HandleOpen(Command cmd)
-        {
-            TileInfo targetTile = (TileInfo)cmd.Get("door");
-
-            Game.UI.Log("You open the door.");
-
-            targetTile.Door = Door.Open;
-        }
-
-        private void HandleGet(Command cmd)
-        {
-            Item item = (Item)cmd.Get("item");
-
-            World.WorldItems.Remove(item);
-
-            Item stack = Inventory.FirstOrDefault(it => it.CanStack(item));
-
-            if (stack != null)
-            {
-                Game.UI.Log("Picked up " + item.GetName("count") + ".");
-                stack.Stack(item);
-                //so we can get the right char below
-                item = stack;
-            }
-            else Game.Player.Inventory.Add(item);
-
-            char index = IO.Indexes[Inventory.IndexOf(item)];
-            if(this == Game.Player)
-                Util.Game.UI.Log(index + " - "  + item.GetName("count") + ".");
-
-            Pass();
-        }
-
         private void HandleShoot(Command cmd)
         {
             Actor target = (Actor)cmd.Get("actor");
             Shoot(target);
         }
 
-        private void HandleEngrave(Command cmd)
-        {
-            string answer = (string)cmd.Get("answer");
-
-            World.Level.At(Game.Player.xy).Tile.Engraving = answer;
-
-            if(this == Game.Player)
-                Game.UI.Log(
-                    "You wrote \"{1}\" on the dungeon floor.",
-                    answer
-                );
-        }
-
-        private void HandleEat(Command cmd)
+        private void HandleUse(Command cmd)
         {
             Item item = (Item)cmd.Get("item");
-            int index = Inventory.IndexOf(item);
+            Spell spell = Spell.Spells
+                [item.GetComponent<UsableComponent>().UseEffect];
+            item.SpendCharge();
 
-            if (item.Definition.Stacking)
-            {
-                if (item.Count > 1)
-                {
-                    item.Count--;
-                    Eat(item);
-                }
-                else
-                {
-                    Inventory.RemoveAt(index);
-                    Eat(item);
-                }
-            }
+            if(spell.CastType == InputType.Targeting)
+                spell.Cast(this, cmd.Get("target"));
             else
-            {
-                Inventory.RemoveAt(index);
-                Eat(item);
-            }
+                spell.Cast(this, cmd.Get("answer"));
 
             Pass();
         }
 
-        private void HandleDrop(Command cmd)
+        private void HandleWear(Command cmd)
         {
             Item item = (Item)cmd.Get("item");
-            int count = (int)cmd.Get("count");
+            Wear(item);
 
-            if (count != item.Count)
-            {
-                Item clone = new Item(item.WriteItem().ToString()) {
-                    ID = Item.IDCounter++,
-                    Count = count
-                };
-                item.Count -= count;
+            if (this == Game.Player)
+                Game.UI.Log(
+                    "Wore {1}.",
+                    item.GetName("a")
+                );
 
-                item = clone;
-            }
+            Pass();
+        }
 
-            Item stack = World.Level.At(xy).Items
-                .FirstOrDefault(it => it.CanStack(item));
+        private void HandleWield(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+            Wield(item);
 
-            if (stack != null)
-                stack.Stack(item);
-            else DropItem(item);
-
-            Game.UI.Log(
-                "{1} {2} {3}.",
-                GetName("Name"),
-                Verb("drop"),
-                item.GetName("count")
-            );
+            if (this == Game.Player)
+                Game.UI.Log(
+                    "You wield {1}.",
+                    item.GetName("a")
+                );
 
             Pass();
         }
@@ -1443,6 +1472,8 @@ namespace ODB
             switch(cmd.Type)
             {
                 case "cast": HandleCast(cmd); break; //zap
+                case "chant": HandleChant(cmd); break;
+                case "close": HandleClose(cmd); break;
                 case "drop": HandleDrop(cmd); break;
                 case "eat": HandleEat(cmd); break;
                 case "engrave": HandleEngrave(cmd); break;

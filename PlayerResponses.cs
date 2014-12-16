@@ -9,10 +9,7 @@ namespace ODB
 
         public static void Chant()
         {
-            string answer = Game.QpAnswerStack.Pop();
-            Game.UI.Log("You chant...");
-            Game.UI.Log("\"" + Util.Capitalize(answer) + "...\"");
-            Game.Player.Chant(answer);
+            Game.Player.Do(new Command("chant").Add("chant", IO.Answer));
         }
 
         public static void Close()
@@ -26,19 +23,7 @@ namespace ODB
             if(ti != null)
                 if (ti.Door == Door.Open)
                 {
-                    //first check if something's in the way
-                    if (ti.Items.Count <= 0)
-                    {
-                        ti.Door = Door.Closed;
-                        Game.UI.Log("You closed the door.");
-
-                        //counted as a movement action at the moment, based
-                        //on the dnd rules.
-                        Game.Player.Pass(true);
-                        return;
-                    }
-
-                    Game.UI.Log("There's something in the way.");
+                    Game.Player.Do(new Command("close").Add("door", ti));
                     return;
                 }
             Game.UI.Log("There's no open door there.");
