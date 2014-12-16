@@ -29,10 +29,9 @@ namespace ODB
         public static void Drop()
         {
             int i = IO.Indexes.IndexOf(IO.Answer[0]);
-
             Item item = Game.Player.Inventory[i];
 
-            IO.CurrentCommand = new Command("drop").Add("item", item);
+            IO.CurrentCommand.Add("item", item);
 
             if (item.Definition.Stacking && item.Count > 1)
             {
@@ -66,7 +65,7 @@ namespace ODB
         {
             int index = IO.Indexes.IndexOf(IO.Answer[0]);
             Item item = Game.Player.Inventory[index];
-            Game.Player.Do(new Command("eat").Add("item", item));
+            Game.Player.Do(IO.CurrentCommand.Add("item", item));
         }
 
         public static void Engrave()
@@ -169,7 +168,7 @@ namespace ODB
             //key used for InputType.Targeting.
             //also, might want to do the choose weapon/ammo bits here,
             //and add those as weapon/ammo keys to the command.
-            Game.Player.Do(new Command("shoot").Add("actor", a));
+            Game.Player.Do(IO.CurrentCommand.Add("actor", a));
         }
 
         public static void Get()
@@ -178,7 +177,7 @@ namespace ODB
             List<Item> onTile = World.Level.ItemsOnTile(Game.Player.xy);
             Item item = onTile[i];
 
-            Game.Player.Do(new Command("get").Add("item", item));
+            Game.Player.Do(IO.CurrentCommand.Add("item", item));
         }
 
         public static void Look()
@@ -194,7 +193,8 @@ namespace ODB
             if(ti != null)
                 if (ti.Door == Door.Closed)
                 {
-                    Game.Player.Do(new Command("open").Add("door", ti));
+                    IO.CurrentCommand.Add("door", ti);
+                    Game.Player.Do();
                     return;
                 }
             Game.UI.Log("There's no closed door there.");
@@ -205,7 +205,7 @@ namespace ODB
             int index = IO.Indexes.IndexOf(IO.Answer[0]);
             Item item = Game.Player.Inventory[index];
 
-            Game.Player.Do(new Command("quaff").Add("item", item));
+            Game.Player.Do(IO.CurrentCommand.Add("item", item));
         }
 
         public static void Quiver()
@@ -213,7 +213,7 @@ namespace ODB
             int i = IO.Indexes.IndexOf(IO.Answer[0]);
             Item item = Game.Player.Inventory[i];
 
-            Game.Player.Do(new Command("quiver").Add("item", item));
+            Game.Player.Do(IO.CurrentCommand.Add("item", item));
         }
 
         public static void Read()
@@ -231,7 +231,7 @@ namespace ODB
             {
                 Spell effect = Spell.Spells[rc.Effect];
 
-                IO.CurrentCommand = new Command("read").Add("item", item);
+                IO.CurrentCommand.Add("item", item);
 
                 if (effect.CastType == InputType.None)
                     Game.Player.Do(IO.CurrentCommand);
@@ -246,11 +246,18 @@ namespace ODB
                         return;
                     }
 
-                    string question = effect.CastType == InputType.Targeting
-                            ? "Where? ["
-                            : "On what? [";
-                    question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
-                    question += "]";
+                    string question;
+
+                    if (effect.CastType == InputType.Targeting)
+                        question = "Where?";
+                    else
+                    {
+                        question = "On what? [";
+                        question += IO.AcceptedInput.Aggregate(
+                            "", (c, n) => c + n
+                        );
+                        question += "]";
+                    }
 
                     IO.AskPlayer(
                         question,
@@ -341,11 +348,16 @@ namespace ODB
                     return;
                 }
 
-                string question = useEffect.CastType == InputType.Targeting
-                        ? "Where? ["
-                        : "On what? [";
-                question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
-                question += "]";
+                string question;
+
+                if (useEffect.CastType == InputType.Targeting)
+                    question = "Where?";
+                else
+                {
+                    question = "On what? [";
+                    question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
+                    question += "]";
+                }
 
                 IO.AskPlayer(
                     question,
@@ -370,7 +382,7 @@ namespace ODB
                 return;
             }
 
-            Game.Player.Do(new Command("wield").Add("item", item));
+            Game.Player.Do(IO.CurrentCommand.Add("item", item));
         }
 
         public static void Wear()
@@ -391,7 +403,7 @@ namespace ODB
 
             if (!canEquip) return;
 
-            Game.Player.Do(new Command("wear").Add("item", item));
+            Game.Player.Do(IO.CurrentCommand.Add("item", item));
         }
 
         public static void Zap()
@@ -435,11 +447,16 @@ namespace ODB
                     return;
                 }
 
-                string question = spell.CastType == InputType.Targeting
-                        ? "Where? ["
-                        : "On what? [";
-                question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
-                question += "]";
+                string question;
+
+                if (spell.CastType == InputType.Targeting)
+                    question = "Where?";
+                else
+                {
+                    question = "On what? [";
+                    question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
+                    question += "]";
+                }
 
                 IO.AskPlayer(
                     question,

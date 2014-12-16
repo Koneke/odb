@@ -114,7 +114,11 @@ namespace ODB
             get { return _quiver == null
                 ? null
                 : Util.GetItemByID(_quiver.Value); }
-            set { _quiver = value.ID; }
+            set
+            {
+                if (value == null) _quiver = null;
+                else _quiver = value.ID;
+            }
         }
 
         #region temporary/cached (nonwritten)
@@ -947,10 +951,7 @@ namespace ODB
         public void ResetVision()
         {
             if (Vision == null)
-                Vision = new bool[
-                    World.Level.Size.x,
-                    World.Level.Size.y
-                ];
+                Vision = new bool[World.Level.Size.x, World.Level.Size.y];
             for (int x = 0; x < World.Level.Size.x; x++)
                 for (int y = 0; y < World.Level.Size.y; y++)
                     Vision[x, y] = false;
@@ -961,10 +962,7 @@ namespace ODB
                 for (int x = 0; x < rr.wh.x; x++)
                     for (int y = 0; y < rr.wh.y; y++)
                     {
-                        Vision[
-                            rr.xy.x + x,
-                            rr.xy.y + y
-                        ] = true;
+                        Vision[rr.xy.x + x, rr.xy.y + y] = true;
 
                         if (this == Game.Player)
                             World.Level.At(rr.xy + new Point(x, y)).Seen = true;
@@ -1047,6 +1045,7 @@ namespace ODB
         {
             BlackMagic.CheckCircle(this, chant);
         }
+
         public void Heal(int amount)
         {
             HpCurrent += amount;
@@ -1186,7 +1185,7 @@ namespace ODB
             TileInfo targetTile = (TileInfo)cmd.Get("door");
             if(Game.Player.Sees(xy))
                 Game.UI.Log(
-                    "{0} {1} {2} door.",
+                    "{1} {2} {3} door.",
                     GetName("Name"),
                     Verb("close"),
                     this == Game.Player ? "the" : "a"
@@ -1334,6 +1333,8 @@ namespace ODB
             DrinkableComponent dc = item.GetComponent<DrinkableComponent>();
             Spell.Spells[dc.Effect].Cast(this, null);
 
+            item.SpendCharge();
+
             Pass();
         }
 
@@ -1360,7 +1361,6 @@ namespace ODB
                 );
 
             item.Identify();
-            item.SpendCharge();
 
             Spell spell = Spell.Spells
                 [item.GetComponent<ReadableComponent>().Effect];
@@ -1369,6 +1369,8 @@ namespace ODB
                 spell.Cast(this, cmd.Get("target"));
             else
                 spell.Cast(this, cmd.Get("answer"));
+
+            item.SpendCharge();
 
             Pass();
         }

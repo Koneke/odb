@@ -194,6 +194,8 @@ namespace ODB
                 return;
             }
 
+            IO.CurrentCommand = new Command("drop");
+
             string question = "Drop what? [";
             question += IO.AcceptedInput.Aggregate(
                 "", (c, n) => c + n);
@@ -223,6 +225,8 @@ namespace ODB
                 }
             question += "]";
 
+            IO.CurrentCommand = new Command("eat");
+
             if (IO.AcceptedInput.Count > 0)
                 IO.AskPlayer(
                     question,
@@ -245,6 +249,8 @@ namespace ODB
             const string question = "Engrave what?";
             IO.AcceptedInput.Clear();
             IO.AcceptedInput.AddRange(IO.Indexes.ToCharArray());
+
+            IO.CurrentCommand = new Command("engrave");
 
             IO.AskPlayer(
                 question,
@@ -304,6 +310,8 @@ namespace ODB
                 throwing ? ammo.Definition.Name : weapon.Definition.Name
             );
 
+            IO.CurrentCommand = new Command("shoot");
+
             IO.AskPlayer(
                 question,
                 InputType.Targeting,
@@ -346,6 +354,8 @@ namespace ODB
                     "", (c, n) => c + n);
                 question += "]";
 
+                IO.CurrentCommand = new Command("get");
+
                 IO.AskPlayer(
                     question,
                     InputType.QuestionPromptSingle,
@@ -377,6 +387,8 @@ namespace ODB
             for(int i = (int)Keys.NumPad1; i <= (int)Keys.NumPad9; i++)
                 IO.AcceptedInput.Add((char)(48 + i - Keys.NumPad0));
             IO.AcceptedInput.AddRange(IO.ViKeys.ToCharArray());
+
+            IO.CurrentCommand = new Command("open");
                 
             IO.AskPlayer(
                 "Open where?",
@@ -400,6 +412,8 @@ namespace ODB
             string question = "Drink what? [";
             question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
             question += "]";
+
+            IO.CurrentCommand = new Command("quaff");
 
             if (IO.AcceptedInput.Count > 0)
                 IO.AskPlayer(
@@ -430,6 +444,8 @@ namespace ODB
             string question = "Quiver what? [";
             question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
             question += "]";
+
+            IO.CurrentCommand = new Command("quiver");
 
             if (IO.AcceptedInput.Count > 0)
                 IO.AskPlayer(
@@ -468,6 +484,8 @@ namespace ODB
                 "", (c, n) => c + n);
             question += "]";
 
+            IO.CurrentCommand = new Command("read");
+
             IO.AskPlayer(
                 question,
                 InputType.QuestionPromptSingle,
@@ -491,8 +509,10 @@ namespace ODB
             if (worn.Count > 0)
             {
                 IO.AcceptedInput.Clear();
-                for (int i = 0; i < worn.Count; i ++)
-                    IO.AcceptedInput.Add(IO.Indexes[i]);
+                foreach(Item item in Game.Player.GetWornItems())
+                    IO.AcceptedInput.Add(IO.Indexes
+                        [Game.Player.Inventory.IndexOf(item)]
+                    );
 
                 string question = "Remove what? [";
                 question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
@@ -535,6 +555,8 @@ namespace ODB
                         [Game.Player.Inventory.IndexOf(Game.Player.Quiver)]
                     );
 
+                IO.AcceptedInput.Sort();
+
                 string question = "Sheathe what? [";
                 question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
                 question += "]";
@@ -575,6 +597,8 @@ namespace ODB
             question += IO.AcceptedInput.Aggregate(
                 "", (c, n) => c + n);
             question += "]";
+
+            IO.CurrentCommand = new Command("wield");
 
             IO.AskPlayer(
                 question,

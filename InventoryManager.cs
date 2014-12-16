@@ -273,14 +273,23 @@ namespace ODB
         {
             IO.CurrentCommand = new Command("drop").Add("item", item);
 
-            IO.AcceptedInput.Clear();
-            IO.AcceptedInput.AddRange(IO.Numbers.ToList());
+            if (item.Stacking && item.Count > 1)
+            {
 
-            IO.AskPlayer(
-                "How many?",
-                InputType.QuestionPrompt,
-                PlayerResponses.DropCount
-            );
+                IO.AcceptedInput.Clear();
+                IO.AcceptedInput.AddRange(IO.Numbers.ToList());
+
+                IO.AskPlayer(
+                    "How many?",
+                    InputType.QuestionPrompt,
+                    PlayerResponses.DropCount
+                );
+            }
+            else
+            {
+                IO.CurrentCommand.Add("count", 0);
+                Game.Player.Do();
+            }
         }
 
         private static void CheckWield(Item item)
@@ -349,7 +358,7 @@ namespace ODB
 
         private static void CheckSheath(Item item)
         {
-            if (Game.Player.IsWielded(item))
+            if (Game.Player.IsWielded(item) || Game.Player.Quiver == item)
             {
                 Game.Player.Do(new Command("sheathe").Add("item", item));
             }
@@ -382,8 +391,47 @@ namespace ODB
 
             ReadableComponent rc = item.GetComponent<ReadableComponent>();
 
-            if(rc != null)
-                Game.Player.Do(new Command("read").Add("item", item));
+            if (rc != null)
+            {
+                Spell effect = Spell.Spells[rc.Effect];
+
+                IO.CurrentCommand = new Command("read").Add("item", item);
+
+                if (effect.CastType == InputType.None)
+                {
+                    Game.Player.Do(IO.CurrentCommand);
+                }
+                else
+                {
+                    if (effect.SetupAcceptedInput != null)
+                        effect.SetupAcceptedInput(Game.Player);
+
+                    if (IO.AcceptedInput.Count <= 0)
+                    {
+                        Game.UI.Log("You have nothing to cast that on.");
+                        return;
+                    }
+
+                    string question;
+
+                    if (effect.CastType == InputType.Targeting)
+                        question = "Where?";
+                    else
+                    {
+                        question = "On what? [";
+                        question += IO.AcceptedInput.Aggregate(
+                            "", (c, n) => c + n
+                        );
+                        question += "]";
+                    }
+
+                    IO.AskPlayer(
+                        question,
+                        effect.CastType,
+                        Game.Player.Do
+                    );
+                }
+            }
             else
                 Game.Player.Do(new Command("learn").Add("item", item));
         }
