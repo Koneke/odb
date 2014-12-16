@@ -29,7 +29,7 @@ namespace ODB
             #region looking at our new tile
             if (moved)
             {
-                Game.Target = Game.Player.xy;
+                IO.Target = Game.Player.xy;
                 PlayerResponses.Examine();
             }
             #endregion
@@ -138,7 +138,7 @@ namespace ODB
                 return;
             }
 
-            Game.CurrentCommand = new Command("use");
+            IO.CurrentCommand = new Command("use");
 
             IO.AskPlayer(
                 question,
@@ -317,7 +317,7 @@ namespace ODB
                 .ToList();
 
             if(visible.Count > 0)
-                Game.Target =
+                IO.Target =
                     visible
                     .OrderBy(a => Util.Distance(a.xy, Game.Player.xy))
                     .Select(a => a.xy)
@@ -609,7 +609,7 @@ namespace ODB
                 "", (c, n) => c + n);
             question += "]";
 
-            Game.CurrentCommand = new Command("wear");
+            IO.CurrentCommand = new Command("wear");
 
             IO.AskPlayer(
                 question,
@@ -637,7 +637,7 @@ namespace ODB
             question += "]";
 
             //setup cmd, no info yet other than type
-            Game.CurrentCommand = new Command("cast");
+            IO.CurrentCommand = new Command("cast");
 
             IO.AskPlayer(
                 question,

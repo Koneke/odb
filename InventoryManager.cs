@@ -233,7 +233,7 @@ namespace ODB
 
             //not actually passing this to an actor, just using as a vessel
             //to ferry things around.
-            Game.CurrentCommand = new Command("split")
+            IO.CurrentCommand = new Command("split")
                 .Add("container", CurrentContainer)
                 .Add("item-id", item.ID);
 
@@ -271,9 +271,16 @@ namespace ODB
 
         private static void CheckDrop(Item item)
         {
-            //semi weird hack so we can reuse drop code
-            IO.Answer = IO.Indexes[Selection] + "";
-            PlayerResponses.Drop();
+            IO.CurrentCommand = new Command("drop").Add("item", item);
+
+            IO.AcceptedInput.Clear();
+            IO.AcceptedInput.AddRange(IO.Numbers.ToList());
+
+            IO.AskPlayer(
+                "How many?",
+                InputType.QuestionPrompt,
+                PlayerResponses.DropCount
+            );
         }
 
         private static void CheckWield(Item item)

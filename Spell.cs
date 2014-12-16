@@ -107,8 +107,7 @@ namespace ODB
                 CastType = InputType.QuestionPromptSingle,
                 SetupAcceptedInput = (caster) =>
                 {
-                    Item readItem =
-                        (Item)ODBGame.Game.CurrentCommand.Get("item");
+                    Item readItem = (Item)IO.CurrentCommand.Get("item");
 
                     IO.AcceptedInput.Clear();
                     IO.AcceptedInput.AddRange(

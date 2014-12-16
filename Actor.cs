@@ -1135,7 +1135,7 @@ namespace ODB
 
         public void Do()
         {
-            Do(Game.CurrentCommand);
+            Do(IO.CurrentCommand);
         }
 
         private void HandleCast(Command cmd)

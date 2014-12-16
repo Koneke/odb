@@ -32,7 +32,7 @@ namespace ODB
 
             Item item = Game.Player.Inventory[i];
 
-            Game.CurrentCommand = new Command("drop").Add("item", item);
+            IO.CurrentCommand = new Command("drop").Add("item", item);
 
             if (item.Definition.Stacking && item.Count > 1)
             {
@@ -46,20 +46,20 @@ namespace ODB
                 );
             }
             //just do a full drop, no splitting necessary
-            else Game.Player.Do(Game.CurrentCommand.Add("count", 0));
+            else Game.Player.Do(IO.CurrentCommand.Add("count", 0));
         }
 
         public static void DropCount()
         {
             int count = int.Parse(IO.Answer);
 
-            if (count > ((Item)Game.CurrentCommand.Get("item")).Count)
+            if (count > ((Item)IO.CurrentCommand.Get("item")).Count)
             {
                 Game.UI.Log("You don't have that many.");
                 return;
             }
 
-            Game.Player.Do(Game.CurrentCommand.Add("count", count));
+            Game.Player.Do(IO.CurrentCommand.Add("count", count));
         }
 
         public static void Eat()
@@ -76,10 +76,10 @@ namespace ODB
 
         public static void Examine(bool verbose = false)
         {
-            TileInfo ti = World.Level.At(Game.Target);
+            TileInfo ti = World.Level.At(IO.Target);
 
             string distString =
-                (Util.Distance(Game.Player.xy, Game.Target) > 0 ?
+                (Util.Distance(Game.Player.xy, IO.Target) > 0 ?
                     " there. " : " here. ");
 
             bool nonSeen = false;
@@ -112,7 +112,7 @@ namespace ODB
             }
 
 
-            if (Game.Player.Vision[Game.Target.x, Game.Target.y])
+            if (Game.Player.Sees(IO.Target))
             {
                 if (ti.Tile.Engraving != "")
                     str += "\"" + ti.Tile.Engraving +
@@ -152,11 +152,11 @@ namespace ODB
 
         public static void Fire()
         {
-            if (!Game.Player.Sees(Game.Target)) {
+            if (!Game.Player.Sees(IO.Target)) {
                 Game.UI.Log("You can't see that place.");
                 return;
             }
-            Actor a = World.Level.ActorOnTile(Game.Target);
+            Actor a = World.Level.ActorOnTile(IO.Target);
 
             //todo: allow firing anyways..?
             if (a == null)
@@ -231,10 +231,10 @@ namespace ODB
             {
                 Spell effect = Spell.Spells[rc.Effect];
 
-                Game.CurrentCommand = new Command("read").Add("item", item);
+                IO.CurrentCommand = new Command("read").Add("item", item);
 
                 if (effect.CastType == InputType.None)
-                    Game.Player.Do(Game.CurrentCommand);
+                    Game.Player.Do(IO.CurrentCommand);
                 else
                 {
                     if (effect.SetupAcceptedInput != null)
@@ -282,8 +282,8 @@ namespace ODB
         public static void Split()
         {
             int count = int.Parse(IO.Answer);
-            int id = (int)Game.CurrentCommand.Get("item-id");
-            int container = (int)Game.CurrentCommand.Get("container");
+            int id = (int)IO.CurrentCommand.Get("item-id");
+            int container = (int)IO.CurrentCommand.Get("container");
 
             Item item = Util.GetItemByID(id);
             if (count > item.Count)
@@ -323,13 +323,13 @@ namespace ODB
                 Spell.Spells
                 [item.GetComponent<UsableComponent>().UseEffect];
 
-            Game.CurrentCommand.Add(
+            IO.CurrentCommand.Add(
                 "item",
                 item
             );
 
             if (useEffect.CastType == InputType.None)
-                Game.Player.Do(Game.CurrentCommand);
+                Game.Player.Do(IO.CurrentCommand);
             else
             {
                 if (useEffect.SetupAcceptedInput != null)
@@ -410,11 +410,11 @@ namespace ODB
             }
 
             //save the spell to be cast using that index to the ccmd
-            ODBGame.Game.CurrentCommand.Add("spell", spell);
+            IO.CurrentCommand.Add("spell", spell);
 
             //no more data required, gogo
             if (spell.CastType == InputType.None)
-                Game.Player.Do(Game.CurrentCommand);
+                Game.Player.Do(IO.CurrentCommand);
 
             //or ask for a target
             //Game.Player.Do() handles Do specifically for the player

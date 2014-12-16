@@ -57,6 +57,10 @@ namespace ODB
             return _ks.IsKeyDown(k) && !_oks.IsKeyDown(k);
         }
 
+        public static Point Target;
+        public static Action QuestionReaction;
+        public static Command CurrentCommand;
+
         private static void SubmitAnswer()
         {
             if (IOState == InputType.PlayerInput)
@@ -71,9 +75,9 @@ namespace ODB
             //           repetetive though, since most questions do /not/ chain.
 
             IOState = InputType.PlayerInput;
-            Game.CurrentCommand.Answer = Answer;
-            Game.CurrentCommand.Target = Game.Target;
-            Game.QuestionReaction();
+            CurrentCommand.Answer = Answer;
+            CurrentCommand.Target = Target;
+            QuestionReaction();
         }
 
         public static void QuestionPromptInput()
@@ -126,10 +130,6 @@ namespace ODB
         }
 
         public static InputType IOState = InputType.PlayerInput;
-        //todo: should keep info about source as well
-        //      since the item is sometime removed
-        //      -actor.ID should be actor inventory
-        public static Item UsedItem;
         public static string Question;
         public static string Answer;
 
@@ -141,9 +141,9 @@ namespace ODB
             Answer = "";
             IOState = type;
             Question = question;
-            Game.QuestionReaction = reaction;
+            QuestionReaction = reaction;
             if(type == InputType.Targeting)
-                Game.Target = Game.Player.xy;
+                Target = Game.Player.xy;
         }
 
         public static void TargetInput()
@@ -159,7 +159,7 @@ namespace ODB
             if (KeyBindings.Pressed(Bind.South)) offset.Nudge(0, 1);
             if (KeyBindings.Pressed(Bind.SouthEast)) offset.Nudge(1, 1);
 
-            Game.Target.Nudge(offset);
+            Target.Nudge(offset);
 
             if (KeyBindings.Pressed(Bind.Target_Accept))
                 SubmitAnswer();

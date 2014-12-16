@@ -42,11 +42,6 @@ namespace ODB
 
         public Actor Player;
 
-        public Point Target;
-        public Action QuestionReaction;
-
-        public Command CurrentCommand = new Command("foo");
-
         public const int StandardActionLength = 10;
 
         private void GameReferences()
