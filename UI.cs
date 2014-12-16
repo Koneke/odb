@@ -634,6 +634,41 @@ namespace ODB
                 : Color.White;
         }
 
+        public void DrawColorString(
+            Console console,
+            int x, int y,
+            string s
+        ) {
+            foreach (string split in s.NeatSplit("\\n"))
+                DrawColorString(console, x, y, new ColorString(split));
+        }
+
+        public void DrawColorString(
+            Console console,
+            int x, int y,
+            ColorString cs
+        ) {
+            for (int j = -1; j < cs.ColorPoints.Count; j++)
+            {
+                int current = j == -1
+                    ? 0
+                    : cs.ColorPoints[j].Item1;
+
+                int next = j == cs.ColorPoints.Count - 1
+                    ? cs.String.Length
+                    : cs.ColorPoints[j + 1].Item1;
+
+                console.CellData.Print(
+                    x + current, y,
+                    cs.String.Substring(current, next - current),
+                    j == -1
+                        ? Color.White
+                        : cs.ColorPoints[j].Item2
+                );
+            }
+        }
+
+
         public void DrawToScreen(Point xy, Color? bg, Color fg, String tile)
         {
             if (bg != null)

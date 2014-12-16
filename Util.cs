@@ -42,6 +42,17 @@ namespace ODB
         ) {
             return coll.Skip(Math.Max(0, coll.Count() - n)).Take(n);
         }
+
+        public static List<string> NeatSplit(
+            this string s,
+            string split,
+            bool removeEmpty = true
+        ) {
+            return s.Split(new []{ split }, removeEmpty
+                ? StringSplitOptions.RemoveEmptyEntries
+                : StringSplitOptions.None)
+            .ToList();
+        }
     }
 
     public class Util
