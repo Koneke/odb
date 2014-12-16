@@ -606,7 +606,8 @@ namespace ODB
             IO.AcceptedInput.Clear();
             foreach(Item item in wearable)
                 IO.AcceptedInput.Add(
-                    IO.Indexes[Game.Player.Inventory.IndexOf(item)]);
+                    IO.Indexes[Game.Player.Inventory.IndexOf(item)]
+                );
 
             string question = "Wear what? [";
             question += IO.AcceptedInput.Aggregate(
@@ -637,8 +638,7 @@ namespace ODB
             }
 
             string question = "Cast what? [";
-            question += IO.AcceptedInput.Aggregate(
-                "", (c, n) => c + n);
+            question += IO.AcceptedInput.Aggregate("", (c, n) => c + n);
             question += "]";
 
             //setup cmd, no info yet other than type

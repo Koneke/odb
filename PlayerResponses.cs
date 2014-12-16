@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Collections.Generic;
 using System.Linq;
-//using Microsoft.Xna.Framework.Input;
 
 namespace ODB
 {
@@ -64,8 +61,6 @@ namespace ODB
             if (it.Definition.Stacking && it.Count > 1)
             {
                 IO.AcceptedInput.Clear();
-                /*for (Keys k = Keys.D0; k <= Keys.D9; k++)
-                    IO.AcceptedInput.Add((char)k);*/
                 IO.AcceptedInput.AddRange(IO.Numbers.ToList());
 
                 IO.AskPlayer(
@@ -370,21 +365,13 @@ namespace ODB
 
         public static void Quaff()
         {
-            throw new NotImplementedException();
-
             string answer = Game.QpAnswerStack.Pop();
             if (answer.Length <= 0) return;
 
             int index = IO.Indexes.IndexOf(answer[0]);
-            Item selected = Game.Player.Inventory[index];
+            Item item = Game.Player.Inventory[index];
 
-            Game.UI.Log("You drank " + selected.GetName("a"));
-            DrinkableComponent dc = selected.GetComponent<DrinkableComponent>();
-            Game.Caster = Game.Player;
-            //Spell.Spells[dc.Effect].Cast();
-            selected.Identify();
-
-            Game.Player.Pass();
+            Game.Player.Do(new Command("quaff").Add("item", item));
         }
 
         public static void Quiver()
@@ -393,26 +380,51 @@ namespace ODB
             if (answer.Length <= 0) return;
 
             int i = IO.Indexes.IndexOf(answer[0]);
+            Item item = Game.Player.Inventory[i];
 
-            Item selected = Game.Player.Inventory[i];
-            Game.Player.Quiver = selected;
-
-            Game.UI.Log("Quivered "+ selected.GetName("count") + ".");
-
-            Game.Player.Pass();
+            Game.Player.Do(new Command("quiver").Add("item", item));
         }
 
         public static void Read()
         {
             string answer = Game.QpAnswerStack.Pop();
+
             int index = IO.Indexes.IndexOf(answer[0]);
-
             Item item = Game.Player.Inventory[index];
-
-            Game.UI.Log("You read {1}...", item.GetName("name"), Game);
 
             ReadableComponent rc =
                 item.GetComponent<ReadableComponent>();
+
+            //we know from Player.CheckRead that this item either has
+            //a ReadableComponent, or a LearnableComponent, guaranteed.
+
+            if (rc != null)
+            {
+                Spell effect = Spell.Spells[rc.Effect];
+
+                Game.CurrentCommand = new Command("read").Add("item", item);
+
+                if (effect.CastType == InputType.None)
+                    Game.Player.Do(Game.CurrentCommand);
+                else
+                {
+                    if (effect.SetupAcceptedInput != null)
+                        effect.SetupAcceptedInput(Game.Player);
+
+                    IO.AskPlayer(
+                        effect.CastType == InputType.Targeting
+                            ? "Where?"
+                            : "On what?",
+                        effect.CastType,
+                        Game.Player.Do
+                    );
+                }
+            }
+            else
+                Game.Player.Do(new Command("learn").Add("item", item));
+
+            /*
+            Game.UI.Log("You read {1}...", item.GetName("name"), Game);
 
             if (rc != null)
             {
@@ -433,7 +445,7 @@ namespace ODB
             Game.UI.Log("You feel knowledgable about {1}!", spell.Name, Game);
             item.Identify();
             Game.Player.LearnSpell(spell);
-            Game.Player.Pass();
+            Game.Player.Pass();*/
         }
 
         public static void Remove()
@@ -537,51 +549,25 @@ namespace ODB
                 [item.GetComponent<UsableComponent>().UseEffect];
 
             Game.CurrentCommand.Add(
-                "spell",
-                useEffect
-            );
-
-            Game.CurrentCommand.Add(
                 "item",
                 item
             );
 
             if (useEffect.CastType == InputType.None)
-            {
                 Game.Player.Do(Game.CurrentCommand);
-                return;
-            }
             else
             {
                 if (useEffect.SetupAcceptedInput != null)
                     useEffect.SetupAcceptedInput(Game.Player);
 
                 IO.AskPlayer(
-                    //todo: switch to appropriate On what/Where here
-                    "foo bar",
+                    useEffect.CastType == InputType.Targeting
+                        ? "Where?"
+                        : "On what?",
                     useEffect.CastType,
                     Game.Player.Do
                 );
-                return;
             }
-
-            //LH-021214: Note! Because we're spending a charge here, I've set it
-            //           up so that we can't actually cancel the question we
-            //           set up (unless the effect has InputType.None).
-            //           This mainly so you don't cancel and lose out on a
-            //           charge. /Might/ be wanted behaviour, we'll see.
-            item.SpendCharge();
-            IO.UsedItem = item;
-
-            UsableComponent uc =
-                item.GetComponent<UsableComponent>();
-
-            //LH-021214: if uc is null here, we failed an earlier check.
-            Debug.Assert(uc != null);
-
-            throw new NotImplementedException();
-
-            //Cast(Spell.Spells[uc.UseEffect]);
         }
 
         public static void Wield()
@@ -630,33 +616,6 @@ namespace ODB
 
             Game.CurrentCommand.Add("item", item);
             Game.Player.Do(Game.CurrentCommand);
-
-            //LH-151214: This check should never be needed, because no
-            //           wearable item should be stacking. Either way,
-            //           if they are, that should no longer be handled here.
-            //           Leaving it here for one commit just so this comment
-            //           is saved ;)
-            //make sure we're not equipping "2x ..."
-            /*if (item.Definition.Stacking && item.Count > 1)
-            {
-                Item clone = new Item(
-                    //clone
-                    item.WriteItem().ToString()
-                ) {
-                    //no dupe ids pls
-                    ID = Item.IDCounter++
-                };
-
-                clone.Count--;
-                item.Count = 1;
-                Game.Player.Inventory.Add(clone);
-                World.AllItems.Add(clone);
-            }*/
-
-            /*Game.Player.Wear(item);
-            Game.UI.Log("Wore " + item.GetName("a") + ".");
-
-            Game.Player.Pass();*/
         }
 
         public static void Zap()
@@ -680,6 +639,7 @@ namespace ODB
             //no more data required, gogo
             if (spell.CastType == InputType.None)
                 Game.Player.Do(Game.CurrentCommand);
+
             //or ask for a target
             //Game.Player.Do() handles Do specifically for the player
             //automatically promotes the Answer/Target to a "real" key

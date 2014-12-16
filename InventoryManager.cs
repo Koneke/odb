@@ -196,6 +196,7 @@ namespace ODB
             if (KeyBindings.Pressed(Bind.Wear)) CheckWear(SelectedItem);
             if (KeyBindings.Pressed(Bind.Sheath)) CheckSheath(SelectedItem);
             if (KeyBindings.Pressed(Bind.Remove)) CheckRemove(SelectedItem);
+            if (KeyBindings.Pressed(Bind.Quaff)) CheckQuaff(SelectedItem);
             if (KeyBindings.Pressed(Bind.Quiver)) CheckQuiver(SelectedItem);
             if (KeyBindings.Pressed(Bind.Split)) CheckSplit(SelectedItem);
             if (KeyBindings.Pressed(Bind.Eat)) CheckEat(SelectedItem);
@@ -236,12 +237,18 @@ namespace ODB
             );
         }
 
+        private static void CheckQuaff(Item item)
+        {
+            if (item.HasComponent<DrinkableComponent>())
+                Game.Player.Do(new Command("quaff").Add("item", item));
+            else Game.UI.Log("You can't drink that.");
+        }
+
         private static void CheckQuiver(Item item)
         {
             if (!Game.Player.IsEquipped(item))
             {
-                Game.QpAnswerStack.Push(IO.Indexes[Selection] + "");
-                PlayerResponses.Quiver();
+                Game.Player.Do(new Command("quiver").Add("item", item));
             }
             else
             {
@@ -297,8 +304,6 @@ namespace ODB
                 return;
             }
 
-            /*Game.QpAnswerStack.Push(IO.Indexes[Selection] + "");
-            PlayerResponses.Wear();*/
             Game.Player.Do(
                 new Command("wear")
                 .Add("item", item)

@@ -467,6 +467,10 @@ namespace ODB
 
         public Command Add(string key, object value)
         {
+            //restricted
+            if (key.ToLower() == "target" || key.ToLower() == "answer")
+                throw new Exception();
+
             _data.Add(key.ToLower(), value);
 
             //so we can do nice inlining stuff for readability
@@ -475,7 +479,17 @@ namespace ODB
 
         public object Get(string key)
         {
-            return _data[key.ToLower()];
+            key = key.ToLower();
+
+            switch (key)
+            {
+                case "target":
+                    return Target;
+                case "answer":
+                    return Answer;
+                default:
+                    return _data[key];
+            }
         }
     }
 }

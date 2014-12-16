@@ -1176,9 +1176,6 @@ namespace ODB
             if (Util.Roll("1d20") + Get(Stat.Intelligence) >=
                 spell.CastDifficulty)
             {
-                //target-less spells can just ignore the passed
-                //target-data. others parse it to the right type
-                //(string/point/whatever)
                 spell.Cast(this, cmd.Get("target"));
             }
             else
@@ -1196,10 +1193,14 @@ namespace ODB
 
         private void HandleUse(Command cmd)
         {
-            Spell spell = (Spell)cmd.Get("spell");
             Item item = (Item)cmd.Get("item");
+            Spell spell = Spell.Spells
+                [item.GetComponent<UsableComponent>().UseEffect];
             item.SpendCharge();
+
             spell.Cast(this, cmd.Get("target"));
+
+            Pass();
         }
 
         private void HandleWear(Command cmd)
@@ -1212,6 +1213,74 @@ namespace ODB
                     "Wore {1}.",
                     item.GetName("a")
                 );
+
+            Pass();
+        }
+
+        public void HandleQuaff(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+
+            if (this == Game.Player)
+                Game.UI.Log("Drank {1}.", item.GetName("a"));
+
+            DrinkableComponent dc = item.GetComponent<DrinkableComponent>();
+            Spell.Spells[dc.Effect].Cast(this, null);
+
+            Pass();
+        }
+
+        private void HandleQuiver(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+            Quiver = item;
+
+            if(this == Game.Player)
+                Game.UI.Log("Quivered {1}.", item.GetName("count"));
+
+            Pass();
+        }
+
+        //read is for scrolls, learn is for tomes
+        private void HandleRead(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+
+            if (this == Game.Player)
+                Game.UI.Log(
+                    "You read {1}.",
+                    item.GetName("a")
+                );
+
+            item.Identify();
+            item.SpendCharge();
+
+            Spell spell = Spell.Spells
+                [item.GetComponent<ReadableComponent>().Effect];
+
+            spell.Cast(this, cmd.Get("target"));
+
+            Pass();
+        }
+
+        private void HandleLearn(Command cmd)
+        {
+            Item item = (Item)cmd.Get("item");
+
+            if( this == Game.Player)
+                Game.UI.Log(
+                    "You read {1}.",
+                    item.GetName("name")
+                );
+
+            item.Identify();
+
+            Spell spell = Spell.Spells
+                [item.GetComponent<LearnableComponent>().Spell];
+
+            LearnSpell(spell);
+
+            Pass();
         }
 
         public void Do(Command cmd)
@@ -1219,6 +1288,10 @@ namespace ODB
             switch(cmd.Type)
             {
                 case "cast": HandleCast(cmd); break;
+                case "learn": HandleLearn(cmd); break;
+                case "quaff": HandleQuaff(cmd); break;
+                case "quiver": HandleQuiver(cmd); break;
+                case "read": HandleRead(cmd); break;
                 case "use": HandleUse(cmd); break;
                 case "wear": HandleWear(cmd); break;
                 default: throw new ArgumentException();

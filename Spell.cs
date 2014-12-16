@@ -59,14 +59,14 @@ namespace ODB
             new Spell("potion of healing")
             {
                 CastType = InputType.None,
-                Effect = (c, t) =>
+                Effect = (caster, target) =>
                 {
                     ODBGame.Game.UI.Log(
-                        ODBGame.Game.Caster.GetName("Name") + " " +
-                        ODBGame.Game.Caster.Verb("#feel") + " " +
-                        "better!"
+                        "{1} {2} better!",
+                        caster.GetName("Name"),
+                        caster.Verb("#feel")
                     );
-                    Util.Game.Caster.Heal(Util.Roll("3d3"));
+                    caster.Heal(Util.Roll("3d3"));
                 }
             };
 
@@ -110,10 +110,9 @@ namespace ODB
                 {
                     IO.AcceptedInput.Clear();
                     IO.AcceptedInput.AddRange(
-                        ODBGame.Game.Caster.Inventory
+                        caster.Inventory
                             .Where(it => !it.Known)
-                            .Select(item => ODBGame.Game.Caster.Inventory
-                                .IndexOf(item))
+                            .Select(item => caster.Inventory.IndexOf(item))
                             .Select(index => IO.Indexes[index])
                     );
 
@@ -122,7 +121,7 @@ namespace ODB
                 {
                     string answer = (string)target;
                     int index = IO.Indexes.IndexOf(answer[0]);
-                    Item item = ODBGame.Game.Caster.Inventory[index];
+                    Item item = caster.Inventory[index];
                     item.Identify();
                 },
                 CastDifficulty = 15,
