@@ -175,7 +175,7 @@ namespace ODB
 
             foreach (Item i in World.WorldItems
                 .Where(i => i.LevelID == World.Level.ID)
-                .Where(i => Game.Player.Vision[i.xy.x, i.xy.y] || Game.WizMode)
+                .Where(i => Game.Player.Sees(i.xy) || Game.WizMode)
                 .Where(i => screen.ContainsPoint(i.xy)))
             {
                 if (itemCount[i.xy.x, i.xy.y] == 1)
@@ -205,7 +205,7 @@ namespace ODB
 
             foreach (Actor a in World.WorldActors
                 .Where(a => a.LevelID == World.Level.ID)
-                .Where(a => Game.Player.Vision[a.xy.x, a.xy.y] || Game.WizMode)
+                .Where(a => Game.Player.Sees(a.xy) || Game.WizMode)
                 .Where(a => screen.ContainsPoint(a.xy)))
             {
                 if (actorCount[a.xy.x, a.xy.y] == 1)

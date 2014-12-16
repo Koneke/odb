@@ -14,7 +14,7 @@ namespace ODB
 
         public static void Close()
         {
-            Point offset = Game.NumpadToDirection(IO.Answer[0]);
+            Point offset = Util.NumpadToDirection(IO.Answer[0]);
             TileInfo ti = World.Level.At(Game.Player.xy + offset);
 
             if(ti != null)
@@ -187,7 +187,7 @@ namespace ODB
 
         public static void Open()
         {
-            Point offset = Game.NumpadToDirection(IO.Answer[0]);
+            Point offset = Util.NumpadToDirection(IO.Answer[0]);
             TileInfo ti = World.Level.At(Game.Player.xy + offset);
 
             if(ti != null)

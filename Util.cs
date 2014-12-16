@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
-
 /*
  * Mainly for just storing general, loose utility functions.
  * Classes/enums/structs live in Header.cs
  */
+using Microsoft.Xna.Framework.Input;
 
 namespace ODB
 {
@@ -396,5 +396,26 @@ namespace ODB
             result *= x;
             return result;
         }
+
+        public static Point NumpadToDirection(char c)
+        {
+            Point p;
+            switch (c)
+            {
+                case 'y': case (char)Keys.D7: p = new Point(-1, -1); break;
+                case 'k': case (char)Keys.D8: p = new Point(0, -1); break;
+                case 'u': case (char)Keys.D9: p = new Point(1, -1); break;
+                case 'h': case (char)Keys.D4: p = new Point(-1, 0); break;
+                case 'l': case (char)Keys.D6: p = new Point(1, 0); break;
+                case 'b': case (char)Keys.D1: p = new Point(-1, 1); break;
+                case 'j': case (char)Keys.D2: p = new Point(0, 1); break;
+                case 'n': case (char)Keys.D3: p = new Point(1, 1); break;
+                default: throw new Exception(
+                        "Bad input (expected numpad keycode, " +
+                        "got something weird instead).");
+            }
+            return p;
+        }
+
     }
 }

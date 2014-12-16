@@ -1038,6 +1038,7 @@ namespace ODB
 
         public bool Sees(Point other)
         {
+            if (Vision == null) return false;
             return Vision[other.x, other.y];
         }
 
