@@ -32,7 +32,7 @@ namespace ODB
 
         private List<Tuple<Font, Font>> _fonts; //text/tile pair
         private int _currentFont;
-        private bool _fontDoublesize = false;
+        private bool _fontDoublesize;
 
         public Point Camera;
         private Point _cameraOffset;

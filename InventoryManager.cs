@@ -306,12 +306,16 @@ namespace ODB
                 return;
             }
 
-            Game.Player.Do(new Command("wield").Add("item", item));
+            if (Game.Player.CanEquip(item.GetHands(Game.Player)))
+                Game.Player.Do(new Command("wield").Add("item", item));
+            else
+                Game.UI.Log("You'd need more hands to do that.");
         }
 
         private static void CheckWear(Item item)
         {
-            if (!item.HasComponent<WearableComponent>())
+            WearableComponent wc = item.GetComponent<WearableComponent>();
+            if(wc == null)
             {
                 Game.UI.Log("You can't wear that.");
                 return;
@@ -329,10 +333,13 @@ namespace ODB
                 return;
             }
 
-            Game.Player.Do(
-                new Command("wear")
-                .Add("item", item)
-            );
+            if (Game.Player.CanEquip(wc.EquipSlots))
+                Game.Player.Do(new Command("wear").Add("item", item));
+            else
+                Game.UI.Log(
+                    "You'd need to remove something first " +
+                        "(or grow more limbs).");
+
         }
 
         private static void PutInto(Item item, int container)

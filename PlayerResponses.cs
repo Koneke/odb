@@ -17,13 +17,22 @@ namespace ODB
             Point offset = Util.NumpadToDirection(IO.Answer[0]);
             TileInfo ti = World.Level.At(Game.Player.xy + offset);
 
-            if(ti != null)
-                if (ti.Door == Door.Open)
-                {
+            if (ti == null)
+            {
+                Game.UI.Log("There's no open door there.");
+                return;
+            }
+
+            if (ti.Door == Door.Open)
+            {
+                if (ti.Items.Count == 0 && ti.Actor == null)
                     Game.Player.Do(new Command("close").Add("door", ti));
-                    return;
-                }
-            Game.UI.Log("There's no open door there.");
+                else Game.UI.Log("There's something in the way.");
+            }
+            else
+            {
+                Game.UI.Log("There's no open door there.");
+            }
         }
 
         public static void Drop()
