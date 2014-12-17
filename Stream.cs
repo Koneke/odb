@@ -154,7 +154,7 @@ namespace ODB
             string s = _stream.Substring(Read, _stream.Length - Read);
             s = s.Split(';')[0];
             Read += s.Length + 1;
-            return s;
+            return s.TrimStart(' ');
         }
 
         public int ReadHex(int length)

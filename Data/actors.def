@@ -1,4 +1,6 @@
-0000XXXXXX00FFFF	01	moribund;1		0000	
+0000XXXXXX00FFFF	01	moribund;1
+				g_unique;
+				0000	
 				1d10; 1d6;
 				1d3+3; 1d3+3; 1d3+3;
 				0000
@@ -14,9 +16,11 @@
 					{}
 				}##
 
-0001XXXXXX8e5500	72	rat;0			0402
-				1d5;0d0;
-				1d2;2d1;0d1;
+0001XXXXXX8e5500	72	rat;0
+				g_normal;
+				0402
+				1d5; 0d0;
+				1d2; 2d1; 0d1;
 				0000
 				;
 				8801
@@ -30,7 +34,9 @@
 					{}
 				}##
 
-0002XXXXXXFFFF55	3a	newt;0			0101
+0002XXXXXXFFFF55	3a	newt;0
+				g_normal;
+				0101
 				1d4; 0d0;
 				1d1; 2d1; 0d1;
 				0000
@@ -43,7 +49,9 @@
 					{}
 				}##
 
-0003XXXXXX8e5500	6b	kobold;0		0804
+0003XXXXXX8e5500	6b	kobold;0
+				g_normal;
+				0804
 				1d8; 0d0;
 				1d2+2; 1d3+1; 1d2;
 				0000
@@ -59,7 +67,9 @@
 					{}
 				}##
 
-0004XXXXXX8e5500	52	kilik, ratking;1	150a
+0004XXXXXX8e5500	52	kilik, ratking;1
+				g_unique;
+				150a
 				1d8; 0d0;
 				1d2+1; 1d2+1; 0d1;
 				0202
@@ -73,6 +83,6 @@
 					at_bite;
 					dt_ratking;
 					{
-						cEffect;{st_poison; ff 100d3;}
+						cEffect;{st_poison; 100; 100d3;}
 					}
 				}##

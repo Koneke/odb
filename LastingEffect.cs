@@ -130,8 +130,9 @@ namespace ODB
                     : (holder.GetName("Name") + " looks ")) +
                 "sick..."
             );
-            DamageSource ds = new DamageSource
-            {
+            DamageSource ds = new DamageSource(
+                "R.I.P {0}, succumbed to poison on dungeon level {2}."
+            ) {
                 //todo: at_poison, dt_poison
                 Damage = Util.Roll("1d4"),
                 AttackType = AttackType.Bash,

@@ -21,10 +21,30 @@ namespace ODB
 
     public class DamageSource
     {
+        public DamageSource(string killMessage = null)
+        {
+            KillMessage = killMessage ??
+                "R.I.P. {0}, killed by {1} on dungeon level {2}.";
+        }
+
+        public Point Position;
+        public string KillMessage;
         public int Damage;
         public AttackType AttackType;
         public DamageType DamageType;
         public Actor Source, Target;
+
+        public string GenerateKillMessage()
+        {
+            return string.Format(
+                KillMessage,
+                Target.GetName("Name", true),
+                Source.GetName("a"),
+                Position.z.HasValue
+                    ? (Position.z.Value + "")
+                    : "X"
+            );
+        }
     }
 
     public class AttackMessage

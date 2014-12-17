@@ -552,8 +552,11 @@ namespace ODB
                 }
 
                 totalDamage += damage;
+                Point position = xy;
+                position.z = World.Level.Depth;
                 damageSources.Add(new DamageSource
                 {
+                    Position =  position,
                     Damage = damage,
                     AttackType = ac.AttackType,
                     DamageType = ac.DamageType,
@@ -632,8 +635,11 @@ namespace ODB
 
                 int damageRoll = ammoDamage + launcherDamage;
 
+                Point position = xy;
+                position.z = World.Level.Depth;
                 ds = new DamageSource
                 {
+                    Position = position,
                     Damage = damageRoll,
                     AttackType = AttackType.Pierce,
                     DamageType = DamageType.Physical,
@@ -712,6 +718,9 @@ namespace ODB
             if (HpCurrent > 0) return;
 
             Game.UI.Log(GetName("Name") + " " + Verb("die") + "!");
+            if (this == Game.Player)
+                Game.UI.Log(ds.GenerateKillMessage());
+
             Item corpse = new Item(
                 xy,
                 LevelID,
@@ -959,14 +968,14 @@ namespace ODB
         public void AddRoomToVision(Room r)
         {
             foreach (Rect rr in r.Rects)
-                for (int x = 0; x < rr.wh.x; x++)
-                    for (int y = 0; y < rr.wh.y; y++)
-                    {
-                        Vision[rr.xy.x + x, rr.xy.y + y] = true;
+            for (int x = 0; x < rr.wh.x; x++)
+                for (int y = 0; y < rr.wh.y; y++)
+                {
+                    Vision[rr.xy.x + x, rr.xy.y + y] = true;
 
-                        if (this == Game.Player)
-                            World.Level.At(rr.xy + new Point(x, y)).Seen = true;
-                    }
+                    if (this == Game.Player)
+                        World.Level.At(rr.xy + new Point(x, y)).Seen = true;
+                }
         }
 
         public enum Tempus

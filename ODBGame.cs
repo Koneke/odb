@@ -37,6 +37,7 @@ namespace ODB
         public bool OpenRolls = false;
         public InventoryManager InvMan;
         public Actor Player;
+        public List<int> GeneratedUniques; 
 
         public const int StandardActionLength = 10;
 
@@ -90,6 +91,8 @@ namespace ODB
                 new Point(0, 0),
                 0, Util.ADefByName("Moribund"), 1)
             { Awake = true };
+
+            GeneratedUniques = new List<int>();
 
             World.Levels.Add(World.Level = new Generator().Generate(null, 1));
             World.Level.Spawn(Player);

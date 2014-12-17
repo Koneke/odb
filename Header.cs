@@ -29,16 +29,21 @@ namespace ODB
         public int x;
         //ReSharper disable once InconsistentNaming
         public int y;
+        //ReSharper disable once InconsistentNaming
+        public int? z;
         
-        public Point(int x, int y) {
+        public Point(int x, int y, int? z = null) {
             this.x = x;
             this.y = y;
+            this.z = z;
         }
 
-        public void Nudge(int offsetX, int offsetY)
+        public void Nudge(int offsetX, int offsetY, int? offsetZ = null)
         {
             x += offsetX;
             y += offsetY;
+            if (z.HasValue && offsetZ.HasValue)
+                z += offsetZ;
         }
         public void Nudge(Point p)
         {
@@ -47,7 +52,10 @@ namespace ODB
 
         public static bool operator ==(Point a, Point b)
         {
-            return a.x == b.x && a.y == b.y;
+            return
+                a.x == b.x &&
+                a.y == b.y &&
+                a.z == b.z;
         }
         public static bool operator !=(Point a, Point b)
         {
@@ -55,19 +63,19 @@ namespace ODB
         }
         public static Point operator +(Point a, Point b)
         {
-            return new Point(a.x + b.x, a.y + b.y);
+            return new Point(a.x + b.x, a.y + b.y, a.z + b.z);
         }
         public static Point operator -(Point a, Point b)
         {
-            return new Point(a.x - b.x, a.y - b.y);
+            return new Point(a.x - b.x, a.y - b.y, a.z - b.z);
         }
         public static Point operator /(Point a, int b)
         {
-            return new Point(a.x / b, a.y / b);
+            return new Point(a.x / b, a.y / b, a.z / b);
         }
         public static Point operator /(Point a, Point b)
         {
-            return new Point(a.x / b.x, a.y / b.y);
+            return new Point(a.x / b.x, a.y / b.y, a.z / b.z);
         }
     }
 
@@ -382,6 +390,32 @@ namespace ODB
 
     public class Monster
     {
+        public enum GenerationType
+        {
+            Normal,
+            Unique
+        }
+
+        public static GenerationType ReadGenerationType(string s)
+        {
+            switch (s.ToLower())
+            {
+                case "g_normal": return GenerationType.Normal;
+                case "g_unique": return GenerationType.Unique;
+                default: throw new ArgumentException();
+            }
+        }
+
+        public static string WriteGenerationType(GenerationType gt)
+        {
+            switch (gt)
+            {
+                case GenerationType.Normal: return "g_normal";
+                case GenerationType.Unique: return "g_unique";
+                default: throw new ArgumentException();
+            }
+        }
+
         public static Dictionary<int, List<ActorDefinition>>
             MonstersByDifficulty = new Dictionary<int, List<ActorDefinition>>();
     }

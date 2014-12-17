@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Xna.Framework;
 
 namespace ODB
 {
@@ -305,6 +306,9 @@ namespace ODB
                     .SelectMany(kvp => kvp.Value)
                     //no playermonsters, please, thanks.
                     .Where(ad => ad.Type != 0)
+                    .Where(ad =>
+                        ad.GenerationType != Monster.GenerationType.Unique ||
+                        !ODBGame.Game.GeneratedUniques.Contains(ad.Type))
                     .ToList();
 
             const int monsterCount = 10;
@@ -321,6 +325,12 @@ namespace ODB
                         (int)Math.Floor(difficulty / 2f)
                     )
                 );
+
+                if (monster.GenerationType == Monster.GenerationType.Unique)
+                {
+                    ODBGame.Game.GeneratedUniques.Add(monster.Type);
+                    possibleMonsters.Remove(monster);
+                }
             }
         }
 

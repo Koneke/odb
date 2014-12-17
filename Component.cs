@@ -304,7 +304,7 @@ namespace ODB
             return new EffectComponent
             {
                 EffectType = LastingEffect.ReadStatusType(stream.ReadString()),
-                Chance = stream.ReadHex(2),
+                Chance = stream.ReadInt(),
                 Length = stream.ReadString()
             };
         }
@@ -315,7 +315,7 @@ namespace ODB
             stream.Write(GetComponentType());
             stream.Write("{", false);
             stream.Write(LastingEffect.WriteStatusType(EffectType));
-            stream.Write(Chance, 2);
+            stream.Write(Chance);
             stream.Write(Length);
             stream.Write("}", false);
             return stream;
@@ -323,7 +323,7 @@ namespace ODB
 
         public void Apply(Actor target, bool noRoll = false)
         {
-            if (!(Util.Random.NextDouble() <= Chance / 255f)) return;
+            if (!(Util.Random.NextDouble() <= Chance / 100f)) return;
 
             target.AddEffect(
                 LastingEffect.Create(

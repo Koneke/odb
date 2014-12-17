@@ -75,6 +75,7 @@ namespace ODB
             new ActorDefinition[0xFFFF];
 
         public bool Named; //for uniques and what not
+        public Monster.GenerationType GenerationType;
         public string Strength, Dexterity, Intelligence;
         public int Speed, Quickness;
         public string HitDie, ManaDie;
@@ -150,6 +151,7 @@ namespace ODB
             Stream stream = WriteGObjectDefinition();
 
             stream.Write(Named);
+            stream.Write(Monster.WriteGenerationType(GenerationType));
             stream.Write(Experience, 2); //xp per level
             stream.Write(Difficulty, 2);
             stream.Write(HitDie);
@@ -195,6 +197,7 @@ namespace ODB
             Stream stream = ReadGObjectDefinition(s);
 
             Named = stream.ReadBool();
+            GenerationType = Monster.ReadGenerationType(stream.ReadString());
             Experience = stream.ReadHex(2);
             Difficulty = stream.ReadHex(2);
             HitDie = stream.ReadString();
