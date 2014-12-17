@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using SadConsole;
 using Microsoft.Xna.Framework;
 using xnaPoint = Microsoft.Xna.Framework.Point;
@@ -17,6 +19,8 @@ namespace ODB
 {
     public class ODBGame : Game
     {
+        public string Hash;
+
         public UI UI;
         public static ODBGame Game;
 
@@ -75,6 +79,8 @@ namespace ODB
 
         protected override void Initialize()
         {
+            GenerateGameHash();
+
             GameReferences();
 
             IsMouseVisible = true;
@@ -112,6 +118,41 @@ namespace ODB
             UI.FontSize();
 
             base.Initialize();
+        }
+
+        private void GenerateGameHash()
+        {
+            using (MD5 md5 = MD5.Create())
+            {
+                Hash = "";
+
+                using (var stream = File.OpenRead(
+                    Directory.GetCurrentDirectory() + "/ODB.exe"))
+                {
+                    Hash += BitConverter
+                        .ToString(md5.ComputeHash(stream))
+                        .Replace("-", "")
+                        .ToLower().Substring(0, 5) + "-";
+                }
+
+                using (var stream = File.OpenRead(
+                    Directory.GetCurrentDirectory() + "/Data/actors.def"))
+                {
+                    Hash += BitConverter
+                        .ToString(md5.ComputeHash(stream))
+                        .Replace("-", "")
+                        .ToLower().Substring(0, 5) + "-";
+                }
+
+                using (var stream = File.OpenRead(
+                    Directory.GetCurrentDirectory() + "/Data/items.def"))
+                {
+                    Hash += BitConverter
+                        .ToString(md5.ComputeHash(stream))
+                        .Replace("-", "")
+                        .ToLower().Substring(0, 5);
+                }
+            }
         }
 
         protected override void Update(GameTime gameTime)

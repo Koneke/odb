@@ -136,6 +136,11 @@ namespace ODB
             _foo.DrawColorString(
                 2, 4, exitString
             );
+
+            _foo.DrawColorString(
+                2, _foo.GetHeight() - 2,
+                "Checksum: " + Game.Hash
+            );
         }
 
         public override void SwitchTo()
