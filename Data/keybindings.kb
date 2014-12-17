@@ -19,6 +19,7 @@ dev_toggleconsole	=	:oemtilde;
 dev_saveactors		=	:f1;
 dev_saveitems		=	:f2;
 window_size			=	:f3;
+switch_font			=	:f4;
 exit				=	:escape;
 
 log_size_up			=	:add;

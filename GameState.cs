@@ -45,8 +45,9 @@ namespace ODB
         {
             while(Game.Player.Cooldown > 0 && Game.Player.IsAlive)
             {
-                foreach (Brain b in Game.Brains
-                    .Where( b =>
+                List<Brain> clone = new List<Brain>(Game.Brains);
+                foreach (Brain b in clone
+                    .Where(b =>
                         b.MeatPuppet.Cooldown <= 0 &&
                         b.MeatPuppet.Awake))
                     b.Tick();
@@ -167,8 +168,6 @@ namespace ODB
                     a.AddRoomToVision(r);
             }
 
-            if (KeyBindings.Pressed(KeyBindings.Bind.Window_Size))
-                Game.UI.CycleFont();
 
             if (KeyBindings.Pressed(KeyBindings.Bind.Dev_ToggleConsole))
             {

@@ -30,7 +30,9 @@ namespace ODB
         public List<ColorString> LogText; 
         public int LoggedSincePlayerInput;
 
-        private List<Font> _fonts;
+        private List<Tuple<Font, Font>> _fonts; //text/tile pair
+        private int _currentFont;
+        private bool _fontDoublesize = false;
 
         public Point Camera;
         private Point _cameraOffset;
@@ -62,27 +64,22 @@ namespace ODB
             Engine.UseMouse = false;
             Engine.UseKeyboard = true;
 
-            _fonts = new List<Font>();
+            _fonts = new List<Tuple<Font, Font>>();
             using (var stream = System.IO.File.OpenRead("Fonts/IBM.font"))
-                _fonts.Add(Serializer.Deserialize<Font>(stream));
-            using (var stream = System.IO.File.OpenRead("Fonts/IBM2x.font"))
-                _fonts.Add(Serializer.Deserialize<Font>(stream));
-            using (var stream = System.IO.File.OpenRead("Fonts/tiles.font"))
             {
                 Font f = Serializer.Deserialize<Font>(stream);
-                f.CellWidth = 16;
-                f.CellHeight = 16;
-                _fonts.Add(f);
-            }
-            using (var stream = System.IO.File.OpenRead("Fonts/font.font"))
-            {
-                Font f = Serializer.Deserialize<Font>(stream);
-                f.CellWidth = 16;
-                f.CellHeight = 16;
-                _fonts.Add(f);
+                _fonts.Add(new Tuple<Font, Font>(f, f));
             }
 
-            Engine.DefaultFont = _fonts[0];
+            using (var font = System.IO.File.OpenRead("Fonts/font.font"))
+            using (var tiles = System.IO.File.OpenRead("Fonts/tiles.font"))
+            {
+                Font f = Serializer.Deserialize<Font>(font);
+                Font t = Serializer.Deserialize<Font>(tiles);
+                _fonts.Add(new Tuple<Font, Font>(f, t));
+            }
+
+            Engine.DefaultFont = _fonts[0].Item1;
 
             Engine.DefaultFont.ResizeGraphicsDeviceManager(
                 Graphics, 80, 25, 0, 0
@@ -714,18 +711,19 @@ namespace ODB
 
         public void CycleFont()
         {
-            int i = _fonts.IndexOf(Engine.DefaultFont);
-            i++;
-            i = i % _fonts.Count;
+            _currentFont++;
+            _currentFont = _currentFont % _fonts.Count;
 
-            Engine.DefaultFont = _fonts[i];
+            UpdateFont();
+        }
+
+        private void UpdateFont()
+        {
             foreach (Console c in Consoles)
-            {
-                c.Font = (i == 2 && c != _dfc)
-                    ? _fonts[3]
-                    : Engine.DefaultFont;
-            }
+                c.Font = _fonts[_currentFont].Item1;
+            _dfc.Font = _fonts[_currentFont].Item2; //dfc takes tiles font
 
+            Engine.DefaultFont = _fonts[_currentFont].Item1;
 
             Engine.DefaultFont.ResizeGraphicsDeviceManager(
                 Graphics, ScreenSize.X, ScreenSize.Y, 0, 0
@@ -740,9 +738,38 @@ namespace ODB
             if (KeyBindings.Pressed(Bind.Log_Size_Down))
                 LogSize = Math.Max(0, --LogSize);
 
+            if (KeyBindings.Pressed(Bind.Window_Size))
+                Game.UI.FontSize();
+
+            if (KeyBindings.Pressed(Bind.Switch_Font))
+                Game.UI.CycleFont();
+
             _logConsole.Position = new Microsoft.Xna.Framework.Point(
                 0, -_logConsole.ViewArea.Height + LogSize
             );
+        }
+
+        private void FontSize()
+        {
+            if (_fontDoublesize)
+                foreach (Tuple<Font, Font> t in _fonts)
+                {
+                    t.Item1.CellWidth /= 2;
+                    t.Item2.CellWidth /= 2;
+                    t.Item1.CellHeight /= 2;
+                    t.Item2.CellHeight /= 2;
+                }
+            else
+                foreach (Tuple<Font, Font> t in _fonts)
+                {
+                    t.Item1.CellWidth *= 2;
+                    t.Item2.CellWidth *= 2;
+                    t.Item1.CellHeight *= 2;
+                    t.Item2.CellHeight *= 2;
+                }
+            _fontDoublesize = !_fontDoublesize;
+
+            UpdateFont();
         }
 
         public void UpdateCamera()
