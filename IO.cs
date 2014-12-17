@@ -28,6 +28,16 @@ namespace ODB
         static KeyboardState _ks, _oks;
         public static bool ShiftState;
 
+        public static InputType IOState = InputType.PlayerInput;
+        public static string Question;
+        public static string Answer = "";
+        public static int AnswerLimit = 20;
+        public const int AnswerLimitDefault = 20;
+
+        public static Point Target;
+        public static Action QuestionReaction;
+        public static Command CurrentCommand;
+
         private const string Lowercase = "abcdefghijklmnopqrstuvwxyz";
         private const string Uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         public static string Numbers = "0123456789";
@@ -74,10 +84,6 @@ namespace ODB
         {
             return _ks.IsKeyDown(k) && !_oks.IsKeyDown(k);
         }
-
-        public static Point Target;
-        public static Action QuestionReaction;
-        public static Command CurrentCommand;
 
         private static void SubmitAnswer()
         {
@@ -132,7 +138,8 @@ namespace ODB
 
                 if (!AcceptedInput.Contains(c)) continue;
 
-                Answer += c;
+                if(Answer.Length < AnswerLimit)
+                    Answer += c;
 
                 if (IOState == InputType.QuestionPromptSingle)
                     SubmitAnswer();
@@ -143,6 +150,7 @@ namespace ODB
                     Answer = Answer.Substring(0, Answer.Length - 1);
 
             if (!KeyPressed(Keys.Enter)) return;
+            if (Answer.Length <= 0) return;
 
             if (!Game.WizMode)
                 SubmitAnswer();
@@ -153,10 +161,6 @@ namespace ODB
                 Wizard.WmScrollback = 0;
             }
         }
-
-        public static InputType IOState = InputType.PlayerInput;
-        public static string Question;
-        public static string Answer;
 
         public static void AskPlayer(
             string question,

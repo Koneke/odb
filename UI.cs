@@ -157,6 +157,7 @@ namespace ODB
                         Sees(Camera + new Point(x, y)) || Game.WizMode;
 
                     Color background = ti.Tile.Background;
+
                     if (ti.Blood) background = Color.DarkRed;
 
                     DrawToScreen(
@@ -784,6 +785,7 @@ namespace ODB
             if (KeyBindings.Pressed(Bind.Camera_Down)) _cameraOffset.y++;
             if (KeyBindings.Pressed(Bind.Camera_Up)) _cameraOffset.y--;
 
+            //todo, scale on screen size instead
             Camera.x = Game.Player.xy.x - 40;
             Camera.y = Game.Player.xy.y - 12;
             Camera += _cameraOffset;

@@ -115,8 +115,7 @@ namespace ODB
                 .Replace("#genname", actor.Genitive("name"))
                 .Replace("#gen", actor.Genitive())
                 .Replace("#pass-s", target == Util.Game.Player ? "" : "s")
-                .Replace("#s", actor == Util.Game.Player ? "" : "s")
-            ;
+                .Replace("#s", actor == Util.Game.Player ? "" : "s");
 
             return Util.Capitalize(result);
         }

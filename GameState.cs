@@ -171,12 +171,17 @@ namespace ODB
 
             if (KeyBindings.Pressed(KeyBindings.Bind.Dev_ToggleConsole))
             {
+                IO.Answer = "";
                 if (Game.WizMode)
                 {
-                    IO.Answer = "";
                     IO.IOState = InputType.PlayerInput;
+                    IO.AnswerLimit = IO.AnswerLimitDefault;
                 }
-                else Wizard.WmCursor = Game.Player.xy;
+                else
+                {
+                    Wizard.WmCursor = Game.Player.xy;
+                    IO.AnswerLimit = 80;
+                }
                 Game.WizMode = !Game.WizMode;
             }
         }

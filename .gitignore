@@ -189,3 +189,4 @@ FakesAssemblies/
 
 #General non-sourcy stuff
 *.ico
+Redist/*

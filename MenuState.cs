@@ -124,18 +124,10 @@ namespace ODB
                 _choice == (int)Choices.Exit ? ">" : ""
             );
 
-            _foo.DrawColorString(
-                2, 1, nameString 
-            );
-            _foo.DrawColorString(
-                2, 2, startString
-            );
-            _foo.DrawColorString(
-                2, 3, loadString
-            );
-            _foo.DrawColorString(
-                2, 4, exitString
-            );
+            _foo.DrawColorString(2, 1, nameString);
+            _foo.DrawColorString(2, 2, startString);
+            _foo.DrawColorString(2, 3, loadString);
+            _foo.DrawColorString(2, 4, exitString);
 
             _foo.DrawColorString(
                 2, _foo.GetHeight() - 2,

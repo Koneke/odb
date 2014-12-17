@@ -525,5 +525,10 @@ namespace ODB
                     return _data[key];
             }
         }
+
+        public bool Has(string key)
+        {
+            return _data.ContainsKey(key.ToLower());
+        }
     }
 }
