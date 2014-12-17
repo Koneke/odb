@@ -249,6 +249,9 @@ namespace ODB
                     if (effect.SetupAcceptedInput != null)
                         effect.SetupAcceptedInput(Game.Player);
 
+                    item.Identify();
+                    item.SpendCharge();
+
                     if (IO.AcceptedInput.Count <= 0)
                     {
                         Game.UI.Log("You have nothing to cast that on.");
@@ -292,6 +295,12 @@ namespace ODB
             Item item = Game.Player.Inventory[i];
 
             Game.Player.Do(new Command("sheathe").Add("item", item));
+        }
+
+        public static void Sleep()
+        {
+            int length = int.Parse(IO.CurrentCommand.Answer);
+            Game.Player.Do(IO.CurrentCommand.Add("length", length));
         }
 
         //todo: mig this

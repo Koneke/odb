@@ -38,11 +38,9 @@ namespace ODB
         {
             return string.Format(
                 KillMessage,
-                Target.GetName("Name", true),
-                Source.GetName("a"),
-                Position.z.HasValue
-                    ? (Position.z.Value + "")
-                    : "X"
+                Target == null ? "" : Target.GetName("Name", true),
+                Source == null ? "" : Source.GetName("a"),
+                Position.z.HasValue ? (Position.z.Value + "") : "X"
             );
         }
     }

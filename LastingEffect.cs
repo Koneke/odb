@@ -53,6 +53,7 @@ namespace ODB
                 { StatusType.Confusion, "Confusion" },
                 { StatusType.Bleed, "Bleed" },
                 { StatusType.Poison, "Poison" },
+                { StatusType.Sleep, "Sleep" },
             };
 
         public StatusType Type;

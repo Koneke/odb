@@ -85,9 +85,8 @@ namespace ODB
                     foreach (LastingEffect effect in a.LastingEffects)
                         effect.Tick();
                     a.LastingEffects.RemoveAll(
-                        x =>
-                            x.Life > x.LifeLength &&
-                                x.LifeLength != -1);
+                        x => x.Life > x.LifeLength && x.LifeLength != -1
+                    );
                 }
                 World.WorldActors.RemoveAll(a => !a.IsAlive);
             }

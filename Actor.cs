@@ -721,6 +721,8 @@ namespace ODB
             if (this == Game.Player)
                 Game.UI.Log(ds.GenerateKillMessage());
 
+            World.Level.Despawn(this);
+
             Item corpse = new Item(
                 xy,
                 LevelID,
@@ -1074,20 +1076,35 @@ namespace ODB
         {
             switch (fs)
             {
-                case FoodStatus.Starving: return "starving";
-                case FoodStatus.Hungry: return "hungry";
-                case FoodStatus.Satisfied: return "satisfied";
-                case FoodStatus.Full: return "full";
-                case FoodStatus.Stuffed: return "stuffed";
+                case FoodStatus.Starving: return "Starving";
+                case FoodStatus.Hungry: return "Hungry";
+                case FoodStatus.Satisfied: return "Satisfied";
+                case FoodStatus.Full: return "Full";
+                case FoodStatus.Stuffed: return "Stuffed";
             }
             throw new ArgumentException();
         }
         public FoodStatus GetFoodStatus()
         {
-            if (_food < 500) return FoodStatus.Starving;
-            if (_food < 1500) return FoodStatus.Hungry;
-            if (_food < 10000) return FoodStatus.Satisfied;
-            if (_food < 20000) return FoodStatus.Full;
+            if (_food <= 0)
+            {
+                Damage(new DamageSource(
+                    "R.I.P. {0}, starved to death.")
+                    { Damage = HpCurrent, Target = this }
+                );
+                return FoodStatus.Starving;
+            }
+
+            if (_food <= 500) return FoodStatus.Starving;
+            if (_food <= 1500) return FoodStatus.Hungry;
+            if (_food <= 9000) return FoodStatus.Satisfied;
+            if (_food <= 15000) return FoodStatus.Full;
+            if (_food <= 20000) return FoodStatus.Stuffed;
+
+            Damage(new DamageSource(
+                "R.I.P. {0}, choked to death on their food.")
+                { Damage = HpCurrent, Target = this }
+            );
             return FoodStatus.Stuffed;
         }
         public void AddFood(int amount)
@@ -1239,27 +1256,7 @@ namespace ODB
         private void HandleEat(Command cmd)
         {
             Item item = (Item)cmd.Get("item");
-            int index = Inventory.IndexOf(item);
-
-            if (item.Definition.Stacking)
-            {
-                if (item.Count > 1)
-                {
-                    item.Count--;
-                    Eat(item);
-                }
-                else
-                {
-                    Inventory.RemoveAt(index);
-                    Eat(item);
-                }
-            }
-            else
-            {
-                Inventory.RemoveAt(index);
-                Eat(item);
-            }
-
+            Eat(item);
             Pass();
         }
 
@@ -1370,7 +1367,7 @@ namespace ODB
                     item.GetName("the")
                 );
 
-            item.Identify();
+            //item.Identify();
 
             Spell spell = Spell.Spells
                 [item.GetComponent<ReadableComponent>().Effect];
@@ -1380,7 +1377,7 @@ namespace ODB
             else
                 spell.Cast(this, cmd.Get("answer"));
 
-            item.SpendCharge();
+            //item.SpendCharge();
 
             Pass();
         }
@@ -1497,12 +1494,24 @@ namespace ODB
                 case "read": HandleRead(cmd); break;
                 case "remove": HandleRemove(cmd); break;
                 case "sheathe": HandleSheathe(cmd); break;
+                case "sleep": HandleSleep(cmd); break;
                 case "shoot": HandleShoot(cmd); break;
                 case "use": HandleUse(cmd); break;
                 case "wear": HandleWear(cmd); break;
                 case "wield": HandleWield(cmd); break;
                 default: throw new ArgumentException();
             }
+        }
+
+        private void HandleSleep(Command cmd)
+        {
+            AddEffect(
+                new LastingEffect(
+                    ID,
+                    StatusType.Sleep,
+                    ((int)cmd.Get("length") - 1) * 10
+                )
+            );
         }
 
         public Stream WriteActor()

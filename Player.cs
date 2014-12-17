@@ -16,8 +16,10 @@ namespace ODB
             if (Game.Player.HpCurrent <= 0) return;
             //should probably be moved into some 'input-preprocess',
             //since we do the same thing for brains
-            if (Game.Player.HasEffect(StatusType.Stun))
-            {
+            if (
+                Game.Player.HasEffect(StatusType.Stun) ||
+                Game.Player.HasEffect(StatusType.Sleep)
+            ) {
                 Game.Player.Pass(ODBGame.StandardActionLength);
                 return;
             }
@@ -52,6 +54,7 @@ namespace ODB
             CheckRead();
             CheckRemove();
             CheckSheathe();
+            CheckSleep();
             CheckWield();
             CheckWear();
             CheckZap();
@@ -570,6 +573,20 @@ namespace ODB
             {
                 Game.UI.Log("You don't have anything quivered or wielded!");
             }
+        }
+
+        private static void CheckSleep()
+        {
+            if (!KeyBindings.Pressed(Bind.Sleep)) return;
+
+            IO.CurrentCommand = new Command("sleep");
+
+            IO.SetInput(IO.Numbers);
+            IO.AskPlayer(
+                "Sleep for how long?",
+                InputType.QuestionPrompt,
+                PlayerResponses.Sleep
+            );
         }
 
         private static void CheckWield()

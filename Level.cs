@@ -384,7 +384,7 @@ namespace ODB
         }
         public void Despawn(Actor actor)
         {
-            foreach (Item it in actor.Inventory)
+            foreach (Item it in new List<Item>(actor.Inventory))
                 Despawn(it);
             World.WorldActors.Remove(actor);
         }
