@@ -108,6 +108,9 @@ namespace ODB
 
             SwitchState(MenuState);
 
+            UI.CycleFont();
+            UI.FontSize();
+
             base.Initialize();
         }
 

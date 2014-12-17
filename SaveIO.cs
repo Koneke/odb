@@ -8,6 +8,15 @@ namespace ODB
 {
     static internal class SaveIO
     {
+        public static bool SaveExists
+        {
+            get
+            {
+                return File.Exists(
+                    Directory.GetCurrentDirectory() + "/Save/game.sv");
+            }
+        }
+
         public static void Save()
         {
             Stream stream = new Stream();

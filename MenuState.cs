@@ -68,8 +68,11 @@ namespace ODB
                                 Game.SwitchState(Game.GameState);
                                 break;
                             case Choices.Load:
-                                SaveIO.Load();
-                                Game.SwitchState(Game.GameState);
+                                if (SaveIO.SaveExists)
+                                {
+                                    SaveIO.Load();
+                                    Game.SwitchState(Game.GameState);
+                                }
                                 break;
                             case Choices.Exit:
                                 Game.Exit();
@@ -111,7 +114,8 @@ namespace ODB
             );
 
             string loadString = String.Format(
-                "{0}Load game",
+                "{0}{1}Load game",
+                SaveIO.SaveExists ? "" : "#aaaaaa",
                 _choice == (int)Choices.Load ? ">" : ""
             );
 

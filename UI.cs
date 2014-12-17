@@ -749,7 +749,7 @@ namespace ODB
             );
         }
 
-        private void FontSize()
+        public void FontSize()
         {
             if (_fontDoublesize)
                 foreach (Tuple<Font, Font> t in _fonts)

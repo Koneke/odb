@@ -447,6 +447,7 @@ namespace ODB
                 case 'b': case (char)Keys.D1: p = new Point(-1, 1); break;
                 case 'j': case (char)Keys.D2: p = new Point(0, 1); break;
                 case 'n': case (char)Keys.D3: p = new Point(1, 1); break;
+                case (char)Keys.D5: p = new Point(0, 0); break;
                 default: throw new Exception(
                         "Bad input (expected numpad keycode, " +
                         "got something weird instead).");
