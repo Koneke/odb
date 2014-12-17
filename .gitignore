@@ -188,5 +188,4 @@ UpgradeLog*.htm
 FakesAssemblies/
 
 #General non-sourcy stuff
-*.png
 *.ico

@@ -8,7 +8,7 @@
 				cProjectile;{1d2;}
 				##
 
-8003XXXXXXA52A2A	29	bow;			0	0;0;	ff	  90;	20;	mt_wood;	2;
+8003XXXXXXA52A2A	5c	bow;			0	0;0;	ff	  90;	20;	mt_wood;	2;
 				cLauncher;{8002,;1d6;}
 				##
 
@@ -27,12 +27,12 @@
 
 8100XXXXXXFFFFFF	3f	scroll of forcebolt;	0	0;0;	01	   1;	15;	mt_paper;	1;	cReadable;{0001}##
 8101XXXXXXFFFFFF	3f	scroll of identify;	0	0;0;	01	   1;	15;	mt_paper;	1;	cReadable;{0002}##
-8200XXXXXXFFFF00	2b	tome of forcebolt;	0	0;0;	02	  50;	65;	mt_paper;	2;	cLearnable;{0001}##
-8201XXXXXXFFFF00	2b	tome of identify;	0	0;0;	02	  50;	80;	mt_paper;	2;	cLearnable;{0002}##
+8200XXXXXXFFFF00	fe	tome of forcebolt;	0	0;0;	02	  50;	65;	mt_paper;	2;	cLearnable;{0001}##
+8201XXXXXXFFFF00	fe	tome of identify;	0	0;0;	02	  50;	80;	mt_paper;	2;	cLearnable;{0002}##
 
 8300XXXXXXFF0000	21	potion of healing;	1	1;1;	00	 100;	30;	mt_glass;	1;	cDrinkable;{0;}##
 
-8600XXXXXXFFCC99	25	ration;			1	1;3;	ff	 130;   10;	mt_organic;	2;	cEdible;{1500}##
+8600XXXXXXFFCC99	f6	ration;			1	1;3;	ff	 130;   10;	mt_organic;	2;	cEdible;{1500}##
 
 8800XXXXXXFF0000	25	moribund corpse;	0	0;0;	ff	7000;	65536;	mt_organic;	3;	cEdible;{2500;}##
 8801XXXXXXFF0000	25	rat corpse;		0	0;0;	ff	 200;	65536;	mt_organic;	3;	cEdible;{700;}##
