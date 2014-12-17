@@ -67,6 +67,20 @@ namespace ODB
                 _fonts.Add(Serializer.Deserialize<Font>(stream));
             using (var stream = System.IO.File.OpenRead("Fonts/IBM2x.font"))
                 _fonts.Add(Serializer.Deserialize<Font>(stream));
+            using (var stream = System.IO.File.OpenRead("Fonts/tiles.font"))
+            {
+                Font f = Serializer.Deserialize<Font>(stream);
+                f.CellWidth = 16;
+                f.CellHeight = 16;
+                _fonts.Add(f);
+            }
+            using (var stream = System.IO.File.OpenRead("Fonts/font.font"))
+            {
+                Font f = Serializer.Deserialize<Font>(stream);
+                f.CellWidth = 16;
+                f.CellHeight = 16;
+                _fonts.Add(f);
+            }
 
             Engine.DefaultFont = _fonts[0];
 
@@ -181,9 +195,8 @@ namespace ODB
                         i.Known ? i.Definition.Background : null,
                         i.Known ? i.Definition.Foreground : Color.Gray,
                         i.Definition.Tile
-                        );
-                    //not sure I like the + for pile, since doors are +
-                else DrawToScreen(i.xy, null, Color.White, "+");
+                    );
+                else DrawToScreen(i.xy, null, Color.White, "*");
             }
         }
 
@@ -707,7 +720,12 @@ namespace ODB
 
             Engine.DefaultFont = _fonts[i];
             foreach (Console c in Consoles)
-                c.Font = Engine.DefaultFont;
+            {
+                c.Font = (i == 2 && c != _dfc)
+                    ? _fonts[3]
+                    : Engine.DefaultFont;
+            }
+
 
             Engine.DefaultFont.ResizeGraphicsDeviceManager(
                 Graphics, ScreenSize.X, ScreenSize.Y, 0, 0

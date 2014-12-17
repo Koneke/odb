@@ -69,8 +69,7 @@ namespace ODB
                     if (a.MpRegCooldown == 0)
                     {
                         a.MpCurrent = System.Math.Min(a.MpMax, a.MpCurrent + 1);
-                        a.MpRegCooldown = 300 -
-                            a.Get(Stat.Intelligence) * 10;
+                        a.MpRegCooldown = 300 - a.Get(Stat.Intelligence) * 10;
                     }
                 }
 
