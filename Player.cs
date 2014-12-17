@@ -240,20 +240,19 @@ namespace ODB
         {
             if (!KeyBindings.Pressed(Bind.Engrave)) return;
 
-            if(World.Level.At(Game.Player.xy).Stairs != Stairs.None)
-            {
+            if(
+                World.Level.At(Game.Player.xy).Stairs != Stairs.None &&
+                World.Level.At(Game.Player.xy).Door != Door.None
+            ) {
                 Game.UI.Log("You can't engrave here.");
                 return;
             }
 
-            const string question = "Engrave what?";
-            IO.AcceptedInput.Clear();
-            IO.AcceptedInput.AddRange(IO.Indexes.ToCharArray());
-
+            IO.SetInput(IO.Indexes, ' ');
             IO.CurrentCommand = new Command("engrave");
 
             IO.AskPlayer(
-                question,
+                "Engrave what?",
                 InputType.QuestionPrompt,
                 PlayerResponses.Engrave
             );

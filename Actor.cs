@@ -1038,6 +1038,7 @@ namespace ODB
 
         public bool Sees(Point other)
         {
+            if (Vision == null) return false;
             return Vision[other.x, other.y];
         }
 
@@ -1577,7 +1578,7 @@ namespace ODB
 
             Cooldown = stream.ReadHex(2);
             _food = stream.ReadInt();
-            _quiver = stream.ReadInt();
+            _quiver = stream.ReadNInt();
 
             PaperDoll = new List<BodyPart>();
             foreach (string ss in

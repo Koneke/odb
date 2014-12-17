@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using SadConsole;
+using SadConsole.Consoles;
 using Console = SadConsole.Consoles.Console;
 
 using Bind = ODB.KeyBindings.Bind;
 
 namespace ODB
 {
+    //Specifically, the game UI, not general UI
     public class UI
     {
         public Microsoft.Xna.Framework.Point ScreenSize;
@@ -17,7 +19,7 @@ namespace ODB
 
         public static ODBGame Game;
 
-        private List<Console> _consoles;
+        public ConsoleList Consoles;
         private Console _dfc;
         private Console _logConsole;
         private Console _inputRowConsole;
@@ -28,7 +30,9 @@ namespace ODB
         public List<ColorString> LogText; 
         public int LoggedSincePlayerInput;
 
-        private List<Font> _fonts;
+        private List<Tuple<Font, Font>> _fonts; //text/tile pair
+        private int _currentFont;
+        private bool _fontDoublesize = false;
 
         public Point Camera;
         private Point _cameraOffset;
@@ -60,24 +64,33 @@ namespace ODB
             Engine.UseMouse = false;
             Engine.UseKeyboard = true;
 
-            _fonts = new List<Font>();
+            _fonts = new List<Tuple<Font, Font>>();
             using (var stream = System.IO.File.OpenRead("Fonts/IBM.font"))
-                _fonts.Add(Serializer.Deserialize<Font>(stream));
-            using (var stream = System.IO.File.OpenRead("Fonts/IBM2x.font"))
-                _fonts.Add(Serializer.Deserialize<Font>(stream));
+            {
+                Font f = Serializer.Deserialize<Font>(stream);
+                _fonts.Add(new Tuple<Font, Font>(f, f));
+            }
 
-            Engine.DefaultFont = _fonts[0];
+            using (var font = System.IO.File.OpenRead("Fonts/font.font"))
+            using (var tiles = System.IO.File.OpenRead("Fonts/tiles.font"))
+            {
+                Font f = Serializer.Deserialize<Font>(font);
+                Font t = Serializer.Deserialize<Font>(tiles);
+                _fonts.Add(new Tuple<Font, Font>(f, t));
+            }
+
+            Engine.DefaultFont = _fonts[0].Item1;
 
             Engine.DefaultFont.ResizeGraphicsDeviceManager(
                 Graphics, 80, 25, 0, 0
-                );
+            );
 
             SetupConsoles();
         }
 
         public void SetupConsoles()
         {
-            _consoles = new List<Console>();
+            Consoles = new ConsoleList();
 
             _dfc = new Console(80, 25);
             Engine.ActiveConsole = _dfc;
@@ -104,18 +117,13 @@ namespace ODB
                 Position = new Microsoft.Xna.Framework.Point(0, 23)
             };
 
-            _consoles.Add(_dfc);
-            _consoles.Add(_logConsole);
-            _consoles.Add(_inputRowConsole);
-            _consoles.Add(_statRowConsole);
-            _consoles.Add(_inventoryConsole);
+            Consoles.Add(_dfc);
+            Consoles.Add(_logConsole);
+            Consoles.Add(_inputRowConsole);
+            Consoles.Add(_statRowConsole);
+            Consoles.Add(_inventoryConsole);
 
-            //draw order
-            Engine.ConsoleRenderStack.Add(_dfc);
-            Engine.ConsoleRenderStack.Add(_logConsole);
-            Engine.ConsoleRenderStack.Add(_inputRowConsole);
-            Engine.ConsoleRenderStack.Add(_statRowConsole);
-            Engine.ConsoleRenderStack.Add(_inventoryConsole);
+            Engine.ConsoleRenderStack = Consoles;
         }
 
         public void RenderConsoles()
@@ -145,8 +153,8 @@ namespace ODB
                     if (ti == null) continue;
                     if(!(ti.Seen | Game.WizMode)) continue;
 
-                    bool inVision = Game.Player.Vision
-                        [x + Camera.x, y + Camera.y] || Game.WizMode;
+                    bool inVision = Game.Player.
+                        Sees(Camera + new Point(x, y)) || Game.WizMode;
 
                     Color background = ti.Tile.Background;
                     if (ti.Blood) background = Color.DarkRed;
@@ -175,7 +183,7 @@ namespace ODB
 
             foreach (Item i in World.WorldItems
                 .Where(i => i.LevelID == World.Level.ID)
-                .Where(i => Game.Player.Vision[i.xy.x, i.xy.y] || Game.WizMode)
+                .Where(i => Game.Player.Sees(i.xy) || Game.WizMode)
                 .Where(i => screen.ContainsPoint(i.xy)))
             {
                 if (itemCount[i.xy.x, i.xy.y] == 1)
@@ -184,9 +192,8 @@ namespace ODB
                         i.Known ? i.Definition.Background : null,
                         i.Known ? i.Definition.Foreground : Color.Gray,
                         i.Definition.Tile
-                        );
-                    //not sure I like the + for pile, since doors are +
-                else DrawToScreen(i.xy, null, Color.White, "+");
+                    );
+                else DrawToScreen(i.xy, null, Color.White, "*");
             }
         }
 
@@ -205,7 +212,7 @@ namespace ODB
 
             foreach (Actor a in World.WorldActors
                 .Where(a => a.LevelID == World.Level.ID)
-                .Where(a => Game.Player.Vision[a.xy.x, a.xy.y] || Game.WizMode)
+                .Where(a => Game.Player.Sees(a.xy) || Game.WizMode)
                 .Where(a => screen.ContainsPoint(a.xy)))
             {
                 if (actorCount[a.xy.x, a.xy.y] == 1)
@@ -510,7 +517,7 @@ namespace ODB
 
             //Not using GetName() here, simply because that'd yield "You"
             //since it is the player.
-            string namerow = Game.Player.GetName("Name", true);
+            string namerow = Game.Player.GetName("name", true);
             namerow += "  ";
             namerow += "STR " + Game.Player.Get(Stat.Strength) + "  ";
             namerow += "DEX " + Game.Player.Get(Stat.Dexterity) + "  ";
@@ -668,7 +675,6 @@ namespace ODB
             }
         }
 
-
         public void DrawToScreen(Point xy, Color? bg, Color fg, String tile)
         {
             if (bg != null)
@@ -705,15 +711,23 @@ namespace ODB
 
         public void CycleFont()
         {
-            int i = _fonts.IndexOf(Engine.DefaultFont);
-            i++;
-            i = i % _fonts.Count;
-            Engine.DefaultFont = _fonts[i];
-            foreach (Console c in _consoles)
-                c.Font = Engine.DefaultFont;
+            _currentFont++;
+            _currentFont = _currentFont % _fonts.Count;
+
+            UpdateFont();
+        }
+
+        private void UpdateFont()
+        {
+            foreach (Console c in Consoles)
+                c.Font = _fonts[_currentFont].Item1;
+            _dfc.Font = _fonts[_currentFont].Item2; //dfc takes tiles font
+
+            Engine.DefaultFont = _fonts[_currentFont].Item1;
+
             Engine.DefaultFont.ResizeGraphicsDeviceManager(
                 Graphics, ScreenSize.X, ScreenSize.Y, 0, 0
-                );
+            );
         }
 
         public void Input()
@@ -724,9 +738,38 @@ namespace ODB
             if (KeyBindings.Pressed(Bind.Log_Size_Down))
                 LogSize = Math.Max(0, --LogSize);
 
+            if (KeyBindings.Pressed(Bind.Window_Size))
+                Game.UI.FontSize();
+
+            if (KeyBindings.Pressed(Bind.Switch_Font))
+                Game.UI.CycleFont();
+
             _logConsole.Position = new Microsoft.Xna.Framework.Point(
                 0, -_logConsole.ViewArea.Height + LogSize
             );
+        }
+
+        private void FontSize()
+        {
+            if (_fontDoublesize)
+                foreach (Tuple<Font, Font> t in _fonts)
+                {
+                    t.Item1.CellWidth /= 2;
+                    t.Item2.CellWidth /= 2;
+                    t.Item1.CellHeight /= 2;
+                    t.Item2.CellHeight /= 2;
+                }
+            else
+                foreach (Tuple<Font, Font> t in _fonts)
+                {
+                    t.Item1.CellWidth *= 2;
+                    t.Item2.CellWidth *= 2;
+                    t.Item1.CellHeight *= 2;
+                    t.Item2.CellHeight *= 2;
+                }
+            _fontDoublesize = !_fontDoublesize;
+
+            UpdateFont();
         }
 
         public void UpdateCamera()

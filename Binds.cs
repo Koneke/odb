@@ -91,6 +91,7 @@ namespace ODB
             Inv_Jump_15, Inv_Jump_16, Inv_Jump_17, Inv_Jump_18, Inv_Jump_19,
             Inv_Jump_20, Inv_Jump_21, Inv_Jump_22, Inv_Jump_23,
 // ReSharper restore InconsistentNaming
+            Switch_Font
         }
 
         public static bool Pressed(Bind bind)

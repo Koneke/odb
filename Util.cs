@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
+using Console = SadConsole.Consoles.Console;
 
 /*
  * Mainly for just storing general, loose utility functions.
@@ -52,6 +55,40 @@ namespace ODB
                 ? StringSplitOptions.RemoveEmptyEntries
                 : StringSplitOptions.None)
             .ToList();
+        }
+
+        public static void DrawColorString(
+            this Console console,
+            int x, int y,
+            ColorString cs
+        ) {
+            for (int j = -1; j < cs.ColorPoints.Count; j++)
+            {
+                int current = j == -1
+                    ? 0
+                    : cs.ColorPoints[j].Item1;
+
+                int next = j == cs.ColorPoints.Count - 1
+                    ? cs.String.Length
+                    : cs.ColorPoints[j + 1].Item1;
+
+                console.CellData.Print(
+                    x + current, y,
+                    cs.String.Substring(current, next - current),
+                    j == -1
+                        ? Color.White
+                        : cs.ColorPoints[j].Item2
+                );
+            }
+        }
+
+        public static void DrawColorString(
+            this Console console,
+            int x, int y,
+            string s
+        ) {
+            foreach(string split in s.NeatSplit("\\n"))
+                console.DrawColorString(x, y, new ColorString(split));
         }
     }
 
@@ -396,5 +433,26 @@ namespace ODB
             result *= x;
             return result;
         }
+
+        public static Point NumpadToDirection(char c)
+        {
+            Point p;
+            switch (c)
+            {
+                case 'y': case (char)Keys.D7: p = new Point(-1, -1); break;
+                case 'k': case (char)Keys.D8: p = new Point(0, -1); break;
+                case 'u': case (char)Keys.D9: p = new Point(1, -1); break;
+                case 'h': case (char)Keys.D4: p = new Point(-1, 0); break;
+                case 'l': case (char)Keys.D6: p = new Point(1, 0); break;
+                case 'b': case (char)Keys.D1: p = new Point(-1, 1); break;
+                case 'j': case (char)Keys.D2: p = new Point(0, 1); break;
+                case 'n': case (char)Keys.D3: p = new Point(1, 1); break;
+                default: throw new Exception(
+                        "Bad input (expected numpad keycode, " +
+                        "got something weird instead).");
+            }
+            return p;
+        }
+
     }
 }
