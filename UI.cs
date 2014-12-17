@@ -10,6 +10,7 @@ using Bind = ODB.KeyBindings.Bind;
 
 namespace ODB
 {
+    //Specifically, the game UI, not general UI
     public class UI
     {
         public Microsoft.Xna.Framework.Point ScreenSize;

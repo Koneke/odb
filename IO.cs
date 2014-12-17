@@ -35,14 +35,32 @@ namespace ODB
         public static string ViKeys = "hjklyubn";
         public static List<char> AcceptedInput = new List<char>();
 
+        public static void SetInput(params object[] args)
+        {
+            AcceptedInput.Clear();
+            foreach (object o in args)
+            {
+                if (o is char) Add((char)o);
+                if (o is string) Add((string)o);
+            }
+        }
+        public static void Add(char c)
+        {
+            AcceptedInput.Add(c);
+        }
+        public static void Add(string s)
+        {
+            for (int i = 0; i < s.Length; i++)
+            {
+                AcceptedInput.Add(s[i]);
+            }
+        }
+
         public static void Update(bool final)
         {
             ShiftState =
                 (_ks.IsKeyDown(Keys.LeftShift) ||
                  _ks.IsKeyDown(Keys.RightShift));
-
-            if (IOState != InputType.QuestionPrompt)
-                Answer = "";
 
             if (!final) _ks = Keyboard.GetState();
             else _oks = _ks;
@@ -63,9 +81,6 @@ namespace ODB
 
         private static void SubmitAnswer()
         {
-            if (IOState == InputType.PlayerInput)
-                throw new Exception("Submitted answer in playerinput mode");
-
             //LH-011214: Note! We switch IOState /FIRST/, because some questions
             //           are going to generate new ones.
             //           Changing the IOState to PlayerInput after would then
@@ -74,10 +89,20 @@ namespace ODB
             //           themselves switch IOState..? Might be too clumsy and
             //           repetetive though, since most questions do /not/ chain.
 
+            //LH-171214: Might want to have the PlayerInput-state in GameState
+            //           instead. QP/QPS/Target makes sense to have here, I
+            //           guess though.
             IOState = InputType.PlayerInput;
-            CurrentCommand.Answer = Answer;
-            CurrentCommand.Target = Target;
-            QuestionReaction();
+            if (CurrentCommand != null)
+            {
+                CurrentCommand.Answer = Answer;
+                CurrentCommand.Target = Target;
+            }
+
+            //LH-171214: If we're using IO.Answer just for the text itself,
+            //           we might not actually have a reaction set up.
+            if (QuestionReaction != null)
+                QuestionReaction();
         }
 
         public static void QuestionPromptInput()

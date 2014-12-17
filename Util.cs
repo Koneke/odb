@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -59,8 +60,8 @@ namespace ODB
         public static void DrawColorString(
             this Console console,
             int x, int y,
-            ColorString cs)
-        {
+            ColorString cs
+        ) {
             for (int j = -1; j < cs.ColorPoints.Count; j++)
             {
                 int current = j == -1
@@ -79,6 +80,15 @@ namespace ODB
                         : cs.ColorPoints[j].Item2
                 );
             }
+        }
+
+        public static void DrawColorString(
+            this Console console,
+            int x, int y,
+            string s
+        ) {
+            foreach(string split in s.NeatSplit("\\n"))
+                console.DrawColorString(x, y, new ColorString(split));
         }
     }
 

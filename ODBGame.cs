@@ -21,6 +21,8 @@ namespace ODB
         public static ODBGame Game;
 
         private AppState _state;
+        public MenuState MenuState;
+        public GameState GameState;
 
         public ODBGame()
         {
@@ -98,7 +100,10 @@ namespace ODB
 
             UI.Log("Welcome!");
 
-            SwitchState(new MenuState(this));
+            MenuState = new MenuState(this);
+            GameState = new GameState(this);
+
+            SwitchState(MenuState);
 
             base.Initialize();
         }
