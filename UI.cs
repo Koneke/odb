@@ -156,8 +156,8 @@ namespace ODB
                     if (ti == null) continue;
                     if(!(ti.Seen | Game.WizMode)) continue;
 
-                    bool inVision = Game.Player.Vision
-                        [x + Camera.x, y + Camera.y] || Game.WizMode;
+                    bool inVision = Game.Player.
+                        Sees(Camera + new Point(x, y)) || Game.WizMode;
 
                     Color background = ti.Tile.Background;
                     if (ti.Blood) background = Color.DarkRed;
@@ -520,7 +520,7 @@ namespace ODB
 
             //Not using GetName() here, simply because that'd yield "You"
             //since it is the player.
-            string namerow = Game.Player.GetName("Name", true);
+            string namerow = Game.Player.GetName("name", true);
             namerow += "  ";
             namerow += "STR " + Game.Player.Get(Stat.Strength) + "  ";
             namerow += "DEX " + Game.Player.Get(Stat.Dexterity) + "  ";

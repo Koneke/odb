@@ -1578,7 +1578,7 @@ namespace ODB
 
             Cooldown = stream.ReadHex(2);
             _food = stream.ReadInt();
-            _quiver = stream.ReadInt();
+            _quiver = stream.ReadNInt();
 
             PaperDoll = new List<BodyPart>();
             foreach (string ss in
