@@ -261,11 +261,16 @@ namespace ODB
                             : cs.ColorPoints[j].Item2
                     );
                 }
-                if(hidden > 0)
-                    _logConsole.CellData.Print(
-                        _logConsole.ViewArea.Width - 3,
-                        _logConsole.ViewArea.Height - 1,
-                        "<"+(char)27+">", Color.White
+                
+                ColorString morePrompt = new ColorString(
+                    "#00ff00<More " + (char)27 + ">"
+                );
+
+                if (hidden > 0)
+                    _logConsole.DrawColorString(
+                        log.Last().String.Length,
+                        _logConsole.GetHeight() - 1,
+                        morePrompt
                     );
             }
         }

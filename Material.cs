@@ -29,6 +29,8 @@ namespace ODB
                 "ripped" }},
             { Material.Organic, new List<string> {
                 "leaky", "mashed" }},
+            { Material.Leather, new List<string> {
+                "scratched", "torn", "ripped" }}
         };
 
         public const int MaxHardness = 50;

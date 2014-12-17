@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -89,6 +88,16 @@ namespace ODB
         ) {
             foreach(string split in s.NeatSplit("\\n"))
                 console.DrawColorString(x, y, new ColorString(split));
+        }
+
+        public static int GetWidth(this Console console)
+        {
+            return console.ViewArea.Width;
+        }
+
+        public static int GetHeight(this Console console)
+        {
+            return console.ViewArea.Height;
         }
     }
 
