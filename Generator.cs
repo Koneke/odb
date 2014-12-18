@@ -354,7 +354,6 @@ namespace ODB
                 loot -= itemd.Value;
                 Item item = new Item(
                     level.RandomOpenPoint(),
-                    level.ID,
                     itemd,
                     Util.Random.Next(
                         itemd.GenerationLowBound,
@@ -378,7 +377,6 @@ namespace ODB
                 int amount = Util.Random.Next(1, loot + 1);
                 Item item = new Item(
                     level.RandomOpenPoint(),
-                    level.ID,
                     gold,
                     amount * 3 + Util.Random.Next(0, 3)
                 );

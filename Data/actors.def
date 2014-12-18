@@ -11,6 +11,7 @@
 				cAttack;
 				{
 					1d4;
+					0;
 					at_bash;
 					dt_physical;
 					{}
@@ -29,6 +30,7 @@
 				cAttack;
 				{
 					1d3;
+					0;
 					at_bite;
 					dt_physical;
 					{}
@@ -44,6 +46,7 @@
 				cAttack;
 				{
 					1d2;
+					0;
 					at_bite;
 					dt_physical;
 					{}
@@ -52,7 +55,7 @@
 0003XXXXXX8e5500	6b	kobold;0
 				g_normal;
 				0805
-				1d8; 0d0;
+				1d7; 0d0;
 				1d2+2; 1d3+1; 1d2;
 				0000
 				head,torso,back,hand,hand,legs,feet;
@@ -62,6 +65,7 @@
 				cAttack;
 				{
 					1d2+1;
+					-2;
 					at_bash;
 					dt_physical;
 					{}
@@ -80,6 +84,7 @@
 				cAttack;
 				{
 					1d4;
+					0;
 					at_bite;
 					dt_ratking;
 					{

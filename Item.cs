@@ -80,7 +80,6 @@ namespace ODB
         //SPAWNING a NEW item
         public Item(
             Point xy,
-            int levelid,
             ItemDefinition definition,
             int count = 0,
             IEnumerable<Mod> mods = null
@@ -110,8 +109,7 @@ namespace ODB
             {
                 return
                     ItemDefinition.IdentifiedDefs.Contains(Definition.Type) ||
-                    Definition.Category == 0xff
-                ;
+                    Definition.Category == 0xff;
             }
         }
         private string UnknownApperance
@@ -122,9 +120,8 @@ namespace ODB
                     [Definition.Category].Shuffle()
                     [
                         (Definition.Type + Math.Abs(Game.Seed))
-                            %
-                            ItemDefinition.Appearances[Definition.Category]
-                                .Count
+                            % ItemDefinition.Appearances
+                            [Definition.Category].Count
                     ];
             }
         }
@@ -293,7 +290,8 @@ namespace ODB
 
             if(log != null)
                 log(String.Format(
-                    "#ff0000{0}#ffffff is #ff0000damaged by the impact#ffffff!",
+                    "#ff0000{0}#ffffff is " +
+                    "#ff0000damaged by the impact#ffffff! ",
                     GetName("The")
                 ));
 
@@ -337,7 +335,7 @@ namespace ODB
             {
                 if(log != null)
                     log(string.Format(
-                        "#ff0000{0} falls to pieces!",
+                        "#ff0000{0} falls to pieces#ffffff!",
                         GetName("The")
                     ));
                 Health--;

@@ -12,7 +12,7 @@ namespace ODB
         public static Component CreateComponent(
             string component,
             string content
-            ) {
+        ) {
             Stream stream = new Stream(component);
 
             //Component type
@@ -64,6 +64,7 @@ namespace ODB
         public override string GetComponentType() { return "cAttack"; }
 
         public string Damage;
+        public int Modifier;
         public AttackType AttackType;
         public DamageType DamageType;
         public List<EffectComponent> Effects;
@@ -78,6 +79,7 @@ namespace ODB
             Stream stream = new Stream(content);
 
             string damage = stream.ReadString();
+            int modifier = stream.ReadInt();
             AttackType attackType = Util.ReadAttackType(stream.ReadString());
             DamageType damageType = Util.ReadDamageType(stream.ReadString());
 
@@ -92,6 +94,7 @@ namespace ODB
 
             return new AttackComponent {
                 Damage = damage,
+                Modifier = modifier,
                 AttackType = attackType,
                 DamageType = damageType,
                 Effects = effects
@@ -104,6 +107,7 @@ namespace ODB
             stream.Write(GetComponentType());
             stream.Write("{", false);
             stream.Write(Damage);
+            stream.Write(Modifier);
             stream.Write(Util.WriteAttackType(AttackType));
             stream.Write(Util.WriteDamageType(DamageType));
             stream.Write("{", false);

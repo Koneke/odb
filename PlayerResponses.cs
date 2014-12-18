@@ -270,7 +270,7 @@ namespace ODB
                         question = "On what? [";
                         question += IO.AcceptedInput.Aggregate(
                             "", (c, n) => c + n
-                        );
+                            );
                         question += "]";
                     }
 
@@ -279,6 +279,8 @@ namespace ODB
                         effect.CastType,
                         Game.Player.Do
                     );
+
+                    Util.QuickTarget();
                 }
             }
             else Game.Player.Do(new Command("learn").Add("item", item));
@@ -484,6 +486,8 @@ namespace ODB
                     spell.CastType,
                     Game.Player.Do
                 );
+
+                Util.QuickTarget();
             }
         }
     }

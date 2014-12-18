@@ -126,7 +126,9 @@ namespace ODB
                     break;
                 //get item definition (id) (by name)
                 case "gid":
-                    Game.UI.Log(IO.WriteHex(Util.ItemDefByName(args[0]).Type, 4));
+                    Game.UI.Log(
+                        IO.WriteHex(Util.ItemDefByName(args[0]).Type, 4)
+                    );
                     break;
                 case "gad":
                     Game.UI.Log(IO.WriteHex(Util.ADefByName(args[0]).Type, 4));
@@ -156,12 +158,10 @@ namespace ODB
                     #region spawnitem
                     Item it = new Item(
                         WmCursor,
-                        World.Level.ID,
                         Util.ItemDefByName(args[0]),
                         IO.ReadHex(args[1])
                     );
-                    World.AllItems.Add(it);
-                    World.WorldItems.Add(it);
+                    World.Level.Spawn(it);
                     break;
                     #endregion
                 case "saveadefs":

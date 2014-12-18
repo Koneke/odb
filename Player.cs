@@ -310,18 +310,7 @@ namespace ODB
                 PlayerResponses.Fire
             );
 
-            List<Actor> visible =
-                World.Level.Actors
-                .Where(a => a != Game.Player)
-                .Where(a => Game.Player.Sees(a.xy))
-                .ToList();
-
-            if(visible.Count > 0)
-                IO.Target =
-                    visible
-                    .OrderBy(a => Util.Distance(a.xy, Game.Player.xy))
-                    .Select(a => a.xy)
-                    .First();
+            Util.QuickTarget();
         }
 
         private static void CheckGet()
@@ -368,6 +357,8 @@ namespace ODB
                 InputType.Targeting,
                 PlayerResponses.Look
             );
+
+            Util.QuickTarget();
         }
 
         private static void CheckOpen()

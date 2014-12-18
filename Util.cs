@@ -507,7 +507,7 @@ namespace ODB
                 line.Add(steep
                     ? new Point(y, x)
                     : new Point(x, y)
-                    );
+                );
                 err = err - dY;
                 if (err < 0)
                 {
@@ -517,6 +517,22 @@ namespace ODB
             }
 
             return line;
+        }
+
+        public static void QuickTarget()
+        {
+            List<Actor> visible =
+                World.Level.Actors
+                .Where(a => a != Game.Player)
+                .Where(a => Game.Player.Sees(a.xy))
+                .ToList();
+
+            if(visible.Count > 0)
+                IO.Target =
+                    visible
+                    .OrderBy(a => Distance(a.xy, Game.Player.xy))
+                    .Select(a => a.xy)
+                    .First();
         }
     }
 }

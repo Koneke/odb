@@ -454,6 +454,7 @@ namespace ODB
             AttackComponent bash = new AttackComponent
             {
                 Damage = "1d4",
+                Modifier =  -2,
                 AttackType = AttackType.Bash,
                 DamageType = DamageType.Physical
             };
@@ -506,13 +507,14 @@ namespace ODB
 
                     if (Game.OpenRolls)
                         message += String.Format(
-                            "d20+{0} ({1}+{2}+{3}+{4}-{5}), " +
+                            "d20+{0} ({1}+{2}+{3}+{4}-{5}{9:+#;-#;+0}), " +
                                 "{6}+{0}, {7} vs. {8}. ",
                             totalModifier,
                             strBonus, dexBonus, Level, mod, multiWeaponPenalty,
                             roll,
                             hitRoll,
-                            targetDefense
+                            targetDefense,
+                            attack.Item2.Modifier
                         );
 
                     continue;
@@ -751,7 +753,6 @@ namespace ODB
 
             Item corpse = new Item(
                 xy,
-                LevelID,
                 ItemDefinition.ItemDefinitions[Definition.CorpseType],
                 0, Intrinsics
             );

@@ -171,6 +171,7 @@ namespace ODB
             IOState = type;
             Question = question;
             QuestionReaction = reaction;
+
             if(type == InputType.Targeting)
                 Target = Game.Player.xy;
         }
