@@ -91,14 +91,9 @@ namespace ODB
 
             if(World.Level.At(moveTo).Door == Door.Closed)
             {
-                World.Level.At(moveTo).Door = Door.Open;
-                if (Game.Player.Vision[moveTo.x, moveTo.y])
-                {
-                    Game.UI.Log(
-                        MeatPuppet.GetName("Name") +
-                            " opens a door."
-                        );
-                }
+                MeatPuppet.Do(
+                    new Command("open").Add("door", World.Level.At(moveTo))
+                );
             }
             else MeatPuppet.TryMove(offset);
         }
@@ -111,11 +106,11 @@ namespace ODB
             if (!MeatPuppet.Awake) return;
             if (!Game.Player.IsAlive) return;
 
-            if (MeatPuppet.HasEffect(StatusType.Stun))
-            {
+            //Handled by Actor.CanMove() now.
+            /*if (MeatPuppet.HasEffect(StatusType.Stun)) {
                 MeatPuppet.Pass(ODBGame.StandardActionLength);
                 return;
-            }
+            }*/
 
             if(CanAttack(Game.Player))
             {

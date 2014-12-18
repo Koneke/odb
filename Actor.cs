@@ -97,6 +97,7 @@ namespace ODB
         public int MpMax;
         public int Level;
         public int ExperiencePoints;
+        //probably should enforce this being >=0
         public int Cooldown;
         private int _food;
 
@@ -721,6 +722,17 @@ namespace ODB
                 );
 
             HpCurrent -= ds.Damage;
+
+            if (HasEffect(StatusType.Sleep))
+            {
+                RemoveEffect(StatusType.Sleep);
+                Game.UI.Log(
+                    "{1} {2} up!",
+                    GetName("Name"),
+                    Verb("wake")
+                );
+            }
+
             if (HpCurrent > 0) return;
 
             Game.UI.Log(GetName("Name") + " " + Verb("die") + "!");
@@ -1348,10 +1360,10 @@ namespace ODB
         private void HandleOpen(Command cmd)
         {
             TileInfo targetTile = (TileInfo)cmd.Get("door");
-            if(Game.Player.Sees(xy))
+            if(Game.Player.Sees(targetTile.Position))
                 Game.UI.Log(
                     "{1} {2} {3} door.",
-                    GetName("Name"),
+                    Game.Player.Sees(xy) ? GetName("Name") : "Something",
                     Verb("open"),
                     this == Game.Player ? "the" : "a"
                 );
@@ -1463,6 +1475,17 @@ namespace ODB
             Shoot(target);
         }
 
+        private void HandleSleep(Command cmd)
+        {
+            AddEffect(
+                new LastingEffect(
+                    ID,
+                    StatusType.Sleep,
+                    ((int)cmd.Get("length") - 1) * 10
+                )
+            );
+        }
+
         private void HandleUse(Command cmd)
         {
             Item item = (Item)cmd.Get("item");
@@ -1524,8 +1547,8 @@ namespace ODB
                 case "read": HandleRead(cmd); break;
                 case "remove": HandleRemove(cmd); break;
                 case "sheathe": HandleSheathe(cmd); break;
-                case "sleep": HandleSleep(cmd); break;
                 case "shoot": HandleShoot(cmd); break;
+                case "sleep": HandleSleep(cmd); break;
                 case "use": HandleUse(cmd); break;
                 case "wear": HandleWear(cmd); break;
                 case "wield": HandleWield(cmd); break;
@@ -1533,15 +1556,12 @@ namespace ODB
             }
         }
 
-        private void HandleSleep(Command cmd)
+        public bool CanMove()
         {
-            AddEffect(
-                new LastingEffect(
-                    ID,
-                    StatusType.Sleep,
-                    ((int)cmd.Get("length") - 1) * 10
-                )
-            );
+            if (Cooldown > 0) return false;
+            if (HasEffect(StatusType.Sleep)) return false;
+            if (HasEffect(StatusType.Stun)) return false;
+            return true;
         }
 
         public Stream WriteActor()
