@@ -194,21 +194,33 @@ namespace ODB
             }
         }
 
+        private int GetMuffleValue(TileInfo tile)
+        {
+            if (tile == null) return 12;
+            if (tile.Solid) return 7;
+            if (tile.Door == Door.Closed) return 6;
+            return 0;
+        }
+
         public void MakeNoise(Point p, NoiseType type, int noisemod = 0)
         {
             foreach (Actor a in World.Level.Actors)
             {
                 List<Point> l = Util.Line(a.xy.x, a.xy.y, p.x, p.y);
-                int obstruction = l
-                    .Select(x => World.Level.At(x))
+                int obstruction =
+                    l
+                        /*.Select(x => World.Level.At(x))
                     .Where(ti => ti != null)
                     .Count(ti => ti.Solid || ti.Door == Door.Closed);
+                obstruction = l*/
+                    .Select(x => World.Level.At(x))
+                    .Sum(ti => GetMuffleValue(ti));
                 //only through walls, not void
-                if (l.Any(x => World.Level.At(x) == null)) obstruction = 10;
+                //if (l.Any(x => World.Level.At(x) == null)) obstruction = 10;
 
                 if (Util.Random.Next(1, 20)
                     + noisemod
-                    - (obstruction * 6)
+                    - (obstruction)
                     - Util.XperY(1, 2, Util.Distance(p, a.xy))
                     >= 7)
                     a.Hear(type, p);

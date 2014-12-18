@@ -45,9 +45,26 @@ namespace ODB
             CheckRemove();
             CheckSheathe();
             CheckSleep();
+            CheckSneak();
             CheckWield();
             CheckWear();
             CheckZap();
+        }
+
+        private static void CheckSneak()
+        {
+            if (!KeyBindings.Pressed(Bind.Sneak)) return;
+
+            if (Game.Player.HasEffect(StatusType.Sneak))
+            {
+                Game.UI.Log("You stop sneaking.");
+                Game.Player.RemoveEffect(StatusType.Sneak);
+            }
+            else
+            {
+                Game.UI.Log("You start sneaking.");
+                Game.Player.AddEffect(StatusType.Sneak, -1);
+            }
         }
 
         //return whether we moved or not
@@ -102,7 +119,8 @@ namespace ODB
             else if (KeyBindings.Pressed(Bind.West)) offset.Nudge(-1, 0);
             else if (KeyBindings.Pressed(Bind.NorthWest)) offset.Nudge(-1, -1);
 
-            if (KeyBindings.Pressed(Bind.Wait)) Game.Player.Pass(true);
+            //pass a STANDARD action
+            if (KeyBindings.Pressed(Bind.Wait)) Game.Player.Pass();
 
             if (offset.x == 0 && offset.y == 0) return false;
 
@@ -576,6 +594,7 @@ namespace ODB
 
             List<Item> wieldable = Game.Player.Inventory
                 .Where(x => !Game.Player.GetEquippedItems().Contains(x))
+                .Where(x => x != Game.Player.Quiver)
                 .ToList();
 
             if(wieldable.Count <= 0)

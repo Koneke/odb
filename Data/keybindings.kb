@@ -47,6 +47,7 @@ read				=	:r;
 remove				=	s:r;
 sheath				=	s:s;
 sleep				=	s:z;
+sneak				=	:x;
 wear				=	s:w;
 wield				=	:w;
 zap					=	:z;

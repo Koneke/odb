@@ -919,8 +919,14 @@ namespace ODB
         public void Pass(bool movement = false)
         {
             //switch this to +=? could mean setting cd to -10 = free action
-            Cooldown = ODBGame.StandardActionLength -
-                (movement ? Get(Stat.Speed) : Get(Stat.Quickness));
+            int sneakMod = 0;
+            if(HasEffect(StatusType.Sneak) && movement)
+                sneakMod += 5;
+
+            Cooldown =
+                ODBGame.StandardActionLength -
+                (movement ? Get(Stat.Speed) : Get(Stat.Quickness)) +
+                sneakMod;
         }
         public void Pass(int length)
         {
@@ -976,7 +982,13 @@ namespace ODB
 
                 //walking noise
                 World.Level.CalculateActorPositions();
-                World.Level.MakeNoise(xy, NoiseType.FootSteps);
+                World.Level.MakeNoise(
+                    xy,
+                    NoiseType.FootSteps,
+                    HasEffect(StatusType.Sneak)
+                        ? -Get(Stat.Dexterity)
+                        : 0
+                );
             }
             else
             {
@@ -1270,8 +1282,19 @@ namespace ODB
 
             Game.UI.UpdateAt(targetTile.Position);
 
-            if(Util.Random.Next(1, 6) == 5)
+            int squeakChance = 6;
+            if (HasEffect(StatusType.Sneak)) squeakChance = 8;
+
+            if (Util.Random.Next(1, squeakChance) == 1)
+            {
                 World.Level.MakeNoise(targetTile.Position, NoiseType.Door);
+                if (this == Game.Player)
+                    //player would normally not see anything, since they see
+                    //the door.
+                    Game.UI.Log("The door squeaks.");
+            }
+
+            Pass(true);
         }
 
         private void HandleDrop(Command cmd)
@@ -1385,8 +1408,19 @@ namespace ODB
 
             Game.UI.UpdateAt(targetTile.Position);
 
-            if(Util.Random.Next(1, 6) == 5)
+            int squeakChance = 6;
+            if (HasEffect(StatusType.Sneak)) squeakChance = 8;
+
+            if (Util.Random.Next(1, squeakChance) == 1)
+            {
                 World.Level.MakeNoise(targetTile.Position, NoiseType.Door);
+                if (this == Game.Player)
+                    //player would normally not see anything, since they see
+                    //the door.
+                    Game.UI.Log("The door squeaks.");
+            }
+
+            Pass(true);
         }
 
         public void HandleQuaff(Command cmd)
@@ -1494,7 +1528,7 @@ namespace ODB
                 new LastingEffect(
                     ID,
                     StatusType.Sleep,
-                    ((int)cmd.Get("length") - 1) * 10
+                    ((int)cmd.Get("length")) * 10 - 1
                 )
             );
         }

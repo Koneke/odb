@@ -12,6 +12,7 @@ namespace ODB
         Sleep,
         Bleed,
         Poison,
+        Sneak
     }
 
     public class LastingEffect
@@ -54,6 +55,7 @@ namespace ODB
                 { StatusType.Bleed, "Bleed" },
                 { StatusType.Poison, "Poison" },
                 { StatusType.Sleep, "Sleep" },
+                { StatusType.Sneak, "Sneak" },
             };
 
         public StatusType Type;
