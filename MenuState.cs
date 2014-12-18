@@ -24,7 +24,7 @@ namespace ODB
         private State _state;
 
         private ConsoleList _consoles;
-        private Console _foo;
+        private Console _menuConsole;
 
         private int _choice;
         private readonly int _numChoices;
@@ -98,7 +98,7 @@ namespace ODB
 
         public override void Draw()
         {
-            _foo.CellData.Clear();
+            _menuConsole.CellData.Clear();
 
             string nameString = String.Format(
                 "{0}Name: {1}",
@@ -124,13 +124,13 @@ namespace ODB
                 _choice == (int)Choices.Exit ? ">" : ""
             );
 
-            _foo.DrawColorString(2, 1, nameString);
-            _foo.DrawColorString(2, 2, startString);
-            _foo.DrawColorString(2, 3, loadString);
-            _foo.DrawColorString(2, 4, exitString);
+            _menuConsole.DrawColorString(2, 1, nameString);
+            _menuConsole.DrawColorString(2, 2, startString);
+            _menuConsole.DrawColorString(2, 3, loadString);
+            _menuConsole.DrawColorString(2, 4, exitString);
 
-            _foo.DrawColorString(
-                2, _foo.GetHeight() - 2,
+            _menuConsole.DrawColorString(
+                2, _menuConsole.GetHeight() - 2,
                 "Checksum: " + Game.Hash
             );
         }
@@ -143,9 +143,9 @@ namespace ODB
         private void SetupConsoles()
         {
             _consoles = new ConsoleList();
-            _foo = new Console(80, 25);
+            _menuConsole = new Console(80, 25);
 
-            _consoles.Add(_foo);
+            _consoles.Add(_menuConsole);
         }
     }
 }

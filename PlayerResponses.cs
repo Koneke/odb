@@ -242,6 +242,9 @@ namespace ODB
 
                 IO.CurrentCommand.Add("item", item);
 
+                item.Identify();
+                item.SpendCharge();
+
                 if (effect.CastType == InputType.None)
                     Game.Player.Do(IO.CurrentCommand);
                 else

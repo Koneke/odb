@@ -310,8 +310,8 @@ namespace ODB
                         !ODBGame.Game.GeneratedUniques.Contains(ad.Type))
                     .ToList();
 
-            const int monsterCount = 10;
-            for (int i = 0; i < monsterCount; i++)
+            float monsterPool = (difficulty * 5);
+            while(monsterPool > 0)
             {
                 ActorDefinition monster =
                     possibleMonsters.SelectRandom();
@@ -319,7 +319,6 @@ namespace ODB
                 Actor spawned =
                     new Actor(
                         level.RandomOpenPoint(),
-                        level.ID,
                         monster,
                         (int)Math.Floor(difficulty / 2f)
                     );
@@ -334,6 +333,8 @@ namespace ODB
                     ODBGame.Game.GeneratedUniques.Add(monster.Type);
                     possibleMonsters.Remove(monster);
                 }
+
+                monsterPool -= spawned.Definition.Difficulty;
             }
         }
 

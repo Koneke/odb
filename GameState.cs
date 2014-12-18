@@ -23,9 +23,10 @@ namespace ODB
         public GameState(ODBGame game) : base(game)
         {
             Game.InvMan = new InventoryManager();
+            Game.GeneratedUniques = new List<int>();
 
             Game.Player = new Actor(
-                new Point(0, 0), 0,
+                new Point(0, 0),
                 Util.ADefByName("Moribund"), 1
             ) { Awake =  true };
 
@@ -57,11 +58,13 @@ namespace ODB
             }
         }
 
-// ReSharper disable once InconsistentNaming
+        //ReSharper disable once InconsistentNaming
         private void ProcessNPCs()
         {
             while(!Game.Player.CanMove())
             {
+                if (!Game.Player.IsAlive) break;
+
                 List<Brain> clone = new List<Brain>(Game.Brains);
                 foreach (Brain b in clone.Where(b => b.MeatPuppet.CanMove()))
                     b.Tick();
@@ -119,7 +122,16 @@ namespace ODB
                     switch (IO.IOState)
                     {
                         case InputType.PlayerInput:
-                            ODBGame.Game.Exit();
+                            IO.SetInput('Y', 'n');
+                            IO.AskPlayer(
+                                "Really quit? [Yn]",
+                                InputType.QuestionPromptSingle,
+                                () =>
+                                {
+                                    if (IO.Answer[0] == 'Y')
+                                        ODBGame.Game.Exit();
+                                }
+                            );
                             break;
                         case InputType.Inventory:
                             Game.InvMan.HandleCancel();

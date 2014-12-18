@@ -140,10 +140,9 @@ namespace ODB
 
         public Actor(
             Point xy,
-            int levelid,
             ActorDefinition definition,
             int level
-        ) : base(xy, levelid, definition) {
+        ) : base(xy, definition) {
             ID = IDCounter++;
             Definition = definition;
 
@@ -782,8 +781,10 @@ namespace ODB
                             .SelectRandom()
                             .Position;
                         Actor rat = new Actor(
-                            p, World.Level.ID, Util.ADefByName("rat"),
-                            ds.Source.Level);
+                            p,
+                            Util.ADefByName("rat"),
+                            ds.Source.Level
+                        );
                         World.Level.Spawn(rat);
                     }
                     break;
@@ -1424,8 +1425,6 @@ namespace ODB
                     item.GetName("the")
                 );
 
-            //item.Identify();
-
             Spell spell = Spell.Spells
                 [item.GetComponent<ReadableComponent>().Effect];
 
@@ -1433,8 +1432,6 @@ namespace ODB
                 spell.Cast(this, cmd.Get("target"));
             else
                 spell.Cast(this, cmd.Get("answer"));
-
-            //item.SpendCharge();
 
             Pass();
         }

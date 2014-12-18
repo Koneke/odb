@@ -134,7 +134,6 @@ namespace ODB
                 case "sa":
                 case "spawnactor":
                     #region spawnactor
-
                     if (args.Length < 1)
                     {
                         Game.UI.Log("");
@@ -142,7 +141,6 @@ namespace ODB
                     }
                     Actor act = new Actor(
                         WmCursor,
-                        World.Level.ID,
                         Util.ADefByName(args[0]),
                         args.Length > 1
                         ? IO.ReadHex(args[1])

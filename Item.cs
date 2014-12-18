@@ -84,7 +84,7 @@ namespace ODB
             ItemDefinition definition,
             int count = 0,
             IEnumerable<Mod> mods = null
-        ) : base(xy, levelid, definition) {
+        ) : base(xy, definition) {
             ID = IDCounter++;
             Count = count;
             Definition = definition;
