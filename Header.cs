@@ -472,7 +472,7 @@ namespace ODB
                     cp.Item1 - index, cp.Item2));
             }
 
-            ColorPoints = newColorPoints;
+            ColorPoints = newColorPoints.OrderBy(c => c.Item1).ToList();
         }
 
         public ColorString Clone()

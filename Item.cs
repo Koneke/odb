@@ -285,16 +285,18 @@ namespace ODB
             World.Level.Despawn(other);
         }
 
-        public void Damage(int mod = 0)
+        public void Damage(int mod = 0, Action<string> log = null)
         {
             if (Util.Random.Next(0, Materials.MaxHardness+1) + mod <
                 Materials.GetHardness(Material))
                 return;
 
-            Game.UI.Log(
-                "#ff0000{1}#ffffff is #ffffffdamaged by the impact#ffffff!",
-                GetName("The")
-            );
+            if(log != null)
+                log(String.Format(
+                    "#ff0000{0}#ffffff is #ff0000damaged by the impact#ffffff!",
+                    GetName("The")
+                ));
+
             if (Stacking)
             {
                 //spawn a stack of every item in the stack that wasn't the
@@ -323,19 +325,21 @@ namespace ODB
                     //otherwise, drop it into the world
                     else
                     {
-                        Game.UI.Log(
-                            "{1} is dropped to the ground.",
-                            GetName("The")
-                        );
+                        if(log != null)
+                            log(string.Format(
+                                "{0} is dropped to the ground.",
+                                GetName("The")
+                            ));
                     }
                 }
             }
             if (Health <= 1)
             {
-                Game.UI.Log(
-                    "#ff0000{1} falls to pieces!",
-                    GetName("The")
-                );
+                if(log != null)
+                    log(string.Format(
+                        "#ff0000{0} falls to pieces!",
+                        GetName("The")
+                    ));
                 Health--;
                 World.Level.Despawn(this);
             }
@@ -366,10 +370,7 @@ namespace ODB
         public Stream ReadItem(string s)
         {
             Stream stream = ReadGObject(s);
-            Definition =
-                ItemDefinition.ItemDefinitions[
-                    stream.ReadHex(4)
-                ];
+            Definition = ItemDefinition.ItemDefinitions[stream.ReadHex(4)];
 
             ID = stream.ReadHex(4);
             Mod = stream.ReadHex(2);

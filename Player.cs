@@ -13,17 +13,7 @@ namespace ODB
 
         public static void PlayerInput()
         {
-            if (Game.Player.HpCurrent <= 0) return;
-            //should probably be moved into some 'input-preprocess',
-            //since we do the same thing for brains
-            if (
-                Game.Player.HasEffect(StatusType.Stun) ||
-                Game.Player.HasEffect(StatusType.Sleep)
-            ) {
-                Game.Player.Pass(ODBGame.StandardActionLength);
-                return;
-            }
-
+            //should probably be remade to commands
             bool moved = MovementInput();
 
             //should be replaced with a look command

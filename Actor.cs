@@ -483,7 +483,10 @@ namespace ODB
                 Item weapon = attack.Item1;
 
                 int roll = Util.Roll("1d20");
-                bool crit = roll >= 20;
+                bool crit =
+                    roll >= 20 ||
+                    target.HasEffect(StatusType.Sleep)
+                ;
                 int mod = weapon == null ? 0 : weapon.Mod;
 
                 int totalModifier =
@@ -567,7 +570,7 @@ namespace ODB
 
                 if (weapon == null) continue;
                 //does not -guarantee- damage, rolls the chance as well
-                weapon.Damage();
+                weapon.Damage(0, s => message += s);
             }
 
             Game.UI.Log(message);
@@ -592,6 +595,7 @@ namespace ODB
             if(lc != null) if(!lc.AmmoTypes.Contains(ammo.Type)) lc = null;
 
             int roll = Util.Roll("1d20");
+            bool crit = roll == 20 || target.HasEffect(StatusType.Sleep);
 
             int dexBonus = Get(Stat.Dexterity);
             int distanceModifier = 1;
@@ -616,10 +620,6 @@ namespace ODB
                 LevelID = World.Level.ID
             };
 
-            projectile.Damage(4);
-            if (projectile.Health > 0)
-                World.Level.Spawn(projectile);
-
             ammo.Count--;
             if(ammo.Count <= 0) World.Level.Despawn(ammo);
 
@@ -627,12 +627,12 @@ namespace ODB
 
             if(hitRoll >= targetArmor) {
                 int ammoDamage = pc == null
-                    ? Util.Roll("1d4")
+                    ? Util.Roll("1d4", crit)
                     : Util.Roll(pc.Damage);
 
                 int launcherDamage = lc == null
                     ? 0
-                    : Util.Roll(lc.Damage);
+                    : Util.Roll(lc.Damage, crit);
 
                 int damageRoll = ammoDamage + launcherDamage;
 
@@ -648,7 +648,11 @@ namespace ODB
                     Target = target
                 };
 
-                message += target.GetName("Name") + " is hit! ";
+                message += string.Format(
+                    "{0} is hit{1} ",
+                    target.GetName("Name"),
+                    crit ? "!" : "."
+                );
 
                 #region rolls to log
                 if (Game.OpenRolls)
@@ -697,10 +701,15 @@ namespace ODB
                 #endregion
             }
 
+            projectile.Damage(4, s => message += s);
+            if (projectile.Health > 0)
+                World.Level.Spawn(projectile);
+
             Game.UI.Log(message);
             if(ds != null) target.Damage(ds);
 
-            World.Level.MakeNoise(1, target.xy);
+            //ranged is fairly quiet.
+            World.Level.MakeNoise(target.xy, NoiseType.Combat, -2);
             Pass();
         }
         public void Damage(DamageSource ds)
@@ -965,7 +974,7 @@ namespace ODB
 
                 //walking noise
                 World.Level.CalculateActorPositions();
-                World.Level.MakeNoise(0, xy);
+                World.Level.MakeNoise(xy, NoiseType.FootSteps);
             }
             else
             {
@@ -973,7 +982,7 @@ namespace ODB
                 Pass();
 
                 //combat noise
-                World.Level.MakeNoise(1, xy);
+                World.Level.MakeNoise(xy, NoiseType.Combat, +2);
             }
 
             Game.UI.UpdateAt(xy);
@@ -1258,6 +1267,9 @@ namespace ODB
             targetTile.Door = Door.Closed;
 
             Game.UI.UpdateAt(targetTile.Position);
+
+            if(Util.Random.Next(1, 6) == 5)
+                World.Level.MakeNoise(targetTile.Position, NoiseType.Door);
         }
 
         private void HandleDrop(Command cmd)
@@ -1370,6 +1382,9 @@ namespace ODB
             targetTile.Door = Door.Open;
 
             Game.UI.UpdateAt(targetTile.Position);
+
+            if(Util.Random.Next(1, 6) == 5)
+                World.Level.MakeNoise(targetTile.Position, NoiseType.Door);
         }
 
         public void HandleQuaff(Command cmd)
@@ -1558,10 +1573,44 @@ namespace ODB
 
         public bool CanMove()
         {
+            if (!IsAlive) return false;
             if (Cooldown > 0) return false;
             if (HasEffect(StatusType.Sleep)) return false;
             if (HasEffect(StatusType.Stun)) return false;
             return true;
+        }
+
+        public void Hear(NoiseType noise, Point p)
+        {
+            if (HasEffect(StatusType.Sleep))
+            {
+                RemoveEffect(StatusType.Sleep);
+
+                if (this != Game.Player && Game.Player.Sees(xy))
+                    ODBGame.Game.UI.Log(
+                        "{1} {2} up.",
+                        GetName("Name"),
+                        Verb("wake")
+                    );
+            }
+
+            //only log hearing for the player, and only for things he/she
+            //doesn't already see.
+            if (this != Game.Player || Game.Player.Sees(p)) return;
+
+            switch (noise)
+            {
+                case NoiseType.FootSteps:
+                    Game.UI.Log("You hear footsteps.");
+                    break;
+                case NoiseType.Combat:
+                    Game.UI.Log("You hear sounds of combat.");
+                    break;
+                case NoiseType.Door:
+                    Game.UI.Log("You hear a door squeaking.");
+                    break;
+                default: throw new ArgumentException();
+            }
         }
 
         public Stream WriteActor()
@@ -1701,5 +1750,12 @@ namespace ODB
 
             return stream;
         }
+    }
+
+    public enum NoiseType
+    {
+        FootSteps,
+        Combat,
+        Door
     }
 }

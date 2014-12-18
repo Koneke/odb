@@ -106,12 +106,6 @@ namespace ODB
             if (!MeatPuppet.Awake) return;
             if (!Game.Player.IsAlive) return;
 
-            //Handled by Actor.CanMove() now.
-            /*if (MeatPuppet.HasEffect(StatusType.Stun)) {
-                MeatPuppet.Pass(ODBGame.StandardActionLength);
-                return;
-            }*/
-
             if(CanAttack(Game.Player))
             {
                 Attack(Game.Player);

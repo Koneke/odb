@@ -20,7 +20,24 @@ namespace ODB
 
     public class GameState : AppState
     {
-        public GameState(ODBGame game) : base(game) { }
+        public GameState(ODBGame game) : base(game)
+        {
+            Game.InvMan = new InventoryManager();
+
+            Game.Player = new Actor(
+                new Point(0, 0), 0,
+                Util.ADefByName("Moribund"), 1
+            ) { Awake =  true };
+
+            World.Levels.Add(World.Level = new Generator().Generate(null, 1));
+            World.Level.Spawn(Game.Player);
+            Game.Player.xy = World.Level.RandomOpenPoint();
+
+            //force a screendraw in the beginning
+            Game.Player.HasMoved = true;
+
+            Game.SetupBrains();
+        }
 
         public void SetupBrains() {
             if(Game.Brains == null)
@@ -43,7 +60,7 @@ namespace ODB
 // ReSharper disable once InconsistentNaming
         private void ProcessNPCs()
         {
-            while(Game.Player.Cooldown > 0 && Game.Player.IsAlive)
+            while(!Game.Player.CanMove())
             {
                 List<Brain> clone = new List<Brain>(Game.Brains);
                 foreach (Brain b in clone.Where(b => b.MeatPuppet.CanMove()))
@@ -63,7 +80,6 @@ namespace ODB
                         a.HpCurrent = System.Math.Min(a.HpMax, a.HpCurrent + 1);
                         a.HpRegCooldown = 100;
                     }
-                    // ReSharper disable once InvertIf
                     if (a.MpRegCooldown == 0)
                     {
                         a.MpCurrent = System.Math.Min(a.MpMax, a.MpCurrent + 1);
@@ -141,9 +157,13 @@ namespace ODB
 
                     case InputType.PlayerInput:
                         if (Game.UI.CheckMorePrompt()) break;
+
                         if (Game.Player.CanMove())
                             Player.PlayerInput();
-                        else ProcessNPCs(); //mind: also ticks gameclock
+                        //pass when sleeping etc.
+                        else Game.Player.Pass();
+
+                        ProcessNPCs(); //mind: also ticks gameclock
                         break;
 
                     case InputType.Inventory:

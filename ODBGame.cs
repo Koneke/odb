@@ -92,24 +92,6 @@ namespace ODB
             Load();
             SetupSeed();
 
-            InvMan = new InventoryManager();
-
-            Player = new Actor(
-                new Point(0, 0),
-                0, Util.ADefByName("Moribund"), 1)
-            { Awake = true };
-
-            GeneratedUniques = new List<int>();
-
-            World.Levels.Add(World.Level = new Generator().Generate(null, 1));
-            World.Level.Spawn(Player);
-
-            Player.xy = World.Level.RandomOpenPoint();
-            //make sure we draw the screen when we spawn
-            Player.HasMoved = true;
-
-            SetupBrains();
-
             UI.Log("Welcome!");
 
             MenuState = new MenuState(this);

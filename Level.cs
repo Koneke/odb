@@ -89,11 +89,10 @@ namespace ODB
 
         public void See(Point p)
         {
-            if (!Seen[p.x, p.y])
-            {
-                ODBGame.Game.UI.UpdateAt(p);
-                Seen[p.x, p.y] = true;
-            }
+            if (Seen[p.x, p.y]) return;
+
+            ODBGame.Game.UI.UpdateAt(p);
+            Seen[p.x, p.y] = true;
         }
 
         public TileInfo At(Point p)
@@ -195,10 +194,9 @@ namespace ODB
             }
         }
 
-        public void MakeNoise(int noisemod, Point p)
+        public void MakeNoise(Point p, NoiseType type, int noisemod = 0)
         {
-            foreach (Actor a in World.Level.Actors
-                .Where(a => a.HasEffect(StatusType.Sleep)))
+            foreach (Actor a in World.Level.Actors)
             {
                 List<Point> l = Util.Line(a.xy.x, a.xy.y, p.x, p.y);
                 int obstruction = l
@@ -208,19 +206,12 @@ namespace ODB
                 //only through walls, not void
                 if (l.Any(x => World.Level.At(x) == null)) obstruction = 10;
 
-                if (Util.Random.Next(1, 20) + noisemod - (obstruction * 6) >= 7)
-                {
-                    //a.Hear(NoiseType.FootSteps);
-                    a.RemoveEffect(StatusType.Sleep);
-                    if (ODBGame.Game.Player.Sees(a.xy))
-                    {
-                        ODBGame.Game.UI.Log(
-                            "{1} {2} up.",
-                            a.GetName("Name"),
-                            a.Verb("wake")
-                        );
-                    }
-                }
+                if (Util.Random.Next(1, 20)
+                    + noisemod
+                    - (obstruction * 6)
+                    - Util.XperY(1, 2, Util.Distance(p, a.xy))
+                    >= 7)
+                    a.Hear(type, p);
             }
         }
 
