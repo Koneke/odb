@@ -31,6 +31,7 @@ namespace ODB
         public ODBGame()
         {
             UI.Graphics = new GraphicsDeviceManager(this);
+            UI.Graphics.SynchronizeWithVerticalRetrace = false;
             Content.RootDirectory = "Content";
         }
 
@@ -104,6 +105,8 @@ namespace ODB
             World.Level.Spawn(Player);
 
             Player.xy = World.Level.RandomOpenPoint();
+            //make sure we draw the screen when we spawn
+            Player.HasMoved = true;
 
             SetupBrains();
 
@@ -204,6 +207,8 @@ namespace ODB
             }
 
             SetupBrains();
+
+            Game.UI.FullRedraw();
 
             if (!gotoStairs) return;
             Game.Player.xy = target;

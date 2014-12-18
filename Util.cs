@@ -99,6 +99,20 @@ namespace ODB
         {
             return console.ViewArea.Height;
         }
+
+        public static void Paint<T>(this T[,] arr, Rect area, T value)
+        {
+            for (int x = 0; x < area.wh.x; x++)
+            for (int y = 0; y < area.wh.y; y++)
+                arr[area.xy.x + x, area.xy.y + y] = value;
+        }
+
+        public static void Fill<T>(this T[,] arr, T value)
+        {
+            for (int x = 0; x < arr.GetLength(0); x++)
+            for (int y = 0; y < arr.GetLength(1); y++)
+                arr[x, y] = value;
+        }
     }
 
     public class Util
@@ -464,5 +478,45 @@ namespace ODB
             return p;
         }
 
+        //both below picked from:
+        //http://www.roguebasin.com/index.php?title=Bresenham%27s_Line_Algorithm
+
+        public static void Swap<T>(ref T lhs, ref T rhs)
+        {
+            T temp = lhs;
+            lhs = rhs;
+            rhs = temp;
+        }
+
+        public static List<Point> Line(int x0, int y0, int x1, int y1)
+        {
+            bool steep = Math.Abs(y1 - y0) > Math.Abs(x1 - x0);
+            if (steep) { Swap(ref x0, ref y0); Swap(ref x1, ref y1); }
+            if (x0 > x1) { Swap(ref x0, ref x1); Swap(ref y0, ref y1); }
+
+            int dX = (x1 - x0);
+            int dY = Math.Abs(y1 - y0);
+            int err = (dX / 2);
+            int ystep = y0 < y1 ? 1 : -1;
+            int y = y0;
+
+            List<Point> line = new List<Point>();
+
+            for (int x = x0; x <= x1; ++x)
+            {
+                line.Add(steep
+                    ? new Point(y, x)
+                    : new Point(x, y)
+                    );
+                err = err - dY;
+                if (err < 0)
+                {
+                    y += ystep;
+                    err += dX;
+                }
+            }
+
+            return line;
+        }
     }
 }

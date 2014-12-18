@@ -316,14 +316,18 @@ namespace ODB
                 ActorDefinition monster =
                     possibleMonsters.SelectRandom();
 
-                level.Spawn(
+                Actor spawned =
                     new Actor(
                         level.RandomOpenPoint(),
                         level.ID,
                         monster,
                         (int)Math.Floor(difficulty / 2f)
-                    )
-                );
+                    );
+                spawned.Awake = true;
+                //sleep until woken up
+                spawned.AddEffect(StatusType.Sleep, -1);
+
+                level.Spawn(spawned);
 
                 if (monster.GenerationType == Monster.GenerationType.Unique)
                 {

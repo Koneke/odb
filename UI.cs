@@ -37,6 +37,17 @@ namespace ODB
         public Point Camera;
         private Point _cameraOffset;
 
+        private readonly bool[,] _updateAt;
+
+        public void UpdateAt(Point p)
+        {
+            UpdateAt(p.x, p.y);
+        }
+        public void UpdateAt(int x, int y)
+        {
+            _updateAt[x, y] = true;
+        }
+
         public UI()
         {
             Load();
@@ -45,6 +56,8 @@ namespace ODB
             _cameraOffset = new Point(0, 0);
 
             LogText = new List<ColorString>();
+
+            _updateAt = new bool[80, 25];
         }
 
         public bool CheckMorePrompt()
@@ -141,17 +154,27 @@ namespace ODB
             RenderWmCursor();
         }
 
+        public void FullRedraw()
+        {
+            foreach (Console c in Consoles)
+                c.CellData.Clear();
+            _updateAt.Fill(true);
+        }
+
         private void RenderMap()
         {
-            _dfc.CellData.Clear();
+            //_dfc.CellData.Clear();
 
             for (int x = 0; x < ScreenSize.X; x++)
                 for (int y = 0; y < ScreenSize.Y; y++)
                 {
+                    if (!_updateAt[x, y]) continue;
+                    _updateAt[x, y] = false;
+
                     TileInfo ti = World.Level.At(Camera + new Point(x, y));
 
                     if (ti == null) continue;
-                    if(!(ti.Seen | Game.WizMode)) continue;
+                    if(!(ti.Seen || Game.WizMode)) continue;
 
                     bool inVision = Game.Player.
                         Sees(Camera + new Point(x, y)) || Game.WizMode;
@@ -173,10 +196,7 @@ namespace ODB
         {
             Rect screen = new Rect(Camera, new Point(80, 25));
 
-            int[,] itemCount = new int[
-                World.Level.Size.x,
-                World.Level.Size.y
-                ];
+            int[,] itemCount = new int[World.Level.Size.x, World.Level.Size.y];
 
             foreach (Item i in World.WorldItems
                 .Where(it => it.LevelID == World.Level.ID))
@@ -202,10 +222,7 @@ namespace ODB
         {
             Rect screen = new Rect(Camera, new Point(80, 25));
 
-            int[,] actorCount = new int[
-                World.Level.Size.x,
-                World.Level.Size.y
-                ];
+            int[,] actorCount = new int[World.Level.Size.x, World.Level.Size.y];
 
             foreach (Actor a in World.WorldActors
                 .Where(a => a.LevelID == World.Level.ID))
@@ -221,7 +238,7 @@ namespace ODB
                         a.xy - Camera,
                         a.Definition.Background,
                         a.Definition.Foreground, a.Definition.Tile
-                        );
+                    );
                     //draw a "pile" (shouldn't happen at all atm
                 else DrawToScreen(a.xy, null, Color.White, "*");
             }
@@ -627,14 +644,15 @@ namespace ODB
             cs.Foreground = blink
                 ? Util.InvertColor(cs.Foreground)
                 : Color.White;
+
+            UpdateAt(IO.Target);
         }
 
         private void RenderWmCursor()
         {
             if (!Game.WizMode) return;
 
-            Cell cs = _dfc.CellData[
-                Wizard.WmCursor.x, Wizard.WmCursor.y];
+            Cell cs = _dfc.CellData[Wizard.WmCursor.x, Wizard.WmCursor.y];
 
             bool blink = (DateTime.Now.Millisecond%500 > 250);
 
@@ -645,6 +663,8 @@ namespace ODB
             cs.Foreground = blink
                 ? Util.InvertColor(cs.Foreground)
                 : Color.White;
+
+            UpdateAt(Wizard.WmCursor);
         }
 
         public void DrawColorString(
@@ -686,7 +706,7 @@ namespace ODB
             if (bg != null)
                 _dfc.CellData.SetBackground(
                     xy.x, xy.y, bg.Value
-                    );
+                );
 
             _dfc.CellData.SetForeground(xy.x, xy.y, fg);
 

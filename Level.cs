@@ -87,6 +87,15 @@ namespace ODB
             Rooms = new List<Room>();
         }
 
+        public void See(Point p)
+        {
+            if (!Seen[p.x, p.y])
+            {
+                ODBGame.Game.UI.UpdateAt(p);
+                Seen[p.x, p.y] = true;
+            }
+        }
+
         public TileInfo At(Point p)
         {
             if (p.x >= Size.x ||
@@ -188,51 +197,30 @@ namespace ODB
 
         public void MakeNoise(int noisemod, Point p)
         {
-            List<Room> closed = Util.GetRooms(p);
-            List<Room> open = Util.GetRooms(p);
-
-            Dictionary<int, List<Room>> roomdistances =
-                new Dictionary<int, List<Room>>();
-            int dist = 0;
-            List<Room> newopen = new List<Room>();
-
-            int maxDistance = 6 + noisemod - 1;
-            maxDistance -= maxDistance % 2;
-            maxDistance /= 2;
-
-            while (dist <= maxDistance)
+            foreach (Actor a in World.Level.Actors
+                .Where(a => a.HasEffect(StatusType.Sleep)))
             {
-                newopen.Clear();
-                roomdistances[dist] = new List<Room>();
-                foreach (Room r in open)
+                List<Point> l = Util.Line(a.xy.x, a.xy.y, p.x, p.y);
+                int obstruction = l
+                    .Select(x => World.Level.At(x))
+                    .Where(ti => ti != null)
+                    .Count(ti => ti.Solid || ti.Door == Door.Closed);
+                //only through walls, not void
+                if (l.Any(x => World.Level.At(x) == null)) obstruction = 10;
+
+                if (Util.Random.Next(1, 20) + noisemod - (obstruction * 6) >= 7)
                 {
-                    roomdistances[dist].Add(r);
-                    newopen.AddRange(
-                        r.Linked.Where(
-                            n => !closed.Contains(n) && !open.Contains(n))
+                    //a.Hear(NoiseType.FootSteps);
+                    a.RemoveEffect(StatusType.Sleep);
+                    if (ODBGame.Game.Player.Sees(a.xy))
+                    {
+                        ODBGame.Game.UI.Log(
+                            "{1} {2} up.",
+                            a.GetName("Name"),
+                            a.Verb("wake")
                         );
-                    closed.Add(r);
+                    }
                 }
-                open.Clear();
-                open.AddRange(newopen);
-                dist++;
-            }
-
-            for (int distance = 0; distance <= maxDistance; distance++)
-                foreach (
-                    Actor actor in
-                    from actor in (
-                        from room in roomdistances[distance]
-                        from actor in ActorPositions[room]
-                        where actor != Util.Game.Player
-                        select actor)
-                    //ReSharper disable once AccessToModifiedClosure
-                    //LH-011214: only reading the value (i), not changing it
-                    let roll = Util.Roll("1d6") + noisemod - distance * 2 > 1
-                    select actor
-                )
-            {
-                actor.Awake = true;
             }
         }
 

@@ -97,6 +97,7 @@ namespace ODB
         public int MpMax;
         public int Level;
         public int ExperiencePoints;
+        //probably should enforce this being >=0
         public int Cooldown;
         private int _food;
 
@@ -708,13 +709,30 @@ namespace ODB
             if (HpCurrent <= 0) return;
 
             TileInfo tileInfo = World.Level.At(xy);
+            Game.UI.UpdateAt(xy);
             tileInfo.Blood = true;
             tileInfo.Neighbours
                 .Where(n => !n.Solid)
                 .Where(n => Util.Random.Next(0, 4) >= 3)
-                .ToList().ForEach(n => n.Blood = true);
+                .ToList().ForEach(n =>
+                    {
+                        n.Blood = true;
+                        Game.UI.UpdateAt(n.Position);
+                    }
+                );
 
             HpCurrent -= ds.Damage;
+
+            if (HasEffect(StatusType.Sleep))
+            {
+                RemoveEffect(StatusType.Sleep);
+                Game.UI.Log(
+                    "{1} {2} up!",
+                    GetName("Name"),
+                    Verb("wake")
+                );
+            }
+
             if (HpCurrent > 0) return;
 
             Game.UI.Log(GetName("Name") + " " + Verb("die") + "!");
@@ -914,6 +932,8 @@ namespace ODB
         //but should, I guess, be called by monsters as well in the future
         public bool TryMove(Point offset)
         {
+            Game.UI.UpdateAt(xy);
+
             List<Point> possiblesMoves = GetPossibleMoves();
 
             if(HasEffect(StatusType.Confusion))
@@ -956,16 +976,25 @@ namespace ODB
                 World.Level.MakeNoise(1, xy);
             }
 
+            Game.UI.UpdateAt(xy);
+            HasMoved = moved;
+
             return moved;
         }
+
+        public bool HasMoved;
 
         public void ResetVision()
         {
             if (Vision == null)
                 Vision = new bool[World.Level.Size.x, World.Level.Size.y];
             for (int x = 0; x < World.Level.Size.x; x++)
-                for (int y = 0; y < World.Level.Size.y; y++)
+            for (int y = 0; y < World.Level.Size.y; y++)
+                if (Vision[x, y])
+                {
                     Vision[x, y] = false;
+                    Game.UI.UpdateAt(x, y);
+                }
         }
         public void AddRoomToVision(Room r)
         {
@@ -976,7 +1005,8 @@ namespace ODB
                     Vision[rr.xy.x + x, rr.xy.y + y] = true;
 
                     if (this == Game.Player)
-                        World.Level.At(rr.xy + new Point(x, y)).Seen = true;
+                        World.Level.See(rr.xy + new Point(x, y));
+                        //World.Level.At(rr.xy + new Point(x, y)).Seen = true;
                 }
         }
 
@@ -1155,7 +1185,15 @@ namespace ODB
                     message = "Hm, a mint maybe isn't such a bad idea.";
                     break;
             }
-            if(message != "")
+
+            if(neo == FoodStatus.Hungry || neo == FoodStatus.Starving)
+                if (HasEffect(StatusType.Sleep))
+                {
+                    RemoveEffect(StatusType.Sleep);
+                    message += " You wake up due to hunger.";
+                }
+
+            if(message != "" && this == Game.Player)
                 Game.UI.Log(message);
         }
 
@@ -1218,6 +1256,8 @@ namespace ODB
                     this == Game.Player ? "the" : "a"
                 );
             targetTile.Door = Door.Closed;
+
+            Game.UI.UpdateAt(targetTile.Position);
         }
 
         private void HandleDrop(Command cmd)
@@ -1320,14 +1360,16 @@ namespace ODB
         private void HandleOpen(Command cmd)
         {
             TileInfo targetTile = (TileInfo)cmd.Get("door");
-            if(Game.Player.Sees(xy))
+            if(Game.Player.Sees(targetTile.Position))
                 Game.UI.Log(
                     "{1} {2} {3} door.",
-                    GetName("Name"),
+                    Game.Player.Sees(xy) ? GetName("Name") : "Something",
                     Verb("open"),
                     this == Game.Player ? "the" : "a"
                 );
             targetTile.Door = Door.Open;
+
+            Game.UI.UpdateAt(targetTile.Position);
         }
 
         public void HandleQuaff(Command cmd)
@@ -1433,6 +1475,17 @@ namespace ODB
             Shoot(target);
         }
 
+        private void HandleSleep(Command cmd)
+        {
+            AddEffect(
+                new LastingEffect(
+                    ID,
+                    StatusType.Sleep,
+                    ((int)cmd.Get("length") - 1) * 10
+                )
+            );
+        }
+
         private void HandleUse(Command cmd)
         {
             Item item = (Item)cmd.Get("item");
@@ -1494,8 +1547,8 @@ namespace ODB
                 case "read": HandleRead(cmd); break;
                 case "remove": HandleRemove(cmd); break;
                 case "sheathe": HandleSheathe(cmd); break;
-                case "sleep": HandleSleep(cmd); break;
                 case "shoot": HandleShoot(cmd); break;
+                case "sleep": HandleSleep(cmd); break;
                 case "use": HandleUse(cmd); break;
                 case "wear": HandleWear(cmd); break;
                 case "wield": HandleWield(cmd); break;
@@ -1503,15 +1556,12 @@ namespace ODB
             }
         }
 
-        private void HandleSleep(Command cmd)
+        public bool CanMove()
         {
-            AddEffect(
-                new LastingEffect(
-                    ID,
-                    StatusType.Sleep,
-                    ((int)cmd.Get("length") - 1) * 10
-                )
-            );
+            if (Cooldown > 0) return false;
+            if (HasEffect(StatusType.Sleep)) return false;
+            if (HasEffect(StatusType.Stun)) return false;
+            return true;
         }
 
         public Stream WriteActor()

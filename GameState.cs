@@ -46,10 +46,7 @@ namespace ODB
             while(Game.Player.Cooldown > 0 && Game.Player.IsAlive)
             {
                 List<Brain> clone = new List<Brain>(Game.Brains);
-                foreach (Brain b in clone
-                    .Where(b =>
-                        b.MeatPuppet.Cooldown <= 0 &&
-                        b.MeatPuppet.Awake))
+                foreach (Brain b in clone.Where(b => b.MeatPuppet.CanMove()))
                     b.Tick();
 
                 foreach (Actor a in World.WorldActors
@@ -116,6 +113,7 @@ namespace ODB
                             break;
                     }
                 }
+                Game.UI.FullRedraw();
             }
 
             Game.UI.Input();
@@ -143,7 +141,7 @@ namespace ODB
 
                     case InputType.PlayerInput:
                         if (Game.UI.CheckMorePrompt()) break;
-                        if (Game.Player.Cooldown == 0)
+                        if (Game.Player.CanMove())
                             Player.PlayerInput();
                         else ProcessNPCs(); //mind: also ticks gameclock
                         break;
@@ -160,8 +158,9 @@ namespace ODB
 
             //should probably find a better place to tick this
             foreach (Actor a in World.WorldActors
-                .Where(a => a.LevelID == World.Level.ID))
-            {
+                .Where(a => a.LevelID == World.Level.ID)
+                .Where(a => a.HasMoved)
+            ) {
                 a.ResetVision();
                 foreach (Room r in Util.GetRooms(a))
                     a.AddRoomToVision(r);
@@ -182,6 +181,7 @@ namespace ODB
                     IO.AnswerLimit = 80;
                 }
                 Game.WizMode = !Game.WizMode;
+                Game.UI.FullRedraw();
             }
         }
 
