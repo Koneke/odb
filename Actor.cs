@@ -708,11 +708,17 @@ namespace ODB
             if (HpCurrent <= 0) return;
 
             TileInfo tileInfo = World.Level.At(xy);
+            Game.UI.UpdateAt[xy.x, xy.y] = true;
             tileInfo.Blood = true;
             tileInfo.Neighbours
                 .Where(n => !n.Solid)
                 .Where(n => Util.Random.Next(0, 4) >= 3)
-                .ToList().ForEach(n => n.Blood = true);
+                .ToList().ForEach(n =>
+                    {
+                        n.Blood = true;
+                        Game.UI.UpdateAt[n.Position.x, n.Position.y] = true;
+                    }
+                );
 
             HpCurrent -= ds.Damage;
             if (HpCurrent > 0) return;
@@ -914,6 +920,8 @@ namespace ODB
         //but should, I guess, be called by monsters as well in the future
         public bool TryMove(Point offset)
         {
+            Game.UI.UpdateAt[xy.x, xy.y] = true;
+
             List<Point> possiblesMoves = GetPossibleMoves();
 
             if(HasEffect(StatusType.Confusion))
@@ -956,8 +964,13 @@ namespace ODB
                 World.Level.MakeNoise(1, xy);
             }
 
+            Game.UI.UpdateAt[xy.x, xy.y] = true;
+            HasMoved = moved;
+
             return moved;
         }
+
+        public bool HasMoved;
 
         public void ResetVision()
         {
@@ -976,7 +989,8 @@ namespace ODB
                     Vision[rr.xy.x + x, rr.xy.y + y] = true;
 
                     if (this == Game.Player)
-                        World.Level.At(rr.xy + new Point(x, y)).Seen = true;
+                        World.Level.See(rr.xy + new Point(x, y));
+                        //World.Level.At(rr.xy + new Point(x, y)).Seen = true;
                 }
         }
 
@@ -1218,6 +1232,9 @@ namespace ODB
                     this == Game.Player ? "the" : "a"
                 );
             targetTile.Door = Door.Closed;
+
+            Game.UI.UpdateAt[targetTile.Position.x, targetTile.Position.y]
+                = true;
         }
 
         private void HandleDrop(Command cmd)
@@ -1328,6 +1345,9 @@ namespace ODB
                     this == Game.Player ? "the" : "a"
                 );
             targetTile.Door = Door.Open;
+
+            Game.UI.UpdateAt[targetTile.Position.x, targetTile.Position.y]
+                = true;
         }
 
         public void HandleQuaff(Command cmd)

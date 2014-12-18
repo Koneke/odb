@@ -160,8 +160,9 @@ namespace ODB
 
             //should probably find a better place to tick this
             foreach (Actor a in World.WorldActors
-                .Where(a => a.LevelID == World.Level.ID))
-            {
+                .Where(a => a.LevelID == World.Level.ID)
+                .Where(a => a.HasMoved)
+            ) {
                 a.ResetVision();
                 foreach (Room r in Util.GetRooms(a))
                     a.AddRoomToVision(r);

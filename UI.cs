@@ -37,6 +37,8 @@ namespace ODB
         public Point Camera;
         private Point _cameraOffset;
 
+        public bool[,] UpdateAt;
+
         public UI()
         {
             Load();
@@ -45,6 +47,8 @@ namespace ODB
             _cameraOffset = new Point(0, 0);
 
             LogText = new List<ColorString>();
+
+            UpdateAt = new bool[80, 25];
         }
 
         public bool CheckMorePrompt()
@@ -143,11 +147,14 @@ namespace ODB
 
         private void RenderMap()
         {
-            _dfc.CellData.Clear();
+            //_dfc.CellData.Clear();
 
             for (int x = 0; x < ScreenSize.X; x++)
                 for (int y = 0; y < ScreenSize.Y; y++)
                 {
+                    if (!UpdateAt[x, y]) continue;
+                    UpdateAt[x, y] = false;
+
                     TileInfo ti = World.Level.At(Camera + new Point(x, y));
 
                     if (ti == null) continue;
@@ -173,10 +180,7 @@ namespace ODB
         {
             Rect screen = new Rect(Camera, new Point(80, 25));
 
-            int[,] itemCount = new int[
-                World.Level.Size.x,
-                World.Level.Size.y
-                ];
+            int[,] itemCount = new int[World.Level.Size.x, World.Level.Size.y];
 
             foreach (Item i in World.WorldItems
                 .Where(it => it.LevelID == World.Level.ID))
@@ -202,10 +206,7 @@ namespace ODB
         {
             Rect screen = new Rect(Camera, new Point(80, 25));
 
-            int[,] actorCount = new int[
-                World.Level.Size.x,
-                World.Level.Size.y
-                ];
+            int[,] actorCount = new int[World.Level.Size.x, World.Level.Size.y];
 
             foreach (Actor a in World.WorldActors
                 .Where(a => a.LevelID == World.Level.ID))

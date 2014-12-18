@@ -310,7 +310,7 @@ namespace ODB
                         !ODBGame.Game.GeneratedUniques.Contains(ad.Type))
                     .ToList();
 
-            const int monsterCount = 10;
+            const int monsterCount = 0;
             for (int i = 0; i < monsterCount; i++)
             {
                 ActorDefinition monster =

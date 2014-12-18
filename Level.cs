@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Xna.Framework;
 
 namespace ODB
 {
@@ -85,6 +86,15 @@ namespace ODB
             Seen = new bool[Size.x, Size.y];
             Blood = new bool[Size.x, Size.y];
             Rooms = new List<Room>();
+        }
+
+        public void See(Point p)
+        {
+            if (!Seen[p.x, p.y])
+            {
+                ODBGame.Game.UI.UpdateAt[p.x, p.y] = true;
+                Seen[p.x, p.y] = true;
+            }
         }
 
         public TileInfo At(Point p)

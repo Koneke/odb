@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using Microsoft.Xna.Framework.Graphics;
 using SadConsole;
 using Microsoft.Xna.Framework;
 using xnaPoint = Microsoft.Xna.Framework.Point;
