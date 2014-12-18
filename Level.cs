@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Xna.Framework;
 
 namespace ODB
 {
@@ -92,7 +91,7 @@ namespace ODB
         {
             if (!Seen[p.x, p.y])
             {
-                ODBGame.Game.UI.UpdateAt[p.x, p.y] = true;
+                ODBGame.Game.UI.UpdateAt(p);
                 Seen[p.x, p.y] = true;
             }
         }

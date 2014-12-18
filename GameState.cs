@@ -116,6 +116,7 @@ namespace ODB
                             break;
                     }
                 }
+                Game.UI.FullRedraw();
             }
 
             Game.UI.Input();
@@ -183,6 +184,7 @@ namespace ODB
                     IO.AnswerLimit = 80;
                 }
                 Game.WizMode = !Game.WizMode;
+                Game.UI.FullRedraw();
             }
         }
 

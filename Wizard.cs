@@ -54,11 +54,7 @@ namespace ODB
             //try to target stuff
 
             IO.IOState = InputType.QuestionPrompt;
-
-            IO.AcceptedInput.Clear();
-            foreach (char c in IO.Indexes) IO.AcceptedInput.Add(c); //letters
-            IO.AcceptedInput.Add(' ');
-            for (int i = 48; i < 58; i++) IO.AcceptedInput.Add((char)i); //nums
+            IO.SetInput(IO.Indexes, ' ', IO.Numbers);
 
             if (IO.KeyPressed(Keys.OemComma))IO.Answer += "~"; //arg. delimiter
             if (IO.KeyPressed(Keys.OemQuestion)) //shift-. to repeat

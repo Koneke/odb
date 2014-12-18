@@ -99,6 +99,20 @@ namespace ODB
         {
             return console.ViewArea.Height;
         }
+
+        public static void Paint<T>(this T[,] arr, Rect area, T value)
+        {
+            for (int x = 0; x < area.wh.x; x++)
+            for (int y = 0; y < area.wh.y; y++)
+                arr[area.xy.x + x, area.xy.y + y] = value;
+        }
+
+        public static void Fill<T>(this T[,] arr, T value)
+        {
+            for (int x = 0; x < arr.GetLength(0); x++)
+            for (int y = 0; y < arr.GetLength(1); y++)
+                arr[x, y] = value;
+        }
     }
 
     public class Util

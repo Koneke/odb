@@ -708,7 +708,7 @@ namespace ODB
             if (HpCurrent <= 0) return;
 
             TileInfo tileInfo = World.Level.At(xy);
-            Game.UI.UpdateAt[xy.x, xy.y] = true;
+            Game.UI.UpdateAt(xy);
             tileInfo.Blood = true;
             tileInfo.Neighbours
                 .Where(n => !n.Solid)
@@ -716,7 +716,7 @@ namespace ODB
                 .ToList().ForEach(n =>
                     {
                         n.Blood = true;
-                        Game.UI.UpdateAt[n.Position.x, n.Position.y] = true;
+                        Game.UI.UpdateAt(n.Position);
                     }
                 );
 
@@ -920,7 +920,7 @@ namespace ODB
         //but should, I guess, be called by monsters as well in the future
         public bool TryMove(Point offset)
         {
-            Game.UI.UpdateAt[xy.x, xy.y] = true;
+            Game.UI.UpdateAt(xy);
 
             List<Point> possiblesMoves = GetPossibleMoves();
 
@@ -964,7 +964,7 @@ namespace ODB
                 World.Level.MakeNoise(1, xy);
             }
 
-            Game.UI.UpdateAt[xy.x, xy.y] = true;
+            Game.UI.UpdateAt(xy);
             HasMoved = moved;
 
             return moved;
@@ -977,8 +977,12 @@ namespace ODB
             if (Vision == null)
                 Vision = new bool[World.Level.Size.x, World.Level.Size.y];
             for (int x = 0; x < World.Level.Size.x; x++)
-                for (int y = 0; y < World.Level.Size.y; y++)
+            for (int y = 0; y < World.Level.Size.y; y++)
+                if (Vision[x, y])
+                {
                     Vision[x, y] = false;
+                    Game.UI.UpdateAt(x, y);
+                }
         }
         public void AddRoomToVision(Room r)
         {
@@ -1169,7 +1173,15 @@ namespace ODB
                     message = "Hm, a mint maybe isn't such a bad idea.";
                     break;
             }
-            if(message != "")
+
+            if(neo == FoodStatus.Hungry || neo == FoodStatus.Starving)
+                if (HasEffect(StatusType.Sleep))
+                {
+                    RemoveEffect(StatusType.Sleep);
+                    message += " You wake up due to hunger.";
+                }
+
+            if(message != "" && this == Game.Player)
                 Game.UI.Log(message);
         }
 
@@ -1233,8 +1245,7 @@ namespace ODB
                 );
             targetTile.Door = Door.Closed;
 
-            Game.UI.UpdateAt[targetTile.Position.x, targetTile.Position.y]
-                = true;
+            Game.UI.UpdateAt(targetTile.Position);
         }
 
         private void HandleDrop(Command cmd)
@@ -1346,8 +1357,7 @@ namespace ODB
                 );
             targetTile.Door = Door.Open;
 
-            Game.UI.UpdateAt[targetTile.Position.x, targetTile.Position.y]
-                = true;
+            Game.UI.UpdateAt(targetTile.Position);
         }
 
         public void HandleQuaff(Command cmd)
