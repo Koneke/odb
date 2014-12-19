@@ -307,7 +307,9 @@ namespace ODB
                 from bp in PaperDoll
                     where bp != null
                     where bp.Item != null
-                    where bp.Type != DollSlot.Hand
+                    where
+                        bp.Type != DollSlot.Hand ||
+                        bp.Item.HasTag(ItemTag.NonWeapon)
                     where !equipped.Contains(bp.Item)
                     where bp.Item.HasComponent<WearableComponent>()
                 select bp)
@@ -326,6 +328,7 @@ namespace ODB
                 .Where(bp => bp != null)
                 .Where(bp => bp.Type == DollSlot.Hand)
                 .Where(bp => bp.Item != null)
+                .Where(bp => !bp.Item.HasTag(ItemTag.NonWeapon))
                 .Select(bp => bp.Item)
                 .Distinct()
                 .ToList();
@@ -1508,7 +1511,7 @@ namespace ODB
 
                 if (this == Game.Player)
                     Game.UI.Log(
-                        "You quiver your {1}.",
+                        "You unquiver your {1}.",
                         item.GetName("count")
                     );
             }

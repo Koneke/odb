@@ -4,7 +4,7 @@
 				1d10; 1d6;
 				1d3+3; 1d3+3; 1d3+3;
 				0000
-				head,torso,back,hand,hand,legs,feet;
+				head,torso,back,wrist,wrist,hand,hand,legs,feet;
 				8800
 				;
 				;
@@ -74,8 +74,8 @@
 0004XXXXXX8e5500	52	kilik, ratking;1
 				g_unique;
 				150a
-				1d8; 0d0;
-				1d2+1; 1d2+1; 0d1;
+				1d8+2; 0d0;
+				1d3+1; 1d2+1; 0d1;
 				0202
 				;
 				8804
@@ -88,6 +88,6 @@
 					at_bite;
 					dt_ratking;
 					{
-						cEffect;{st_poison; 100; 100d3;}
+						cEffect;{st_poison; 100; 200d2;}
 					}
 				}##

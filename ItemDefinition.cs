@@ -85,7 +85,7 @@ namespace ODB
         public int Value;
         public Material Material;
         public int Health;
-
+        public List<ItemTag> Tags; 
         public List<Component> Components; 
 
         //saved in game file, not idef file
@@ -147,6 +147,11 @@ namespace ODB
             Health = stream.ReadInt();
 
             ItemDefinitions[Type] = this;
+
+            Tags = new List<ItemTag>();
+            string tags = stream.ReadString();
+            foreach (string tag in tags.NeatSplit(","))
+                Tags.Add(Item.ReadItemTag(tag));
 
             Components = new List<Component>();
             while (!stream.AtFinish)

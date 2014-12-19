@@ -4,6 +4,11 @@ using System.Linq;
 
 namespace ODB
 {
+    public enum ItemTag
+    {
+        NonWeapon
+    }
+
     public class Item : gObject
     {
         protected bool Equals(Item other)
@@ -221,9 +226,14 @@ namespace ODB
             LauncherComponent lc = GetComponent<LauncherComponent>();
 
             if (lc != null) hands = 2;
-            //360 decagram, i.e. 3.6kg, or ~8lb
-            //todo: adjust for actor strength
-            else hands = Definition.Weight >= 280 ? 2 : 1;
+            else
+            {
+                hands = Util.XperY(
+                    1,
+                    60 + 40 * a.Get(Stat.Strength), //220, 260, 300
+                    Definition.Weight
+                ) + 1;
+            }
 
             List<DollSlot> slots = new List<DollSlot>();
             for (int i = 0; i < hands; i++)
@@ -344,6 +354,38 @@ namespace ODB
             else Health--;
         }
 
+        public void MoveTo(Level newLevel)
+        {
+            LevelID = newLevel.ID;
+            if (!HasComponent<ContainerComponent>()) return;
+
+            foreach (Item it in InventoryManager.Containers[ID])
+                it.MoveTo(newLevel);
+        }
+
+        public static ItemTag ReadItemTag(string s)
+        {
+            switch (s.ToLower())
+            {
+                case "nonweapon": return ItemTag.NonWeapon;
+                default: throw new ArgumentException();
+            }
+        }
+
+        public static string WriteItemTag(ItemTag it)
+        {
+            switch (it)
+            {
+                case ItemTag.NonWeapon: return "nonweapon";
+                default: throw new ArgumentException();
+            }
+        }
+
+        public bool HasTag(ItemTag nonWeapon)
+        {
+            return Definition.Tags.Contains(nonWeapon);
+        }
+
         public Stream WriteItem()
         {
             Stream stream = WriteGObject();
@@ -391,15 +433,6 @@ namespace ODB
             }
 
             return stream;
-        }
-
-        public void MoveTo(Level newLevel)
-        {
-            LevelID = newLevel.ID;
-            if (!HasComponent<ContainerComponent>()) return;
-
-            foreach (Item it in InventoryManager.Containers[ID])
-                it.MoveTo(newLevel);
         }
     }
 }

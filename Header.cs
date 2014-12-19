@@ -214,7 +214,8 @@ namespace ODB
         public static DollSlot ReadDollSlot(string s)
         {
             return BodyPartNames
-                .First(kvp => kvp.Value.ToLower()  == s.ToLower()).Key;
+                .First(kvp => kvp.Value.ToLower()  == s.ToLower())
+                .Key;
         }
         public static string WriteDollSlot(DollSlot ds)
             { return BodyPartNames[ds]; }

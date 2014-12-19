@@ -498,14 +498,7 @@ namespace ODB
         {
             if (!KeyBindings.Pressed(Bind.Remove)) return;
 
-            //LH-021214: Since we can (soon) wield anything, anything in your
-            //           hands should be sheathable.
-            List<Item> worn = (
-                    from bp in Game.Player.PaperDoll
-                    where bp.Item != null
-                    where bp.Item.HasComponent<WearableComponent>()
-                    select bp.Item
-                ).ToList();
+            List<Item> worn = Game.Player.GetWornItems();
 
             if (worn.Count > 0)
             {
