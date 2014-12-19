@@ -193,7 +193,8 @@ namespace ODB
             if (KeyBindings.Pressed(Bind.TakeOut) && CurrentContainer != -1)
             {
                 if (GetParentContainer(CurrentContainer) == -1)
-                    Game.Player.Inventory.Add(SelectedItem);
+                    //Game.Player.Inventory.Add(SelectedItem);
+                    Game.Player.GiveItem(SelectedItem);
                 else
                     ContainerIDs[GetParentContainer(CurrentContainer)]
                         .Add(SelectedItem.ID);
@@ -395,7 +396,8 @@ namespace ODB
             );
 
             if (GetParentContainer(container) == -1)
-                Game.Player.Inventory.Remove(item);
+                //Game.Player.Inventory.Remove(item);
+                Game.Player.RemoveItem(item);
             else
                 ContainerIDs[GetParentContainer(container)].Remove(item.ID);
             ContainerIDs[container].Add(item.ID);

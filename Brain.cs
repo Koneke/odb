@@ -103,7 +103,7 @@ namespace ODB
             if (MeatPuppet.LevelID != World.Level.ID)
                 return;
 
-            if (!MeatPuppet.Awake) return;
+            //if (!MeatPuppet.Awake) return;
             if (!Game.Player.IsAlive) return;
 
             if(CanAttack(Game.Player))

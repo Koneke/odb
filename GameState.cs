@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json;
 using SadConsole;
 
 namespace ODB
@@ -29,9 +30,9 @@ namespace ODB
             Game.Player = new Actor(
                 new Point(0, 0),
                 Util.ADefByName("Moribund"), 1
-            ) { Awake =  true };
+            );
 
-            World.Levels.Add(World.Level = new Generator().Generate(null, 1));
+            World.Level = new Generator().Generate(null, 1);
             World.Level.Spawn(Game.Player);
             Game.Player.xy = World.Level.RandomOpenPoint();
 
@@ -49,7 +50,7 @@ namespace ODB
 
             //note: this means that we only act with actors on the same
             //      floor as the player, might want to change this in the future
-            foreach (Actor actor in World.WorldActors
+            foreach (Actor actor in World.Instance.WorldActors
                 .Where(a => a.LevelID == World.Level.ID))
             {
                 if (actor.ID == 0)
@@ -78,11 +79,11 @@ namespace ODB
                         b.MeatPuppet.Pass();
                 }
 
-                foreach (Actor a in World.WorldActors
+                foreach (Actor a in World.Instance.WorldActors
                     .Where(a => a.LevelID == World.Level.ID))
                     a.Cooldown = Math.Max(0, a.Cooldown - 1);
 
-                foreach (Actor a in World.WorldActors)
+                foreach (Actor a in World.Instance.WorldActors)
                 {
                     a.HpRegCooldown--;
                     a.MpRegCooldown--;
@@ -103,7 +104,7 @@ namespace ODB
 
                 Game.GameTick++;
 
-                foreach (Actor a in World.WorldActors)
+                foreach (Actor a in World.Instance.WorldActors)
                 {
                     if (!a.IsAlive) continue;
                     foreach (LastingEffect effect in a.LastingEffects)
@@ -112,7 +113,7 @@ namespace ODB
                         x => x.Life > x.LifeLength && x.LifeLength != -1
                     );
                 }
-                World.WorldActors.RemoveAll(a => !a.IsAlive);
+                World.Instance.WorldActors.RemoveAll(a => !a.IsAlive);
             }
         }
 
@@ -192,14 +193,14 @@ namespace ODB
                         Game.InvMan.InventoryInput();
                         break;
 
-                    default: throw new System.Exception("");
+                    default: throw new Exception("");
                 }
             }
 
             Game.UI.UpdateCamera();
 
             //should probably find a better place to tick this
-            foreach (Actor a in World.WorldActors
+            foreach (Actor a in World.Instance.WorldActors
                 .Where(a => a.LevelID == World.Level.ID)
                 .Where(a => a.HasMoved)
             ) {

@@ -148,7 +148,7 @@ namespace ODB
                         ? IO.ReadHex(args[1])
                         : 1
                     );
-                    World.WorldActors.Add(act);
+                    World.Instance.WorldActors.Add(act);
                     Game.Brains.Add(new Brain(act));
                     World.Level.CalculateActorPositions();
                     break;
@@ -192,10 +192,10 @@ namespace ODB
                     Game.UI.Log(Game.Seed + "");
                     break;
                 case "save":
-                    SaveIO.Save();
+                    SaveIO.JsonSave();
                     break;
                 case "load":
-                    SaveIO.Load();
+                    SaveIO.JsonLoad();
                     break;
                 default: return false;
             }
@@ -472,11 +472,6 @@ namespace ODB
                     };
                     a.Damage(ds);
                     break;
-                case "ai-sdef":
-                case "ai-setdef":
-                    a.Definition = ActorDefinition.ActorDefinitions
-                        [IO.ReadHex(args[0])];
-                    break;
                 case "ai-p":
                 case "ai-print":
                     #region pa
@@ -539,9 +534,6 @@ namespace ODB
                     }
                     break;
                     #endregion
-                case "ai-awake":
-                    a.Awake = IO.ReadBool(args[0]);
-                    break;
                 case "ai-ale":
                 case "ai-addle":
                     a.AddEffect(
@@ -566,12 +558,6 @@ namespace ODB
                 case "ii-setmod":
                     foreach (Item it in items)
                         it.Mod = IO.ReadHex(args[0]);
-                    break;
-                case "ii-sdef":
-                case "ii-setdef":
-                    foreach (Item it in World.Level.ItemsOnTile(WmCursor))
-                        it.Definition = ItemDefinition.ItemDefinitions
-                            [IO.ReadHex(args[0])];
                     break;
                 case "ii-p":
                 case "ii-print":

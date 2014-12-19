@@ -155,7 +155,7 @@ namespace ODB
         public void SetupBrains() {
             if(Brains == null) Brains = new List<Brain>();
             else Brains.Clear();
-            foreach (Actor actor in World.WorldActors
+            foreach (Actor actor in World.Instance.WorldActors
                 .Where(a => a.LevelID == World.Level.ID))
                 //shouldn't be needed, but
                 //what did i even mean with that comment

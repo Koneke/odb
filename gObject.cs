@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System.Runtime.Serialization;
+using Microsoft.Xna.Framework;
 
 namespace ODB
 {
@@ -8,6 +9,7 @@ namespace ODB
     //instances, in contrast, is per level rather than global
 
     //ReSharper disable once InconsistentNaming
+    [DataContract]
     public class gObjectDefinition
     {
         public bool Equals(gObjectDefinition other)
@@ -39,11 +41,11 @@ namespace ODB
             new gObjectDefinition[0xFFFF];
         public static int TypeCounter = 0;
 
-        public Color? Background;
-        public Color Foreground;
-        public string Tile;
-        public string Name;
-        public int Type;
+        [DataMember] public Color? Background;
+        [DataMember] public Color Foreground;
+        [DataMember] public string Tile;
+        [DataMember] public string Name;
+        [DataMember] public int Type;
 
         public gObjectDefinition(
             Color? background, Color foreground, string tile, string name
@@ -92,8 +94,11 @@ namespace ODB
     }
 
     //ReSharper disable once InconsistentNaming
+    [DataContract]
     public class gObject
     {
+        public static int IDCounter = 0;
+
         protected bool Equals(gObject other)
         {
             return
@@ -117,16 +122,22 @@ namespace ODB
         public static ODBGame Game;
 
         //ReSharper disable InconsistentNaming
-        public Point xy;
-        public int LevelID;
-        public gObjectDefinition Definition;
+        [DataMember] public Point xy;
+        [DataMember] public int LevelID;
+        [DataMember] private int _type;
+
+        public gObjectDefinition Definition {
+            get { return gObjectDefinition.Definitions[_type]; }
+        }
+
+        public gObject() { }
 
         public gObject(
             Point xy,
             gObjectDefinition definition
         ) {
             this.xy = xy;
-            Definition = definition;
+            _type = definition.Type;
         }
 
         public gObject(string s)
@@ -146,9 +157,7 @@ namespace ODB
         public Stream ReadGObject(string s)
         {
             Stream stream = new Stream(s);
-            Definition = gObjectDefinition.Definitions[
-                stream.ReadHex(4)
-            ];
+            _type = stream.ReadHex(4);
 
             xy = stream.ReadPoint();
             LevelID = stream.ReadHex(4);

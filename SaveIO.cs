@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework;
+using Newtonsoft.Json;
 
 namespace ODB
 {
@@ -21,11 +22,11 @@ namespace ODB
         public static void Save()
         {
             Stream stream = new Stream();
-            stream.Write(World.Levels.Count, 2);
+            stream.Write(World.Instance.Levels.Count, 2);
             stream.Write(IO.Game.Player.LevelID, 2);
 
-            for (int i = 0; i < World.Levels.Count; i++)
-                World.Levels[i].WriteLevelSave("Save/level" + i + ".sv");
+            for (int i = 0; i < World.Instance.Levels.Count; i++)
+                World.Instance.Levels[i].WriteLevelSave("Save/level" + i + ".sv");
 
             //okay, so I really don't think anyone's going to hit
             //gametick 0xFFFFFFFF, that'd be ludicrous.
@@ -51,11 +52,11 @@ namespace ODB
             }
             stream.Write(";", false);
 
-            foreach (Item item in World.AllItems)
+            foreach (Item item in World.Instance.AllItems)
                 stream.Write(item.WriteItem() + "##", false);
             stream.Write("</ITEMS>", false);
 
-            foreach (Actor actor in World.WorldActors)
+            foreach (Actor actor in World.Instance.WorldActors)
                 stream.Write(actor.WriteActor() + "##", false);
             stream.Write("</ACTORS>", false);
 
@@ -68,20 +69,20 @@ namespace ODB
             int levels = stream.ReadHex(2);
             int playerLocation = stream.ReadHex(2);
 
-            if (World.Levels != null)
+            if (World.Instance.Levels != null)
             {
-                for (int i = 0; i < World.Levels.Count; i++)
-                    World.Levels[i] = null;
-                World.Levels.Clear();
-            } else World.Levels = new List<Level>();
+                for (int i = 0; i < World.Instance.Levels.Count; i++)
+                    World.Instance.Levels[i] = null;
+                World.Instance.Levels.Clear();
+            } else World.Instance.Levels = new List<Level>();
 
             for (int i = 0; i < levels; i++)
-                World.Levels.Add(new Level("Save/level" + i + ".sv"));
+                World.Instance.Levels.Add(new Level("Save/level" + i + ".sv"));
 
             Util.Game.GameTick = stream.ReadHex(8);
             Util.Game.Seed = stream.ReadHex(8);
             //Util.Game.Food = stream.ReadHex(8);
-            World.Level = World.Levels[playerLocation];
+            World.Level = World.Instance.Levels[playerLocation];
 
             string containers = stream.ReadString();
             List<int> containerItems = new List<int>();
@@ -110,9 +111,9 @@ namespace ODB
                 .Where(ided => ided != ""))
                 ItemDefinition.IdentifiedDefs.Add(IO.ReadHex(ided));
 
-            World.AllItems.Clear();
-            World.WorldItems.Clear();
-            World.WorldActors.Clear();
+            World.Instance.AllItems.Clear();
+            World.Instance.WorldItems.Clear();
+            World.Instance.WorldActors.Clear();
 
             string items = stream.ReadTo("</ITEMS>");
 
@@ -120,8 +121,8 @@ namespace ODB
                 new[] {"##"}, StringSplitOptions.RemoveEmptyEntries)
                 .Select(i => new Item(i))
             ) {
-                World.AllItems.Add(item);
-                World.WorldItems.Add(item);
+                World.Instance.AllItems.Add(item);
+                World.Instance.WorldItems.Add(item);
             }
 
             string actors = stream.ReadTo("</ACTORS>");
@@ -130,12 +131,14 @@ namespace ODB
                 new[] {"##"}, StringSplitOptions.RemoveEmptyEntries)
                 .Select(a => new Actor(a))
             ) {
-                World.WorldActors.Add(actor);
+                World.Instance.WorldActors.Add(actor);
                 foreach (Item item in actor.Inventory)
-                    World.WorldItems.Remove(item);
+                    World.Instance.WorldItems.Remove(item);
             }
 
-            World.WorldItems.RemoveAll(x => containerItems.Contains(x.ID));
+            World.Instance.WorldItems.RemoveAll(
+                x => containerItems.Contains(x.ID)
+            );
 
             IO.Game.SetupBrains();
             ODBGame.Game.Player.HasMoved = true;
@@ -278,6 +281,24 @@ namespace ODB
             ).ToList();
 
             definitions.ForEach(definition => new TileDefinition(definition));
+        }
+
+        public static void JsonSave()
+        {
+            WriteToFile(
+                "Test/foo.txt", 
+                JsonConvert.SerializeObject(
+                    World.Instance,
+                    //ODBGame.Game.Player,
+                    Formatting.Indented
+                )
+            );
+        }
+
+        public static void JsonLoad()
+        {
+            string content = ReadFromFile("Test/foo.txt");
+            World.Load(JsonConvert.DeserializeObject<World>(content));
         }
     }
 }

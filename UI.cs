@@ -198,11 +198,11 @@ namespace ODB
 
             int[,] itemCount = new int[World.Level.Size.x, World.Level.Size.y];
 
-            foreach (Item i in World.WorldItems
+            foreach (Item i in World.Instance.WorldItems
                 .Where(it => it.LevelID == World.Level.ID))
                 itemCount[i.xy.x, i.xy.y]++;
 
-            foreach (Item i in World.WorldItems
+            foreach (Item i in World.Instance.WorldItems
                 .Where(i => i.LevelID == World.Level.ID)
                 .Where(i => Game.Player.Sees(i.xy) || Game.WizMode)
                 .Where(i => screen.ContainsPoint(i.xy)))
@@ -224,11 +224,11 @@ namespace ODB
 
             int[,] actorCount = new int[World.Level.Size.x, World.Level.Size.y];
 
-            foreach (Actor a in World.WorldActors
+            foreach (Actor a in World.Instance.WorldActors
                 .Where(a => a.LevelID == World.Level.ID))
                 actorCount[a.xy.x, a.xy.y]++;
 
-            foreach (Actor a in World.WorldActors
+            foreach (Actor a in World.Instance.WorldActors
                 .Where(a => a.LevelID == World.Level.ID)
                 .Where(a => Game.Player.Sees(a.xy) || Game.WizMode)
                 .Where(a => screen.ContainsPoint(a.xy)))

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using Microsoft.Xna.Framework;
 
 namespace ODB
@@ -18,13 +19,13 @@ namespace ODB
 
         public bool Blood
         {
-            get { return Level.Blood[Tile.Position.x, Tile.Position.y]; }
-            set { Level.Blood[Tile.Position.x, Tile.Position.y] = value; }
+            get { return Level.Blood[Position.x, Position.y]; }
+            set { Level.Blood[Position.x, Position.y] = value; }
         }
         public bool Seen
         {
-            get { return Level.Seen[Tile.Position.x, Tile.Position.y]; }
-            set { Level.Seen[Tile.Position.x, Tile.Position.y] = value; }
+            get { return Level.Seen[Position.x, Position.y]; }
+            set { Level.Seen[Position.x, Position.y] = value; }
         }
 
         public bool Solid { get { return Tile.Solid; } }
@@ -39,7 +40,7 @@ namespace ODB
                 List<TileInfo> neighbours = new List<TileInfo>();
                 for (int x = -1; x <= 1; x++)
                 for (int y = -1; y <= 1; y++)
-                    neighbours.Add(Level.At(Tile.Position + new Point(x, y)));
+                    neighbours.Add(Level.At(Position + new Point(x, y)));
                 return neighbours
                     .Where(ti => ti != null)
                     .Where(ti => ti != this)
@@ -130,17 +131,25 @@ namespace ODB
         }
     }
 
+    [DataContract]
     public class Tile
     {
-        public TileDefinition Definition;
+        [DataMember] private int _type;
+
         public Color Background { get { return Definition.Background; } }
         public Color Foreground { get { return Definition.Foreground; } }
         public string Character { get { return Definition.Character; } }
         public bool Solid { get { return Definition.Solid; } }
 
-        public Door Door;
-        public Stairs Stairs;
-        public string Engraving;
+        [DataMember] public Door Door;
+        [DataMember] public Stairs Stairs;
+        [DataMember] public string Engraving;
+
+        public TileDefinition Definition
+        {
+            get { return TileDefinition.Definitions[_type]; }
+            set { _type = value.Type; }
+        }
 
         //no need to save
         public Point Position;
@@ -151,7 +160,7 @@ namespace ODB
             Stairs stairs = Stairs.None,
             string engraving = ""
         ) {
-            Definition = definition;
+            _type = definition.Type;
             Door = doors;
             Stairs = stairs;
             Engraving = engraving;
@@ -177,7 +186,7 @@ namespace ODB
         public Stream ReadTile(string s)
         {
             Stream stream = new Stream(s);
-            Definition = TileDefinition.Definitions[stream.ReadHex(4)];
+            _type = stream.ReadHex(4);
             Door = (Door)stream.ReadHex(1);
             Stairs = (Stairs)stream.ReadHex(1);
             Engraving = stream.ReadString();

@@ -326,10 +326,10 @@ namespace ODB
             Item stack = new Item(item.WriteItem().ToString()) {
                 Count = count, ID = Item.IDCounter++
             };
-            World.AllItems.Add(stack);
+            World.Instance.AllItems.Add(stack);
 
             if (container == -1)
-                Game.Player.Inventory.Add(stack);
+                Game.Player.GiveItem(stack);
             else
                 InventoryManager.ContainerIDs[container].Add(stack.ID);
 

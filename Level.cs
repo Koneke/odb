@@ -1,15 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 
 namespace ODB
 {
+    [DataContract]
     public class LevelConnector
     {
-        public Point Position;
-        //public Level Target;
-        public int? Target;
+        [DataMember] public Point Position;
+        [DataMember] public int? Target;
         //public blabla theme, for more interesting forks
+
+        public LevelConnector() { }
 
         public LevelConnector(Point position, Level target = null)
         {
@@ -40,24 +43,25 @@ namespace ODB
         }
     }
 
+    [DataContract]
     public class Level
     {
         public static int IDCounter = 0;
-        public string Name;
-        public int ID;
-        public int Depth;
+        [DataMember] public string Name;
+        [DataMember] public int ID;
+        [DataMember] public int Depth;
 
-        public Point Size;
+        [DataMember] public Point Size;
 
         //notice: These are public, BUT, should in reality only ever be accesed
         //        by the TileInfo class. In part because it is neater that way,
         //        in part because it is ten thousand times as convenient.
-        public Tile[,] Map;
-        public bool[,] Seen;
-        public bool[,] Blood;
-        public List<Room> Rooms;
+        [DataMember] public Tile[,] Map;
+        [DataMember] public bool[,] Seen;
+        [DataMember] public bool[,] Blood;
+        [DataMember] public List<Room> Rooms;
 
-        public List<LevelConnector> Connectors; 
+        [DataMember] public List<LevelConnector> Connectors; 
 
         //should not be saved
         public Dictionary<Room, List<Actor>> ActorPositions;
@@ -67,21 +71,23 @@ namespace ODB
         {
             get
             {
-                return World.WorldActors.Where(a => a.LevelID == ID).ToList();
+                return World.Instance.WorldActors.Where(a => a.LevelID == ID).ToList();
             }
         }
         public List<Item> WorldItems {
             get
             {
-                return World.WorldItems.Where(i => i.LevelID == ID).ToList();
+                return World.Instance.WorldItems.Where(i => i.LevelID == ID).ToList();
             }
         }
         public List<Item> AllItems {
             get
             {
-                return World.AllItems.Where(i => i.LevelID == ID).ToList();
+                return World.Instance.AllItems.Where(i => i.LevelID == ID).ToList();
             }
         }
+
+        public Level() { }
 
         public Level(
             int levelWidth, int levelHeight
@@ -157,13 +163,13 @@ namespace ODB
         }
         public Actor ActorOnTile(Point xy)
         {
-            return World.WorldActors
+            return World.Instance.WorldActors
                 .Where(a => a.LevelID == ID)
                 .FirstOrDefault(actor => actor.xy == xy);
         }
         public List<Item> ItemsOnTile(Point xy)
         {
-            return World.WorldItems
+            return World.Instance.WorldItems
                 .Where(item => item.LevelID == ID)
                 .Where(item => item.xy == xy).ToList();
         }
@@ -194,16 +200,22 @@ namespace ODB
         }
         public void CalculateActorPositions()
         {
+            if (ActorPositions == null)
+                ActorPositions = new Dictionary<Room, List<Actor>>();
             ActorPositions.Clear();
+
+            if (ActorRooms == null)
+                ActorRooms = new Dictionary<Actor, List<Room>>();
             ActorRooms.Clear();
+
             foreach (Actor a in
-                World.WorldActors.Where(a => a.LevelID == ID))
+                World.Instance.WorldActors.Where(a => a.LevelID == ID))
                 ActorRooms.Add(a, new List<Room>());
 
             foreach (Room r in Rooms.Where(r => r != null))
             {
                 ActorPositions.Add(r, new List<Actor>());
-                foreach (Actor a in World.WorldActors
+                foreach (Actor a in World.Instance.WorldActors
                     .Where(a => a.LevelID == ID)
                     //ReSharper disable once AccessToForEachVariableInClosure
                     //LH-011214: we're only /using/ the value here, so it's ok
@@ -375,7 +387,7 @@ namespace ODB
                     ODBGame.Game.Brains.Add(new Brain(actor));
 
             actor.LevelID = ID;
-            World.WorldActors.Add(actor);
+            World.Instance.WorldActors.Add(actor);
             CalculateActorPositions();
         }
         public void Spawn(Item item)
@@ -395,22 +407,22 @@ namespace ODB
             }
             if (stacked) return;
 
-            World.WorldItems.Add(item);
-            World.AllItems.Add(item);
+            World.Instance.WorldItems.Add(item);
+            World.Instance.AllItems.Add(item);
         }
         public void Despawn(Actor actor)
         {
             foreach (Item it in new List<Item>(actor.Inventory))
                 Despawn(it);
-            World.WorldActors.Remove(actor);
+            World.Instance.WorldActors.Remove(actor);
         }
         public void Despawn(Item item)
         {
             if (item.HasComponent<ContainerComponent>())
                 foreach (Item it in InventoryManager.Containers[item.ID])
                     Despawn(it);
-            World.WorldItems.Remove(item);
-            World.AllItems.Remove(item);
+            World.Instance.WorldItems.Remove(item);
+            World.Instance.AllItems.Remove(item);
 
             //properly despawn from every actor as well.
             foreach (BodyPart bp in Actors
@@ -420,7 +432,7 @@ namespace ODB
                 bp.Item = null;
             foreach (Actor a in
                 Actors.Where(a => a.Inventory.Contains(item)))
-                a.Inventory.Remove(item);
+                a.RemoveItem(item);
             foreach (Actor a in Actors.Where(a => a.Quiver != null))
                 if (a.Quiver == item) a.Quiver = null;
         }
@@ -439,7 +451,7 @@ namespace ODB
             TileDefinition floor,
             TileDefinition walls = null
         ) {
-            Room room = new Room { Level = level };
+            Room room = new Room(level);
             room.Rects.AddRange(rects);
             Rooms.Add(room);
 

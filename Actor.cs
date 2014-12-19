@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace ODB
 {
@@ -15,6 +16,7 @@ namespace ODB
         PoisonRes
     }
 
+    [DataContract]
     public class Actor : gObject
     {
         //LH-011214: Likewise here as in the definition, equality means that
@@ -57,7 +59,7 @@ namespace ODB
                 HpCurrent == other.HpCurrent &&
                 MpCurrent == other.MpCurrent &&
                 Cooldown == other.Cooldown &&
-                Awake.Equals(other.Awake) &&
+                //Awake.Equals(other.Awake) &&
                 Equals(Quiver, other.Quiver)
             ;
         }
@@ -72,7 +74,7 @@ namespace ODB
                 hashCode = (hashCode*397) ^ HpCurrent;
                 hashCode = (hashCode*397) ^ MpCurrent;
                 hashCode = (hashCode*397) ^ Cooldown;
-                hashCode = (hashCode*397) ^ Awake.GetHashCode();
+                //hashCode = (hashCode*397) ^ Awake.GetHashCode();
                 hashCode = (hashCode*397) ^
                            (Quiver != null ? Quiver.GetHashCode() : 0);
                 return hashCode;
@@ -86,31 +88,42 @@ namespace ODB
             return Equals((Actor)obj);
         }
 
-        public static int IDCounter = 0;
+        public new ActorDefinition Definition
+        {
+            get { return ActorDefinition.ActorDefinitions[_type]; }
+        }
 
-        public new ActorDefinition Definition;
-        public int ID;
-        private int _strength, _dexterity, _intelligence;
-        public int HpCurrent;
-        public int MpCurrent;
-        public int HpMax;
-        public int MpMax;
-        public int Level;
-        public int ExperiencePoints;
-        //probably should enforce this being >=0
-        public int Cooldown;
-        private int _food;
+        [DataMember] private int _type;
+        [DataMember] public int ID;
 
-        public int HpRegCooldown;
-        public int MpRegCooldown;
+        [DataMember] private int _strength, _dexterity, _intelligence;
 
-        public List<BodyPart> PaperDoll;
-        public List<Item> Inventory;
-        public List<LastingEffect> LastingEffects;
-        public List<Mod> Intrinsics;
+        [DataMember] public int HpCurrent;
+        [DataMember] public int MpCurrent;
+        [DataMember] public int HpRegCooldown;
 
-        public bool Awake;
-        private int? _quiver;
+        [DataMember] public int HpMax;
+        [DataMember] public int MpMax;
+        [DataMember] public int MpRegCooldown;
+
+        [DataMember] public int Level;
+        [DataMember] public int ExperiencePoints;
+        [DataMember] public int Cooldown;
+        [DataMember] private int _food;
+
+        [DataMember] public List<BodyPart> PaperDoll;
+        [DataMember] private List<int> _inventory;
+
+        public List<Item> Inventory
+        {
+            get { return _inventory.Select(Util.GetItemByID).ToList(); }
+        }
+
+        [DataMember] public List<LastingEffect> LastingEffects;
+        [DataMember] public List<Mod> Intrinsics;
+
+        //public bool Awake;
+        [DataMember] private int? _quiver;
         public Item Quiver {
             get { return _quiver == null
                 ? null
@@ -138,13 +151,15 @@ namespace ODB
         public bool IsAlive { get { return HpCurrent > 0; } }
         #endregion
 
+        public Actor() { }
+
         public Actor(
             Point xy,
             ActorDefinition definition,
             int level
         ) : base(xy, definition) {
             ID = IDCounter++;
-            Definition = definition;
+            _type = definition.Type;
 
             _strength = Util.Roll(definition.Strength);
             _dexterity = Util.Roll(definition.Dexterity);
@@ -175,9 +190,9 @@ namespace ODB
                     ? new Hand(ds)
                     : new BodyPart(ds)
                 );
-            Inventory = new List<Item>();
+            _inventory = new List<int>();
             Intrinsics = new List<Mod>(Definition.SpawnIntrinsics);
-            Awake = false;
+            //Awake = false;
             LastingEffects = new List<LastingEffect>();
 
             HpRegCooldown = 10;
@@ -348,11 +363,11 @@ namespace ODB
         }
         public void DropItem(Item item)
         {
-            World.WorldItems.Add(item);
+            World.Instance.WorldItems.Add(item);
 
             item.xy = xy;
 
-            Inventory.Remove(item);
+            RemoveItem(item);
 
             foreach (BodyPart bp in PaperDoll.Where(bp => bp.Item == item))
                 bp.Item = null;
@@ -631,7 +646,7 @@ namespace ODB
             //could probably be made into a generic "split" function
             Item projectile = new Item(ammo.WriteItem().ToString())
             {
-                ID = Item.IDCounter++,
+                ID = IDCounter++,
                 Count = ammo.Stacking ? 1 : 0,
                 xy = target.xy,
                 LevelID = World.Level.ID
@@ -894,7 +909,7 @@ namespace ODB
             if (item.Stacking) item.SpendCharge();
             else
             {
-                Inventory.Remove(item);
+                RemoveItem(item);
                 World.Level.Despawn(item);
             }
 
@@ -1373,7 +1388,7 @@ namespace ODB
         {
             Item item = (Item)cmd.Get("item");
 
-            World.WorldItems.Remove(item);
+            World.Instance.WorldItems.Remove(item);
 
             Item stack = Inventory.FirstOrDefault(it => it.CanStack(item));
 
@@ -1384,7 +1399,7 @@ namespace ODB
                 //so we can get the right char below
                 item = stack;
             }
-            else Game.Player.Inventory.Add(item);
+            else Game.Player.GiveItem(item);
 
             char index = IO.Indexes[Inventory.IndexOf(item)];
             if(this == Game.Player)
@@ -1733,16 +1748,14 @@ namespace ODB
             }
             stream.Write(";", false);
 
-            stream.Write(Awake);
+            //stream.Write(Awake);
 
             return stream;
         }
         public Stream ReadActor(string s)
         {
             Stream stream = ReadGObject(s);
-            Definition =
-                ActorDefinition.ActorDefinitions
-                [stream.ReadHex(4)];
+            _type = stream.ReadHex(4);
 
             ID = stream.ReadHex(4);
 
@@ -1783,16 +1796,10 @@ namespace ODB
                     PaperDoll.Add(new BodyPart(type, item));
             }
 
-            Inventory = new List<Item>();
-            foreach (string ss in
-                stream.ReadString().Split(
-                    new[] { "," },
-                    StringSplitOptions.RemoveEmptyEntries
-                ).ToList()
-            ) {
-                Inventory.Add(
-                    Util.GetItemByID(IO.ReadHex(ss))
-                );
+            _inventory = new List<int>();
+            foreach (string ss in stream.ReadString().NeatSplit(","))
+            {
+                _inventory.Add(IO.ReadHex(ss));
             }
 
             LastingEffects = new List<LastingEffect>();
@@ -1818,9 +1825,20 @@ namespace ODB
                 );
             }
 
-            Awake = stream.ReadBool();
+            //Awake = stream.ReadBool();
 
             return stream;
+        }
+
+        //should probably be moved to a container class or something
+        public void GiveItem(Item item)
+        {
+            _inventory.Add(item.ID);
+        }
+
+        public void RemoveItem(Item item)
+        {
+            _inventory.Remove(item.ID);
         }
     }
 

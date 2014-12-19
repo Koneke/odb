@@ -129,12 +129,12 @@ namespace ODB
 
         public static Item GetItemByID(int id)
         {
-            return World.AllItems.Find(x => x.ID == id);
+            return World.Instance.AllItems.Find(x => x.ID == id);
         }
 
         public static Actor GetActorByID(int id)
         {
-            return World.WorldActors.Find(x => x.ID == id);
+            return World.Instance.WorldActors.Find(x => x.ID == id);
         }
 
         public static ItemDefinition ItemDefByName(string name)

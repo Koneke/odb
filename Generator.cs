@@ -190,6 +190,8 @@ namespace ODB
                 Depth = depth
             };
 
+            World.Instance.Levels.Add(newLevel);
+
             Rooms = new List<GenRoom>();
             Doors = new List<Point>();
             Connections = new List<KeyValuePair<Connector, Connector>>();
@@ -322,7 +324,7 @@ namespace ODB
                         monster,
                         (int)Math.Floor(difficulty / 2f)
                     );
-                spawned.Awake = true;
+                //spawned.Awake = true;
                 //sleep until woken up
                 spawned.AddEffect(StatusType.Sleep, -1);
 
