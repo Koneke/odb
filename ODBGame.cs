@@ -54,19 +54,12 @@ namespace ODB
             Game.Brains = new List<Brain>();
         }
 
-        private void SetupSeed()
-        {
-            Game.Seed = Guid.NewGuid().GetHashCode();
-            Util.SetSeed(Game.Seed);
-        }
-
         protected override void Initialize()
         {
             new Game();
 
             GenerateGameHash();
             Load();
-            SetupSeed();
 
             Game.UI = new UI { ScreenSize = new xnaPoint(80, 25) };
             MenuState = new MenuState();

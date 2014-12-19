@@ -12,8 +12,13 @@ namespace ODB
 
         public Game()
         {
-            if (Instance != null) throw new Exception();
             Instance = this;
+
+            _generatedUniques = new List<int>();
+            _gameTick = 0;
+            SetupSeed();
+            _idCounter = 0;
+            _identified = new List<int>();
         }
 
         //we keep these purely static because we don't need to save/load them
@@ -29,6 +34,7 @@ namespace ODB
         [DataMember] private int _gameTick;
         [DataMember] private int _seed;
         [DataMember] private int _idCounter;
+        [DataMember] private List<int> _identified; 
 
         public static List<int> GeneratedUniques
         {
@@ -52,6 +58,16 @@ namespace ODB
         {
             get { return Instance._idCounter; }
             set { Instance._idCounter = value; }
+        }
+
+        public static void Identify(int type)
+        {
+            Instance._identified.Add(type);
+        }
+
+        public static bool IsIdentified(int type)
+        {
+            return Instance._identified.Contains(type);
         }
 
         public static void SwitchLevel(Level newLevel, bool gotoStairs = false)
@@ -87,6 +103,12 @@ namespace ODB
             foreach (Actor actor in World.Level.Actors)
                 if (actor.ID == 0) Player = actor;
                 else Brains.Add(new Brain(actor));
+        }
+
+        private void SetupSeed()
+        {
+            Seed = Guid.NewGuid().GetHashCode();
+            Util.SetSeed(Seed);
         }
     }
 }

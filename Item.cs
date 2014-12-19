@@ -119,7 +119,7 @@ namespace ODB
             get
             {
                 return
-                    ItemDefinition.IdentifiedDefs.Contains(Definition.Type) ||
+                    Game.IsIdentified(Definition.Type) ||
                     Definition.Category == 0xff;
             }
         }
@@ -212,7 +212,9 @@ namespace ODB
             if (Known) return;
 
             string prename = GetName("the");
-            ItemDefinition.IdentifiedDefs.Add(Type);
+
+            Game.Identify(Type);
+
             if (!silent)
                 Game.UI.Log("You identified " +
                     prename + " as " + GetName("count") + ".");

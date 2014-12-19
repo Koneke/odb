@@ -75,7 +75,6 @@ namespace ODB
                 }},
             };
         #endregion
-        public static List<int> IdentifiedDefs = new List<int>();
 
         public bool Stacking;
         public int GenerationLowBound;
@@ -87,11 +86,6 @@ namespace ODB
         public int Health;
         public List<ItemTag> Tags; 
         public List<Component> Components; 
-
-        //saved in game file, not idef file
-        public bool Identified {
-            get { return IdentifiedDefs.Contains(Type); }
-        }
 
         //creating a NEW definition
         public ItemDefinition(

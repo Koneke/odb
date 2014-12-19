@@ -416,7 +416,7 @@ namespace ODB
                     break;
                     #endregion
                 case "id-id":
-                    ItemDefinition.IdentifiedDefs.Add(idef.Type);
+                    Game.Identify(idef.Type);
                     break;
                 case "id-p":
                     Game.UI.Log(idef.WriteItemDefinition().ToString());
@@ -571,12 +571,6 @@ namespace ODB
                     #region id
                     foreach (Item iditem in World.Level.ItemsOnTile(WmCursor))
                         iditem.Identify();
-                    break;
-                    #endregion
-                case "ii-unid":
-                    #region unid
-                    foreach (Item iditem in World.Level.ItemsOnTile(WmCursor))
-                        ItemDefinition.IdentifiedDefs.Remove(iditem.Type);
                     break;
                     #endregion
                 case "ii-am":
