@@ -173,7 +173,7 @@ namespace ODB
         {
             //assuming only one connector
             Point target = newLevel.Connectors
-                .First(lc => lc.Target == World.Level).Position;
+                .First(lc => lc.Target == World.Level.ID).Position;
 
             Game.Player.LevelID = newLevel.ID;
 

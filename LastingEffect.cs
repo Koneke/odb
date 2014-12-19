@@ -110,8 +110,11 @@ namespace ODB
             stream.Write((int)Type, 4);
             stream.Write(Life, 4);
             stream.Write(Holder, 4);
-            stream.Write(Ticker.ID, 4);
-            stream.Write(LifeLength, 8);
+
+            int? ticker = Ticker == null ? (int?)null : Ticker.ID;
+            stream.Write(ticker);
+
+            stream.Write(LifeLength);
             return stream;
         }
         public void ReadLastingEffect(string s)
@@ -120,9 +123,13 @@ namespace ODB
             Type = (StatusType)stream.ReadHex(4);
             Life = stream.ReadHex(4);
             Holder = stream.ReadHex(4);
-            Ticker = TickingEffectDefinition.Definitions
-                [stream.ReadHex(4)];
-            LifeLength = stream.ReadHex(8);
+
+            int? ticker = stream.ReadNInt();
+            if(ticker.HasValue)
+                Ticker = TickingEffectDefinition.Definitions[ticker.Value];
+
+            //LifeLength = stream.ReadHex(8);
+            LifeLength = stream.ReadInt();
         }
 
         public static void PoisonEffect(Actor holder)

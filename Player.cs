@@ -90,16 +90,17 @@ namespace ODB
                     if (connector.Target == null)
                     {
                         Generator g = new Generator();
-                        connector.Target = g.Generate(
+                        Level l = g.Generate(
                             World.Level,
                             World.Level.Depth + 1
                         );
-                        World.Levels.Add(connector.Target);
+                        connector.Target = l.ID;
+                        World.Levels.Add(l);
                     }
 
                 if (connector.Target == null) return false;
 
-                Game.SwitchLevel(connector.Target, true);
+                Game.SwitchLevel(World.LevelByID(connector.Target.Value), true);
                 Game.UI.Log(
                     "You {1} the stairs...",
                     descending

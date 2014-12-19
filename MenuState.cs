@@ -38,9 +38,6 @@ namespace ODB
 
         public override void Update()
         {
-            if (KeyBindings.Pressed(KeyBindings.Bind.Exit))
-                Game.SwitchState(Game.GameState);
-
             switch (_state)
             {
                 case State.MainMenu:
@@ -65,6 +62,10 @@ namespace ODB
                                 _state = State.Name;
                                 break;
                             case Choices.Start:
+                                //LH-191214
+                                //should maybe generate the gamestate here, or
+                                //on load, currently we're loading stuff in
+                                //on startup, which might not really be ncssary.
                                 Game.SwitchState(Game.GameState);
                                 break;
                             case Choices.Load:

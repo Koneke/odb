@@ -4,7 +4,7 @@
 				1d10; 1d6;
 				1d3+3; 1d3+3; 1d3+3;
 				0000
-				head,torso,back,wrist,wrist,hand,hand,legs,feet;
+				head,torso,back,hand,hand,legs,feet;
 				8800
 				;
 				;

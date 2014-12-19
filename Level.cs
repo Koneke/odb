@@ -7,13 +7,36 @@ namespace ODB
     public class LevelConnector
     {
         public Point Position;
-        public Level Target;
+        //public Level Target;
+        public int? Target;
         //public blabla theme, for more interesting forks
 
         public LevelConnector(Point position, Level target = null)
         {
             Position = position;
-            Target = target;
+            Target = target == null ? (int?)null : target.ID;
+        }
+
+        public LevelConnector(string s)
+        {
+            ReadConnector(s);
+        }
+
+        public Stream WriteConnector()
+        {
+            Stream stream = new Stream();
+            stream.Write("{", false);
+            stream.Write(Position);
+            stream.Write(Target);
+            stream.Write("}", false);
+            return stream;
+        }
+
+        public void ReadConnector(string s)
+        {
+            Stream stream = new Stream(s);
+            Position = stream.ReadPoint();
+            Target = stream.ReadNInt();
         }
     }
 
@@ -75,8 +98,6 @@ namespace ODB
             LoadLevelSave(s);
             ActorPositions = new Dictionary<Room, List<Actor>>();
             ActorRooms = new Dictionary<Actor, List<Room>>();
-            //todo: SHOULD BE SAVED
-            Connectors = new List<LevelConnector>();
         }
 
         public void Clear()
@@ -207,16 +228,10 @@ namespace ODB
             foreach (Actor a in World.Level.Actors)
             {
                 List<Point> l = Util.Line(a.xy.x, a.xy.y, p.x, p.y);
-                int obstruction =
-                    l
-                        /*.Select(x => World.Level.At(x))
-                    .Where(ti => ti != null)
-                    .Count(ti => ti.Solid || ti.Door == Door.Closed);
-                obstruction = l*/
+                int obstruction = l
                     .Select(x => World.Level.At(x))
                     .Sum(ti => GetMuffleValue(ti));
                 //only through walls, not void
-                //if (l.Any(x => World.Level.At(x) == null)) obstruction = 10;
 
                 if (Util.Random.Next(1, 20)
                     + noisemod
@@ -236,6 +251,7 @@ namespace ODB
                  * Dimensions
                  * Depth
                  * ID
+                 * Connectors
              * Body
                  * Level itself
                  * Rooms
@@ -247,6 +263,10 @@ namespace ODB
             stream.Write(Name);
             stream.Write(Depth);
             stream.Write(ID, 2);
+            stream.Write("{", false);
+            foreach (LevelConnector c in Connectors)
+                stream.Write(c.WriteConnector(), false);
+            stream.Write("}", false);
             stream.Write("</HEADER>", false);
 
             for (int y = 0; y < Size.y; y++)
@@ -291,6 +311,11 @@ namespace ODB
             Name = stream.ReadString();
             Depth = stream.ReadInt();
             ID = stream.ReadHex(2);
+
+            Connectors = new List<LevelConnector>();
+            Stream connectors = new Stream(stream.ReadBlock());
+            while(!connectors.AtFinish)
+                Connectors.Add(new LevelConnector(connectors.ReadBlock()));
 
             string levelSection =
                 content.Substring(read, content.Length - read).Split(

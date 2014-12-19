@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using SadConsole;
@@ -66,13 +67,20 @@ namespace ODB
                 if (!Game.Player.IsAlive) break;
 
                 List<Brain> clone = new List<Brain>(Game.Brains);
-                foreach (Brain b in clone.Where(b => b.MeatPuppet.CanMove()))
-                    b.Tick();
+                //foreach (Brain b in clone.Where(b => b.MeatPuppet.CanMove()))
+                foreach (Brain b in clone)
+                {
+                    if(b.MeatPuppet.CanMove())
+                        b.Tick();
+                    //if we could move, only if we weren't sleeping or whatev,
+                    //pass.
+                    else if (b.MeatPuppet.CanMove(true))
+                        b.MeatPuppet.Pass();
+                }
 
                 foreach (Actor a in World.WorldActors
-                    .Where(a => a.LevelID == World.Level.ID)
-                    .Where(a => a.Awake))
-                    a.Cooldown--;
+                    .Where(a => a.LevelID == World.Level.ID))
+                    a.Cooldown = Math.Max(0, a.Cooldown - 1);
 
                 foreach (Actor a in World.WorldActors)
                 {
@@ -80,12 +88,12 @@ namespace ODB
                     a.MpRegCooldown--;
                     if (a.HpRegCooldown == 0)
                     {
-                        a.HpCurrent = System.Math.Min(a.HpMax, a.HpCurrent + 1);
+                        a.HpCurrent = Math.Min(a.HpMax, a.HpCurrent + 1);
                         a.HpRegCooldown = 100;
                     }
                     if (a.MpRegCooldown == 0)
                     {
-                        a.MpCurrent = System.Math.Min(a.MpMax, a.MpCurrent + 1);
+                        a.MpCurrent = Math.Min(a.MpMax, a.MpCurrent + 1);
                         a.MpRegCooldown = 300 - a.Get(Stat.Intelligence) * 10;
                     }
                 }
@@ -179,6 +187,8 @@ namespace ODB
                         break;
 
                     case InputType.Inventory:
+                        //suppress --more-- in the inventory.
+                        Game.UI.CheckMorePrompt();
                         Game.InvMan.InventoryInput();
                         break;
 

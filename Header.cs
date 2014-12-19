@@ -249,6 +249,18 @@ namespace ODB
         }
     }
 
+    public class Hand : BodyPart
+    {
+        public bool Wielding;
+
+        public Hand(
+            DollSlot type,
+            Item item = null
+        ) : base(type, item) {
+            Wielding = false;
+        }
+    }
+
     public enum ModType
     {
         Strength,
@@ -428,6 +440,11 @@ namespace ODB
         public static List<Item> AllItems = new List<Item>();
         public static List<Item> WorldItems = new List<Item>();
         public static List<Actor> WorldActors = new List<Actor>();
+
+        public static Level LevelByID(int target)
+        {
+            return Levels.First(l => l.ID == target);
+        }
     }
 
     public class ColorString

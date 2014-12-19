@@ -128,7 +128,26 @@ namespace ODB
                             break;
                         }
 
+                        if (Game.Player.IsWielded(_selected))
+                        {
+                            Game.UI.Log("You're busy wielding that.");
+                            break;
+                        }
+
+                        if (Game.Player.IsWorn(_selected))
+                        {
+                            Game.UI.Log("You're busy wearing that.");
+                            break;
+                        }
+
+                        if (Game.Player.Quiver == _selected)
+                        {
+                            Game.UI.Log("Take it out from your quiver first.");
+                            break;
+                        }
+
                         PutInto(_selected, SelectedItem.ID);
+                        Selection--;
                     }
                     break;
 
@@ -173,12 +192,12 @@ namespace ODB
 
             if (KeyBindings.Pressed(Bind.TakeOut) && CurrentContainer != -1)
             {
-                ContainerIDs[CurrentContainer].Remove(SelectedItem.ID);
                 if (GetParentContainer(CurrentContainer) == -1)
                     Game.Player.Inventory.Add(SelectedItem);
                 else
                     ContainerIDs[GetParentContainer(CurrentContainer)]
                         .Add(SelectedItem.ID);
+                ContainerIDs[CurrentContainer].Remove(SelectedItem.ID);
                 Game.Player.Pass();
             }
 
@@ -186,7 +205,10 @@ namespace ODB
             {
                 _selected = SelectedItem;
                 State = InventoryState.Inserting;
-                Game.UI.Log("Put " + SelectedItem.GetName("name") + " into what?");
+                Game.UI.Log(
+                    "Put {1} into what?",
+                    SelectedItem.GetName("name")
+                );
             }
 
             if (CurrentContainer != -1) return;
@@ -306,10 +328,24 @@ namespace ODB
                 return;
             }
 
+            if (Game.Player.Quiver == item)
+            {
+                Game.UI.Log("Take it out from your quiver first.");
+                return;
+            }
+
             if (Game.Player.CanEquip(item.GetHands(Game.Player)))
                 Game.Player.Do(new Command("wield").Add("item", item));
             else
-                Game.UI.Log("You'd need more hands to do that.");
+            {
+                if (item.GetHands(Game.Player).Count >
+                    Game.Player.PaperDoll
+                        .Where(bp => bp != null)
+                        .Sum(bp => bp.Type == DollSlot.Hand ? 1 : 0))
+                    Game.UI.Log("You'd need more hands to do that.");
+                else
+                    Game.UI.Log("You have too much stuff in your hands.");
+            }
         }
 
         private static void CheckWear(Item item)
@@ -330,6 +366,14 @@ namespace ODB
             if (Game.Player.IsWielded(item))
             {
                 Game.UI.Log("You are busy wielding that.");
+                return;
+            }
+
+            //LH-191214: These error responses really need to be centralized
+            //           somewhere. DRY, stupid.
+            if (Game.Player.Quiver == item)
+            {
+                Game.UI.Log("Take it out from your quiver first.");
                 return;
             }
 

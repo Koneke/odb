@@ -170,7 +170,11 @@ namespace ODB
 
             PaperDoll = new List<BodyPart>();
             foreach (DollSlot ds in definition.BodyParts)
-                PaperDoll.Add(new BodyPart(ds));
+                PaperDoll.Add(
+                    ds == DollSlot.Hand
+                    ? new Hand(ds)
+                    : new BodyPart(ds)
+                );
             Inventory = new List<Item>();
             Intrinsics = new List<Mod>(Definition.SpawnIntrinsics);
             Awake = false;
@@ -252,9 +256,12 @@ namespace ODB
                 //ReSharper disable once AccessToForEachVariableInClosure
                 //LH-011214: only reading value
                 foreach (BodyPart bp in PaperDoll
-                    .Where(bp => bp.Type == ds && bp.Item == null))
+                    .Where(bp =>
+                        bp.Type == ds &&
+                        bp.Item == null))
                 {
                     bp.Item = item;
+                    ((Hand)bp).Wielding = true;
                     break;
                 }
             }
@@ -272,6 +279,8 @@ namespace ODB
                     .Where(bp => bp.Type == ds && bp.Item == null))
                 {
                     bp.Item = item;
+                    if (bp.Type == DollSlot.Hand)
+                        ((Hand)bp).Wielding = false;
                     break;
                 }
             }
@@ -295,9 +304,7 @@ namespace ODB
         }
         public bool IsWorn(Item item)
         {
-            return PaperDoll
-                .Where(bp => bp.Type != DollSlot.Hand)
-                .Any(x => x.Item == item);
+            return GetWornItems().Contains(item);
         }
         public List<Item> GetWornItems()
         {
@@ -318,17 +325,19 @@ namespace ODB
         }
         public bool IsWielded(Item item)
         {
-            return PaperDoll
-                .Where(bp => bp.Type == DollSlot.Hand)
-                .Any(x => x.Item == item);
+            return GetWieldedItems().Contains(item);
         }
         public List<Item> GetWieldedItems()
         {
             return PaperDoll
                 .Where(bp => bp != null)
                 .Where(bp => bp.Type == DollSlot.Hand)
+                //note, just assuming we can do this cast, since, at least at
+                //the moment, the only things we consider wielded are in the
+                //hands of the actor, which should be castable to Hand.
+                .Where(bp => ((Hand)bp).Wielding)
                 .Where(bp => bp.Item != null)
-                .Where(bp => !bp.Item.HasTag(ItemTag.NonWeapon))
+                //.Where(bp => !bp.Item.HasTag(ItemTag.NonWeapon))
                 .Select(bp => bp.Item)
                 .Distinct()
                 .ToList();
@@ -602,11 +611,14 @@ namespace ODB
             bool crit = roll == 20 || target.HasEffect(StatusType.Sleep);
 
             int dexBonus = Get(Stat.Dexterity);
+
+            //to method?
             int distanceModifier = 1;
             if (pc == null) distanceModifier++;
             if (lc == null) distanceModifier++;
             int distancePenalty =
                 Util.XperY(distanceModifier, 1, Util.Distance(xy, target.xy));
+
             int mod = ammo.Mod;
             if (weapon != null) mod += weapon.Mod;
             int totalModifier = dexBonus + mod - distancePenalty;
@@ -616,6 +628,7 @@ namespace ODB
 
             string message = "";
 
+            //could probably be made into a generic "split" function
             Item projectile = new Item(ammo.WriteItem().ToString())
             {
                 ID = Item.IDCounter++,
@@ -623,7 +636,6 @@ namespace ODB
                 xy = target.xy,
                 LevelID = World.Level.ID
             };
-
             ammo.Count--;
             if(ammo.Count <= 0) World.Level.Despawn(ammo);
 
@@ -718,6 +730,10 @@ namespace ODB
         }
         public void Damage(DamageSource ds)
         {
+            if(this == Game.Player && IO.IOState == InputType.Inventory)
+                //make sure that the player doesn't killed while invmanaging
+                IO.IOState = InputType.PlayerInput;
+
             if (ds.Damage <= 0) return;
             if (HpCurrent <= 0) return;
 
@@ -1497,7 +1513,11 @@ namespace ODB
             if (IsWielded(item))
             {
                 foreach (BodyPart bp in PaperDoll.Where(bp => bp.Item == item))
+                {
+                    if (bp.Type == DollSlot.Hand)
+                        ((Hand)bp).Wielding = false;
                     bp.Item = null;
+                }
 
                 if (this == Game.Player)
                     Game.UI.Log(
@@ -1606,10 +1626,11 @@ namespace ODB
             }
         }
 
-        public bool CanMove()
+        public bool CanMove(bool disregardStatus = false)
         {
             if (!IsAlive) return false;
             if (Cooldown > 0) return false;
+            if (disregardStatus) return true;
             if (HasEffect(StatusType.Sleep)) return false;
             if (HasEffect(StatusType.Stun)) return false;
             return true;
@@ -1661,8 +1682,10 @@ namespace ODB
 
             stream.Write(HpCurrent, 2);
             stream.Write(HpMax, 2);
+            stream.Write(HpRegCooldown);
             stream.Write(MpCurrent, 2);
             stream.Write(MpMax, 2);
+            stream.Write(MpRegCooldown);
 
             stream.Write(Level);
             stream.Write(ExperiencePoints);
@@ -1674,6 +1697,9 @@ namespace ODB
             foreach (BodyPart bp in PaperDoll)
             {
                 stream.Write((int)bp.Type, 2);
+                if(bp.Type == DollSlot.Hand)
+                    if (((Hand)bp).Wielding)
+                        stream.Write("W", false);
                 stream.Write(":", false);
 
                 if (bp.Item == null) stream.Write("X", false);
@@ -1690,12 +1716,16 @@ namespace ODB
             }
             stream.Write(";", false);
 
+            stream.Write("{", false);
             foreach (LastingEffect le in LastingEffects)
             {
-                stream.Write(le.WriteLastingEffect().ToString(), false);
+                stream.Write(
+                    '{' + le.WriteLastingEffect().ToString() + '}',
+                    false);
                 stream.Write(",", false);
             }
-            stream.Write(";", false);
+            stream.Write("}", false);
+            //stream.Write(";", false);
 
             foreach (Mod m in Intrinsics)
             {
@@ -1722,8 +1752,10 @@ namespace ODB
 
             HpCurrent = stream.ReadHex(2);
             HpMax = stream.ReadHex(2);
+            HpRegCooldown = stream.ReadInt();
             MpCurrent = stream.ReadHex(2);
             MpMax = stream.ReadHex(2);
+            MpRegCooldown = stream.ReadInt();
 
             Level = stream.ReadInt();
             ExperiencePoints = stream.ReadInt();
@@ -1733,19 +1765,22 @@ namespace ODB
             _quiver = stream.ReadNInt();
 
             PaperDoll = new List<BodyPart>();
-            foreach (string ss in
-                stream.ReadString().Split(
-                    new[] { "," },
-                    StringSplitOptions.RemoveEmptyEntries
-                ).ToList()
-            ) {
-                DollSlot type =
-                        (DollSlot)IO.ReadHex(ss.Split(':')[0]);
+            foreach (string ss in stream.ReadString().NeatSplit(","))
+            {
+                string dsType = ss.Split(':')[0];
+                bool wielding = dsType.Last() == 'W'; //handW => wielding hand
+                if (wielding) dsType = dsType.Substring(0, dsType.Length - 1);
+
+                DollSlot type = (DollSlot)IO.ReadHex(dsType);
                 Item item = 
                     ss.Split(':')[1].Contains("X") ?
                         null :
                         Util.GetItemByID(IO.ReadHex(ss.Split(':')[1]));
-                PaperDoll.Add(new BodyPart(type, item));
+
+                if(type == DollSlot.Hand)
+                    PaperDoll.Add(new Hand(type, item) { Wielding = wielding });
+                else
+                    PaperDoll.Add(new BodyPart(type, item));
             }
 
             Inventory = new List<Item>();
@@ -1761,12 +1796,14 @@ namespace ODB
             }
 
             LastingEffects = new List<LastingEffect>();
-            string lasting = stream.ReadString();
+            string lasting = stream.ReadBlock();
 
             foreach (string effect in lasting.Split(',')
                 .Where(effect => effect != ""))
             {
-                LastingEffects.Add(new LastingEffect(effect));
+                Stream effBlock = new Stream(effect);
+                string effString = effBlock.ReadBlock();
+                LastingEffects.Add(new LastingEffect(effString));
             }
 
             Intrinsics = new List<Mod>();

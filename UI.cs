@@ -465,10 +465,9 @@ namespace ODB
                 if (Game.Player.IsEquipped(item))
                 {
                     if (Game.Player.Quiver == item) name += " (quivered)";
-                    else if (Game.Player.PaperDoll.Any(
-                        x => x.Type == DollSlot.Hand && x.Item == item))
+                    else if (Game.Player.IsWielded(item))
                         name += " (wielded)";
-                    else
+                    else if (Game.Player.IsWorn(item))
                         name += " (worn)";
                 }
 
@@ -613,8 +612,8 @@ namespace ODB
                         colorStrength - colorStrength * playerHealthPcnt,
                         colorStrength * playerHealthPcnt,
                         0
-                        )
-                    );
+                    )
+                );
 
             for (int x = 10; x < 19; x++)
                 _statRowConsole.CellData.SetBackground(
@@ -622,8 +621,8 @@ namespace ODB
                         manaColorStrength - manaColorStrength * playerManaPcnt,
                         manaColorStrength * playerManaPcnt / 2,
                         manaColorStrength * playerManaPcnt
-                        )
-                    );
+                    )
+                );
 
             _statRowConsole.CellData.Print(0, 0, namerow);
             _statRowConsole.CellData.Print(0, 1, statrow);
