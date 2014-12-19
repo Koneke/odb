@@ -30,11 +30,11 @@ namespace ODB
         //switch to dict? ID:Level
         [DataMember] public List<Level> Levels; 
 
-        //could probably do something about these, not too gracious atm
+        //could probably do something about these two, not too gracious atm
         [DataMember] public List<Item> AllItems;
         [DataMember] public List<Item> WorldItems;
-
         [DataMember] public List<Actor> WorldActors;
+        [DataMember] public InventoryManager WorldContainers;
 
         public static Level LevelByID(int target)
         {
@@ -44,8 +44,8 @@ namespace ODB
         public static void Load(World deserialized)
         {
             _instance = deserialized;
-            ODBGame.Game.SetupBrains();
-            ODBGame.Game.Player.HasMoved = true;
+            Game.SetupBrains();
+            Game.Player.HasMoved = true;
         }
     }
 }

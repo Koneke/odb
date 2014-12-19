@@ -1,20 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
 using SadConsole;
 
 namespace ODB
 {
     public abstract class AppState
     {
-        protected ODBGame Game;
-
-        protected AppState(ODBGame game)
-        {
-            Game = game;
-        }
-
         public abstract void Update();
         public abstract void Draw();
         public abstract void SwitchTo();
@@ -22,9 +14,13 @@ namespace ODB
 
     public class GameState : AppState
     {
-        public GameState(ODBGame game) : base(game)
+        public List<Brain> Brains;
+
+        public GameState()
         {
-            Game.InvMan = new InventoryManager();
+            ODBGame.GameState = this;
+
+            World.Instance.WorldContainers = new InventoryManager();
             Game.GeneratedUniques = new List<int>();
 
             Game.Player = new Actor(
@@ -38,26 +34,6 @@ namespace ODB
 
             //force a screendraw in the beginning
             Game.Player.HasMoved = true;
-
-            Game.SetupBrains();
-        }
-
-        public void SetupBrains() {
-            if(Game.Brains == null)
-                Game.Brains = new List<Brain>();
-            else
-                Game.Brains.Clear();
-
-            //note: this means that we only act with actors on the same
-            //      floor as the player, might want to change this in the future
-            foreach (Actor actor in World.Instance.WorldActors
-                .Where(a => a.LevelID == World.Level.ID))
-            {
-                if (actor.ID == 0)
-                    Game.Player = actor;
-                else
-                    Game.Brains.Add(new Brain(actor));
-            }
         }
 
         //ReSharper disable once InconsistentNaming
@@ -138,12 +114,16 @@ namespace ODB
                                 () =>
                                 {
                                     if (IO.Answer[0] == 'Y')
-                                        ODBGame.Game.Exit();
+                                        ODBGame.Exit();
                                 }
                             );
                             break;
                         case InputType.Inventory:
-                            Game.InvMan.HandleCancel();
+                            //todo
+                            //probably actually want to split the container-
+                            //data-y stuff, and the interact with the
+                            //containers stuff into two separate things.
+                            World.Instance.WorldContainers.HandleCancel();
                             break;
                         default:
                             IO.IOState = InputType.PlayerInput;
@@ -180,7 +160,7 @@ namespace ODB
                         if (Game.UI.CheckMorePrompt()) break;
 
                         if (Game.Player.CanMove())
-                            Player.PlayerInput();
+                            PlayerInput.HandlePlayerInput();
                         //pass when sleeping etc.
                         else Game.Player.Pass();
 
@@ -190,7 +170,7 @@ namespace ODB
                     case InputType.Inventory:
                         //suppress --more-- in the inventory.
                         Game.UI.CheckMorePrompt();
-                        Game.InvMan.InventoryInput();
+                        World.Instance.WorldContainers.InventoryInput();
                         break;
 
                     default: throw new Exception("");

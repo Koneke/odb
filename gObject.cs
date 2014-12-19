@@ -97,8 +97,6 @@ namespace ODB
     [DataContract]
     public class gObject
     {
-        public static int IDCounter = 0;
-
         protected bool Equals(gObject other)
         {
             return
@@ -118,8 +116,6 @@ namespace ODB
             hashCode = (hashCode*397) ^ Definition.GetHashCode();
             return hashCode;
         }
-
-        public static ODBGame Game;
 
         //ReSharper disable InconsistentNaming
         [DataMember] public Point xy;

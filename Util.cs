@@ -18,7 +18,7 @@ namespace ODB
         {
             //we create a new one everytime so the shuffle returns
             //the same result every time for the same input and gameseed
-            Random rng = new Random(Util.Game.Seed);
+            Random rng = new Random(Game.Seed);
             //so we only return a shuffled copy instead
             List<T> list = new List<T>(l);
             int n = list.Count;
@@ -117,9 +117,6 @@ namespace ODB
 
     public class Util
     {
-        //todo: find the odd refs to this hanging around
-        //      due to me being a lazy bum
-        public static ODBGame Game;
         public static Random Random;
 
         public static void SetSeed(int seed)

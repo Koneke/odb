@@ -6,8 +6,6 @@ namespace ODB
 {
     class Wizard
     {
-        public static ODBGame Game;
-
         public static Point WmCursor;
         public static List<string> WmHistory = new List<string>();
         public static int WmScrollback;
@@ -472,14 +470,6 @@ namespace ODB
                     };
                     a.Damage(ds);
                     break;
-                case "ai-p":
-                case "ai-print":
-                    #region pa
-                    Game.UI.Log(
-                        World.Level.ActorOnTile(WmCursor).WriteActor().ToString()
-                    );
-                    break;
-                    #endregion
                 case "ai-pd":
                 case "ai-pdef":
                     #region pad

@@ -8,7 +8,7 @@
 
             if (World.Level.At(actor.xy).Neighbours.Count < 8)
             {
-                Util.Game.UI.Log("Nothing happens.");
+                Game.UI.Log("Nothing happens.");
                 return;
             }
 
@@ -37,11 +37,11 @@
                 case "0,tor,0 zok,0,khr 0,bal,0":
                     if (chant.ToLower() != "tor zok khr bal") break;
 
-                    Util.Game.UI.Log(
+                    Game.UI.Log(
                         "Darkness envelopes {1}...",
                         actor.GetName("name")
                     );
-                    Util.Game.UI.Log(
+                    Game.UI.Log(
                         "{1} {2} good.",
                         actor.GetName("Name"),
                         actor.Verb("#feel")
@@ -50,7 +50,7 @@
                     break;
 
                 default:
-                    Util.Game.UI.Log("Nothing happens.");
+                    Game.UI.Log("Nothing happens.");
                     break;
             }
         }

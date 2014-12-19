@@ -9,7 +9,6 @@ namespace ODB
         //maybe I should stop littering these Game1s about
         //but they are comf... conv(enient)-y..?
         //coinin' it. convy.
-        public static ODBGame Game;
         public Actor MeatPuppet;
 
         public Brain(Actor meatPuppet)
@@ -103,7 +102,6 @@ namespace ODB
             if (MeatPuppet.LevelID != World.Level.ID)
                 return;
 
-            //if (!MeatPuppet.Awake) return;
             if (!Game.Player.IsAlive) return;
 
             if(CanAttack(Game.Player))

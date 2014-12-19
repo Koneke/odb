@@ -118,7 +118,7 @@ namespace ODB
         {
             if (Seen[p.x, p.y]) return;
 
-            ODBGame.Game.UI.UpdateAt(p);
+            Game.UI.UpdateAt(p);
             Seen[p.x, p.y] = true;
         }
 
@@ -383,8 +383,8 @@ namespace ODB
             if(actor.ID != 0)
                 //no brain? give it one
                 //'cuz we nice like that
-                if(ODBGame.Game.Brains.All(b => b.MeatPuppet != actor))
-                    ODBGame.Game.Brains.Add(new Brain(actor));
+                if(Game.Brains.All(b => b.MeatPuppet != actor))
+                    Game.Brains.Add(new Brain(actor));
 
             actor.LevelID = ID;
             World.Instance.WorldActors.Add(actor);

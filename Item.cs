@@ -86,7 +86,7 @@ namespace ODB
 
         public Material Material { get { return Definition.Material; } }
 
-        public Item() : base() { }
+        public Item() { }
 
         //SPAWNING a NEW item
         public Item(
@@ -95,7 +95,7 @@ namespace ODB
             int count = 0,
             IEnumerable<Mod> mods = null
         ) : base(xy, definition) {
-            ID = IDCounter++;
+            ID = Game.IDCounter++;
             Count = count;
             _type = definition.Type;
             Health = definition.Health;
@@ -236,7 +236,7 @@ namespace ODB
             {
                 hands = Util.XperY(
                     1,
-                    60 + 40 * a.Get(Stat.Strength), //220, 260, 300
+                    80 + 40 * a.Get(Stat.Strength), //240, 280, 320
                     Definition.Weight
                 ) + 1;
             }
@@ -317,7 +317,7 @@ namespace ODB
                 //wielded one
                 Item stack = new Item(WriteItem().ToString())
                 {
-                    ID = IDCounter++,
+                    ID = Game.IDCounter++,
                     Count = Count - 1,
                     xy = xy,
                     LevelID = World.Level.ID

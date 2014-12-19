@@ -122,7 +122,13 @@ namespace ODB
 
         public List<Item> Inventory
         {
-            get { return _inventory.Select(Util.GetItemByID).ToList(); }
+            get
+            {
+                return _inventory
+                    .Select(Util.GetItemByID)
+                    .Where(item => item != null)
+                    .ToList();
+            }
         }
 
         [DataMember] public List<LastingEffect> LastingEffects;
@@ -164,7 +170,7 @@ namespace ODB
             ActorDefinition definition,
             int level
         ) : base(xy, definition) {
-            ID = IDCounter++;
+            ID = Game.IDCounter++;
             _type = definition.Type;
 
             _strength = Util.Roll(definition.Strength);
@@ -192,23 +198,16 @@ namespace ODB
             _doll = new Doll();
             foreach (DollSlot ds in definition.BodyParts)
                 _doll.Add(
-                //PaperDoll.Add(
                     ds == DollSlot.Hand
                     ? new Hand(ds)
                     : new BodyPart(ds)
                 );
             _inventory = new List<int>();
             Intrinsics = new List<Mod>(Definition.SpawnIntrinsics);
-            //Awake = false;
             LastingEffects = new List<LastingEffect>();
 
             HpRegCooldown = 10;
             MpRegCooldown = 30 - _intelligence;
-        }
-
-        public Actor(string s) : base(s)
-        {
-            ReadActor(s);
         }
 
         //LH-021214: We have this function here because
@@ -359,7 +358,6 @@ namespace ODB
                 //hands of the actor, which should be castable to Hand.
                 .Where(bp => ((Hand)bp).Wielding)
                 .Where(bp => bp.Item != null)
-                //.Where(bp => !bp.Item.HasTag(ItemTag.NonWeapon))
                 .Select(bp => bp.Item)
                 .Distinct()
                 .ToList();
@@ -433,14 +431,10 @@ namespace ODB
             List<Item> worn = Util.GetWornItems(this);
 
             //itembonuses
-            modifier += Util.GetModsOfType(mt, worn).Sum(
-                m => m.GetValue()
-            );
+            modifier += Util.GetModsOfType(mt, worn).Sum(m => m.GetValue());
 
             //intrinsics
-            modifier += Util.GetModsOfType(mt, this).Sum(
-                m => m.GetValue()
-            );
+            modifier += Util.GetModsOfType(mt, this).Sum(m => m.GetValue());
 
             switch (stat)
             {
@@ -509,7 +503,6 @@ namespace ODB
 
             List<DamageSource> damageSources = new List<DamageSource>();
 
-            //foreach (Item weapon in GetWieldedItems())
             foreach(Tuple<Item, AttackComponent> attack in attacks)
             {
                 if (totalDamage > target.HpCurrent) continue;
@@ -653,7 +646,7 @@ namespace ODB
             //could probably be made into a generic "split" function
             Item projectile = new Item(ammo.WriteItem().ToString())
             {
-                ID = IDCounter++,
+                ID = Game.IDCounter++,
                 Count = ammo.Stacking ? 1 : 0,
                 xy = target.xy,
                 LevelID = World.Level.ID
@@ -845,7 +838,7 @@ namespace ODB
                 "{1} stronger",
                 this == Game.Player
                     ? "You feel" :
-                    GetName("Name") + " looks", Game
+                    GetName("Name") + " looks"
             );
             HpMax += Util.Roll(Definition.HitDie);
             MpMax += Util.Roll(Definition.ManaDie);
@@ -944,7 +937,6 @@ namespace ODB
             //(number being index in list)
             //so bigger chance for mods earlier in the list
             int count, n = count = item.Mods.Count;
-            //count = 3 => r = 1d7
             int r = Util.Roll("1d" + (Math.Pow(2, count)-1));
             //less than 2^n-1 = "loss", check later intrinsics
 
@@ -965,7 +957,7 @@ namespace ODB
                 sneakMod += 5;
 
             Cooldown =
-                ODBGame.StandardActionLength -
+                Game.StandardActionLength -
                 (movement ? Get(Stat.Speed) : Get(Stat.Quickness)) +
                 sneakMod;
         }
@@ -1346,7 +1338,7 @@ namespace ODB
             if (count != item.Count)
             {
                 Item clone = new Item(item.WriteItem().ToString()) {
-                    ID = IDCounter++,
+                    ID = Game.IDCounter++,
                     Count = count
                 };
                 item.Count -= count;
@@ -1408,9 +1400,11 @@ namespace ODB
             }
             else Game.Player.GiveItem(item);
 
-            char index = IO.Indexes[Inventory.IndexOf(item)];
+            char index = IO.Indexes
+                [Inventory.IndexOf(Inventory.First(it => it.ID == item.ID))];
+
             if(this == Game.Player)
-                Util.Game.UI.Log(index + " - "  + item.GetName("count") + ".");
+                Game.UI.Log(index + " - "  + item.GetName("count") + ".");
 
             Pass();
         }
@@ -1665,7 +1659,7 @@ namespace ODB
                 RemoveEffect(StatusType.Sleep);
 
                 if (this != Game.Player && Game.Player.Sees(xy))
-                    ODBGame.Game.UI.Log(
+                    Game.UI.Log(
                         "{1} {2} up.",
                         GetName("Name"),
                         Verb("wake")
@@ -1689,151 +1683,6 @@ namespace ODB
                     break;
                 default: throw new ArgumentException();
             }
-        }
-
-        public Stream WriteActor()
-        {
-            Stream stream = WriteGObject();
-            stream.Write(Definition.Type, 4);
-
-            stream.Write(ID, 4);
-
-            stream.Write(_strength, 2);
-            stream.Write(_dexterity, 2);
-            stream.Write(_intelligence, 2);
-
-            stream.Write(HpCurrent, 2);
-            stream.Write(HpMax, 2);
-            stream.Write(HpRegCooldown);
-            stream.Write(MpCurrent, 2);
-            stream.Write(MpMax, 2);
-            stream.Write(MpRegCooldown);
-
-            stream.Write(Level);
-            stream.Write(ExperiencePoints);
-
-            stream.Write(Cooldown, 2);
-            stream.Write(_food);
-            stream.Write(_quiver);
-
-            foreach (BodyPart bp in PaperDoll)
-            {
-                stream.Write((int)bp.Type, 2);
-                if(bp.Type == DollSlot.Hand)
-                    if (((Hand)bp).Wielding)
-                        stream.Write("W", false);
-                stream.Write(":", false);
-
-                if (bp.Item == null) stream.Write("X", false);
-                else stream.Write(bp.Item.ID, 4);
-
-                stream.Write(",", false);
-            }
-            stream.Write(";", false);
-
-            foreach (Item it in Inventory)
-            {
-                stream.Write(it.ID, 4);
-                stream.Write(",", false);
-            }
-            stream.Write(";", false);
-
-            stream.Write("{", false);
-            foreach (LastingEffect le in LastingEffects)
-            {
-                stream.Write(
-                    '{' + le.WriteLastingEffect().ToString() + '}',
-                    false);
-                stream.Write(",", false);
-            }
-            stream.Write("}", false);
-            //stream.Write(";", false);
-
-            foreach (Mod m in Intrinsics)
-            {
-                stream.Write((int)m.Type + ":" + m.RawValue + ",");
-            }
-            stream.Write(";", false);
-
-            //stream.Write(Awake);
-
-            return stream;
-        }
-        public Stream ReadActor(string s)
-        {
-            Stream stream = ReadGObject(s);
-            _type = stream.ReadHex(4);
-
-            ID = stream.ReadHex(4);
-
-            _strength = stream.ReadHex(2);
-            _dexterity = stream.ReadHex(2);
-            _intelligence = stream.ReadHex(2);
-
-            HpCurrent = stream.ReadHex(2);
-            HpMax = stream.ReadHex(2);
-            HpRegCooldown = stream.ReadInt();
-            MpCurrent = stream.ReadHex(2);
-            MpMax = stream.ReadHex(2);
-            MpRegCooldown = stream.ReadInt();
-
-            Level = stream.ReadInt();
-            ExperiencePoints = stream.ReadInt();
-
-            Cooldown = stream.ReadHex(2);
-            _food = stream.ReadInt();
-            _quiver = stream.ReadNInt();
-
-            //PaperDoll = new List<BodyPart>();
-            _doll = new Doll();
-            foreach (string ss in stream.ReadString().NeatSplit(","))
-            {
-                string dsType = ss.Split(':')[0];
-                bool wielding = dsType.Last() == 'W'; //handW => wielding hand
-                if (wielding) dsType = dsType.Substring(0, dsType.Length - 1);
-
-                DollSlot type = (DollSlot)IO.ReadHex(dsType);
-                Item item = 
-                    ss.Split(':')[1].Contains("X") ?
-                        null :
-                        Util.GetItemByID(IO.ReadHex(ss.Split(':')[1]));
-
-                if(type == DollSlot.Hand)
-                    PaperDoll.Add(new Hand(type, item) { Wielding = wielding });
-                else
-                    PaperDoll.Add(new BodyPart(type, item));
-            }
-
-            _inventory = new List<int>();
-            foreach (string ss in stream.ReadString().NeatSplit(","))
-            {
-                _inventory.Add(IO.ReadHex(ss));
-            }
-
-            LastingEffects = new List<LastingEffect>();
-            string lasting = stream.ReadBlock();
-
-            foreach (string effect in lasting.Split(',')
-                .Where(effect => effect != ""))
-            {
-                Stream effBlock = new Stream(effect);
-                string effString = effBlock.ReadBlock();
-                LastingEffects.Add(new LastingEffect(effString));
-            }
-
-            Intrinsics = new List<Mod>();
-            string intr = stream.ReadString();
-
-            foreach (string mod in intr.Split(',')
-                .Where(mod => mod != ""))
-            {
-                Intrinsics.Add(new Mod(
-                    (ModType)IO.ReadHex(mod.Split(':')[0]),
-                    IO.ReadHex(mod.Split(':')[1]))
-                );
-            }
-
-            return stream;
         }
 
         //should probably be moved to a container class or something

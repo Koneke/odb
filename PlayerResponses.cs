@@ -5,8 +5,6 @@ namespace ODB
 {
     class PlayerResponses
     {
-        public static ODBGame Game;
-
         public static void Chant()
         {
             Game.Player.Do(new Command("chant").Add("chant", IO.Answer));
@@ -324,7 +322,7 @@ namespace ODB
 
             item.Count -= count;
             Item stack = new Item(item.WriteItem().ToString()) {
-                Count = count, ID = Item.IDCounter++
+                Count = count, ID = Game.IDCounter++
             };
             World.Instance.AllItems.Add(stack);
 

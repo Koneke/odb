@@ -61,7 +61,7 @@ namespace ODB
                 CastType = InputType.None,
                 Effect = (caster, target) =>
                 {
-                    ODBGame.Game.UI.Log(
+                    Game.UI.Log(
                         "{1} {2} better!",
                         caster.GetName("Name"),
                         caster.Verb("#feel")
@@ -80,10 +80,10 @@ namespace ODB
 
                     if (targetActor == null)
                     {
-                        ODBGame.Game.UI.Log("The bolt fizzles in the air.");
+                        Game.UI.Log("The bolt fizzles in the air.");
                         return;
                     }
-                    ODBGame.Game.UI.Log("The forcebolt hits {1}.",
+                    Game.UI.Log("The forcebolt hits {1}.",
                         targetActor.GetName("the")
                     );
 

@@ -127,6 +127,7 @@
     <Compile Include="Brain.cs" />
     <Compile Include="Component.cs" />
     <Compile Include="DamageSource.cs" />
+    <Compile Include="Game.cs" />
     <Compile Include="GameState.cs" />
     <Compile Include="Generator.cs" />
     <Compile Include="gObject.cs" />
@@ -139,7 +140,7 @@
     <Compile Include="Level.cs" />
     <Compile Include="Material.cs" />
     <Compile Include="MenuState.cs" />
-    <Compile Include="Player.cs" />
+    <Compile Include="PlayerInput.cs" />
     <Compile Include="PlayerResponses.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Program.cs" />

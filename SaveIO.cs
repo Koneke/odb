@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Microsoft.Xna.Framework;
 using Newtonsoft.Json;
 
 namespace ODB
@@ -17,131 +16,6 @@ namespace ODB
                 return File.Exists(
                     Directory.GetCurrentDirectory() + "/Save/game.sv");
             }
-        }
-
-        public static void Save()
-        {
-            Stream stream = new Stream();
-            stream.Write(World.Instance.Levels.Count, 2);
-            stream.Write(IO.Game.Player.LevelID, 2);
-
-            for (int i = 0; i < World.Instance.Levels.Count; i++)
-                World.Instance.Levels[i].WriteLevelSave("Save/level" + i + ".sv");
-
-            //okay, so I really don't think anyone's going to hit
-            //gametick 0xFFFFFFFF, that'd be ludicrous.
-            //but 0xFFFF might be hit, and 0xFFFFF looks ugly.
-            stream.Write(Util.Game.GameTick, 8);
-            stream.Write(Util.Game.Seed, 8);
-
-            string containers = "";
-            foreach (int container in InventoryManager.ContainerIDs.Keys)
-            {
-                containers += IO.WriteHex(container, 4);
-                containers = InventoryManager.ContainerIDs[container]
-                    .Aggregate(containers,
-                    (current, item) => current + IO.WriteHex(item, 4));
-                containers += ",";
-            }
-            stream.Write(containers);
-
-            foreach (int ided in ItemDefinition.IdentifiedDefs)
-            {
-                stream.Write(ided, 4);
-                stream.Write(",", false);
-            }
-            stream.Write(";", false);
-
-            foreach (Item item in World.Instance.AllItems)
-                stream.Write(item.WriteItem() + "##", false);
-            stream.Write("</ITEMS>", false);
-
-            foreach (Actor actor in World.Instance.WorldActors)
-                stream.Write(actor.WriteActor() + "##", false);
-            stream.Write("</ACTORS>", false);
-
-            WriteToFile("Save/game.sv", stream.ToString());
-        }
-
-        public static void Load()
-        {
-            Stream stream = new Stream(ReadFromFile("Save/game.sv"));
-            int levels = stream.ReadHex(2);
-            int playerLocation = stream.ReadHex(2);
-
-            if (World.Instance.Levels != null)
-            {
-                for (int i = 0; i < World.Instance.Levels.Count; i++)
-                    World.Instance.Levels[i] = null;
-                World.Instance.Levels.Clear();
-            } else World.Instance.Levels = new List<Level>();
-
-            for (int i = 0; i < levels; i++)
-                World.Instance.Levels.Add(new Level("Save/level" + i + ".sv"));
-
-            Util.Game.GameTick = stream.ReadHex(8);
-            Util.Game.Seed = stream.ReadHex(8);
-            //Util.Game.Food = stream.ReadHex(8);
-            World.Level = World.Instance.Levels[playerLocation];
-
-            string containers = stream.ReadString();
-            List<int> containerItems = new List<int>();
-            InventoryManager.ContainerIDs = new Dictionary<int, List<int>>();
-            foreach (string container in containers.Split(','))
-            {
-                if(container == "") continue;
-
-                int count = container.Length / 4 - 1;
-                int id;
-
-                Stream strm = new Stream(container);
-                InventoryManager.ContainerIDs.Add(
-                    id = strm.ReadHex(4), new List<int>());
-
-                for (int i = 0; i < count; i++)
-                {
-                    int itemid = strm.ReadHex(4);
-                    InventoryManager.ContainerIDs[id].Add(itemid);
-                    containerItems.Add(itemid);
-                }
-            }
-
-            string identifieds = stream.ReadString();
-            foreach (string ided in identifieds.Split(',')
-                .Where(ided => ided != ""))
-                ItemDefinition.IdentifiedDefs.Add(IO.ReadHex(ided));
-
-            World.Instance.AllItems.Clear();
-            World.Instance.WorldItems.Clear();
-            World.Instance.WorldActors.Clear();
-
-            string items = stream.ReadTo("</ITEMS>");
-
-            foreach (Item item in items.Split(
-                new[] {"##"}, StringSplitOptions.RemoveEmptyEntries)
-                .Select(i => new Item(i))
-            ) {
-                World.Instance.AllItems.Add(item);
-                World.Instance.WorldItems.Add(item);
-            }
-
-            string actors = stream.ReadTo("</ACTORS>");
-
-            foreach (Actor actor in actors.Split(
-                new[] {"##"}, StringSplitOptions.RemoveEmptyEntries)
-                .Select(a => new Actor(a))
-            ) {
-                World.Instance.WorldActors.Add(actor);
-                foreach (Item item in actor.Inventory)
-                    World.Instance.WorldItems.Remove(item);
-            }
-
-            World.Instance.WorldItems.RemoveAll(
-                x => containerItems.Contains(x.ID)
-            );
-
-            IO.Game.SetupBrains();
-            ODBGame.Game.Player.HasMoved = true;
         }
 
         public static void WriteToFile(string path, string content)
@@ -159,7 +33,7 @@ namespace ODB
             }
             catch (UnauthorizedAccessException)
             {
-                IO.Game.UI.Log(
+                Game.UI.Log(
                     "~ERROR~: Could not write to file " +
                         cwd + "/" + path + " (Unauthorized access)."
                     );
@@ -286,10 +160,16 @@ namespace ODB
         public static void JsonSave()
         {
             WriteToFile(
+                "Test/bar.txt", 
+                JsonConvert.SerializeObject(
+                    Game.Instance,
+                    Formatting.Indented
+                )
+            );
+            WriteToFile(
                 "Test/foo.txt", 
                 JsonConvert.SerializeObject(
                     World.Instance,
-                    //ODBGame.Game.Player,
                     Formatting.Indented
                 )
             );
@@ -297,6 +177,9 @@ namespace ODB
 
         public static void JsonLoad()
         {
+            string gs = ReadFromFile("Test/bar.txt");
+            Game.Instance = JsonConvert.DeserializeObject<Game>(gs);
+
             string content = ReadFromFile("Test/foo.txt");
             World.Load(JsonConvert.DeserializeObject<World>(content));
         }

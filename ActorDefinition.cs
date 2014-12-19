@@ -141,7 +141,7 @@ namespace ODB
                     Quickness = IO.ReadHex(value);
                     break;
                 default:
-                    Util.Game.UI.Log("~ERROR~: Bad stat.");
+                    Game.UI.Log("~ERROR~: Bad stat.");
                     break;
             }
         }

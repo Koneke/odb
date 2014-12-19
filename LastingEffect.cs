@@ -145,8 +145,8 @@ namespace ODB
 
         public static void PoisonEffect(Actor holder)
         {
-            Util.Game.UI.Log(
-                (holder == Util.Game.Player
+            Game.UI.Log(
+                (holder == Game.Player
                     ? "You feel "
                     : (holder.GetName("Name") + " looks ")) +
                 "sick..."
@@ -169,8 +169,8 @@ namespace ODB
         {
             World.Level.At(holder.xy).Blood = true;
 
-            if(holder == Util.Game.Player || Util.Game.Player.Sees(holder.xy))
-                Util.Game.UI.Log(
+            if(holder == Game.Player || Game.Player.Sees(holder.xy))
+                Game.UI.Log(
                     holder.GetName("Name") + " " +
                     holder.Verb("bleed") + "!"
                 );

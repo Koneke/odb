@@ -23,8 +23,6 @@ namespace ODB
 
     public class IO
     {
-        public static ODBGame Game;
-
         static KeyboardState _ks, _oks;
         public static bool ShiftState;
 
@@ -51,7 +49,7 @@ namespace ODB
             foreach (object o in args)
             {
                 if (o is char) Add((char)o);
-                if (o is string) Add((string)o);
+                else if (o is string) Add((string)o);
             }
         }
         public static void Add(char c)
@@ -60,10 +58,8 @@ namespace ODB
         }
         public static void Add(string s)
         {
-            for (int i = 0; i < s.Length; i++)
-            {
-                AcceptedInput.Add(s[i]);
-            }
+            foreach (char c in s)
+                AcceptedInput.Add(c);
         }
 
         public static void Update(bool final)
