@@ -44,9 +44,6 @@ namespace ODB
         public static void Load(World deserialized)
         {
             _instance = deserialized;
-            /*ODBGame.Game.Player = Instance.WorldActors
-                .First(a => a.Definition.Name == "Moribund");*/
-
             ODBGame.Game.SetupBrains();
             ODBGame.Game.Player.HasMoved = true;
         }

@@ -111,7 +111,13 @@ namespace ODB
         [DataMember] public int Cooldown;
         [DataMember] private int _food;
 
-        [DataMember] public List<BodyPart> PaperDoll;
+        [DataMember] private Doll _doll;
+
+        public List<BodyPart> PaperDoll
+        {
+            get { return _doll.Get(); }
+        }
+
         [DataMember] private List<int> _inventory;
 
         public List<Item> Inventory
@@ -183,9 +189,10 @@ namespace ODB
 
             _food = 9000;
 
-            PaperDoll = new List<BodyPart>();
+            _doll = new Doll();
             foreach (DollSlot ds in definition.BodyParts)
-                PaperDoll.Add(
+                _doll.Add(
+                //PaperDoll.Add(
                     ds == DollSlot.Hand
                     ? new Hand(ds)
                     : new BodyPart(ds)
@@ -1339,7 +1346,7 @@ namespace ODB
             if (count != item.Count)
             {
                 Item clone = new Item(item.WriteItem().ToString()) {
-                    ID = Item.IDCounter++,
+                    ID = IDCounter++,
                     Count = count
                 };
                 item.Count -= count;
@@ -1777,7 +1784,8 @@ namespace ODB
             _food = stream.ReadInt();
             _quiver = stream.ReadNInt();
 
-            PaperDoll = new List<BodyPart>();
+            //PaperDoll = new List<BodyPart>();
+            _doll = new Doll();
             foreach (string ss in stream.ReadString().NeatSplit(","))
             {
                 string dsType = ss.Split(':')[0];
@@ -1825,8 +1833,6 @@ namespace ODB
                 );
             }
 
-            //Awake = stream.ReadBool();
-
             return stream;
         }
 
@@ -1839,6 +1845,33 @@ namespace ODB
         public void RemoveItem(Item item)
         {
             _inventory.Remove(item.ID);
+        }
+    }
+
+    [DataContract]
+    public class Doll
+    {
+        [DataMember] public List<BodyPart> BodyParts;
+        [DataMember] public List<Hand> Hands;
+
+        public Doll()
+        {
+            BodyParts = new List<BodyPart>();
+            Hands = new List<Hand>();
+        }
+
+        public List<BodyPart> Get()
+        {
+            List<BodyPart> bodyParts = new List<BodyPart>();
+            bodyParts.AddRange(BodyParts);
+            bodyParts.AddRange(Hands);
+            return bodyParts;
+        }
+
+        public void Add(BodyPart bp)
+        {
+            if (bp.Type == DollSlot.Hand) Hands.Add((Hand)bp);
+            else BodyParts.Add(bp);
         }
     }
 

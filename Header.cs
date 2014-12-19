@@ -179,7 +179,23 @@ namespace ODB
         }
 
         [DataMember] public DollSlot Type;
-        [DataMember] public Item Item;
+        [DataMember] private int? _item;
+
+        public Item Item
+        {
+            get
+            {
+                return _item.HasValue
+                    ? Util.GetItemByID(_item.Value)
+                    : null;
+            }
+            set
+            {
+                _item = value == null
+                    ? (int?)null
+                    : value.ID;
+            }
+        }
 
         public BodyPart() { }
         public BodyPart(DollSlot type, Item item = null)
