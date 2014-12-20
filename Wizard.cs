@@ -148,7 +148,6 @@ namespace ODB
                     );
                     World.Instance.WorldActors.Add(act);
                     Game.Brains.Add(new Brain(act));
-                    World.Level.CalculateActorPositions();
                     break;
                     #endregion
                 case "si":
@@ -169,10 +168,6 @@ namespace ODB
                     break;
                     #endregion
 
-                case "saveidefs":
-                case "sid":
-                    SaveIO.WriteItemDefinitionsToFile("Data/" + args[0]);
-                    break;
                 case "sp":
                 case "setplayer":
                     #region setplayer
@@ -273,7 +268,6 @@ namespace ODB
                     a.Rects.AddRange(b.Rects);
                     World.Level.Rooms.Remove(b);
                     World.Level.CalculateRoomLinks();
-                    World.Level.CalculateActorPositions();
                     break;
                 case "lv-rid":
                     Game.UI.Log(Util.GetRooms(WmCursor).Aggregate(
@@ -292,7 +286,6 @@ namespace ODB
                     #region load
                     World.Level.LoadLevelSave("Save/" + args[0]);
                     Game.SetupBrains();
-                    World.Level.CalculateActorPositions();
                     break;
                     #endregion
                 case "lv-engrave":
@@ -417,9 +410,6 @@ namespace ODB
                     #endregion
                 case "id-id":
                     Game.Identify(idef.Type);
-                    break;
-                case "id-p":
-                    Game.UI.Log(idef.WriteItemDefinition().ToString());
                     break;
                 case "id-bg":
                     idef.Background = IO.ReadNullableColor(args[0]);
@@ -555,15 +545,6 @@ namespace ODB
                     foreach(Item it in World.Level.ItemsOnTile(WmCursor))
                         Game.UI.Log(
                             it.WriteItem().ToString()
-                        );
-                    break;
-                    #endregion
-                case "ii-pd":
-                case "ii-pdef":
-                    #region pid
-                    foreach(Item piditem in World.Level.ItemsOnTile(WmCursor))
-                        Game.UI.Log(
-                            piditem.Definition.WriteItemDefinition().ToString()
                         );
                     break;
                     #endregion

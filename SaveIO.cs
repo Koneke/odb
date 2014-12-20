@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace ODB
 {
@@ -68,48 +69,15 @@ namespace ODB
             return content;
         }
 
-        public static string WriteItemDefinitionsToFile(string path)
-        {
-            string output = "";
-            //todo: probably a better way to do this.
-            //      saving/loading is sort of assumed to be pretty slow anyways
-            //      so it's not a huge deal. this is actually not even slow atm.
-            for (int i = 0; i < 0xFFFF; i++)
-            {
-                if (ItemDefinition.ItemDefinitions[i] == null) continue;
-
-                output +=
-                    ItemDefinition.ItemDefinitions[i].WriteItemDefinition();
-                output += "##";
-            }
-            WriteToFile(path, output);
-            return output;
-        }
-
-        public static void ReadItemDefinitionsFromFile(string path)
-        {
-            while (ItemDefinition.ItemDefinitions
-                [gObjectDefinition.TypeCounter] != null)
-                gObjectDefinition.TypeCounter++;
-
-            string content = ReadFromFile(path);
-            List<string> definitions = content.Split(
-                new[] { "##" },
-                StringSplitOptions.RemoveEmptyEntries
-            ).ToList();
-
-            definitions.ForEach(definition => new ItemDefinition(definition));
-        }
-
         public static string WriteActorDefinitionsToFile(string path)
         {
             string output = "";
             for (int i = 0; i < 0xFFFF; i++)
             {
-                if (ActorDefinition.ActorDefinitions[i] == null) continue;
+                if (ActorDefinition.DefDict[i] == null) continue;
 
                 output +=
-                    ActorDefinition.ActorDefinitions[i].
+                    ActorDefinition.DefDict[i].
                         WriteActorDefinition();
                 output += "##";
             }
@@ -119,13 +87,13 @@ namespace ODB
 
         public static void ReadActorDefinitionsFromFile(string path)
         {
-            ActorDefinition.ActorDefinitions = new ActorDefinition[0xFFFF];
+            ActorDefinition.DefDict = new Dictionary<int, ActorDefinition>();
 
             string content = ReadFromFile(path);
             List<string> definitions = content.Split(
                 new[] { "##" },
                 StringSplitOptions.RemoveEmptyEntries
-                ).ToList();
+            ).ToList();
 
             definitions.ForEach(definition => new ActorDefinition(definition));
         }
@@ -157,31 +125,108 @@ namespace ODB
             definitions.ForEach(definition => new TileDefinition(definition));
         }
 
+        private static readonly JsonSerializerSettings Settings =
+            new JsonSerializerSettings
+            {
+                TypeNameHandling = TypeNameHandling.Objects,
+                Converters = { new StringEnumConverter() },
+                Formatting = Formatting.Indented
+            };
+
         public static void JsonSave()
         {
             WriteToFile(
-                "Test/bar.txt", 
+                "Test/game.sv", 
                 JsonConvert.SerializeObject(
                     Game.Instance,
-                    Formatting.Indented
+                    Settings
                 )
             );
             WriteToFile(
-                "Test/foo.txt", 
+                "Test/world.sv", 
                 JsonConvert.SerializeObject(
                     World.Instance,
-                    Formatting.Indented
+                    Settings
                 )
             );
         }
 
         public static void JsonLoad()
         {
-            string gs = ReadFromFile("Test/bar.txt");
-            Game.Instance = JsonConvert.DeserializeObject<Game>(gs);
+            Game.Instance = JsonConvert.DeserializeObject<Game>(
+                ReadFromFile("Test/game.sv"),
+                Settings
+            );
 
-            string content = ReadFromFile("Test/foo.txt");
-            World.Load(JsonConvert.DeserializeObject<World>(content));
+            World.Load(JsonConvert.DeserializeObject<World>(
+                ReadFromFile("Test/world.sv"),
+                Settings
+            ));
+        }
+
+        public static void JsonWriteItemDefinitions(string path)
+        {
+            WriteToFile(
+                path,
+                JsonConvert.SerializeObject(
+                    ItemDefinition.DefDict,
+                    Settings
+                )
+            );
+        }
+
+        public static void JsonWriteActorDefinitions(string path)
+        {
+            WriteToFile(
+                path,
+                JsonConvert.SerializeObject(
+                    ActorDefinition.DefDict,
+                    Settings
+                )
+            );
+        }
+
+        public static void JsonLoadItemDefinitions(string path)
+        {
+            ItemDefinition.DefDict = JsonConvert.DeserializeObject
+                <Dictionary<int, ItemDefinition>>(
+                    ReadFromFile(path),
+                    Settings
+            );
+
+            foreach (int key in ItemDefinition.DefDict.Keys)
+                gObjectDefinition.GObjectDefs.Add(
+                    key, ItemDefinition.DefDict[key]
+                );
+        }
+
+        public static void JsonLoadActorDefinitions(string path)
+        {
+            ActorDefinition.DefDict = JsonConvert.DeserializeObject
+                <Dictionary<int, ActorDefinition>>(
+                    ReadFromFile(path),
+                    Settings
+            );
+
+            Monster.MonstersByDifficulty =
+                new Dictionary<int, List<ActorDefinition>>();
+
+            foreach (int key in ActorDefinition.DefDict.Keys)
+            {
+                gObjectDefinition.GObjectDefs.Add(
+                    key, ActorDefinition.DefDict[key]
+                );
+
+                int difficulty = ActorDefinition.DefDict[key].Difficulty;
+
+                if (!Monster.MonstersByDifficulty.ContainsKey(difficulty))
+                    Monster.MonstersByDifficulty.Add(
+                        difficulty, new List<ActorDefinition>());
+
+                Monster.MonstersByDifficulty[difficulty].Add(
+                    ActorDefinition.DefDict[key]
+                );
+            }
         }
     }
 }

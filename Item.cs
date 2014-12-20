@@ -63,7 +63,7 @@ namespace ODB
         [DataMember] public List<Mod> Mods;
 
         public new ItemDefinition Definition {
-            get { return ItemDefinition.ItemDefinitions[_type]; }
+            get { return ItemDefinition.DefDict[_type]; }
         }
 
         /*

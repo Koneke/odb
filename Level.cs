@@ -60,30 +60,28 @@ namespace ODB
         [DataMember] public bool[,] Seen;
         [DataMember] public bool[,] Blood;
         [DataMember] public List<Room> Rooms;
-
         [DataMember] public List<LevelConnector> Connectors; 
-
-        //should not be saved
-        public Dictionary<Room, List<Actor>> ActorPositions;
-        public Dictionary<Actor, List<Room>> ActorRooms;
 
         public List<Actor> Actors
         {
             get
             {
-                return World.Instance.WorldActors.Where(a => a.LevelID == ID).ToList();
+                return World.Instance.WorldActors
+                    .Where(a => a.LevelID == ID).ToList();
             }
         }
         public List<Item> WorldItems {
             get
             {
-                return World.Instance.WorldItems.Where(i => i.LevelID == ID).ToList();
+                return World.Instance.WorldItems
+                    .Where(i => i.LevelID == ID).ToList();
             }
         }
         public List<Item> AllItems {
             get
             {
-                return World.Instance.AllItems.Where(i => i.LevelID == ID).ToList();
+                return World.Instance.AllItems
+                    .Where(i => i.LevelID == ID).ToList();
             }
         }
 
@@ -94,16 +92,12 @@ namespace ODB
         ) {
             Size = new Point(levelWidth, levelHeight);
             Clear();
-            ActorPositions = new Dictionary<Room, List<Actor>>();
-            ActorRooms = new Dictionary<Actor, List<Room>>();
             ID = IDCounter++;
             Connectors = new List<LevelConnector>();
         }
         public Level(string s)
         {
             LoadLevelSave(s);
-            ActorPositions = new Dictionary<Room, List<Actor>>();
-            ActorRooms = new Dictionary<Actor, List<Room>>();
         }
 
         public void Clear()
@@ -196,34 +190,6 @@ namespace ODB
             {
                 r.Linked.Clear();
                 r.Linked.AddRange(NeighbouringRooms(r));
-            }
-        }
-        public void CalculateActorPositions()
-        {
-            if (ActorPositions == null)
-                ActorPositions = new Dictionary<Room, List<Actor>>();
-            ActorPositions.Clear();
-
-            if (ActorRooms == null)
-                ActorRooms = new Dictionary<Actor, List<Room>>();
-            ActorRooms.Clear();
-
-            foreach (Actor a in
-                World.Instance.WorldActors.Where(a => a.LevelID == ID))
-                ActorRooms.Add(a, new List<Room>());
-
-            foreach (Room r in Rooms.Where(r => r != null))
-            {
-                ActorPositions.Add(r, new List<Actor>());
-                foreach (Actor a in World.Instance.WorldActors
-                    .Where(a => a.LevelID == ID)
-                    //ReSharper disable once AccessToForEachVariableInClosure
-                    //LH-011214: we're only /using/ the value here, so it's ok
-                    .Where(a => r.ContainsPoint(a.xy)))
-                {
-                    ActorPositions[r].Add(a);
-                    ActorRooms[a] = new List<Room> {r};
-                }
             }
         }
 
@@ -388,7 +354,6 @@ namespace ODB
 
             actor.LevelID = ID;
             World.Instance.WorldActors.Add(actor);
-            CalculateActorPositions();
         }
         public void Spawn(Item item)
         {

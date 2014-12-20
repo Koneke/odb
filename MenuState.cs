@@ -57,8 +57,7 @@ namespace ODB
                             case Choices.Name:
                                 IO.SetInput(IO.Indexes, ' ');
                                 IO.QuestionReaction = Submit;
-                                IO.Answer =
-                                    ActorDefinition.ActorDefinitions[0].Name;
+                                IO.Answer = ActorDefinition.DefDict[0].Name;
                                 _state = State.Name;
                                 break;
                             case Choices.Start:
@@ -94,7 +93,7 @@ namespace ODB
         private void Submit()
         {
             _state = State.MainMenu;
-            ActorDefinition.ActorDefinitions[0].Name = IO.Answer;
+            ActorDefinition.DefDict[0].Name = IO.Answer;
         }
 
         public override void Draw()
@@ -106,7 +105,7 @@ namespace ODB
                 _choice == (int)Choices.Name ? ">" : "",
                 _state == State.Name
                     ? IO.Answer + "_"
-                    : ActorDefinition.ActorDefinitions[0].Name
+                    : ActorDefinition.DefDict[0].Name
             );
 
             string startString = String.Format(

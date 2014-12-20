@@ -10,10 +10,14 @@ using xnaPoint = Microsoft.Xna.Framework.Point;
 //~~~ QUEST TRACKER for ?? dec ~~~
 // * Item paid-for status.
 // * Wizard mode area select.
-// * Clean up wizard mode class a bit.
-//   * Fairly low prio, since it's not part of the /game/ per se,
-//     but it /is/ fairly messy.
+//   * Probably not very important any more.
 // * Inventory stuff currently doesn't make noise.
+//   * Should it?
+// * Don't save the level itself as json, think that's the slow bit
+//   * Connector info and sim. is okay, but homerolling the level will probably
+//     be faster, I feel.
+// * Save int/byte instead of tile for gObjects, since some tiles are not
+//   visible in ordinary text.
 
 namespace ODB
 {
@@ -45,8 +49,8 @@ namespace ODB
         private void Load()
         {
             Spell.SetupMagic(); //essentially magic defs, but we hardcode magic
-            SaveIO.ReadActorDefinitionsFromFile("Data/actors.def");
-            SaveIO.ReadItemDefinitionsFromFile("Data/items.def");
+            SaveIO.JsonLoadActorDefinitions("Test/jsonactors.def");
+            SaveIO.JsonLoadItemDefinitions("Test/jsonitems.def");
             SaveIO.ReadTileDefinitionsFromFile("Data/tiles.def");
             KeyBindings.ReadBinds(SaveIO.ReadFromFile("Data/keybindings.kb"));
 
@@ -93,7 +97,7 @@ namespace ODB
                 }
 
                 using (var stream = File.OpenRead(
-                    Directory.GetCurrentDirectory() + "/Data/actors.def"))
+                    Directory.GetCurrentDirectory() + "/Test/jsonactors.def"))
                 {
                     Hash += BitConverter.ToString(md5.ComputeHash(stream))
                         .Replace("-", "")
@@ -101,7 +105,7 @@ namespace ODB
                 }
 
                 using (var stream = File.OpenRead(
-                    Directory.GetCurrentDirectory() + "/Data/items.def"))
+                    Directory.GetCurrentDirectory() + "/Test/jsonitems.def"))
                 {
                     Hash += BitConverter.ToString(md5.ComputeHash(stream))
                         .Replace("-", "")

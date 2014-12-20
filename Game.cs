@@ -34,7 +34,7 @@ namespace ODB
         [DataMember] private int _gameTick;
         [DataMember] private int _seed;
         [DataMember] private int _idCounter;
-        [DataMember] private List<int> _identified; 
+        [DataMember] private List<int> _identified;
 
         public static List<int> GeneratedUniques
         {

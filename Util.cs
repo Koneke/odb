@@ -136,21 +136,19 @@ namespace ODB
 
         public static ItemDefinition ItemDefByName(string name)
         {
-            for (int i = 0; i < 0xFFFF; i++)
-                if (ItemDefinition.ItemDefinitions[i] != null)
-                    if (ItemDefinition.
-                        ItemDefinitions[i].Name.ToLower() == name.ToLower())
-                        return ItemDefinition.ItemDefinitions[i];
+            foreach(int key in ItemDefinition.DefDict.Keys)
+                if (ItemDefinition.DefDict[key].Name.ToLower() ==
+                    name.ToLower())
+                    return ItemDefinition.DefDict[key];
             return null;
         }
 
         public static ActorDefinition ADefByName(string name)
         {
-            for (int i = 0; i < 0xFFFF; i++)
-                if (ActorDefinition.ActorDefinitions[i] != null)
-                    if (ActorDefinition.
-                        ActorDefinitions[i].Name.ToLower() == name.ToLower())
-                        return ActorDefinition.ActorDefinitions[i];
+            foreach(int key in ActorDefinition.DefDict.Keys)
+                if (ActorDefinition.DefDict[key].Name.ToLower() ==
+                    name.ToLower())
+                    return ActorDefinition.DefDict[key];
             return null;
         }
 

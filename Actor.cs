@@ -90,7 +90,7 @@ namespace ODB
 
         public new ActorDefinition Definition
         {
-            get { return ActorDefinition.ActorDefinitions[_type]; }
+            get { return ActorDefinition.DefDict[_type]; }
         }
 
         [DataMember] private int _type;
@@ -787,7 +787,7 @@ namespace ODB
 
             Item corpse = new Item(
                 xy,
-                ItemDefinition.ItemDefinitions[Definition.CorpseType],
+                ItemDefinition.DefDict[Definition.CorpseType],
                 0, Intrinsics
             );
             //should always be ided
@@ -1014,7 +1014,6 @@ namespace ODB
                 Pass(true);
 
                 //walking noise
-                World.Level.CalculateActorPositions();
                 World.Level.MakeNoise(
                     xy,
                     NoiseType.FootSteps,

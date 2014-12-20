@@ -459,6 +459,9 @@ namespace ODB
                     if (effect.SetupAcceptedInput != null)
                         effect.SetupAcceptedInput(Game.Player);
 
+                    item.Identify();
+                    item.SpendCharge();
+
                     if (IO.AcceptedInput.Count <= 0)
                     {
                         Game.UI.Log("You have nothing to cast that on.");

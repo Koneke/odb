@@ -344,9 +344,9 @@ namespace ODB
         {
             int loot = (level.Depth) * 30;
             List<ItemDefinition> possibleItems =
-                ItemDefinition.ItemDefinitions
-                    .Where(itd => itd != null)
-                    .Where(itd => itd.Value < loot)
+                ItemDefinition.DefDict
+                    .Where(kvp => kvp.Value.Value < loot)
+                    .Select(kvp => kvp.Value)
                     .ToList();
 
             while (loot > 0 && possibleItems.Count > 0)
@@ -365,9 +365,9 @@ namespace ODB
                 level.Spawn(item);
 
                 possibleItems =
-                    ItemDefinition.ItemDefinitions
-                    .Where(itd => itd != null)
-                    .Where(itd => itd.Value < loot)
+                    ItemDefinition.DefDict
+                    .Where(kvp => kvp.Value.Value < loot)
+                    .Select(kvp => kvp.Value)
                     .ToList();
             }
 
@@ -375,7 +375,7 @@ namespace ODB
             {
                 //Notice: gold should always be at the first item spot, i.e.
                 //0x8000.
-                ItemDefinition gold = ItemDefinition.ItemDefinitions[0x8000];
+                ItemDefinition gold = ItemDefinition.DefDict[0x8000];
                 int amount = Util.Random.Next(1, loot + 1);
                 Item item = new Item(
                     level.RandomOpenPoint(),
