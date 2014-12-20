@@ -17,8 +17,6 @@ namespace ODB
 
         public static GraphicsDeviceManager Graphics;
 
-        public static ODBGame Game;
-
         public ConsoleList Consoles;
         private Console _dfc;
         private Console _logConsole;
@@ -163,8 +161,6 @@ namespace ODB
 
         private void RenderMap()
         {
-            //_dfc.CellData.Clear();
-
             for (int x = 0; x < ScreenSize.X; x++)
                 for (int y = 0; y < ScreenSize.Y; y++)
                 {
@@ -176,8 +172,9 @@ namespace ODB
                     if (ti == null) continue;
                     if(!(ti.Seen || Game.WizMode)) continue;
 
-                    bool inVision = Game.Player.
-                        Sees(Camera + new Point(x, y)) || Game.WizMode;
+                    bool inVision =
+                        Game.Player.Sees(Camera + new Point(x, y)) ||
+                        Game.WizMode;
 
                     Color background = ti.Tile.Background;
 
@@ -198,11 +195,11 @@ namespace ODB
 
             int[,] itemCount = new int[World.Level.Size.x, World.Level.Size.y];
 
-            foreach (Item i in World.WorldItems
+            foreach (Item i in World.Instance.WorldItems
                 .Where(it => it.LevelID == World.Level.ID))
                 itemCount[i.xy.x, i.xy.y]++;
 
-            foreach (Item i in World.WorldItems
+            foreach (Item i in World.Instance.WorldItems
                 .Where(i => i.LevelID == World.Level.ID)
                 .Where(i => Game.Player.Sees(i.xy) || Game.WizMode)
                 .Where(i => screen.ContainsPoint(i.xy)))
@@ -224,13 +221,15 @@ namespace ODB
 
             int[,] actorCount = new int[World.Level.Size.x, World.Level.Size.y];
 
-            foreach (Actor a in World.WorldActors
+            foreach (Actor a in World.Instance.WorldActors
                 .Where(a => a.LevelID == World.Level.ID))
                 actorCount[a.xy.x, a.xy.y]++;
 
-            foreach (Actor a in World.WorldActors
+            foreach (Actor a in World.Instance.WorldActors
                 .Where(a => a.LevelID == World.Level.ID)
-                .Where(a => Game.Player.Sees(a.xy) || Game.WizMode)
+                .Where(a =>
+                    Game.Player.Sees(a.xy) ||
+                    Game.WizMode)
                 .Where(a => screen.ContainsPoint(a.xy)))
             {
                 if (actorCount[a.xy.x, a.xy.y] == 1)
@@ -402,7 +401,8 @@ namespace ODB
             //border texts
             if (InventoryManager.CurrentContainer == -1)
                 _inventoryConsole.CellData.Print(
-                    2, 0, Game.Player.GetName("Name", true), Color.White);
+                    2, 0, Game.Player.GetName("Name", true),
+                    Color.White);
             else
                 _inventoryConsole.CellData.Print(
                     2, 0,
@@ -426,7 +426,7 @@ namespace ODB
 
             List<Item> items = new List<Item>();
             if (InventoryManager.CurrentContainer != -1)
-                items.AddRange(Game.InvMan.CurrentContents);
+                items.AddRange(World.Instance.WorldContainers.CurrentContents);
             else items.AddRange(Game.Player.Inventory);
 
             int y = 1;
@@ -454,21 +454,20 @@ namespace ODB
 
                 if (item.HasComponent<ContainerComponent>())
                 {
-                    name += " (holding ";
-                    name += InventoryManager.Containers[item.ID]
-                        .Count + " item";
-                    if (InventoryManager.Containers[item.ID].Count == 1)
-                        name += "s";
-                    name += ")";
+                    int itemCount = InventoryManager.Containers[item.ID].Count;
+
+                    name += string.Format(
+                        " (holding {0} item{1})",
+                        itemCount,
+                        itemCount == 1 ? "" : "s"
+                    );
                 }
 
                 if (Game.Player.IsEquipped(item))
                 {
                     if (Game.Player.Quiver == item) name += " (quivered)";
-                    else if (Game.Player.IsWielded(item))
-                        name += " (wielded)";
-                    else if (Game.Player.IsWorn(item))
-                        name += " (worn)";
+                    else if (Game.Player.IsWielded(item)) name += " (wielded)";
+                    else if (Game.Player.IsWorn(item)) name += " (worn)";
                 }
 
                 Color bg = Color.Black;
@@ -529,11 +528,19 @@ namespace ODB
                     Wizard.WmCursor.y + ") ";
 
                 str += "D:" + World.Level.Depth + "0M";
-                str += " (" + World.Level.Name + ")";
+                str += " (" + World.Level.Name + ") ";
 
-                _statRowConsole.CellData.Print(
-                    0, 0, str 
+                TileInfo ti = World.Level.At(Wizard.WmCursor);
+                if (ti.Actor != null)
+                    str += string.Format(
+                        "{0}, lvl {1}, {2}/{3}",
+                        ti.Actor.GetName("Name"),
+                        ti.Actor.Level,
+                        ti.Actor.HpCurrent,
+                        ti.Actor.HpMax
                     );
+
+                _statRowConsole.CellData.Print(0, 0, str);
                 return;
             }
 
@@ -541,25 +548,32 @@ namespace ODB
             //since it is the player.
             string namerow = Game.Player.GetName("name", true);
             namerow += "  ";
-            namerow += "STR " + Game.Player.Get(Stat.Strength) + "  ";
-            namerow += "DEX " + Game.Player.Get(Stat.Dexterity) + "  ";
-            namerow += "INT " + Game.Player.Get(Stat.Intelligence) + "  ";
-            namerow += "AC " + Game.Player.GetArmor();
+            namerow += string.Format(
+                "STR {0}  DEX {1}  INT {2} AC {3}",
+                Game.Player.Get(Stat.Strength),
+                Game.Player.Get(Stat.Dexterity),
+                Game.Player.Get(Stat.Intelligence),
+                Game.Player.GetArmor()
+            );
 
-            if (Game.Player.GetFoodStatus() != Actor.FoodStatus.Satisfied)
+            if (Game.Player
+                .GetFoodStatus() != Actor.FoodStatus.Satisfied)
+            {
                 namerow += " " +
-                    Actor.FoodStatusString(Game.Player.GetFoodStatus());
+                    Actor.FoodStatusString(
+                        Game.Player.GetFoodStatus()
+                    );
+            }
 
             namerow = Game.Player.LastingEffects.Aggregate(
                 namerow,
                 (current, lastingEffect) => current +
-                    (
-                        lastingEffect.Type == StatusType.None
-                            ? ""
-                            : " " + LastingEffect.EffectNames
-                                [lastingEffect.Type]
-                        )
-                );
+                (
+                    lastingEffect.Type == StatusType.None
+                        ? ""
+                        : " " + LastingEffect.EffectNames[lastingEffect.Type]
+                )
+            );
 
             string statrow = "";
             statrow += "[";
@@ -588,7 +602,10 @@ namespace ODB
 
             statrow += " ";
             statrow += "T:";
-            statrow += string.Format("{0:F1}", Game.GameTick / 10f);
+            statrow += string.Format(
+                "{0:F1}",
+                Game.GameTick / 10f
+            );
 
             statrow += " ";
             statrow += "D:" + World.Level.Depth + "0M";
@@ -597,11 +614,11 @@ namespace ODB
 
             float playerHealthPcnt =
                 Game.Player.HpCurrent /
-                    (float)Game.Player.HpMax;
+                (float)Game.Player.HpMax;
 
             float playerManaPcnt =
                 Game.Player.MpCurrent /
-                    (float)Game.Player.MpMax;
+                (float)Game.Player.MpMax;
 
             float colorStrength = 0.6f + 0.4f - (0.4f * playerHealthPcnt);
             float manaColorStrength = 0.6f + 0.4f - (0.4f * playerManaPcnt);

@@ -6,8 +6,6 @@ namespace ODB
 {
     class Wizard
     {
-        public static ODBGame Game;
-
         public static Point WmCursor;
         public static List<string> WmHistory = new List<string>();
         public static int WmScrollback;
@@ -148,9 +146,8 @@ namespace ODB
                         ? IO.ReadHex(args[1])
                         : 1
                     );
-                    World.WorldActors.Add(act);
+                    World.Instance.WorldActors.Add(act);
                     Game.Brains.Add(new Brain(act));
-                    World.Level.CalculateActorPositions();
                     break;
                     #endregion
                 case "si":
@@ -171,10 +168,6 @@ namespace ODB
                     break;
                     #endregion
 
-                case "saveidefs":
-                case "sid":
-                    SaveIO.WriteItemDefinitionsToFile("Data/" + args[0]);
-                    break;
                 case "sp":
                 case "setplayer":
                     #region setplayer
@@ -192,10 +185,10 @@ namespace ODB
                     Game.UI.Log(Game.Seed + "");
                     break;
                 case "save":
-                    SaveIO.Save();
+                    SaveIO.JsonSave();
                     break;
                 case "load":
-                    SaveIO.Load();
+                    SaveIO.JsonLoad();
                     break;
                 default: return false;
             }
@@ -275,7 +268,6 @@ namespace ODB
                     a.Rects.AddRange(b.Rects);
                     World.Level.Rooms.Remove(b);
                     World.Level.CalculateRoomLinks();
-                    World.Level.CalculateActorPositions();
                     break;
                 case "lv-rid":
                     Game.UI.Log(Util.GetRooms(WmCursor).Aggregate(
@@ -294,7 +286,6 @@ namespace ODB
                     #region load
                     World.Level.LoadLevelSave("Save/" + args[0]);
                     Game.SetupBrains();
-                    World.Level.CalculateActorPositions();
                     break;
                     #endregion
                 case "lv-engrave":
@@ -418,10 +409,7 @@ namespace ODB
                     break;
                     #endregion
                 case "id-id":
-                    ItemDefinition.IdentifiedDefs.Add(idef.Type);
-                    break;
-                case "id-p":
-                    Game.UI.Log(idef.WriteItemDefinition().ToString());
+                    Game.Identify(idef.Type);
                     break;
                 case "id-bg":
                     idef.Background = IO.ReadNullableColor(args[0]);
@@ -472,19 +460,6 @@ namespace ODB
                     };
                     a.Damage(ds);
                     break;
-                case "ai-sdef":
-                case "ai-setdef":
-                    a.Definition = ActorDefinition.ActorDefinitions
-                        [IO.ReadHex(args[0])];
-                    break;
-                case "ai-p":
-                case "ai-print":
-                    #region pa
-                    Game.UI.Log(
-                        World.Level.ActorOnTile(WmCursor).WriteActor().ToString()
-                    );
-                    break;
-                    #endregion
                 case "ai-pd":
                 case "ai-pdef":
                     #region pad
@@ -539,9 +514,6 @@ namespace ODB
                     }
                     break;
                     #endregion
-                case "ai-awake":
-                    a.Awake = IO.ReadBool(args[0]);
-                    break;
                 case "ai-ale":
                 case "ai-addle":
                     a.AddEffect(
@@ -567,12 +539,6 @@ namespace ODB
                     foreach (Item it in items)
                         it.Mod = IO.ReadHex(args[0]);
                     break;
-                case "ii-sdef":
-                case "ii-setdef":
-                    foreach (Item it in World.Level.ItemsOnTile(WmCursor))
-                        it.Definition = ItemDefinition.ItemDefinitions
-                            [IO.ReadHex(args[0])];
-                    break;
                 case "ii-p":
                 case "ii-print":
                     #region pi
@@ -582,25 +548,10 @@ namespace ODB
                         );
                     break;
                     #endregion
-                case "ii-pd":
-                case "ii-pdef":
-                    #region pid
-                    foreach(Item piditem in World.Level.ItemsOnTile(WmCursor))
-                        Game.UI.Log(
-                            piditem.Definition.WriteItemDefinition().ToString()
-                        );
-                    break;
-                    #endregion
                 case "ii-id":
                     #region id
                     foreach (Item iditem in World.Level.ItemsOnTile(WmCursor))
                         iditem.Identify();
-                    break;
-                    #endregion
-                case "ii-unid":
-                    #region unid
-                    foreach (Item iditem in World.Level.ItemsOnTile(WmCursor))
-                        ItemDefinition.IdentifiedDefs.Remove(iditem.Type);
                     break;
                     #endregion
                 case "ii-am":

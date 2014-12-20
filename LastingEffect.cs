@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace ODB
 {
@@ -15,6 +16,7 @@ namespace ODB
         Sneak
     }
 
+    [DataContract]
     public class LastingEffect
     {
         public static StatusType ReadStatusType(string s)
@@ -58,13 +60,22 @@ namespace ODB
                 { StatusType.Sneak, "Sneak" },
             };
 
-        public StatusType Type;
-        public int Life;
+        [DataMember] public StatusType Type;
+        [DataMember] public int Life;
+        [DataMember] public int Holder;
+        [DataMember] private int? _ticker;
+        [DataMember] public int LifeLength;
 
-        //-1 = permanent
-        public int Holder;
-        public TickingEffectDefinition Ticker;
-        public int LifeLength;
+        public TickingEffectDefinition Ticker {
+            get
+            {
+                return _ticker.HasValue
+                    ? TickingEffectDefinition.Definitions[_ticker.Value]
+                    : null;
+            }
+        }
+
+        public LastingEffect() { }
 
         public LastingEffect(
             int holder,
@@ -75,7 +86,7 @@ namespace ODB
             Holder = holder;
             Type = type;
             LifeLength = lifeLength;
-            Ticker = ticker;
+            if (ticker != null) _ticker = ticker.ID;
         }
 
         public LastingEffect(string s)
@@ -126,7 +137,7 @@ namespace ODB
 
             int? ticker = stream.ReadNInt();
             if(ticker.HasValue)
-                Ticker = TickingEffectDefinition.Definitions[ticker.Value];
+                _ticker = ticker.Value;
 
             //LifeLength = stream.ReadHex(8);
             LifeLength = stream.ReadInt();
@@ -134,8 +145,8 @@ namespace ODB
 
         public static void PoisonEffect(Actor holder)
         {
-            Util.Game.UI.Log(
-                (holder == Util.Game.Player
+            Game.UI.Log(
+                (holder == Game.Player
                     ? "You feel "
                     : (holder.GetName("Name") + " looks ")) +
                 "sick..."
@@ -158,8 +169,8 @@ namespace ODB
         {
             World.Level.At(holder.xy).Blood = true;
 
-            if(holder == Util.Game.Player || Util.Game.Player.Sees(holder.xy))
-                Util.Game.UI.Log(
+            if(holder == Game.Player || Game.Player.Sees(holder.xy))
+                Game.UI.Log(
                     holder.GetName("Name") + " " +
                     holder.Verb("bleed") + "!"
                 );

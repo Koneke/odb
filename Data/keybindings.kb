@@ -20,7 +20,7 @@ dev_saveactors		=	:f1;
 dev_saveitems		=	:f2;
 window_size			=	:f3;
 switch_font			=	:f4;
-exit				=	:escape;
+exit				=	:escape, s:escape;
 
 log_size_up			=	:add;
 log_size_down		=	:subtract;

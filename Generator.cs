@@ -190,6 +190,8 @@ namespace ODB
                 Depth = depth
             };
 
+            World.Instance.Levels.Add(newLevel);
+
             Rooms = new List<GenRoom>();
             Doors = new List<Point>();
             Connections = new List<KeyValuePair<Connector, Connector>>();
@@ -293,9 +295,9 @@ namespace ODB
         private static void GenerateMonsters(Level level)
         {
             float difficulty =
-                (ODBGame.Game.Player == null
+                (Game.Player == null
                     ? 1
-                    : Util.Game.Player.Level)
+                    : Game.Player.Level)
                 + level.Depth + 1;
 
             List<ActorDefinition> possibleMonsters =
@@ -307,7 +309,7 @@ namespace ODB
                     .Where(ad => ad.Type != 0)
                     .Where(ad =>
                         ad.GenerationType != Monster.GenerationType.Unique ||
-                        !ODBGame.Game.GeneratedUniques.Contains(ad.Type))
+                        !Game.GeneratedUniques.Contains(ad.Type))
                     .ToList();
 
             float monsterPool = (difficulty * 5);
@@ -322,7 +324,7 @@ namespace ODB
                         monster,
                         (int)Math.Floor(difficulty / 2f)
                     );
-                spawned.Awake = true;
+                //spawned.Awake = true;
                 //sleep until woken up
                 spawned.AddEffect(StatusType.Sleep, -1);
 
@@ -330,7 +332,7 @@ namespace ODB
 
                 if (monster.GenerationType == Monster.GenerationType.Unique)
                 {
-                    ODBGame.Game.GeneratedUniques.Add(monster.Type);
+                    Game.GeneratedUniques.Add(monster.Type);
                     possibleMonsters.Remove(monster);
                 }
 
@@ -342,9 +344,9 @@ namespace ODB
         {
             int loot = (level.Depth) * 30;
             List<ItemDefinition> possibleItems =
-                ItemDefinition.ItemDefinitions
-                    .Where(itd => itd != null)
-                    .Where(itd => itd.Value < loot)
+                ItemDefinition.DefDict
+                    .Where(kvp => kvp.Value.Value < loot)
+                    .Select(kvp => kvp.Value)
                     .ToList();
 
             while (loot > 0 && possibleItems.Count > 0)
@@ -363,9 +365,9 @@ namespace ODB
                 level.Spawn(item);
 
                 possibleItems =
-                    ItemDefinition.ItemDefinitions
-                    .Where(itd => itd != null)
-                    .Where(itd => itd.Value < loot)
+                    ItemDefinition.DefDict
+                    .Where(kvp => kvp.Value.Value < loot)
+                    .Select(kvp => kvp.Value)
                     .ToList();
             }
 
@@ -373,7 +375,7 @@ namespace ODB
             {
                 //Notice: gold should always be at the first item spot, i.e.
                 //0x8000.
-                ItemDefinition gold = ItemDefinition.ItemDefinitions[0x8000];
+                ItemDefinition gold = ItemDefinition.DefDict[0x8000];
                 int amount = Util.Random.Next(1, loot + 1);
                 Item item = new Item(
                     level.RandomOpenPoint(),

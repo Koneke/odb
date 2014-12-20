@@ -18,7 +18,7 @@ namespace ODB
         {
             //we create a new one everytime so the shuffle returns
             //the same result every time for the same input and gameseed
-            Random rng = new Random(Util.Game.Seed);
+            Random rng = new Random(Game.Seed);
             //so we only return a shuffled copy instead
             List<T> list = new List<T>(l);
             int n = list.Count;
@@ -117,9 +117,6 @@ namespace ODB
 
     public class Util
     {
-        //todo: find the odd refs to this hanging around
-        //      due to me being a lazy bum
-        public static ODBGame Game;
         public static Random Random;
 
         public static void SetSeed(int seed)
@@ -129,31 +126,29 @@ namespace ODB
 
         public static Item GetItemByID(int id)
         {
-            return World.AllItems.Find(x => x.ID == id);
+            return World.Instance.AllItems.Find(x => x.ID == id);
         }
 
         public static Actor GetActorByID(int id)
         {
-            return World.WorldActors.Find(x => x.ID == id);
+            return World.Instance.WorldActors.Find(x => x.ID == id);
         }
 
         public static ItemDefinition ItemDefByName(string name)
         {
-            for (int i = 0; i < 0xFFFF; i++)
-                if (ItemDefinition.ItemDefinitions[i] != null)
-                    if (ItemDefinition.
-                        ItemDefinitions[i].Name.ToLower() == name.ToLower())
-                        return ItemDefinition.ItemDefinitions[i];
+            foreach(int key in ItemDefinition.DefDict.Keys)
+                if (ItemDefinition.DefDict[key].Name.ToLower() ==
+                    name.ToLower())
+                    return ItemDefinition.DefDict[key];
             return null;
         }
 
         public static ActorDefinition ADefByName(string name)
         {
-            for (int i = 0; i < 0xFFFF; i++)
-                if (ActorDefinition.ActorDefinitions[i] != null)
-                    if (ActorDefinition.
-                        ActorDefinitions[i].Name.ToLower() == name.ToLower())
-                        return ActorDefinition.ActorDefinitions[i];
+            foreach(int key in ActorDefinition.DefDict.Keys)
+                if (ActorDefinition.DefDict[key].Name.ToLower() ==
+                    name.ToLower())
+                    return ActorDefinition.DefDict[key];
             return null;
         }
 

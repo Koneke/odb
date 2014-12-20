@@ -1,9 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using Microsoft.Xna.Framework;
 
 namespace ODB
 {
+    [DataContract]
     public class ActorDefinition : gObjectDefinition
     {
         //LH-01214: Note, the concept of equality here does not refer to
@@ -71,22 +73,24 @@ namespace ODB
             return Equals((ActorDefinition)obj);
         }
 
-        public static ActorDefinition[] ActorDefinitions =
-            new ActorDefinition[0xFFFF];
+        public static Dictionary<int, ActorDefinition> DefDict =
+            new Dictionary<int, ActorDefinition>();
 
-        public bool Named; //for uniques and what not
-        public Monster.GenerationType GenerationType;
-        public string Strength, Dexterity, Intelligence;
-        public int Speed, Quickness;
-        public string HitDie, ManaDie;
-        public int Experience;
-        public int Difficulty;
-        public List<DollSlot> BodyParts;
-        public int CorpseType;
-        public List<int> Spellbook;
+        [DataMember(Order= 6)] public bool Named; //for uniques and what not
+        [DataMember(Order= 7)] public Monster.GenerationType GenerationType;
+        [DataMember(Order= 8)] public string Strength, Dexterity, Intelligence;
+        [DataMember(Order= 9)] public int Speed, Quickness;
+        [DataMember(Order=10)] public string HitDie, ManaDie;
+        [DataMember(Order=11)] public int Experience;
+        [DataMember(Order=12)] public int Difficulty;
+        [DataMember(Order=13)] public List<DollSlot> BodyParts;
+        [DataMember(Order=14)] public int CorpseType;
+        [DataMember(Order=15)] public List<int> Spellbook;
         //intrinsics spawned with
-        public List<Mod> SpawnIntrinsics;
-        public AttackComponent NaturalAttack;
+        [DataMember(Order=16)] public List<Mod> SpawnIntrinsics;
+        [DataMember(Order=17)] public AttackComponent NaturalAttack;
+
+        public ActorDefinition() { }
 
         public ActorDefinition(
             Color? background, Color foreground,
@@ -100,7 +104,8 @@ namespace ODB
             Dexterity = dexterity;
             Intelligence = intelligence;
             BodyParts = bodyParts ?? new List<DollSlot>();
-            ActorDefinitions[Type] = this;
+
+            DefDict[Type] = this;
 
             ItemDefinition corpse = new ItemDefinition(
                 null, Color.Red, "%", name + " corpse");
@@ -141,7 +146,7 @@ namespace ODB
                     Quickness = IO.ReadHex(value);
                     break;
                 default:
-                    Util.Game.UI.Log("~ERROR~: Bad stat.");
+                    Game.UI.Log("~ERROR~: Bad stat.");
                     break;
             }
         }
@@ -250,7 +255,7 @@ namespace ODB
                     Difficulty, new List<ActorDefinition>());
             Monster.MonstersByDifficulty[Difficulty].Add(this);
 
-            ActorDefinitions[Type] = this;
+            DefDict[Type] = this;
             return stream;
         }
     }

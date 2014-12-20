@@ -7,13 +7,6 @@ namespace ODB
 {
     public abstract class AppState
     {
-        protected ODBGame Game;
-
-        protected AppState(ODBGame game)
-        {
-            Game = game;
-        }
-
         public abstract void Update();
         public abstract void Draw();
         public abstract void SwitchTo();
@@ -21,42 +14,26 @@ namespace ODB
 
     public class GameState : AppState
     {
-        public GameState(ODBGame game) : base(game)
+        public List<Brain> Brains;
+
+        public GameState()
         {
-            Game.InvMan = new InventoryManager();
+            ODBGame.GameState = this;
+
+            World.Instance.WorldContainers = new InventoryManager();
             Game.GeneratedUniques = new List<int>();
 
             Game.Player = new Actor(
                 new Point(0, 0),
                 Util.ADefByName("Moribund"), 1
-            ) { Awake =  true };
+            );
 
-            World.Levels.Add(World.Level = new Generator().Generate(null, 1));
+            World.Level = new Generator().Generate(null, 1);
             World.Level.Spawn(Game.Player);
             Game.Player.xy = World.Level.RandomOpenPoint();
 
             //force a screendraw in the beginning
             Game.Player.HasMoved = true;
-
-            Game.SetupBrains();
-        }
-
-        public void SetupBrains() {
-            if(Game.Brains == null)
-                Game.Brains = new List<Brain>();
-            else
-                Game.Brains.Clear();
-
-            //note: this means that we only act with actors on the same
-            //      floor as the player, might want to change this in the future
-            foreach (Actor actor in World.WorldActors
-                .Where(a => a.LevelID == World.Level.ID))
-            {
-                if (actor.ID == 0)
-                    Game.Player = actor;
-                else
-                    Game.Brains.Add(new Brain(actor));
-            }
         }
 
         //ReSharper disable once InconsistentNaming
@@ -78,11 +55,11 @@ namespace ODB
                         b.MeatPuppet.Pass();
                 }
 
-                foreach (Actor a in World.WorldActors
+                foreach (Actor a in World.Instance.WorldActors
                     .Where(a => a.LevelID == World.Level.ID))
                     a.Cooldown = Math.Max(0, a.Cooldown - 1);
 
-                foreach (Actor a in World.WorldActors)
+                foreach (Actor a in World.Instance.WorldActors)
                 {
                     a.HpRegCooldown--;
                     a.MpRegCooldown--;
@@ -103,7 +80,7 @@ namespace ODB
 
                 Game.GameTick++;
 
-                foreach (Actor a in World.WorldActors)
+                foreach (Actor a in World.Instance.WorldActors)
                 {
                     if (!a.IsAlive) continue;
                     foreach (LastingEffect effect in a.LastingEffects)
@@ -112,7 +89,7 @@ namespace ODB
                         x => x.Life > x.LifeLength && x.LifeLength != -1
                     );
                 }
-                World.WorldActors.RemoveAll(a => !a.IsAlive);
+                World.Instance.WorldActors.RemoveAll(a => !a.IsAlive);
             }
         }
 
@@ -130,6 +107,12 @@ namespace ODB
                     switch (IO.IOState)
                     {
                         case InputType.PlayerInput:
+                            if (!Game.Player.IsAlive)
+                            {
+                                ODBGame.Exit();
+                                SaveIO.KillSave();
+                            }
+
                             IO.SetInput('Y', 'n');
                             IO.AskPlayer(
                                 "Really quit? [Yn]",
@@ -137,12 +120,16 @@ namespace ODB
                                 () =>
                                 {
                                     if (IO.Answer[0] == 'Y')
-                                        ODBGame.Game.Exit();
+                                        ODBGame.SaveQuit();
                                 }
                             );
                             break;
                         case InputType.Inventory:
-                            Game.InvMan.HandleCancel();
+                            //todo
+                            //probably actually want to split the container-
+                            //data-y stuff, and the interact with the
+                            //containers stuff into two separate things.
+                            World.Instance.WorldContainers.HandleCancel();
                             break;
                         default:
                             IO.IOState = InputType.PlayerInput;
@@ -179,7 +166,7 @@ namespace ODB
                         if (Game.UI.CheckMorePrompt()) break;
 
                         if (Game.Player.CanMove())
-                            Player.PlayerInput();
+                            PlayerInput.HandlePlayerInput();
                         //pass when sleeping etc.
                         else Game.Player.Pass();
 
@@ -189,17 +176,17 @@ namespace ODB
                     case InputType.Inventory:
                         //suppress --more-- in the inventory.
                         Game.UI.CheckMorePrompt();
-                        Game.InvMan.InventoryInput();
+                        World.Instance.WorldContainers.InventoryInput();
                         break;
 
-                    default: throw new System.Exception("");
+                    default: throw new Exception("");
                 }
             }
 
             Game.UI.UpdateCamera();
 
             //should probably find a better place to tick this
-            foreach (Actor a in World.WorldActors
+            foreach (Actor a in World.Instance.WorldActors
                 .Where(a => a.LevelID == World.Level.ID)
                 .Where(a => a.HasMoved)
             ) {

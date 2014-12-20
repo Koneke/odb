@@ -1,4 +1,6 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
+using Microsoft.Xna.Framework;
 
 namespace ODB
 {
@@ -8,6 +10,7 @@ namespace ODB
     //instances, in contrast, is per level rather than global
 
     //ReSharper disable once InconsistentNaming
+    [DataContract]
     public class gObjectDefinition
     {
         public bool Equals(gObjectDefinition other)
@@ -32,28 +35,29 @@ namespace ODB
             }
         }
 
-        //afaik, atm we won't have anything that's /just/
-        // a game object, it'll always be an item/actor
-        //but in case.
-        public static gObjectDefinition[] Definitions =
-            new gObjectDefinition[0xFFFF];
+        public static Dictionary<int, gObjectDefinition> GObjectDefs =
+            new Dictionary<int, gObjectDefinition>();
+
         public static int TypeCounter = 0;
 
-        public Color? Background;
-        public Color Foreground;
-        public string Tile;
-        public string Name;
-        public int Type;
+        [DataMember(Order=1)] public string Name;
+        [DataMember(Order=2)] public int Type;
+        [DataMember(Order=3)] public string Tile;
+        [DataMember(Order=4)] public Color Foreground;
+        [DataMember(Order=5)] public Color? Background;
+
+        public gObjectDefinition() { }
 
         public gObjectDefinition(
             Color? background, Color foreground, string tile, string name
         ) {
-            Background = background;
-            Foreground = foreground;
-            Tile = tile;
             Name = name;
             Type = TypeCounter++;
-            Definitions[Type] = this;
+            Tile = tile;
+            Foreground = foreground;
+            Background = background;
+
+            GObjectDefs.Add(Type, this);
         }
 
         public gObjectDefinition(string s)
@@ -70,13 +74,7 @@ namespace ODB
             Tile = (char)stream.ReadHex(2) + "";
             Name = stream.ReadString();
 
-            Definitions[Type] = this;
-            //LH-011214: Creating new definitions after reading from file
-            //           makes weird stuff happen without this, since we
-            //           do not increment the type counter normally (i.e. when
-            //           we "create" the def) here, so we make the counter
-            //           search for a new empty spot.
-            while (Definitions[TypeCounter++] != null) { }
+            GObjectDefs.Add(Type, this);
             return stream;
         }
         public Stream WriteGObjectDefinition()
@@ -92,6 +90,7 @@ namespace ODB
     }
 
     //ReSharper disable once InconsistentNaming
+    [DataContract]
     public class gObject
     {
         protected bool Equals(gObject other)
@@ -114,19 +113,23 @@ namespace ODB
             return hashCode;
         }
 
-        public static ODBGame Game;
-
         //ReSharper disable InconsistentNaming
-        public Point xy;
-        public int LevelID;
-        public gObjectDefinition Definition;
+        [DataMember] public Point xy;
+        [DataMember] public int LevelID;
+        [DataMember] private int _type;
+
+        public gObjectDefinition Definition {
+            get { return gObjectDefinition.GObjectDefs[_type]; }
+        }
+
+        public gObject() { }
 
         public gObject(
             Point xy,
             gObjectDefinition definition
         ) {
             this.xy = xy;
-            Definition = definition;
+            _type = definition.Type;
         }
 
         public gObject(string s)
@@ -146,9 +149,7 @@ namespace ODB
         public Stream ReadGObject(string s)
         {
             Stream stream = new Stream(s);
-            Definition = gObjectDefinition.Definitions[
-                stream.ReadHex(4)
-            ];
+            _type = stream.ReadHex(4);
 
             xy = stream.ReadPoint();
             LevelID = stream.ReadHex(4);

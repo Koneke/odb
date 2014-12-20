@@ -112,8 +112,8 @@ namespace ODB
                 .Replace("#verb", actor.Verb(Verb))
                 .Replace("#genname", actor.Genitive("name"))
                 .Replace("#gen", actor.Genitive())
-                .Replace("#pass-s", target == Util.Game.Player ? "" : "s")
-                .Replace("#s", actor == Util.Game.Player ? "" : "s");
+                .Replace("#pass-s", target == Game.Player ? "" : "s")
+                .Replace("#s", actor == Game.Player ? "" : "s");
 
             return Util.Capitalize(result);
         }

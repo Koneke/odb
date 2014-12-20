@@ -29,7 +29,7 @@ namespace ODB
         private int _choice;
         private readonly int _numChoices;
 
-        public MenuState(ODBGame game) : base(game)
+        public MenuState()
         {
             SetupConsoles();
             _numChoices = Enum.GetNames(typeof (Choices)).Length;
@@ -57,8 +57,7 @@ namespace ODB
                             case Choices.Name:
                                 IO.SetInput(IO.Indexes, ' ');
                                 IO.QuestionReaction = Submit;
-                                IO.Answer =
-                                    ActorDefinition.ActorDefinitions[0].Name;
+                                IO.Answer = ActorDefinition.DefDict[0].Name;
                                 _state = State.Name;
                                 break;
                             case Choices.Start:
@@ -66,17 +65,17 @@ namespace ODB
                                 //should maybe generate the gamestate here, or
                                 //on load, currently we're loading stuff in
                                 //on startup, which might not really be ncssary.
-                                Game.SwitchState(Game.GameState);
+                                ODBGame.SwitchState(ODBGame.GameState);
                                 break;
                             case Choices.Load:
                                 if (SaveIO.SaveExists)
                                 {
-                                    SaveIO.Load();
-                                    Game.SwitchState(Game.GameState);
+                                    SaveIO.JsonLoad();
+                                    ODBGame.SwitchState(ODBGame.GameState);
                                 }
                                 break;
                             case Choices.Exit:
-                                Game.Exit();
+                                ODBGame.Exit();
                                 break;
                             default:
                                 throw new NotImplementedException();
@@ -94,7 +93,7 @@ namespace ODB
         private void Submit()
         {
             _state = State.MainMenu;
-            ActorDefinition.ActorDefinitions[0].Name = IO.Answer;
+            ActorDefinition.DefDict[0].Name = IO.Answer;
         }
 
         public override void Draw()
@@ -106,7 +105,7 @@ namespace ODB
                 _choice == (int)Choices.Name ? ">" : "",
                 _state == State.Name
                     ? IO.Answer + "_"
-                    : ActorDefinition.ActorDefinitions[0].Name
+                    : ActorDefinition.DefDict[0].Name
             );
 
             string startString = String.Format(
@@ -132,7 +131,7 @@ namespace ODB
 
             _menuConsole.DrawColorString(
                 2, _menuConsole.GetHeight() - 2,
-                "Checksum: " + Game.Hash
+                "Checksum: " + ODBGame.Hash
             );
         }
 

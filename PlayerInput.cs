@@ -2,16 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework.Input;
-
 using Bind = ODB.KeyBindings.Bind;
 
 namespace ODB
 {
-    public class Player
+    public class PlayerInput
     {
-        public static ODBGame Game;
+        //public static ODBGame Game;
 
-        public static void PlayerInput()
+        public static void HandlePlayerInput()
         {
             //should probably be remade to commands
             bool moved = MovementInput();
@@ -95,7 +94,7 @@ namespace ODB
                             World.Level.Depth + 1
                         );
                         connector.Target = l.ID;
-                        World.Levels.Add(l);
+                        //World.Instance.Levels.Add(l);
                     }
 
                 if (connector.Target == null) return false;
@@ -105,7 +104,8 @@ namespace ODB
                     "You {1} the stairs...",
                     descending
                     ? "descend"
-                    : "ascend", Game);
+                    : "ascend"
+                );
             }
             #endregion
 
@@ -230,7 +230,8 @@ namespace ODB
                 char index in
                     from item in Game.Player.Inventory
                     where item.HasComponent<EdibleComponent>()
-                select IO.Indexes[Game.Player.Inventory.IndexOf(item)]
+                select IO.Indexes
+                    [Game.Player.Inventory.IndexOf(item)]
                 ) {
                     question += index;
                     IO.AcceptedInput.Add(index);
@@ -253,8 +254,10 @@ namespace ODB
             if (!KeyBindings.Pressed(Bind.Engrave)) return;
 
             if(
-                World.Level.At(Game.Player.xy).Stairs != Stairs.None &&
-                World.Level.At(Game.Player.xy).Door != Door.None
+                World.Level.At(Game.Player.xy)
+                    .Stairs != Stairs.None &&
+                World.Level.At(Game.Player.xy)
+                    .Door != Door.None
             ) {
                 Game.UI.Log("You can't engrave here.");
                 return;
@@ -546,8 +549,11 @@ namespace ODB
                     );
 
                 if(Game.Player.Quiver != null)
-                    IO.AcceptedInput.Add(IO.Indexes
-                        [Game.Player.Inventory.IndexOf(Game.Player.Quiver)]
+                    IO.AcceptedInput.Add(
+                        IO.Indexes
+                        [Game.Player.Inventory.IndexOf(
+                            Game.Player.Quiver)
+                        ]
                     );
 
                 IO.AcceptedInput.Sort();
@@ -587,7 +593,8 @@ namespace ODB
             if (!KeyBindings.Pressed(Bind.Wield)) return;
 
             List<Item> wieldable = Game.Player.Inventory
-                .Where(x => !Game.Player.GetEquippedItems().Contains(x))
+                .Where(x =>
+                    !Game.Player.GetEquippedItems().Contains(x))
                 .Where(x => x != Game.Player.Quiver)
                 .ToList();
 
@@ -622,7 +629,8 @@ namespace ODB
             if (!KeyBindings.Pressed(Bind.Wear)) return;
 
             List<Item> wearable = Game.Player.Inventory
-                .Where(x => !Game.Player.GetEquippedItems().Contains(x))
+                .Where(x => !Game.Player.GetEquippedItems()
+                    .Contains(x))
                 .Where(item => item.HasComponent<WearableComponent>())
                 .ToList();
 

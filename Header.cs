@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using Microsoft.Xna.Framework;
 
 namespace ODB
@@ -121,70 +122,6 @@ namespace ODB
         }
     }
 
-    public class Room
-    {
-        public List<Rect> Rects;
-        public Level Level;
-
-        //should not be saved to file
-        public List<Room> Linked;
-
-        public Room()
-        {
-            Rects = new List<Rect>();
-            Linked = new List<Room>();
-        }
-
-        public Room(string s)
-        {
-            ReadRoom(s);
-            Linked = new List<Room>();
-        }
-
-        public bool ContainsPoint(Point p)
-        {
-            return Rects.Any(r => r.ContainsPoint(p));
-        }
-
-        public List<Tile> GetTiles()
-        {
-            List<Tile> tiles = new List<Tile>();
-            foreach (Rect rect in Rects)
-                for (int x = 0; x < rect.wh.x; x++)
-                for (int y = 0; y < rect.wh.y; y++)
-                tiles.Add(Level.At(rect.xy + new Point(x, y)).Tile);
-            return tiles;
-        }
-
-        //should probably switch to stream for ease
-        public string WriteRoom()
-        {
-            string output = "";
-            output += IO.WriteHex(Rects.Count, 2);
-            foreach (Rect r in Rects)
-            {
-                output += IO.Write(r.xy);
-                output += IO.Write(r.wh);
-            }
-            return output;
-        }
-        public Stream ReadRoom(string s)
-        {
-            Stream stream = new Stream(s);
-            int numRects = stream.ReadHex(2);
-            Rects = new List<Rect>();
-            for (int i = 0; i < numRects; i++)
-            {
-                Rects.Add(new Rect(
-                    stream.ReadPoint(),
-                    stream.ReadPoint()
-                    )
-                );
-            }
-            return stream;
-        }
-    }
-
     public enum DollSlot
     {
         Head,
@@ -199,6 +136,7 @@ namespace ODB
         Feet,
     }
 
+    [DataContract]
     public class BodyPart
     {
         public static Dictionary<DollSlot, string> BodyPartNames =
@@ -240,8 +178,26 @@ namespace ODB
             return Equals((BodyPart)obj);
         }
 
-        public DollSlot Type;
-        public Item Item;
+        [DataMember] public DollSlot Type;
+        [DataMember] private int? _item;
+
+        public Item Item
+        {
+            get
+            {
+                return _item.HasValue
+                    ? Util.GetItemByID(_item.Value)
+                    : null;
+            }
+            set
+            {
+                _item = value == null
+                    ? (int?)null
+                    : value.ID;
+            }
+        }
+
+        public BodyPart() { }
         public BodyPart(DollSlot type, Item item = null)
         {
             Type = type;
@@ -249,10 +205,12 @@ namespace ODB
         }
     }
 
+    [DataContract]
     public class Hand : BodyPart
     {
-        public bool Wielding;
+        [DataMember] public bool Wielding;
 
+        public Hand() { }
         public Hand(
             DollSlot type,
             Item item = null
@@ -431,20 +389,6 @@ namespace ODB
 
         public static Dictionary<int, List<ActorDefinition>>
             MonstersByDifficulty = new Dictionary<int, List<ActorDefinition>>();
-    }
-
-    public class World
-    {
-        public static Level Level;
-        public static List<Level> Levels = new List<Level>(); 
-        public static List<Item> AllItems = new List<Item>();
-        public static List<Item> WorldItems = new List<Item>();
-        public static List<Actor> WorldActors = new List<Actor>();
-
-        public static Level LevelByID(int target)
-        {
-            return Levels.First(l => l.ID == target);
-        }
     }
 
     public class ColorString

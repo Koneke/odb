@@ -1,18 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using Microsoft.Xna.Framework;
 
 namespace ODB
 {
-    //todo: read/write for this
     public enum ItemCategory
     {
-        Potion = 0x00,
-        Scroll = 0x01,
-        Book = 0x02,
+        Potion,
+        Scroll,
+        Book,
     }
 
+    [DataContract]
     public class ItemDefinition : gObjectDefinition
     {
         protected bool Equals(ItemDefinition other)
@@ -52,8 +53,8 @@ namespace ODB
             return Equals((ItemDefinition)obj);
         }
 
-        public static ItemDefinition[] ItemDefinitions =
-            new ItemDefinition[0xFFFF];
+        public static Dictionary<int, ItemDefinition> DefDict =
+            new Dictionary<int, ItemDefinition>();
 
         public static Dictionary<int, List<string>> Appearances =
         #region appearances
@@ -75,38 +76,29 @@ namespace ODB
                 }},
             };
         #endregion
-        public static List<int> IdentifiedDefs = new List<int>();
 
-        public bool Stacking;
-        public int GenerationLowBound;
-        public int GenerationHighBound;
-        public int Category;
-        public int Weight;
-        public int Value;
-        public Material Material;
-        public int Health;
-        public List<ItemTag> Tags; 
-        public List<Component> Components; 
+        [DataMember(Order= 6)] public bool Stacking;
+        [DataMember(Order= 7)] public int Category;
+        [DataMember(Order= 8)] public int Weight;
+        [DataMember(Order= 9)] public int Value;
+        [DataMember(Order=10)] public Material Material;
+        [DataMember(Order=11)] public int Health;
+        [DataMember(Order=12)] public List<ItemTag> Tags; 
+        [DataMember(Order=13)] public List<Component> Components;
+        [DataMember(Order=14)] public int GenerationLowBound;
+        [DataMember(Order=15)] public int GenerationHighBound;
 
-        //saved in game file, not idef file
-        public bool Identified {
-            get { return IdentifiedDefs.Contains(Type); }
-        }
+        public ItemDefinition() { }
 
         //creating a NEW definition
         public ItemDefinition(
             Color? background, Color foreground,
             string tile, string name,
             bool stacking = false
-            ) : base(background, foreground, tile, name) {
+        ) : base(background, foreground, tile, name) {
             Stacking = stacking;
             Components = new List<Component>();
-            ItemDefinitions[Type] = this;
-        }
-
-        public ItemDefinition(string s) : base(s)
-        {
-            ReadItemDefinition(s);
+            DefDict.Add(Type, this);
         }
 
         public void AddComponent<T>(T component) where T : Component
@@ -131,56 +123,6 @@ namespace ODB
         public T GetComponent<T>() where T : Component
         {
             return (T)Components.FirstOrDefault(c => c is T);
-        }
-
-        public Stream ReadItemDefinition(string s)
-        {
-            Stream stream = ReadGObjectDefinition(s);
-
-            Stacking = stream.ReadBool();
-            GenerationLowBound = stream.ReadInt();
-            GenerationHighBound = stream.ReadInt();
-            Category = stream.ReadHex(2);
-            Weight = stream.ReadInt();
-            Value = stream.ReadInt();
-            Material = Materials.ReadMaterial(stream.ReadString());
-            Health = stream.ReadInt();
-
-            ItemDefinitions[Type] = this;
-
-            Tags = new List<ItemTag>();
-            string tags = stream.ReadString();
-            foreach (string tag in tags.NeatSplit(","))
-                Tags.Add(Item.ReadItemTag(tag));
-
-            Components = new List<Component>();
-            while (!stream.AtFinish)
-            {
-                AddComponent(
-                    Component.CreateComponent(
-                        stream.ReadString(),
-                        stream.ReadBlock()
-                    )
-                );
-            }
-
-            return stream;
-        }
-        public Stream WriteItemDefinition()
-        {
-            Stream stream = WriteGObjectDefinition();
-
-            stream.Write(Stacking);
-            stream.Write(Category, 2);
-            stream.Write(Weight);
-            stream.Write(Value);
-            stream.Write(Materials.WriteMaterial(Material));
-            stream.Write(Health);
-
-            foreach (Component c in Components)
-                stream.Write(c.WriteComponent(), false);
-
-            return stream;
         }
     }
 }

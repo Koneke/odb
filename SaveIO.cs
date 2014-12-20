@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Microsoft.Xna.Framework;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace ODB
 {
@@ -16,129 +17,6 @@ namespace ODB
                 return File.Exists(
                     Directory.GetCurrentDirectory() + "/Save/game.sv");
             }
-        }
-
-        public static void Save()
-        {
-            Stream stream = new Stream();
-            stream.Write(World.Levels.Count, 2);
-            stream.Write(IO.Game.Player.LevelID, 2);
-
-            for (int i = 0; i < World.Levels.Count; i++)
-                World.Levels[i].WriteLevelSave("Save/level" + i + ".sv");
-
-            //okay, so I really don't think anyone's going to hit
-            //gametick 0xFFFFFFFF, that'd be ludicrous.
-            //but 0xFFFF might be hit, and 0xFFFFF looks ugly.
-            stream.Write(Util.Game.GameTick, 8);
-            stream.Write(Util.Game.Seed, 8);
-
-            string containers = "";
-            foreach (int container in InventoryManager.ContainerIDs.Keys)
-            {
-                containers += IO.WriteHex(container, 4);
-                containers = InventoryManager.ContainerIDs[container]
-                    .Aggregate(containers,
-                    (current, item) => current + IO.WriteHex(item, 4));
-                containers += ",";
-            }
-            stream.Write(containers);
-
-            foreach (int ided in ItemDefinition.IdentifiedDefs)
-            {
-                stream.Write(ided, 4);
-                stream.Write(",", false);
-            }
-            stream.Write(";", false);
-
-            foreach (Item item in World.AllItems)
-                stream.Write(item.WriteItem() + "##", false);
-            stream.Write("</ITEMS>", false);
-
-            foreach (Actor actor in World.WorldActors)
-                stream.Write(actor.WriteActor() + "##", false);
-            stream.Write("</ACTORS>", false);
-
-            WriteToFile("Save/game.sv", stream.ToString());
-        }
-
-        public static void Load()
-        {
-            Stream stream = new Stream(ReadFromFile("Save/game.sv"));
-            int levels = stream.ReadHex(2);
-            int playerLocation = stream.ReadHex(2);
-
-            if (World.Levels != null)
-            {
-                for (int i = 0; i < World.Levels.Count; i++)
-                    World.Levels[i] = null;
-                World.Levels.Clear();
-            } else World.Levels = new List<Level>();
-
-            for (int i = 0; i < levels; i++)
-                World.Levels.Add(new Level("Save/level" + i + ".sv"));
-
-            Util.Game.GameTick = stream.ReadHex(8);
-            Util.Game.Seed = stream.ReadHex(8);
-            //Util.Game.Food = stream.ReadHex(8);
-            World.Level = World.Levels[playerLocation];
-
-            string containers = stream.ReadString();
-            List<int> containerItems = new List<int>();
-            InventoryManager.ContainerIDs = new Dictionary<int, List<int>>();
-            foreach (string container in containers.Split(','))
-            {
-                if(container == "") continue;
-
-                int count = container.Length / 4 - 1;
-                int id;
-
-                Stream strm = new Stream(container);
-                InventoryManager.ContainerIDs.Add(
-                    id = strm.ReadHex(4), new List<int>());
-
-                for (int i = 0; i < count; i++)
-                {
-                    int itemid = strm.ReadHex(4);
-                    InventoryManager.ContainerIDs[id].Add(itemid);
-                    containerItems.Add(itemid);
-                }
-            }
-
-            string identifieds = stream.ReadString();
-            foreach (string ided in identifieds.Split(',')
-                .Where(ided => ided != ""))
-                ItemDefinition.IdentifiedDefs.Add(IO.ReadHex(ided));
-
-            World.AllItems.Clear();
-            World.WorldItems.Clear();
-            World.WorldActors.Clear();
-
-            string items = stream.ReadTo("</ITEMS>");
-
-            foreach (Item item in items.Split(
-                new[] {"##"}, StringSplitOptions.RemoveEmptyEntries)
-                .Select(i => new Item(i))
-            ) {
-                World.AllItems.Add(item);
-                World.WorldItems.Add(item);
-            }
-
-            string actors = stream.ReadTo("</ACTORS>");
-
-            foreach (Actor actor in actors.Split(
-                new[] {"##"}, StringSplitOptions.RemoveEmptyEntries)
-                .Select(a => new Actor(a))
-            ) {
-                World.WorldActors.Add(actor);
-                foreach (Item item in actor.Inventory)
-                    World.WorldItems.Remove(item);
-            }
-
-            World.WorldItems.RemoveAll(x => containerItems.Contains(x.ID));
-
-            IO.Game.SetupBrains();
-            ODBGame.Game.Player.HasMoved = true;
         }
 
         public static void WriteToFile(string path, string content)
@@ -156,7 +34,7 @@ namespace ODB
             }
             catch (UnauthorizedAccessException)
             {
-                IO.Game.UI.Log(
+                Game.UI.Log(
                     "~ERROR~: Could not write to file " +
                         cwd + "/" + path + " (Unauthorized access)."
                     );
@@ -191,48 +69,15 @@ namespace ODB
             return content;
         }
 
-        public static string WriteItemDefinitionsToFile(string path)
-        {
-            string output = "";
-            //todo: probably a better way to do this.
-            //      saving/loading is sort of assumed to be pretty slow anyways
-            //      so it's not a huge deal. this is actually not even slow atm.
-            for (int i = 0; i < 0xFFFF; i++)
-            {
-                if (ItemDefinition.ItemDefinitions[i] == null) continue;
-
-                output +=
-                    ItemDefinition.ItemDefinitions[i].WriteItemDefinition();
-                output += "##";
-            }
-            WriteToFile(path, output);
-            return output;
-        }
-
-        public static void ReadItemDefinitionsFromFile(string path)
-        {
-            while (ItemDefinition.ItemDefinitions
-                [gObjectDefinition.TypeCounter] != null)
-                gObjectDefinition.TypeCounter++;
-
-            string content = ReadFromFile(path);
-            List<string> definitions = content.Split(
-                new[] { "##" },
-                StringSplitOptions.RemoveEmptyEntries
-            ).ToList();
-
-            definitions.ForEach(definition => new ItemDefinition(definition));
-        }
-
         public static string WriteActorDefinitionsToFile(string path)
         {
             string output = "";
             for (int i = 0; i < 0xFFFF; i++)
             {
-                if (ActorDefinition.ActorDefinitions[i] == null) continue;
+                if (ActorDefinition.DefDict[i] == null) continue;
 
                 output +=
-                    ActorDefinition.ActorDefinitions[i].
+                    ActorDefinition.DefDict[i].
                         WriteActorDefinition();
                 output += "##";
             }
@@ -242,13 +87,13 @@ namespace ODB
 
         public static void ReadActorDefinitionsFromFile(string path)
         {
-            ActorDefinition.ActorDefinitions = new ActorDefinition[0xFFFF];
+            ActorDefinition.DefDict = new Dictionary<int, ActorDefinition>();
 
             string content = ReadFromFile(path);
             List<string> definitions = content.Split(
                 new[] { "##" },
                 StringSplitOptions.RemoveEmptyEntries
-                ).ToList();
+            ).ToList();
 
             definitions.ForEach(definition => new ActorDefinition(definition));
         }
@@ -278,6 +123,119 @@ namespace ODB
             ).ToList();
 
             definitions.ForEach(definition => new TileDefinition(definition));
+        }
+
+        private static readonly JsonSerializerSettings Settings =
+            new JsonSerializerSettings
+            {
+                TypeNameHandling = TypeNameHandling.Objects,
+                Converters = { new StringEnumConverter() },
+                Formatting = Formatting.Indented
+            };
+
+        public static void JsonSave()
+        {
+            WriteToFile(
+                "Save/game.sv", 
+                JsonConvert.SerializeObject(
+                    Game.Instance,
+                    Settings
+                )
+            );
+            WriteToFile(
+                "Save/world.sv", 
+                JsonConvert.SerializeObject(
+                    World.Instance,
+                    Settings
+                )
+            );
+        }
+
+        public static void JsonLoad()
+        {
+            Game.Instance = JsonConvert.DeserializeObject<Game>(
+                ReadFromFile("Save/game.sv"),
+                Settings
+            );
+
+            World.Load(JsonConvert.DeserializeObject<World>(
+                ReadFromFile("Save/world.sv"),
+                Settings
+            ));
+        }
+
+        public static void JsonWriteItemDefinitions(string path)
+        {
+            WriteToFile(
+                path,
+                JsonConvert.SerializeObject(
+                    ItemDefinition.DefDict,
+                    Settings
+                )
+            );
+        }
+
+        public static void JsonWriteActorDefinitions(string path)
+        {
+            WriteToFile(
+                path,
+                JsonConvert.SerializeObject(
+                    ActorDefinition.DefDict,
+                    Settings
+                )
+            );
+        }
+
+        public static void JsonLoadItemDefinitions(string path)
+        {
+            ItemDefinition.DefDict = JsonConvert.DeserializeObject
+                <Dictionary<int, ItemDefinition>>(
+                    ReadFromFile(path),
+                    Settings
+            );
+
+            foreach (int key in ItemDefinition.DefDict.Keys)
+                gObjectDefinition.GObjectDefs.Add(
+                    key, ItemDefinition.DefDict[key]
+                );
+        }
+
+        public static void JsonLoadActorDefinitions(string path)
+        {
+            ActorDefinition.DefDict = JsonConvert.DeserializeObject
+                <Dictionary<int, ActorDefinition>>(
+                    ReadFromFile(path),
+                    Settings
+            );
+
+            Monster.MonstersByDifficulty =
+                new Dictionary<int, List<ActorDefinition>>();
+
+            foreach (int key in ActorDefinition.DefDict.Keys)
+            {
+                gObjectDefinition.GObjectDefs.Add(
+                    key, ActorDefinition.DefDict[key]
+                );
+
+                int difficulty = ActorDefinition.DefDict[key].Difficulty;
+
+                if (!Monster.MonstersByDifficulty.ContainsKey(difficulty))
+                    Monster.MonstersByDifficulty.Add(
+                        difficulty, new List<ActorDefinition>());
+
+                Monster.MonstersByDifficulty[difficulty].Add(
+                    ActorDefinition.DefDict[key]
+                );
+            }
+        }
+
+        public static void KillSave()
+        {
+            string cwd = Directory.GetCurrentDirectory() + "/";
+            if(File.Exists(cwd + "Save/game.sv"))
+                File.Delete(cwd + "Save/game.sv");
+            if(File.Exists(cwd + "Save/world.sv"))
+                File.Delete(cwd + "Save/world.sv");
         }
     }
 }

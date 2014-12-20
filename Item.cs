@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 
 namespace ODB
 {
@@ -9,6 +10,7 @@ namespace ODB
         NonWeapon
     }
 
+    [DataContract]
     public class Item : gObject
     {
         protected bool Equals(Item other)
@@ -50,17 +52,19 @@ namespace ODB
             return Equals((Item)obj);
         }
 
-        public static int IDCounter = 0;
+        [DataMember] public int ID;
 
-        //instance specifics
-        public int ID;
-        public int Mod;
+        [DataMember] public int Mod;
         //can be used as charges for non-stacking?
         //-1 should be inf. charges?
-        public int Count;
-        public int Health;
-        public new ItemDefinition Definition;
-        public List<Mod> Mods;
+        [DataMember] public int Count;
+        [DataMember] public int Health;
+        [DataMember] private int _type;
+        [DataMember] public List<Mod> Mods;
+
+        public new ItemDefinition Definition {
+            get { return ItemDefinition.DefDict[_type]; }
+        }
 
         /*
          * bool BucKnown;
@@ -82,6 +86,8 @@ namespace ODB
 
         public Material Material { get { return Definition.Material; } }
 
+        public Item() { }
+
         //SPAWNING a NEW item
         public Item(
             Point xy,
@@ -89,9 +95,9 @@ namespace ODB
             int count = 0,
             IEnumerable<Mod> mods = null
         ) : base(xy, definition) {
-            ID = IDCounter++;
+            ID = Game.IDCounter++;
             Count = count;
-            Definition = definition;
+            _type = definition.Type;
             Health = definition.Health;
             Mods = new List<Mod>();
             if (mods != null) Mods.AddRange(mods);
@@ -113,7 +119,7 @@ namespace ODB
             get
             {
                 return
-                    ItemDefinition.IdentifiedDefs.Contains(Definition.Type) ||
+                    Game.IsIdentified(Definition.Type) ||
                     Definition.Category == 0xff;
             }
         }
@@ -206,7 +212,9 @@ namespace ODB
             if (Known) return;
 
             string prename = GetName("the");
-            ItemDefinition.IdentifiedDefs.Add(Type);
+
+            Game.Identify(Type);
+
             if (!silent)
                 Game.UI.Log("You identified " +
                     prename + " as " + GetName("count") + ".");
@@ -230,7 +238,7 @@ namespace ODB
             {
                 hands = Util.XperY(
                     1,
-                    60 + 40 * a.Get(Stat.Strength), //220, 260, 300
+                    80 + 40 * a.Get(Stat.Strength), //240, 280, 320
                     Definition.Weight
                 ) + 1;
             }
@@ -311,7 +319,7 @@ namespace ODB
                 //wielded one
                 Item stack = new Item(WriteItem().ToString())
                 {
-                    ID = IDCounter++,
+                    ID = Game.IDCounter++,
                     Count = Count - 1,
                     xy = xy,
                     LevelID = World.Level.ID
@@ -327,8 +335,8 @@ namespace ODB
                         InventoryManager.InventorySize ||
                         Health <= 1)
                     {
-                        Game.Player.Inventory.Add(stack);
-                        World.WorldItems.Remove(stack);
+                        Game.Player.GiveItem(stack);
+                        World.Instance.WorldItems.Remove(stack);
                     }
                     //otherwise, drop it into the world
                     else
@@ -410,7 +418,8 @@ namespace ODB
         public Stream ReadItem(string s)
         {
             Stream stream = ReadGObject(s);
-            Definition = ItemDefinition.ItemDefinitions[stream.ReadHex(4)];
+            //_type = ItemDefinition.ItemDefinitions[stream.ReadHex(4)];
+            _type = stream.ReadHex(4);
 
             ID = stream.ReadHex(4);
             Mod = stream.ReadHex(2);

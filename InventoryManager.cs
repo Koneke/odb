@@ -1,11 +1,13 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using Microsoft.Xna.Framework.Input;
 
 using Bind = ODB.KeyBindings.Bind;
 
 namespace ODB
 {
+    [DataContract]
     public class InventoryManager
     {
         public static int InventorySize = 21;
@@ -16,7 +18,7 @@ namespace ODB
             ContainerIDs = new Dictionary<int, List<int>>();
         }
 
-        public static Dictionary<int, List<int>> ContainerIDs;
+        [DataMember] public static Dictionary<int, List<int>> ContainerIDs;
         public static Dictionary<int, List<Item>> Containers {
             get
             {
@@ -46,8 +48,6 @@ namespace ODB
                 return it;
             }
         }
-
-        public static ODBGame Game;
 
         public static int Selection;
         private static Item _selected;
@@ -193,7 +193,7 @@ namespace ODB
             if (KeyBindings.Pressed(Bind.TakeOut) && CurrentContainer != -1)
             {
                 if (GetParentContainer(CurrentContainer) == -1)
-                    Game.Player.Inventory.Add(SelectedItem);
+                    Game.Player.GiveItem(SelectedItem);
                 else
                     ContainerIDs[GetParentContainer(CurrentContainer)]
                         .Add(SelectedItem.ID);
@@ -335,7 +335,9 @@ namespace ODB
             }
 
             if (Game.Player.CanEquip(item.GetHands(Game.Player)))
+            {
                 Game.Player.Do(new Command("wield").Add("item", item));
+            }
             else
             {
                 if (item.GetHands(Game.Player).Count >
@@ -395,7 +397,7 @@ namespace ODB
             );
 
             if (GetParentContainer(container) == -1)
-                Game.Player.Inventory.Remove(item);
+                Game.Player.RemoveItem(item);
             else
                 ContainerIDs[GetParentContainer(container)].Remove(item.ID);
             ContainerIDs[container].Add(item.ID);
@@ -456,6 +458,9 @@ namespace ODB
                 {
                     if (effect.SetupAcceptedInput != null)
                         effect.SetupAcceptedInput(Game.Player);
+
+                    item.Identify();
+                    item.SpendCharge();
 
                     if (IO.AcceptedInput.Count <= 0)
                     {
