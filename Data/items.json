@@ -1,0 +1,594 @@
+{
+  "$type": "System.Collections.Generic.Dictionary`2[[System.Int32, mscorlib],[ODB.ItemDefinition, ODB]], mscorlib",
+  "32768": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": true,
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0,
+    "Category": 255,
+    "Weight": 1,
+    "Value": 65536,
+    "Material": "Metal",
+    "Health": 4,
+    "Tags": [],
+    "Components": [],
+    "Name": "gold coin",
+    "Type": 32768,
+    "Tile": "$",
+    "Foreground": "255, 255, 0, 255",
+    "Background": null
+  },
+  "32769": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": false,
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0,
+    "Category": 255,
+    "Weight": 100,
+    "Value": 10,
+    "Material": "Cloth",
+    "Health": 2,
+    "Tags": [],
+    "Components": [
+      {
+        "$type": "ODB.WearableComponent, ODB",
+        "EquipSlots": [
+          "Torso"
+        ],
+        "ArmorClass": 1
+      }
+    ],
+    "Name": "apron",
+    "Type": 32769,
+    "Tile": "[",
+    "Foreground": "255, 192, 203, 255",
+    "Background": null
+  },
+  "32770": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": true,
+    "GenerationLowBound": 4,
+    "GenerationHighBound": 9,
+    "Category": 255,
+    "Weight": 2,
+    "Value": 5,
+    "Material": "Wood",
+    "Health": 1,
+    "Tags": [],
+    "Components": [
+      {
+        "$type": "ODB.ProjectileComponent, ODB",
+        "Damage": "1d3+1"
+      }
+    ],
+    "Name": "arrow",
+    "Type": 32770,
+    "Tile": "\u0018",
+    "Foreground": "165, 42, 42, 255",
+    "Background": null
+  },
+  "32771": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": false,
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0,
+    "Category": 255,
+    "Weight": 90,
+    "Value": 20,
+    "Material": "Wood",
+    "Health": 2,
+    "Tags": [],
+    "Components": [
+      {
+        "$type": "ODB.LauncherComponent, ODB",
+        "AmmoTypes": [
+          32770
+        ],
+        "Damage": "1d6"
+      }
+    ],
+    "Name": "bow",
+    "Type": 32771,
+    "Tile": "\\",
+    "Foreground": "165, 42, 42, 255",
+    "Background": null
+  },
+  "32772": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": false,
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0,
+    "Category": 255,
+    "Weight": 180,
+    "Value": 15,
+    "Material": "Metal",
+    "Health": 3,
+    "Tags": [],
+    "Components": [
+      {
+        "$type": "ODB.AttackComponent, ODB",
+        "Damage": "1d8+1",
+        "Modifier": 0,
+        "AttackType": "Slash",
+        "DamageType": "Physical",
+        "Effects": []
+      },
+      {
+        "$type": "ODB.UsableComponent, ODB",
+        "UseEffect": 1
+      }
+    ],
+    "Name": "longsword",
+    "Type": 32772,
+    "Tile": ")",
+    "Foreground": "211, 211, 211, 255",
+    "Background": null
+  },
+  "32773": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": false,
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0,
+    "Category": 255,
+    "Weight": 5,
+    "Value": 5,
+    "Material": "Cloth",
+    "Health": 2,
+    "Tags": [],
+    "Components": [
+      {
+        "$type": "ODB.ContainerComponent, ODB",
+        "Contained": []
+      }
+    ],
+    "Name": "cloth bag",
+    "Type": 32773,
+    "Tile": "(",
+    "Foreground": "165, 42, 42, 255",
+    "Background": null
+  },
+  "32774": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": false,
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0,
+    "Category": 255,
+    "Weight": 440,
+    "Value": 20,
+    "Material": "Metal",
+    "Health": 4,
+    "Tags": [],
+    "Components": [
+      {
+        "$type": "ODB.AttackComponent, ODB",
+        "Damage": "2d6+1",
+        "Modifier": 0,
+        "AttackType": "Slash",
+        "DamageType": "Physical",
+        "Effects": []
+      }
+    ],
+    "Name": "zweihander",
+    "Type": 32774,
+    "Tile": ")",
+    "Foreground": "165, 42, 42, 255",
+    "Background": null
+  },
+  "32775": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": false,
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0,
+    "Category": 255,
+    "Weight": 1800,
+    "Value": 35,
+    "Material": "Metal",
+    "Health": 2,
+    "Tags": [],
+    "Components": [
+      {
+        "$type": "ODB.WearableComponent, ODB",
+        "EquipSlots": [
+          "Torso"
+        ],
+        "ArmorClass": 3
+      }
+    ],
+    "Name": "chainmail",
+    "Type": 32775,
+    "Tile": "[",
+    "Foreground": "165, 42, 42, 255",
+    "Background": null
+  },
+  "32776": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": false,
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0,
+    "Category": 255,
+    "Weight": 300,
+    "Value": 10,
+    "Material": "Wood",
+    "Health": 4,
+    "Tags": [],
+    "Components": [
+      {
+        "$type": "ODB.AttackComponent, ODB",
+        "Damage": "1d6",
+        "Modifier": 0,
+        "AttackType": "Bash",
+        "DamageType": "Physical",
+        "Effects": []
+      }
+    ],
+    "Name": "club",
+    "Type": 32776,
+    "Tile": ")",
+    "Foreground": "153, 102, 51, 255",
+    "Background": null
+  },
+  "32777": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": false,
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0,
+    "Category": 255,
+    "Weight": 300,
+    "Value": 15,
+    "Material": "Wood",
+    "Health": 3,
+    "Tags": [],
+    "Components": [
+      {
+        "$type": "ODB.AttackComponent, ODB",
+        "Damage": "1d6",
+        "Modifier": 0,
+        "AttackType": "Pierce",
+        "DamageType": "Physical",
+        "Effects": []
+      },
+      {
+        "$type": "ODB.ProjectileComponent, ODB",
+        "Damage": "1d4"
+      }
+    ],
+    "Name": "spear",
+    "Type": 32777,
+    "Tile": ")",
+    "Foreground": "153, 102, 51, 255",
+    "Background": null
+  },
+  "32778": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": false,
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0,
+    "Category": 255,
+    "Weight": 500,
+    "Value": 20,
+    "Material": "Leather",
+    "Health": 3,
+    "Tags": [],
+    "Components": [
+      {
+        "$type": "ODB.WearableComponent, ODB",
+        "EquipSlots": [
+          "Torso"
+        ],
+        "ArmorClass": 2
+      }
+    ],
+    "Name": "leather armor",
+    "Type": 32778,
+    "Tile": "[",
+    "Foreground": "165, 42, 42, 255",
+    "Background": null
+  },
+  "32779": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": false,
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0,
+    "Category": 255,
+    "Weight": 150,
+    "Value": 15,
+    "Material": "Cloth",
+    "Health": 2,
+    "Tags": [],
+    "Components": [
+      {
+        "$type": "ODB.WearableComponent, ODB",
+        "EquipSlots": [
+          "Back"
+        ],
+        "ArmorClass": 1
+      }
+    ],
+    "Name": "cloak",
+    "Type": 32779,
+    "Tile": "[",
+    "Foreground": "165, 42, 42, 255",
+    "Background": null
+  },
+  "32780": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": false,
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0,
+    "Category": 255,
+    "Weight": 200,
+    "Value": 20,
+    "Material": "Wood",
+    "Health": 4,
+    "Tags": [
+      "NonWeapon"
+    ],
+    "Components": [
+      {
+        "$type": "ODB.WearableComponent, ODB",
+        "EquipSlots": [
+          "Hand"
+        ],
+        "ArmorClass": 2
+      }
+    ],
+    "Name": "wooden shield",
+    "Type": 32780,
+    "Tile": "\u001f",
+    "Foreground": "153, 102, 51, 255",
+    "Background": null
+  },
+  "33024": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": false,
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0,
+    "Category": 1,
+    "Weight": 1,
+    "Value": 15,
+    "Material": "Paper",
+    "Health": 1,
+    "Tags": [],
+    "Components": [
+      {
+        "$type": "ODB.ReadableComponent, ODB",
+        "Effect": 1
+      }
+    ],
+    "Name": "scroll of forcebolt",
+    "Type": 33024,
+    "Tile": "?",
+    "Foreground": "255, 255, 255, 255",
+    "Background": null
+  },
+  "33025": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": false,
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0,
+    "Category": 1,
+    "Weight": 1,
+    "Value": 15,
+    "Material": "Paper",
+    "Health": 1,
+    "Tags": [],
+    "Components": [
+      {
+        "$type": "ODB.ReadableComponent, ODB",
+        "Effect": 2
+      }
+    ],
+    "Name": "scroll of identify",
+    "Type": 33025,
+    "Tile": "?",
+    "Foreground": "255, 255, 255, 255",
+    "Background": null
+  },
+  "33280": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": false,
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0,
+    "Category": 2,
+    "Weight": 50,
+    "Value": 65,
+    "Material": "Paper",
+    "Health": 2,
+    "Tags": [],
+    "Components": [
+      {
+        "$type": "ODB.LearnableComponent, ODB",
+        "Spell": 1
+      }
+    ],
+    "Name": "tome of forcebolt",
+    "Type": 33280,
+    "Tile": "þ",
+    "Foreground": "255, 255, 0, 255",
+    "Background": null
+  },
+  "33281": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": false,
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0,
+    "Category": 2,
+    "Weight": 50,
+    "Value": 80,
+    "Material": "Paper",
+    "Health": 2,
+    "Tags": [],
+    "Components": [
+      {
+        "$type": "ODB.LearnableComponent, ODB",
+        "Spell": 2
+      }
+    ],
+    "Name": "tome of identify",
+    "Type": 33281,
+    "Tile": "þ",
+    "Foreground": "255, 255, 0, 255",
+    "Background": null
+  },
+  "33536": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": true,
+    "GenerationLowBound": 1,
+    "GenerationHighBound": 1,
+    "Category": 0,
+    "Weight": 100,
+    "Value": 30,
+    "Material": "Glass",
+    "Health": 1,
+    "Tags": [],
+    "Components": [
+      {
+        "$type": "ODB.DrinkableComponent, ODB",
+        "Effect": 0
+      }
+    ],
+    "Name": "potion of healing",
+    "Type": 33536,
+    "Tile": "!",
+    "Foreground": "255, 0, 0, 255",
+    "Background": null
+  },
+  "34304": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": true,
+    "GenerationLowBound": 1,
+    "GenerationHighBound": 3,
+    "Category": 255,
+    "Weight": 130,
+    "Value": 10,
+    "Material": "Organic",
+    "Health": 2,
+    "Tags": [],
+    "Components": [
+      {
+        "$type": "ODB.EdibleComponent, ODB",
+        "Nutrition": 1500
+      }
+    ],
+    "Name": "ration",
+    "Type": 34304,
+    "Tile": "ö",
+    "Foreground": "255, 204, 153, 255",
+    "Background": null
+  },
+  "34816": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": false,
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0,
+    "Category": 255,
+    "Weight": 7000,
+    "Value": 65536,
+    "Material": "Organic",
+    "Health": 3,
+    "Tags": [],
+    "Components": [
+      {
+        "$type": "ODB.EdibleComponent, ODB",
+        "Nutrition": 2500
+      }
+    ],
+    "Name": "moribund corpse",
+    "Type": 34816,
+    "Tile": "%",
+    "Foreground": "255, 0, 0, 255",
+    "Background": null
+  },
+  "34817": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": false,
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0,
+    "Category": 255,
+    "Weight": 200,
+    "Value": 65536,
+    "Material": "Organic",
+    "Health": 3,
+    "Tags": [],
+    "Components": [
+      {
+        "$type": "ODB.EdibleComponent, ODB",
+        "Nutrition": 700
+      }
+    ],
+    "Name": "rat corpse",
+    "Type": 34817,
+    "Tile": "%",
+    "Foreground": "255, 0, 0, 255",
+    "Background": null
+  },
+  "34818": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": false,
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0,
+    "Category": 255,
+    "Weight": 200,
+    "Value": 65536,
+    "Material": "Organic",
+    "Health": 3,
+    "Tags": [],
+    "Components": [
+      {
+        "$type": "ODB.EdibleComponent, ODB",
+        "Nutrition": 700
+      }
+    ],
+    "Name": "newt corpse",
+    "Type": 34818,
+    "Tile": "%",
+    "Foreground": "255, 0, 0, 255",
+    "Background": null
+  },
+  "34819": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": false,
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0,
+    "Category": 255,
+    "Weight": 1300,
+    "Value": 65536,
+    "Material": "Organic",
+    "Health": 3,
+    "Tags": [],
+    "Components": [
+      {
+        "$type": "ODB.EdibleComponent, ODB",
+        "Nutrition": 700
+      }
+    ],
+    "Name": "kobold corpse",
+    "Type": 34819,
+    "Tile": "%",
+    "Foreground": "255, 0, 0, 255",
+    "Background": null
+  },
+  "34820": {
+    "$type": "ODB.ItemDefinition, ODB",
+    "Stacking": false,
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0,
+    "Category": 255,
+    "Weight": 1300,
+    "Value": 65536,
+    "Material": "Organic",
+    "Health": 3,
+    "Tags": [],
+    "Components": [
+      {
+        "$type": "ODB.EdibleComponent, ODB",
+        "Nutrition": 1000
+      }
+    ],
+    "Name": "kilik, ratking corpse",
+    "Type": 34820,
+    "Tile": "%",
+    "Foreground": "255, 0, 0, 255",
+    "Background": null
+  }
+}

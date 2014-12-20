@@ -107,6 +107,12 @@ namespace ODB
                     switch (IO.IOState)
                     {
                         case InputType.PlayerInput:
+                            if (!Game.Player.IsAlive)
+                            {
+                                ODBGame.Exit();
+                                SaveIO.KillSave();
+                            }
+
                             IO.SetInput('Y', 'n');
                             IO.AskPlayer(
                                 "Really quit? [Yn]",
@@ -114,7 +120,7 @@ namespace ODB
                                 () =>
                                 {
                                     if (IO.Answer[0] == 'Y')
-                                        ODBGame.Exit();
+                                        ODBGame.SaveQuit();
                                 }
                             );
                             break;

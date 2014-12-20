@@ -157,12 +157,12 @@
     <Compile Include="World.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Data\actors.def">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Data\items.def">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <None Include="Data\actors.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\items.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <Content Include="Data\tiles.def">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

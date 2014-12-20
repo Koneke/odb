@@ -49,8 +49,8 @@ namespace ODB
         private void Load()
         {
             Spell.SetupMagic(); //essentially magic defs, but we hardcode magic
-            SaveIO.JsonLoadActorDefinitions("Test/jsonactors.def");
-            SaveIO.JsonLoadItemDefinitions("Test/jsonitems.def");
+            SaveIO.JsonLoadActorDefinitions("Data/actors.json");
+            SaveIO.JsonLoadItemDefinitions("Data/items.json");
             SaveIO.ReadTileDefinitionsFromFile("Data/tiles.def");
             KeyBindings.ReadBinds(SaveIO.ReadFromFile("Data/keybindings.kb"));
 
@@ -137,6 +137,12 @@ namespace ODB
             GraphicsDevice.Clear(Color.Black);
             Engine.Draw(gameTime);
             base.Draw(gameTime);
+        }
+
+        public static void SaveQuit()
+        {
+            SaveIO.JsonSave();
+            Exit();
         }
     }
 }

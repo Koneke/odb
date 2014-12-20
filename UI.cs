@@ -528,7 +528,17 @@ namespace ODB
                     Wizard.WmCursor.y + ") ";
 
                 str += "D:" + World.Level.Depth + "0M";
-                str += " (" + World.Level.Name + ")";
+                str += " (" + World.Level.Name + ") ";
+
+                TileInfo ti = World.Level.At(Wizard.WmCursor);
+                if (ti.Actor != null)
+                    str += string.Format(
+                        "{0}, lvl {1}, {2}/{3}",
+                        ti.Actor.GetName("Name"),
+                        ti.Actor.Level,
+                        ti.Actor.HpCurrent,
+                        ti.Actor.HpMax
+                    );
 
                 _statRowConsole.CellData.Print(0, 0, str);
                 return;

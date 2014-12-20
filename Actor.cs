@@ -519,6 +519,7 @@ namespace ODB
                 int totalModifier =
                     strBonus + dexBonus + Level +
                     mod - multiWeaponPenalty;
+
                 int hitRoll = roll + totalModifier;
 
                 if (hitRoll < targetDefense)
@@ -535,7 +536,7 @@ namespace ODB
                     if (Game.OpenRolls)
                         message += String.Format(
                             "d20+{0} ({1}+{2}+{3}+{4}-{5}{9:+#;-#;+0}), " +
-                                "{6}+{0}, {7} vs. {8}. ",
+                            "{6}+{0}, {7} vs. {8}. ",
                             totalModifier,
                             strBonus, dexBonus, Level, mod, multiWeaponPenalty,
                             roll,
@@ -564,23 +565,24 @@ namespace ODB
                     ec.Apply(target);
 
                 int damageRoll = Util.Roll(ac.Damage, crit);
-                int damage = damageRoll + strBonus;
+                int damage = damageRoll + strBonus + Level;
 
                 if (Game.OpenRolls)
                 {
                     message += String.Format(
-                        "d20+{0} ({1}+{2}+{3}+{4}-{5}), " +
-                            "{6}+{0}, {7} vs. {8}. ",
+                        "d20+{0} ({1}+{2}+{3}+{4}-{5}{9:+#;-#;+0}), " +
+                        "{6}+{0}, {7} vs. {8}. ",
                         totalModifier,
                         strBonus, dexBonus, Level, mod, multiWeaponPenalty,
                         roll,
                         hitRoll,
-                        targetDefense
+                        targetDefense,
+                        attack.Item2.Modifier
                     );
 
                     message += String.Format(
-                        "{0}+{2}, {1}+{2}, {3} hit points damage. ",
-                        ac.Damage, damageRoll, strBonus, damage);
+                        "{0}+{2}+{4}, {1}+{2}+{4}, {3} hit points damage. ",
+                        ac.Damage, damageRoll, strBonus, damage, Level);
                 }
 
                 totalDamage += damage;
@@ -636,7 +638,7 @@ namespace ODB
 
             int mod = ammo.Mod;
             if (weapon != null) mod += weapon.Mod;
-            int totalModifier = dexBonus + mod - distancePenalty;
+            int totalModifier = dexBonus + mod + Level - distancePenalty;
 
             int targetArmor = target.GetArmor();
             int hitRoll = roll + totalModifier;
@@ -665,7 +667,7 @@ namespace ODB
                     ? 0
                     : Util.Roll(lc.Damage, crit);
 
-                int damageRoll = ammoDamage + launcherDamage;
+                int damageRoll = ammoDamage + launcherDamage + Level;
 
                 Point position = xy;
                 position.z = World.Level.Depth;
@@ -691,23 +693,25 @@ namespace ODB
                     message +=
                         String.Format
                         (
-                            "d20+{0} ({1}+{2}-{3}), " +
+                            "d20+{0} ({1}+{2}+{7}-{3}), " +
                                 "{4}+{0}, {5} vs. {6}. ",
                             totalModifier,
                             dexBonus, mod, distancePenalty,
                             roll,
                             hitRoll,
-                            targetArmor
+                            targetArmor,
+                            Level
                         );
                     message +=
                         String.Format
                         (
-                            "{0}{1}, {2}{3}, {4} hit points damage.",
+                            "{0}{1}+{5}, {2}{3}+{5}, {4} hit points damage.",
                             pc == null ? "1d4" : pc.Damage,
                             lc == null ? "" : ("+" + lc.Damage),
                             ammoDamage,
                             lc == null ? "" : ("+" + launcherDamage),
-                            damageRoll
+                            damageRoll,
+                            Level
                         );
                 }
                 #endregion

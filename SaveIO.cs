@@ -136,14 +136,14 @@ namespace ODB
         public static void JsonSave()
         {
             WriteToFile(
-                "Test/game.sv", 
+                "Save/game.sv", 
                 JsonConvert.SerializeObject(
                     Game.Instance,
                     Settings
                 )
             );
             WriteToFile(
-                "Test/world.sv", 
+                "Save/world.sv", 
                 JsonConvert.SerializeObject(
                     World.Instance,
                     Settings
@@ -154,12 +154,12 @@ namespace ODB
         public static void JsonLoad()
         {
             Game.Instance = JsonConvert.DeserializeObject<Game>(
-                ReadFromFile("Test/game.sv"),
+                ReadFromFile("Save/game.sv"),
                 Settings
             );
 
             World.Load(JsonConvert.DeserializeObject<World>(
-                ReadFromFile("Test/world.sv"),
+                ReadFromFile("Save/world.sv"),
                 Settings
             ));
         }
@@ -227,6 +227,15 @@ namespace ODB
                     ActorDefinition.DefDict[key]
                 );
             }
+        }
+
+        public static void KillSave()
+        {
+            string cwd = Directory.GetCurrentDirectory() + "/";
+            if(File.Exists(cwd + "Save/game.sv"))
+                File.Delete(cwd + "Save/game.sv");
+            if(File.Exists(cwd + "Save/world.sv"))
+                File.Delete(cwd + "Save/world.sv");
         }
     }
 }
