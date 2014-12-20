@@ -536,7 +536,7 @@ namespace ODB
                         str += string.Format(
                             "{0}, lvl {1}, {2}/{3}",
                             ti.Actor.GetName("Name"),
-                            ti.Actor.Level,
+                            ti.Actor.Xplevel,
                             ti.Actor.HpCurrent,
                             ti.Actor.HpMax
                         );
@@ -592,7 +592,7 @@ namespace ODB
 
             statrow += " ";
             statrow += "XP:";
-            statrow += Game.Player.Level + "";
+            statrow += Game.Player.Xplevel + "";
 
             statrow += " ";
             statrow += "$:";

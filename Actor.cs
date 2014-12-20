@@ -106,36 +106,18 @@ namespace ODB
         [DataMember] public int MpMax;
         [DataMember] public int MpRegCooldown;
 
-        [DataMember] public int Level;
+        [DataMember] public int Xplevel;
         [DataMember] public int ExperiencePoints;
         [DataMember] public int Cooldown;
         [DataMember] private int _food;
 
+        [DataMember] private int? _quiver;
         [DataMember] private Doll _doll;
-
-        public List<BodyPart> PaperDoll
-        {
-            get { return _doll.Get(); }
-        }
-
         [DataMember] private List<int> _inventory;
-
-        public List<Item> Inventory
-        {
-            get
-            {
-                return _inventory
-                    .Select(Util.GetItemByID)
-                    .Where(item => item != null)
-                    .ToList();
-            }
-        }
 
         [DataMember] public List<LastingEffect> LastingEffects;
         [DataMember] public List<Mod> Intrinsics;
 
-        //public bool Awake;
-        [DataMember] private int? _quiver;
         public Item Quiver {
             get { return _quiver == null
                 ? null
@@ -146,12 +128,21 @@ namespace ODB
                 else _quiver = value.ID;
             }
         }
-
-        #region temporary/cached (nonwritten)
+        public List<BodyPart> PaperDoll
+        {
+            get { return _doll.Get(); }
+        }
+        public List<Item> Inventory
+        {
+            get
+            {
+                return _inventory
+                    .Select(Util.GetItemByID)
+                    .Where(item => item != null)
+                    .ToList();
+            }
+        }
         public bool[,] Vision;
-        #endregion
-
-        #region wraps
         public List<Spell> Spellbook {
             get
             {
@@ -161,14 +152,13 @@ namespace ODB
             }
         }
         public bool IsAlive { get { return HpCurrent > 0; } }
-        #endregion
 
         public Actor() { }
 
         public Actor(
             Point xy,
             ActorDefinition definition,
-            int level
+            int xplevel
         ) : base(xy, definition) {
             ID = Game.IDCounter++;
             _type = definition.Type;
@@ -178,18 +168,24 @@ namespace ODB
             _intelligence = Util.Roll(definition.Intelligence);
 
             HpMax = Util.Roll(definition.HitDie, true);
-            for (int i = 0; i < level - 1; i++)
-                HpMax += Util.Roll(definition.HitDie);
+            for (int i = 0; i < xplevel - 1; i++)
+                HpMax += Math.Max(
+                    Util.Roll(definition.HitDie),
+                    _strength
+                );
 
             MpMax = Util.Roll(definition.ManaDie, true);
-            for (int i = 0; i < level - 1; i++)
-                MpMax += Util.Roll(definition.ManaDie);
+            for (int i = 0; i < xplevel - 1; i++)
+                MpMax += Math.Max(
+                    Util.Roll(definition.ManaDie),
+                    _intelligence
+                );
 
             HpCurrent = HpMax;
             MpCurrent = MpMax;
 
-            Level = level;
-            ExperiencePoints = RequiredExperienceForLevel(level);
+            Xplevel = xplevel;
+            ExperiencePoints = RequiredExperienceForLevel(xplevel);
 
             Cooldown = 0;
 
@@ -210,14 +206,6 @@ namespace ODB
             MpRegCooldown = 30 - _intelligence;
         }
 
-        //LH-021214: We have this function here because
-        //           1. Named enemies and similar should get their name returned
-        //              differently.
-        //           2. Means we don't have to bother with capitalizing
-        //              and crap like that everywhere else, just send a good
-        //              format this-a-way.
-        //           3. Automatically handle player being referred to as "you"
-        //              instead of "Moribund" or whatever they choose.
         public string GetName(string format, bool realname = false)
         {
             string result;
@@ -466,7 +454,7 @@ namespace ODB
         }
         public int GetCarryingCapacity()
         {
-            return 1200 + Level * 100 + Get(Stat.Strength) * 400;
+            return 1200 + Xplevel * 100 + Get(Stat.Strength) * 400;
         }
 
         public void Attack(Actor target)
@@ -474,7 +462,7 @@ namespace ODB
             int dexBonus = Util.XperY(1, 3, Get(Stat.Dexterity));
             int strBonus = Util.XperY(1, 2, Get(Stat.Strength));
 
-            int multiWeaponPenalty = 3 * GetWieldedItems().Count - 1;
+            int multiWeaponPenalty = 3 * (GetWieldedItems().Count - 1);
             multiWeaponPenalty = Math.Max(0, multiWeaponPenalty - dexBonus);
 
             int targetDefense = target.GetArmor();
@@ -517,7 +505,7 @@ namespace ODB
                 int mod = weapon == null ? 0 : weapon.Mod;
 
                 int totalModifier =
-                    strBonus + dexBonus + Level +
+                    strBonus + dexBonus + Xplevel +
                     mod - multiWeaponPenalty;
 
                 int hitRoll = roll + totalModifier;
@@ -538,7 +526,7 @@ namespace ODB
                             "d20+{0} ({1}+{2}+{3}+{4}-{5}{9:+#;-#;+0}), " +
                             "{6}+{0}, {7} vs. {8}. ",
                             totalModifier,
-                            strBonus, dexBonus, Level, mod, multiWeaponPenalty,
+                            strBonus, dexBonus, Xplevel, mod, multiWeaponPenalty,
                             roll,
                             hitRoll,
                             targetDefense,
@@ -565,7 +553,7 @@ namespace ODB
                     ec.Apply(target);
 
                 int damageRoll = Util.Roll(ac.Damage, crit);
-                int damage = damageRoll + strBonus + Level;
+                int damage = damageRoll + strBonus + Xplevel;
 
                 if (Game.OpenRolls)
                 {
@@ -573,7 +561,7 @@ namespace ODB
                         "d20+{0} ({1}+{2}+{3}+{4}-{5}{9:+#;-#;+0}), " +
                         "{6}+{0}, {7} vs. {8}. ",
                         totalModifier,
-                        strBonus, dexBonus, Level, mod, multiWeaponPenalty,
+                        strBonus, dexBonus, Xplevel, mod, multiWeaponPenalty,
                         roll,
                         hitRoll,
                         targetDefense,
@@ -582,7 +570,7 @@ namespace ODB
 
                     message += String.Format(
                         "{0}+{2}+{4}, {1}+{2}+{4}, {3} hit points damage. ",
-                        ac.Damage, damageRoll, strBonus, damage, Level);
+                        ac.Damage, damageRoll, strBonus, damage, Xplevel);
                 }
 
                 totalDamage += damage;
@@ -638,7 +626,7 @@ namespace ODB
 
             int mod = ammo.Mod;
             if (weapon != null) mod += weapon.Mod;
-            int totalModifier = dexBonus + mod + Level - distancePenalty;
+            int totalModifier = dexBonus + mod + Xplevel - distancePenalty;
 
             int targetArmor = target.GetArmor();
             int hitRoll = roll + totalModifier;
@@ -667,7 +655,7 @@ namespace ODB
                     ? 0
                     : Util.Roll(lc.Damage, crit);
 
-                int damageRoll = ammoDamage + launcherDamage + Level;
+                int damageRoll = ammoDamage + launcherDamage + Xplevel;
 
                 Point position = xy;
                 position.z = World.Level.Depth;
@@ -700,7 +688,7 @@ namespace ODB
                             roll,
                             hitRoll,
                             targetArmor,
-                            Level
+                            Xplevel
                         );
                     message +=
                         String.Format
@@ -711,7 +699,7 @@ namespace ODB
                             ammoDamage,
                             lc == null ? "" : ("+" + launcherDamage),
                             damageRoll,
-                            Level
+                            Xplevel
                         );
                 }
                 #endregion
@@ -809,7 +797,7 @@ namespace ODB
             Game.Brains.RemoveAll(b => b.MeatPuppet == this);
 
             if(ds.Source != null)
-                ds.Source.GiveExperience(Definition.Experience * Level);
+                ds.Source.GiveExperience(Definition.Experience * Xplevel);
 
             switch (ds.DamageType)
             {
@@ -830,7 +818,7 @@ namespace ODB
                         Actor rat = new Actor(
                             p,
                             Util.ADefByName("rat"),
-                            ds.Source.Level
+                            ds.Source.Xplevel
                         );
                         World.Level.Spawn(rat);
                     }
@@ -840,23 +828,34 @@ namespace ODB
 
         public void GiveExperience(int amount)
         {
-            int lPre = Level;
-
+            int lPre = Xplevel;
             ExperiencePoints += amount;
+            int levelNew = LevelFromExperience(ExperiencePoints);
 
-            if (LevelFromExperience(ExperiencePoints) == lPre) return;
+            if (levelNew == lPre) return;
 
+            Xplevel = levelNew;
+            LevelUp();
+        }
+        private void LevelUp()
+        {
             Game.UI.Log(
                 "{1} stronger",
                 this == Game.Player
                     ? "You feel" :
                     GetName("Name") + " looks"
             );
-            HpMax += Util.Roll(Definition.HitDie);
-            MpMax += Util.Roll(Definition.ManaDie);
-            Level = LevelFromExperience(ExperiencePoints);
+            HpMax +=
+                Math.Max(
+                    Util.Roll(Definition.HitDie),
+                    _strength
+                );
+            MpMax +=
+                Math.Max(
+                    Util.Roll(Definition.ManaDie),
+                    _intelligence
+                );
         }
-
         public int RequiredExperienceForLevel(int target)
         {
             int level = 1;
@@ -868,7 +867,6 @@ namespace ODB
             }
             return xp;
         }
-
         public int LevelFromExperience(int amount)
         {
             int xp = amount;
@@ -1120,12 +1118,6 @@ namespace ODB
 
             return verb;
         }
-
-        public void LearnSpell(Spell spell)
-        {
-            Definition.Spellbook.Add(spell.ID);
-        }
-
         public string Genitive(string format = "")
         {
             string result;
@@ -1147,15 +1139,15 @@ namespace ODB
             return result;
         }
 
+        public void LearnSpell(Spell spell)
+        {
+            Definition.Spellbook.Add(spell.ID);
+        }
+
         public bool Sees(Point other)
         {
             if (Vision == null) return false;
             return Vision[other.x, other.y];
-        }
-
-        public void Chant(string chant)
-        {
-            BlackMagic.CheckCircle(this, chant);
         }
 
         public void Heal(int amount)
@@ -1302,7 +1294,6 @@ namespace ODB
 
             Pass();
         }
-
         private void HandleChant(Command cmd)
         {
             string chant = (string)cmd.Get("chant");
@@ -1312,9 +1303,8 @@ namespace ODB
                 Verb("chant")
             );
             Game.UI.Log("\"{1}...\"", Util.Capitalize(chant));
-            Chant(chant);
+            BlackMagic.CheckCircle(this, chant);
         }
-
         private void HandleClose(Command cmd)
         {
             TileInfo targetTile = (TileInfo)cmd.Get("door");
@@ -1344,7 +1334,6 @@ namespace ODB
 
             Pass(true);
         }
-
         private void HandleDrop(Command cmd)
         {
             Item item = (Item)cmd.Get("item");
@@ -1377,14 +1366,12 @@ namespace ODB
 
             Pass();
         }
-
         private void HandleEat(Command cmd)
         {
             Item item = (Item)cmd.Get("item");
             Eat(item);
             Pass();
         }
-
         private void HandleEngrave(Command cmd)
         {
             string answer = (string)cmd.Get("text");
@@ -1397,7 +1384,6 @@ namespace ODB
                     answer
                 );
         }
-
         private void HandleGet(Command cmd)
         {
             Item item = (Item)cmd.Get("item");
@@ -1423,7 +1409,6 @@ namespace ODB
 
             Pass();
         }
-
         private void HandleLearn(Command cmd)
         {
             Item item = (Item)cmd.Get("item");
@@ -1443,7 +1428,6 @@ namespace ODB
 
             Pass();
         }
-
         private void HandleOpen(Command cmd)
         {
             TileInfo targetTile = (TileInfo)cmd.Get("door");
@@ -1473,8 +1457,7 @@ namespace ODB
 
             Pass(true);
         }
-
-        public void HandleQuaff(Command cmd)
+        private void HandleQuaff(Command cmd)
         {
             Item item = (Item)cmd.Get("item");
 
@@ -1488,7 +1471,6 @@ namespace ODB
 
             Pass();
         }
-
         private void HandleQuiver(Command cmd)
         {
             Item item = (Item)cmd.Get("item");
@@ -1499,8 +1481,6 @@ namespace ODB
 
             Pass();
         }
-
-        //read is for scrolls, learn is for tomes
         private void HandleRead(Command cmd)
         {
             Item item = (Item)cmd.Get("item");
@@ -1521,8 +1501,7 @@ namespace ODB
 
             Pass();
         }
-
-        public void HandleRemove(Command cmd)
+        private void HandleRemove(Command cmd)
         {
             Item item = (Item)cmd.Get("item");
 
@@ -1537,7 +1516,6 @@ namespace ODB
 
             Pass();
         }
-
         private void HandleSheathe(Command cmd)
         {
             Item item = (Item)cmd.Get("item");
@@ -1570,13 +1548,11 @@ namespace ODB
 
             Pass();
         }
-
         private void HandleShoot(Command cmd)
         {
             Actor target = (Actor)cmd.Get("actor");
             Shoot(target);
         }
-
         private void HandleSleep(Command cmd)
         {
             AddEffect(
@@ -1587,12 +1563,13 @@ namespace ODB
                 )
             );
         }
-
         private void HandleUse(Command cmd)
         {
             Item item = (Item)cmd.Get("item");
             Spell spell = Spell.Spells
                 [item.GetComponent<UsableComponent>().UseEffect];
+
+            //same thing that goes for readables, where to put this and id?
             item.SpendCharge();
 
             if(spell.CastType == InputType.Targeting)
@@ -1602,7 +1579,6 @@ namespace ODB
 
             Pass();
         }
-
         private void HandleWear(Command cmd)
         {
             Item item = (Item)cmd.Get("item");
@@ -1616,7 +1592,6 @@ namespace ODB
 
             Pass();
         }
-
         private void HandleWield(Command cmd)
         {
             Item item = (Item)cmd.Get("item");

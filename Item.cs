@@ -302,6 +302,13 @@ namespace ODB
 
         public void Damage(int mod = 0, Action<string> log = null)
         {
+            WearableComponent wc;
+            if ((wc = GetComponent<WearableComponent>()) != null)
+            {
+                //items actually made to be armour are more damage resistant
+                mod -= wc.ArmorClass * 5;
+            }
+
             if (Util.Random.Next(0, Materials.MaxHardness+1) + mod <
                 Materials.GetHardness(Material))
                 return;

@@ -297,7 +297,7 @@ namespace ODB
             float difficulty =
                 (Game.Player == null
                     ? 1
-                    : Game.Player.Level)
+                    : Game.Player.Xplevel)
                 + level.Depth + 1;
 
             List<ActorDefinition> possibleMonsters =

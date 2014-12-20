@@ -244,7 +244,9 @@ namespace ODB
                 item.SpendCharge();
 
                 if (effect.CastType == InputType.None)
+                {
                     Game.Player.Do(IO.CurrentCommand);
+                }
                 else
                 {
                     if (effect.SetupAcceptedInput != null)
@@ -276,7 +278,7 @@ namespace ODB
                         question,
                         effect.CastType,
                         Game.Player.Do
-                    );
+                        );
 
                     Util.QuickTarget();
                 }
@@ -372,7 +374,10 @@ namespace ODB
                 string question;
 
                 if (useEffect.CastType == InputType.Targeting)
+                {
                     question = "Where?";
+                    Util.QuickTarget();
+                }
                 else
                 {
                     question = "On what? [";

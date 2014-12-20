@@ -33,15 +33,15 @@ namespace ODB
                 "scratched", "torn", "ripped" }}
         };
 
-        public const int MaxHardness = 50;
+        public const int MaxHardness = 100;
 
         //likelyness to take damage when thrown/bashed
-        private const int OrganicHardness = 30;
-        private const int MetalHardness = 50;
-        private const int WoodHardness = 45;
-        private const int LeatherHardness = 43;
+        private const int OrganicHardness = 50;
+        private const int MetalHardness = 98;
+        private const int WoodHardness = 95;
+        private const int LeatherHardness = 85;
         private const int PaperHardness = 15;
-        private const int ClothHardness = 41;
+        private const int ClothHardness = 80;
         private const int GlassHardness = 0; //guaranteed
 
         public static int GetHardness(Material m)

@@ -213,6 +213,7 @@ namespace ODB
 
             if (CurrentContainer != -1) return;
 
+            //todo: apply/use?
             if (KeyBindings.Pressed(Bind.Drop)) CheckDrop(SelectedItem);
             if (KeyBindings.Pressed(Bind.Wield)) CheckWield(SelectedItem);
             if (KeyBindings.Pressed(Bind.Wear)) CheckWear(SelectedItem);
@@ -450,6 +451,12 @@ namespace ODB
 
                 IO.CurrentCommand = new Command("read").Add("item", item);
 
+                item.Identify();
+
+                //Make sure to spend the charge BEFORE setting up input
+                //otherwise all indexes above our gets off-by-one'd.
+                item.SpendCharge();
+
                 if (effect.CastType == InputType.None)
                 {
                     Game.Player.Do(IO.CurrentCommand);
@@ -458,9 +465,6 @@ namespace ODB
                 {
                     if (effect.SetupAcceptedInput != null)
                         effect.SetupAcceptedInput(Game.Player);
-
-                    item.Identify();
-                    item.SpendCharge();
 
                     if (IO.AcceptedInput.Count <= 0)
                     {
