@@ -66,6 +66,7 @@ namespace ODB
                                 //on load, currently we're loading stuff in
                                 //on startup, which might not really be ncssary.
                                 ODBGame.SwitchState(ODBGame.GameState);
+                                SaveIO.KillSave();
                                 break;
                             case Choices.Load:
                                 if (SaveIO.SaveExists)

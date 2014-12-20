@@ -757,7 +757,10 @@ namespace ODB
             if (HpCurrent <= 0) return;
 
             TileInfo tileInfo = World.Level.At(xy);
-            Game.UI.UpdateAt(xy);
+
+            if(Game.Player.Sees(xy))
+                Game.UI.UpdateAt(xy);
+
             tileInfo.Blood = true;
             tileInfo.Neighbours
                 .Where(n => !n.Solid)
@@ -765,20 +768,25 @@ namespace ODB
                 .ToList().ForEach(n =>
                     {
                         n.Blood = true;
-                        Game.UI.UpdateAt(n.Position);
+                        if(Game.Player.Sees(n.Position))
+                            Game.UI.UpdateAt(n.Position);
                     }
                 );
 
             HpCurrent -= ds.Damage;
 
-            if (HasEffect(StatusType.Sleep))
+            if (HasEffect(StatusType.Sleep) && HpCurrent > 0)
             {
                 RemoveEffect(StatusType.Sleep);
+
                 Game.UI.Log(
                     "{1} {2} up!",
                     GetName("Name"),
                     Verb("wake")
                 );
+
+                //still sleepy
+                Pass();
             }
 
             if (HpCurrent > 0) return;
@@ -986,7 +994,8 @@ namespace ODB
         //but should, I guess, be called by monsters as well in the future
         public bool TryMove(Point offset)
         {
-            Game.UI.UpdateAt(xy);
+            if(Game.Player.Sees(xy))
+                Game.UI.UpdateAt(xy);
 
             List<Point> possiblesMoves = GetPossibleMoves();
 
@@ -1035,9 +1044,10 @@ namespace ODB
                 World.Level.MakeNoise(xy, NoiseType.Combat, +2);
             }
 
-            Game.UI.UpdateAt(xy);
-            HasMoved = moved;
+            if(Game.Player.Sees(xy))
+                Game.UI.UpdateAt(xy);
 
+            HasMoved = moved;
             return moved;
         }
 
@@ -1052,7 +1062,8 @@ namespace ODB
                 if (Vision[x, y])
                 {
                     Vision[x, y] = false;
-                    Game.UI.UpdateAt(x, y);
+                    if(this == Game.Player)
+                        Game.UI.UpdateAt(x, y);
                 }
         }
         public void AddRoomToVision(Room r)
@@ -1316,7 +1327,8 @@ namespace ODB
                 );
             targetTile.Door = Door.Closed;
 
-            Game.UI.UpdateAt(targetTile.Position);
+            if(Game.Player.Sees(targetTile.Position))
+                Game.UI.UpdateAt(targetTile.Position);
 
             int squeakChance = 6;
             if (HasEffect(StatusType.Sneak)) squeakChance = 8;
@@ -1444,7 +1456,8 @@ namespace ODB
                 );
             targetTile.Door = Door.Open;
 
-            Game.UI.UpdateAt(targetTile.Position);
+            if(Game.Player.Sees(targetTile.Position))
+                Game.UI.UpdateAt(targetTile.Position);
 
             int squeakChance = 6;
             if (HasEffect(StatusType.Sneak)) squeakChance = 8;
@@ -1667,6 +1680,9 @@ namespace ODB
                         GetName("Name"),
                         Verb("wake")
                     );
+
+                //don't act immediately on wakeup.
+                Pass();
             }
 
             //only log hearing for the player, and only for things he/she
