@@ -17,13 +17,11 @@ namespace ODB
 
             //should be replaced with a look command
             //which could be called here maybe
-            #region looking at our new tile
             if (moved)
             {
                 IO.Target = Game.Player.xy;
                 PlayerResponses.Examine();
             }
-            #endregion
 
             if (KeyBindings.Pressed(Bind.Inventory) && !Game.WizMode)
                 IO.IOState = InputType.Inventory;
@@ -94,7 +92,6 @@ namespace ODB
                             World.Level.Depth + 1
                         );
                         connector.Target = l.ID;
-                        //World.Instance.Levels.Add(l);
                     }
 
                 if (connector.Target == null) return false;
@@ -106,6 +103,8 @@ namespace ODB
                     ? "descend"
                     : "ascend"
                 );
+
+                Game.Player.UpdateVision();
             }
             #endregion
 

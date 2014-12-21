@@ -43,6 +43,7 @@ namespace ODB
         }
         public void UpdateAt(int x, int y)
         {
+            if (World.Level.At(x, y) == null) return;
             _updateAt[x, y] = true;
         }
 
@@ -177,13 +178,14 @@ namespace ODB
                         Game.WizMode;
 
                     Color background = ti.Tile.Background;
+                    Color foreground = ti.Tile.Foreground;
 
                     if (ti.Blood) background = Color.DarkRed;
 
                     DrawToScreen(
                         new Point(x, y),
-                        background,
-                        ti.Tile.Foreground * (inVision ? 1f : 0.6f),
+                        background * (inVision ? 1f : 0.6f),
+                        foreground * (inVision ? 1f : 0.6f),
                         ti.Tile.Render()
                     );
                 }
@@ -280,7 +282,7 @@ namespace ODB
                 }
                 
                 ColorString morePrompt = new ColorString(
-                    "#00ff00<More " + (char)27 + ">"
+                    " #00ff00<More " + (char)27 + ">"
                 );
 
                 if (hidden > 0)

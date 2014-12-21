@@ -142,7 +142,7 @@ namespace ODB
                     .ToList();
             }
         }
-        public bool[,] Vision;
+        private bool[,] _vision;
         public List<Spell> Spellbook {
             get
             {
@@ -1051,31 +1051,47 @@ namespace ODB
 
         public bool HasMoved;
 
-        public void ResetVision()
+        public void UpdateVision()
         {
-            if (Vision == null)
-                Vision = new bool[World.Level.Size.x, World.Level.Size.y];
-            for (int x = 0; x < World.Level.Size.x; x++)
-            for (int y = 0; y < World.Level.Size.y; y++)
-                if (Vision[x, y])
-                {
-                    Vision[x, y] = false;
-                    if(this == Game.Player)
-                        Game.UI.UpdateAt(x, y);
-                }
-        }
-        public void AddRoomToVision(Room r)
-        {
-            foreach (Rect rr in r.Rects)
-            for (int x = 0; x < rr.wh.x; x++)
-                for (int y = 0; y < rr.wh.y; y++)
-                {
-                    Vision[rr.xy.x + x, rr.xy.y + y] = true;
+            if (_vision == null)
+                _vision = new bool[World.Level.Size.x, World.Level.Size.y];
 
+            if (this == Game.Player)
+            {
+                for (int x = 0; x < World.Level.Size.x; x++)
+                    for (int y = 0; y < World.Level.Size.y; y++)
+                        //make sure to update all we SAW as well,
+                        //so that's drawn as not visible
+                        if (_vision[x, y]) Game.UI.UpdateAt(x, y);
+            }
+
+            //nil all
+            _vision.Paint(
+                new Rect(new Point(0, 0), World.Level.Size),
+                false
+            );
+
+            //shadowcast
+            ShadowCaster.ShadowCast(
+                Game.Player.xy,
+                5,
+                (p) =>
+                    World.Level.At(p) == null ||
+                    World.Level.At(p).Solid ||
+                    World.Level.At(p).Door == Door.Closed,
+                (p, d) =>
+                {
                     if (this == Game.Player)
-                        World.Level.See(rr.xy + new Point(x, y));
-                        //World.Level.At(rr.xy + new Point(x, y)).Seen = true;
+                    {
+                        //for now, only player has the "seen"
+                        //and only the player updates the drawn map
+                        World.Level.See(p);
+                        Game.UI.UpdateAt(p);
+                    }
+                    if (World.Level.At(p) != null)
+                        _vision[p.x, p.y] = true;
                 }
+            );
         }
 
         public enum Tempus
@@ -1146,8 +1162,8 @@ namespace ODB
 
         public bool Sees(Point other)
         {
-            if (Vision == null) return false;
-            return Vision[other.x, other.y];
+            if (_vision == null) return false;
+            return _vision[other.x, other.y];
         }
 
         public void Heal(int amount)

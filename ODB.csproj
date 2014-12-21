@@ -127,6 +127,7 @@
     <Compile Include="Brain.cs" />
     <Compile Include="Component.cs" />
     <Compile Include="DamageSource.cs" />
+    <Compile Include="FOV.cs" />
     <Compile Include="Game.cs" />
     <Compile Include="GameState.cs" />
     <Compile Include="Generator.cs" />
