@@ -186,14 +186,14 @@ namespace ODB
             Game.UI.UpdateCamera();
 
             //should probably find a better place to tick this
-            foreach (Actor a in World.Instance.WorldActors
+            /*foreach (Actor a in World.Instance.WorldActors
                 .Where(a => a.LevelID == World.Level.ID)
                 .Where(a => a.HasMoved)
             ) {
                 a.ResetVision();
                 foreach (Room r in Util.GetRooms(a))
                     a.AddRoomToVision(r);
-            }
+            }*/
 
 
             if (KeyBindings.Pressed(KeyBindings.Bind.Dev_ToggleConsole))
