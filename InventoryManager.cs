@@ -447,7 +447,7 @@ namespace ODB
 
             if (rc != null)
             {
-                Spell effect = Spell.Spells[rc.Effect];
+                Spell effect = rc.Effect;
 
                 IO.CurrentCommand = new Command("read").Add("item", item);
 

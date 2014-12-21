@@ -236,7 +236,7 @@ namespace ODB
 
             if (rc != null)
             {
-                Spell effect = Spell.Spells[rc.Effect];
+                Spell effect = rc.Effect;
 
                 IO.CurrentCommand.Add("item", item);
 
@@ -349,9 +349,7 @@ namespace ODB
                 return;
             }
 
-            Spell useEffect =
-                Spell.Spells
-                [item.GetComponent<UsableComponent>().UseEffect];
+            Spell useEffect = item.GetComponent<UsableComponent>().Effect;
 
             IO.CurrentCommand.Add(
                 "item",

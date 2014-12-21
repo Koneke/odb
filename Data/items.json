@@ -2,9 +2,12 @@
   "$type": "System.Collections.Generic.Dictionary`2[[System.Int32, mscorlib],[ODB.ItemDefinition, ODB]], mscorlib",
   "32768": {
     "$type": "ODB.ItemDefinition, ODB",
+    "Name": "gold coin",
+    "Type": 32768,
+    "Tile": "$",
+    "Foreground": "255, 255, 0, 255",
+    "Background": null,
     "Stacking": true,
-    "GenerationLowBound": 0,
-    "GenerationHighBound": 0,
     "Category": 255,
     "Weight": 1,
     "Value": 65536,
@@ -12,17 +15,17 @@
     "Health": 4,
     "Tags": [],
     "Components": [],
-    "Name": "gold coin",
-    "Type": 32768,
-    "Tile": "$",
-    "Foreground": "255, 255, 0, 255",
-    "Background": null
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0
   },
   "32769": {
     "$type": "ODB.ItemDefinition, ODB",
+    "Name": "apron",
+    "Type": 32769,
+    "Tile": "[",
+    "Foreground": "255, 192, 203, 255",
+    "Background": null,
     "Stacking": false,
-    "GenerationLowBound": 0,
-    "GenerationHighBound": 0,
     "Category": 255,
     "Weight": 100,
     "Value": 10,
@@ -38,17 +41,17 @@
         "ArmorClass": 1
       }
     ],
-    "Name": "apron",
-    "Type": 32769,
-    "Tile": "[",
-    "Foreground": "255, 192, 203, 255",
-    "Background": null
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0
   },
   "32770": {
     "$type": "ODB.ItemDefinition, ODB",
+    "Name": "arrow",
+    "Type": 32770,
+    "Tile": "\u0018",
+    "Foreground": "165, 42, 42, 255",
+    "Background": null,
     "Stacking": true,
-    "GenerationLowBound": 4,
-    "GenerationHighBound": 9,
     "Category": 255,
     "Weight": 2,
     "Value": 5,
@@ -61,17 +64,17 @@
         "Damage": "1d3+1"
       }
     ],
-    "Name": "arrow",
-    "Type": 32770,
-    "Tile": "\u0018",
-    "Foreground": "165, 42, 42, 255",
-    "Background": null
+    "GenerationLowBound": 4,
+    "GenerationHighBound": 9
   },
   "32771": {
     "$type": "ODB.ItemDefinition, ODB",
+    "Name": "bow",
+    "Type": 32771,
+    "Tile": "\\",
+    "Foreground": "165, 42, 42, 255",
+    "Background": null,
     "Stacking": false,
-    "GenerationLowBound": 0,
-    "GenerationHighBound": 0,
     "Category": 255,
     "Weight": 90,
     "Value": 20,
@@ -87,17 +90,17 @@
         "Damage": "1d6"
       }
     ],
-    "Name": "bow",
-    "Type": 32771,
-    "Tile": "\\",
-    "Foreground": "165, 42, 42, 255",
-    "Background": null
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0
   },
   "32772": {
     "$type": "ODB.ItemDefinition, ODB",
+    "Name": "longsword",
+    "Type": 32772,
+    "Tile": ")",
+    "Foreground": "211, 211, 211, 255",
+    "Background": null,
     "Stacking": false,
-    "GenerationLowBound": 0,
-    "GenerationHighBound": 0,
     "Category": 255,
     "Weight": 180,
     "Value": 15,
@@ -118,17 +121,17 @@
         "UseEffect": 1
       }
     ],
-    "Name": "longsword",
-    "Type": 32772,
-    "Tile": ")",
-    "Foreground": "211, 211, 211, 255",
-    "Background": null
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0
   },
   "32773": {
     "$type": "ODB.ItemDefinition, ODB",
+    "Name": "cloth bag",
+    "Type": 32773,
+    "Tile": "(",
+    "Foreground": "165, 42, 42, 255",
+    "Background": null,
     "Stacking": false,
-    "GenerationLowBound": 0,
-    "GenerationHighBound": 0,
     "Category": 255,
     "Weight": 5,
     "Value": 5,
@@ -141,17 +144,17 @@
         "Contained": []
       }
     ],
-    "Name": "cloth bag",
-    "Type": 32773,
-    "Tile": "(",
-    "Foreground": "165, 42, 42, 255",
-    "Background": null
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0
   },
   "32774": {
     "$type": "ODB.ItemDefinition, ODB",
+    "Name": "zweihander",
+    "Type": 32774,
+    "Tile": ")",
+    "Foreground": "165, 42, 42, 255",
+    "Background": null,
     "Stacking": false,
-    "GenerationLowBound": 0,
-    "GenerationHighBound": 0,
     "Category": 255,
     "Weight": 440,
     "Value": 20,
@@ -168,17 +171,17 @@
         "Effects": []
       }
     ],
-    "Name": "zweihander",
-    "Type": 32774,
-    "Tile": ")",
-    "Foreground": "165, 42, 42, 255",
-    "Background": null
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0
   },
   "32775": {
     "$type": "ODB.ItemDefinition, ODB",
+    "Name": "chainmail",
+    "Type": 32775,
+    "Tile": "[",
+    "Foreground": "165, 42, 42, 255",
+    "Background": null,
     "Stacking": false,
-    "GenerationLowBound": 0,
-    "GenerationHighBound": 0,
     "Category": 255,
     "Weight": 1800,
     "Value": 35,
@@ -194,17 +197,17 @@
         "ArmorClass": 3
       }
     ],
-    "Name": "chainmail",
-    "Type": 32775,
-    "Tile": "[",
-    "Foreground": "165, 42, 42, 255",
-    "Background": null
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0
   },
   "32776": {
     "$type": "ODB.ItemDefinition, ODB",
+    "Name": "club",
+    "Type": 32776,
+    "Tile": ")",
+    "Foreground": "153, 102, 51, 255",
+    "Background": null,
     "Stacking": false,
-    "GenerationLowBound": 0,
-    "GenerationHighBound": 0,
     "Category": 255,
     "Weight": 300,
     "Value": 10,
@@ -221,17 +224,17 @@
         "Effects": []
       }
     ],
-    "Name": "club",
-    "Type": 32776,
-    "Tile": ")",
-    "Foreground": "153, 102, 51, 255",
-    "Background": null
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0
   },
   "32777": {
     "$type": "ODB.ItemDefinition, ODB",
+    "Name": "spear",
+    "Type": 32777,
+    "Tile": ")",
+    "Foreground": "153, 102, 51, 255",
+    "Background": null,
     "Stacking": false,
-    "GenerationLowBound": 0,
-    "GenerationHighBound": 0,
     "Category": 255,
     "Weight": 300,
     "Value": 15,
@@ -252,17 +255,17 @@
         "Damage": "1d4"
       }
     ],
-    "Name": "spear",
-    "Type": 32777,
-    "Tile": ")",
-    "Foreground": "153, 102, 51, 255",
-    "Background": null
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0
   },
   "32778": {
     "$type": "ODB.ItemDefinition, ODB",
+    "Name": "leather armor",
+    "Type": 32778,
+    "Tile": "[",
+    "Foreground": "165, 42, 42, 255",
+    "Background": null,
     "Stacking": false,
-    "GenerationLowBound": 0,
-    "GenerationHighBound": 0,
     "Category": 255,
     "Weight": 500,
     "Value": 20,
@@ -278,17 +281,17 @@
         "ArmorClass": 2
       }
     ],
-    "Name": "leather armor",
-    "Type": 32778,
-    "Tile": "[",
-    "Foreground": "165, 42, 42, 255",
-    "Background": null
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0
   },
   "32779": {
     "$type": "ODB.ItemDefinition, ODB",
+    "Name": "cloak",
+    "Type": 32779,
+    "Tile": "[",
+    "Foreground": "165, 42, 42, 255",
+    "Background": null,
     "Stacking": false,
-    "GenerationLowBound": 0,
-    "GenerationHighBound": 0,
     "Category": 255,
     "Weight": 150,
     "Value": 15,
@@ -304,17 +307,17 @@
         "ArmorClass": 1
       }
     ],
-    "Name": "cloak",
-    "Type": 32779,
-    "Tile": "[",
-    "Foreground": "165, 42, 42, 255",
-    "Background": null
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0
   },
   "32780": {
     "$type": "ODB.ItemDefinition, ODB",
+    "Name": "wooden shield",
+    "Type": 32780,
+    "Tile": "\u001f",
+    "Foreground": "153, 102, 51, 255",
+    "Background": null,
     "Stacking": false,
-    "GenerationLowBound": 0,
-    "GenerationHighBound": 0,
     "Category": 255,
     "Weight": 200,
     "Value": 20,
@@ -332,17 +335,17 @@
         "ArmorClass": 2
       }
     ],
-    "Name": "wooden shield",
-    "Type": 32780,
-    "Tile": "\u001f",
-    "Foreground": "153, 102, 51, 255",
-    "Background": null
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0
   },
   "33024": {
     "$type": "ODB.ItemDefinition, ODB",
+    "Name": "scroll of forcebolt",
+    "Type": 33024,
+    "Tile": "?",
+    "Foreground": "255, 255, 255, 255",
+    "Background": null,
     "Stacking": false,
-    "GenerationLowBound": 0,
-    "GenerationHighBound": 0,
     "Category": 1,
     "Weight": 1,
     "Value": 15,
@@ -355,17 +358,17 @@
         "Effect": 1
       }
     ],
-    "Name": "scroll of forcebolt",
-    "Type": 33024,
-    "Tile": "?",
-    "Foreground": "255, 255, 255, 255",
-    "Background": null
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0
   },
   "33025": {
     "$type": "ODB.ItemDefinition, ODB",
+    "Name": "scroll of identify",
+    "Type": 33025,
+    "Tile": "?",
+    "Foreground": "255, 255, 255, 255",
+    "Background": null,
     "Stacking": false,
-    "GenerationLowBound": 0,
-    "GenerationHighBound": 0,
     "Category": 1,
     "Weight": 1,
     "Value": 15,
@@ -378,17 +381,17 @@
         "Effect": 2
       }
     ],
-    "Name": "scroll of identify",
-    "Type": 33025,
-    "Tile": "?",
-    "Foreground": "255, 255, 255, 255",
-    "Background": null
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0
   },
   "33280": {
     "$type": "ODB.ItemDefinition, ODB",
+    "Name": "tome of forcebolt",
+    "Type": 33280,
+    "Tile": "þ",
+    "Foreground": "255, 255, 0, 255",
+    "Background": null,
     "Stacking": false,
-    "GenerationLowBound": 0,
-    "GenerationHighBound": 0,
     "Category": 2,
     "Weight": 50,
     "Value": 65,
@@ -401,17 +404,17 @@
         "Spell": 1
       }
     ],
-    "Name": "tome of forcebolt",
-    "Type": 33280,
-    "Tile": "þ",
-    "Foreground": "255, 255, 0, 255",
-    "Background": null
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0
   },
   "33281": {
     "$type": "ODB.ItemDefinition, ODB",
+    "Name": "tome of identify",
+    "Type": 33281,
+    "Tile": "þ",
+    "Foreground": "255, 255, 0, 255",
+    "Background": null,
     "Stacking": false,
-    "GenerationLowBound": 0,
-    "GenerationHighBound": 0,
     "Category": 2,
     "Weight": 50,
     "Value": 80,
@@ -424,17 +427,17 @@
         "Spell": 2
       }
     ],
-    "Name": "tome of identify",
-    "Type": 33281,
-    "Tile": "þ",
-    "Foreground": "255, 255, 0, 255",
-    "Background": null
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0
   },
   "33536": {
     "$type": "ODB.ItemDefinition, ODB",
+    "Name": "potion of healing",
+    "Type": 33536,
+    "Tile": "!",
+    "Foreground": "255, 0, 0, 255",
+    "Background": null,
     "Stacking": true,
-    "GenerationLowBound": 1,
-    "GenerationHighBound": 1,
     "Category": 0,
     "Weight": 100,
     "Value": 30,
@@ -447,17 +450,17 @@
         "Effect": 0
       }
     ],
-    "Name": "potion of healing",
-    "Type": 33536,
-    "Tile": "!",
-    "Foreground": "255, 0, 0, 255",
-    "Background": null
+    "GenerationLowBound": 1,
+    "GenerationHighBound": 1
   },
   "34304": {
     "$type": "ODB.ItemDefinition, ODB",
+    "Name": "ration",
+    "Type": 34304,
+    "Tile": "ö",
+    "Foreground": "255, 204, 153, 255",
+    "Background": null,
     "Stacking": true,
-    "GenerationLowBound": 1,
-    "GenerationHighBound": 3,
     "Category": 255,
     "Weight": 130,
     "Value": 10,
@@ -470,17 +473,17 @@
         "Nutrition": 1500
       }
     ],
-    "Name": "ration",
-    "Type": 34304,
-    "Tile": "ö",
-    "Foreground": "255, 204, 153, 255",
-    "Background": null
+    "GenerationLowBound": 1,
+    "GenerationHighBound": 3
   },
   "34816": {
     "$type": "ODB.ItemDefinition, ODB",
+    "Name": "moribund corpse",
+    "Type": 34816,
+    "Tile": "%",
+    "Foreground": "255, 0, 0, 255",
+    "Background": null,
     "Stacking": false,
-    "GenerationLowBound": 0,
-    "GenerationHighBound": 0,
     "Category": 255,
     "Weight": 7000,
     "Value": 65536,
@@ -493,40 +496,17 @@
         "Nutrition": 2500
       }
     ],
-    "Name": "moribund corpse",
-    "Type": 34816,
-    "Tile": "%",
-    "Foreground": "255, 0, 0, 255",
-    "Background": null
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0
   },
   "34817": {
     "$type": "ODB.ItemDefinition, ODB",
-    "Stacking": false,
-    "GenerationLowBound": 0,
-    "GenerationHighBound": 0,
-    "Category": 255,
-    "Weight": 200,
-    "Value": 65536,
-    "Material": "Organic",
-    "Health": 3,
-    "Tags": [],
-    "Components": [
-      {
-        "$type": "ODB.EdibleComponent, ODB",
-        "Nutrition": 700
-      }
-    ],
     "Name": "rat corpse",
     "Type": 34817,
     "Tile": "%",
     "Foreground": "255, 0, 0, 255",
-    "Background": null
-  },
-  "34818": {
-    "$type": "ODB.ItemDefinition, ODB",
+    "Background": null,
     "Stacking": false,
-    "GenerationLowBound": 0,
-    "GenerationHighBound": 0,
     "Category": 255,
     "Weight": 200,
     "Value": 65536,
@@ -539,17 +519,40 @@
         "Nutrition": 700
       }
     ],
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0
+  },
+  "34818": {
+    "$type": "ODB.ItemDefinition, ODB",
     "Name": "newt corpse",
     "Type": 34818,
     "Tile": "%",
     "Foreground": "255, 0, 0, 255",
-    "Background": null
+    "Background": null,
+    "Stacking": false,
+    "Category": 255,
+    "Weight": 200,
+    "Value": 65536,
+    "Material": "Organic",
+    "Health": 3,
+    "Tags": [],
+    "Components": [
+      {
+        "$type": "ODB.EdibleComponent, ODB",
+        "Nutrition": 700
+      }
+    ],
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0
   },
   "34819": {
     "$type": "ODB.ItemDefinition, ODB",
+    "Name": "kobold corpse",
+    "Type": 34819,
+    "Tile": "%",
+    "Foreground": "255, 0, 0, 255",
+    "Background": null,
     "Stacking": false,
-    "GenerationLowBound": 0,
-    "GenerationHighBound": 0,
     "Category": 255,
     "Weight": 1300,
     "Value": 65536,
@@ -562,17 +565,17 @@
         "Nutrition": 700
       }
     ],
-    "Name": "kobold corpse",
-    "Type": 34819,
-    "Tile": "%",
-    "Foreground": "255, 0, 0, 255",
-    "Background": null
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0
   },
   "34820": {
     "$type": "ODB.ItemDefinition, ODB",
+    "Name": "kilik, ratking corpse",
+    "Type": 34820,
+    "Tile": "%",
+    "Foreground": "255, 0, 0, 255",
+    "Background": null,
     "Stacking": false,
-    "GenerationLowBound": 0,
-    "GenerationHighBound": 0,
     "Category": 255,
     "Weight": 1300,
     "Value": 65536,
@@ -585,10 +588,7 @@
         "Nutrition": 1000
       }
     ],
-    "Name": "kilik, ratking corpse",
-    "Type": 34820,
-    "Tile": "%",
-    "Foreground": "255, 0, 0, 255",
-    "Background": null
+    "GenerationLowBound": 0,
+    "GenerationHighBound": 0
   }
 }

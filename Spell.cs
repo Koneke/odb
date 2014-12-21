@@ -1,13 +1,25 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace ODB
 {
+    public enum SpellID
+    {
+        PotionOfHealing,
+        Forcebolt,
+        Identify
+    }
+
     public class Spell
     {
+        public static Dictionary<SpellID, Spell> SpellDict =
+            new Dictionary<SpellID, Spell>(); 
+
         public static Spell[] Spells = new Spell[0xFFFF];
         public static int IDCounter = 0;
         public int ID;
+        public SpellID SpellID;
 
         public string Name;
         //0 should mean self-cast..? (or just non-targetted)
@@ -25,7 +37,6 @@ namespace ODB
         //LH-021214: Since we're using the standard question system we will at
         //           times need to populate the accepted input, so we need an
         //           action for that as well.
-
         public Action<Actor> SetupAcceptedInput;
 
         //LH-021214: Add variable to keep the questio string as well?
@@ -37,14 +48,14 @@ namespace ODB
         //           blocks. Using them simply because it is easier to skim
         //           quickly if you have both the value and what it actually is
         //           (i.e. castcost or what not).
-        public Spell(string name)
-        {
-            Name = name;
 
+        public Spell(SpellID id)
+        {
+            SpellDict.Add(id, this);
             ID = IDCounter++;
             Spells[ID] = this;
         }
-
+        
         public void Cast(Actor caster, object target)
         {
             //target is currently usually either a string or a point,
@@ -56,8 +67,9 @@ namespace ODB
         public static void SetupMagic()
         {
             //ReSharper disable once ObjectCreationAsStatement
-            new Spell("potion of healing")
+            new Spell(SpellID.PotionOfHealing)
             {
+                Name = "potion of healing",
                 CastType = InputType.None,
                 Effect = (caster, target) =>
                 {
@@ -71,8 +83,9 @@ namespace ODB
             };
 
             //ReSharper disable once ObjectCreationAsStatement
-            new Spell("forcebolt")
+            new Spell(SpellID.Forcebolt)
             {
+                Name = "forcebolt",
                 CastType = InputType.Targeting,
                 Effect = (caster, target) =>
                 {
@@ -102,8 +115,9 @@ namespace ODB
                 Range = 5
             };
 
-            new Spell("identify")
+            new Spell(SpellID.Identify)
             {
+                Name = "identify",
                 CastType = InputType.QuestionPromptSingle,
                 SetupAcceptedInput = (caster) =>
                 {

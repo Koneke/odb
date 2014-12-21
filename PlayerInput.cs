@@ -120,7 +120,9 @@ namespace ODB
             else if (KeyBindings.Pressed(Bind.NorthWest)) offset.Nudge(-1, -1);
 
             //pass a STANDARD action
-            if (KeyBindings.Pressed(Bind.Wait)) Game.Player.Pass();
+            if (KeyBindings.Pressed(Bind.Wait))
+                //even if we're slowed, just pass a standard?
+                Game.Player.Pass(Game.StandardActionLength);
 
             if (offset.x == 0 && offset.y == 0) return false;
 

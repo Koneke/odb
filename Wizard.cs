@@ -118,6 +118,12 @@ namespace ODB
         {
             switch (cmd)
             {
+                case "saveitems":
+                    SaveIO.JsonWriteItemDefinitions(args[0]);
+                    break;
+                case "saveactors":
+                    SaveIO.JsonWriteItemDefinitions(args[0]);
+                    break;
                 case "togglerolls":
                     Game.OpenRolls = !Game.OpenRolls;
                     Game.UI.Log("=> " + Game.OpenRolls);
@@ -159,12 +165,6 @@ namespace ODB
                         IO.ReadHex(args[1])
                     );
                     World.Level.Spawn(it);
-                    break;
-                    #endregion
-                case "saveadefs":
-                case "sad":
-                    #region sad
-                    SaveIO.WriteActorDefinitionsToFile("Data/" + args[0]);
                     break;
                     #endregion
 
@@ -318,9 +318,6 @@ namespace ODB
                 case "ad-is":
                 case "ad-get":
                     break;
-                case "ad-p":
-                    Game.UI.Log(adef.WriteActorDefinition().ToString());
-                    break;
                 case "ad-bg":
                     adef.Background = IO.ReadNullableColor(args[0]);
                     break;
@@ -460,14 +457,6 @@ namespace ODB
                     };
                     a.Damage(ds);
                     break;
-                case "ai-pd":
-                case "ai-pdef":
-                    #region pad
-                    Game.UI.Log(
-                        a.Definition.WriteActorDefinition().ToString()
-                    );
-                    break;
-                    #endregion
                 case "ai-addbp":
                 case "ai-addbodypart":
                     #region addbodypart

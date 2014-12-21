@@ -69,7 +69,7 @@ namespace ODB
             return content;
         }
 
-        public static string WriteActorDefinitionsToFile(string path)
+        /*public static string WriteActorDefinitionsToFile(string path)
         {
             string output = "";
             for (int i = 0; i < 0xFFFF; i++)
@@ -96,7 +96,7 @@ namespace ODB
             ).ToList();
 
             definitions.ForEach(definition => new ActorDefinition(definition));
-        }
+        }*/
 
         public static Stream WriteTileDefinitionsToFile(string path)
         {

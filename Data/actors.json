@@ -14,8 +14,8 @@
     "Intelligence": "1d3+3",
     "Speed": 0,
     "Quickness": 0,
-    "HitDie": "1d10",
-    "ManaDie": "1d6",
+    "HitDie": "1d12",
+    "ManaDie": "1d8",
     "Experience": 0,
     "Difficulty": 0,
     "BodyParts": [

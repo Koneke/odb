@@ -312,7 +312,7 @@ namespace ODB
                         !Game.GeneratedUniques.Contains(ad.Type))
                     .ToList();
 
-            float monsterPool = (difficulty * 5);
+            float monsterPool = (difficulty * 4.5f);
             while(monsterPool > 0)
             {
                 ActorDefinition monster =

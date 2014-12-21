@@ -189,7 +189,6 @@ namespace ODB
             foreach (Actor a in World.Level.Actors.Where(a => a.HasMoved))
                 a.UpdateVision();
 
-
             if (KeyBindings.Pressed(KeyBindings.Bind.Dev_ToggleConsole))
             {
                 IO.Answer = "";

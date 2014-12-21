@@ -1488,8 +1488,7 @@ namespace ODB
 
             item.Identify();
 
-            Spell spell = Spell.Spells
-                [item.GetComponent<LearnableComponent>().Spell];
+            Spell spell = item.GetComponent<LearnableComponent>().TaughtSpell;
 
             LearnSpell(spell);
 
@@ -1535,7 +1534,7 @@ namespace ODB
                 Game.UI.Log("Drank {1}.", item.GetName("a"));
 
             DrinkableComponent dc = item.GetComponent<DrinkableComponent>();
-            Spell.Spells[dc.Effect].Cast(this, null);
+            dc.Effect.Cast(this, null);
 
             item.SpendCharge();
 
@@ -1561,8 +1560,7 @@ namespace ODB
                     item.GetName("the")
                 );
 
-            Spell spell = Spell.Spells
-                [item.GetComponent<ReadableComponent>().Effect];
+            Spell spell = item.GetComponent<ReadableComponent>().Effect;
 
             if(spell.CastType == InputType.Targeting)
                 spell.Cast(this, cmd.Get("target"));
@@ -1636,8 +1634,7 @@ namespace ODB
         private void HandleUse(Command cmd)
         {
             Item item = (Item)cmd.Get("item");
-            Spell spell = Spell.Spells
-                [item.GetComponent<UsableComponent>().UseEffect];
+            Spell spell = item.GetComponent<UsableComponent>().Effect;
 
             //same thing that goes for readables, where to put this and id?
             item.SpendCharge();
