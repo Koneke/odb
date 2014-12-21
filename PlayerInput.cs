@@ -23,42 +23,6 @@ namespace ODB
 
             if (moved)
             {
-                for (int x = 0; x < World.Level.Size.x; x++)
-                for (int y = 0; y < World.Level.Size.y; y++)
-                    if (Game.Player.Vision[x, y]) Game.UI.UpdateAt(x, y);
-
-                Game.Player.Vision.Paint(
-                    new Rect(new Point(0, 0), World.Level.Size),
-                    false
-                );
-
-                FOV fov = new FOV();
-                fov.ShadowCast2(
-                    0,//Game.Player.xy.x,
-                    0,//Game.Player.xy.y,
-                    5,
-                    (x, y) => x == 2 && y == 1,
-                    (x, y) =>
-                    {
-                        Game.Player.Vision[x, y] = true;
-                        Game.UI.UpdateAt(x, y);
-                        World.Level.See(new Point(x, y));
-                    }
-                );
-
-                /*FOV fov = new FOV();
-                fov.CastFrom(
-                    Game.Player.xy.x,
-                    Game.Player.xy.y,
-                    6,
-                    World.Level,
-                    (x, y) => {
-                        Game.Player.Vision[x, y] = true;
-                        Game.UI.UpdateAt(x, y);
-                        World.Level.See(new Point(x, y));
-                    }
-                );*/
-
                 IO.Target = Game.Player.xy;
                 PlayerResponses.Examine();
             }

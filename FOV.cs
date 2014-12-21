@@ -1,145 +1,200 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
+
+//from http://blogs.msdn.com/b/ericlippert/archive/2011/12/12/shadowcasting-in-c-part-one.aspx
+//Partially tweaked by me, base still from there.
 
 namespace ODB
 {
-    public class FOV
+    public static class ShadowCaster
     {
-        public void CastFrom(
-            int ox, int oy, int range, Level level, Action<int, int> paint
+        public static void ShadowCast(
+            Point origin,
+            int radius,
+            Func<Point, bool> isOpaque,
+            Action<Point> see
         ) {
-            Func<int, int, bool> isSolid =
-                (x, y) =>
-                level.At(x, y) == null ||
-                level.At(x, y).Solid ||
-                level.At(x, y).Door == Door.Closed
-            ;
-
-            Func<int, int, int, int, int> pyth =
-                (x1, y1, x2, y2) =>
-                (int)Math.Pow(x1 - x2, 2) + (int)Math.Pow(y1 - y2, 2);
-
-            List<Point> visible = new List<Point>();
-
-            for (int i = -range; i <= range; i++)
+            for (int octant = 0; octant < 8; ++octant)
             {
-                List<List<Point>> ls = new List<List<Point>>();
-                ls.Add(Util.Line(ox, oy, ox+i, oy-range));
-                ls.Add(Util.Line(ox, oy, ox+i, oy+range));
-                ls.Add(Util.Line(ox, oy, ox-range, oy+i));
-                ls.Add(Util.Line(ox, oy, ox+range, oy+i));
-                ls.Add(Util.Line(ox+i, oy-range, ox, oy));
-                ls.Add(Util.Line(ox+i, oy+range, ox, oy));
-                ls.Add(Util.Line(ox-range, oy+i, ox, oy));
-                ls.Add(Util.Line(ox+range, oy+i, ox, oy));
-                
-                foreach (List<Point> l in ls)
-                {
-                    if(l[0].x != ox || l[0].y != oy)
-                        l.Reverse();
-                    int j = 0;
-                    while (j < l.Count && !isSolid(l[j].x, l[j].y))
-                        visible.Add(l[j++]);
-                    if(j < l.Count)
-                        visible.Add(l[j]);
-                }
+                ComputeOctant(
+                    origin,
+                    isOpaque,
+                    see,
+                    octant,
+                    radius
+                );
             }
-
-            visible.ForEach(p => paint(p.x, p.y));
         }
 
-        public void ShadowCast2(
-            int ox,
-            int oy,
-            int range,
-            Func<int, int, bool> isSolid,
-            Action<int, int> paint
+        private static void ComputeOctant(
+            Point origin,
+            Func<Point, bool> isOpaque,
+            Action<Point> see,
+            int octant,
+            int radius
         ) {
-            Func<int, int, double> pyth =
-                (x1, y1) => (int)(Math.Pow(x1, 2) + Math.Pow(y1, 2));
+            Queue<ColumnPortion> queue = new Queue<ColumnPortion>();
 
-            Func<int, int, int, int, double> slope =
-                (x1, y1, x2, y2) => (double)(y2 - y1) / (x2 - x1);
+            queue.Enqueue(
+                new ColumnPortion(
+                    0,
+                    new Point(1, 0),
+                    new Point(1, 1)
+                )
+            );
 
-            bool? lastWasSolid = null;
-            List<Portion> blockers = new List<Portion>();
-
-            //one, not zero. I assume we can see ourselves...
-            for (int x = 1; x < range; x++)
+            while (queue.Count != 0)
             {
-                int y = x;
-                int top = y;
-                int bot = 0;
-                while (y >= 0)
-                {
-                    if (pyth(x, y) >= Math.Pow(range, 2))
-                    { 
-                        y--; continue;
-                    }
+                var current = queue.Dequeue();
+                if (current.X > radius)
+                    continue;
 
-                    if (lastWasSolid ?? false)
-                    {
-                        //solid => transparent
-                        if (!isSolid(x, y))
-                        {
-                            bot = y + 1;
-                            blockers.Add(new Portion(x, top + 0.5, bot - 0.5));
-                        }
-                    }
-                    else
-                    {
-                        //transparent => solid
-                        if (isSolid(x, y))
-                        {
-                            top = y;
-                        }
-                    }
-
-                    lastWasSolid = isSolid(x, y);
-                    y--;
-                }
-
-                //last cell was solid
-                if(isSolid(x, y + 1))
-                    blockers.Add(new Portion(x, top, y + 1));
+                ComputeFoVForColumnPortion(
+                    origin,
+                    current.X,
+                    current.TopVector,
+                    current.BottomVector,
+                    isOpaque,
+                    see,
+                    octant,
+                    radius,
+                    queue
+                );
             }
-
-            List<Point> shaded = new List<Point>();
-
-            foreach (Portion p in blockers)
-            {
-                double topSlope = (p.Top - oy) / (p.X - ox);
-                double botSlope = (p.Bottom - oy) / (p.X - ox);
-
-                for (int x = p.X; x < range; x++)
-                {
-                    int y = x;
-                    while (y >= 0)
-                    {
-                        double s = slope(ox, oy, x, y);
-                        if (s <= topSlope &&
-                            s >= botSlope)
-                            shaded.Add(new Point(x, y));
-                        y--;
-                    }
-                }
-            }
-
-            var a = 0;
         }
 
-        internal class Portion
+        private static void ComputeFoVForColumnPortion(
+            Point origin,
+            int x,
+            Point topVector,
+            Point bottomVector,
+            Func<Point, bool> isOpaque,
+            Action<Point> see,
+            int octant,
+            int radius,
+            Queue<ColumnPortion> queue
+        ) {
+            int topY;
+
+            if (x == 0)
+                topY = 0;
+            else
+            {
+                int quotient = (2 * x + 1) * topVector.y / (2 * topVector.x);
+                int remainder = (2 * x + 1) * topVector.y % (2 * topVector.x);
+
+                if (remainder > topVector.x)
+                    topY = quotient + 1;
+                else
+                    topY = quotient;
+            }
+
+            int bottomY;
+            if (x == 0)
+                bottomY = 0;
+            else
+            {
+                int quotient =
+                    (2 * x - 1) * bottomVector.y / (2 * bottomVector.x);
+
+                int remainder =
+                    (2 * x - 1) * bottomVector.y % (2 * bottomVector.x);
+
+                if (remainder >= bottomVector.x)
+                    bottomY = quotient + 1;
+                else
+                    bottomY = quotient;
+            }
+
+            bool? wasLastCellOpaque = null;
+            for (int y = topY; y >= bottomY; --y)
+            {
+                bool inRadius =
+                    (2 * x - 1) * (2 * x - 1) +
+                    (2 * y - 1) * (2 * y - 1) <=
+                    4 * radius * radius;
+
+                if (inRadius)
+                {
+                    see(
+                        TranslateToOctant(
+                            x, y, octant
+                        ) + origin
+                    );
+                }
+
+                bool currentIsOpaque = !inRadius ||
+                    isOpaque(
+                        TranslateToOctant(
+                            x, y, octant
+                        ) + origin
+                    );
+
+                if (wasLastCellOpaque != null)
+                {
+                    if (currentIsOpaque)
+                    {
+                        if (!wasLastCellOpaque.Value)
+                        {
+                            queue.Enqueue(
+                                new ColumnPortion(
+                                    x + 1,
+                                    new Point (x * 2 - 1, y * 2 + 1),
+                                    topVector
+                                )
+                            );
+                        }
+                    }
+                    else if (wasLastCellOpaque.Value)
+                    {
+                        topVector = new Point(x * 2 + 1, y * 2 + 1);
+                    }
+                }
+                wasLastCellOpaque = currentIsOpaque;
+            }
+
+            if (wasLastCellOpaque != null && !wasLastCellOpaque.Value)
+                queue.Enqueue(
+                    new ColumnPortion(
+                        x + 1,
+                        bottomVector,
+                        topVector
+                    )
+                );
+        }
+
+        private struct ColumnPortion
         {
-            public int X;
-            public double Top;
-            public double Bottom;
+            public int X { get; private set; }
+            public Point BottomVector { get; private set; }
+            public Point TopVector { get; private set; }
 
-            public Portion(int x, double top, double bot)
-            {
+            public ColumnPortion(
+                int x,
+                Point bottom,
+                Point top
+            ) : this() {
                 X = x;
-                Top = top;
-                Bottom = bot;
+                BottomVector = bottom;
+                TopVector = top;
+            }
+        }
+
+        private static Point TranslateToOctant(
+            int x,
+            int y,
+            int octant
+        ) {
+            switch (octant)
+            {
+                default: return new Point(x, y);
+                case 1: return new Point(y, x);
+                case 2: return new Point(-y, x);
+                case 3: return new Point(-x, y);
+                case 4: return new Point(-x, -y);
+                case 5: return new Point(-y, -x);
+                case 6: return new Point(y, -x);
+                case 7: return new Point(x, -y);
             }
         }
     }

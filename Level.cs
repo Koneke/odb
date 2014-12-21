@@ -110,6 +110,7 @@ namespace ODB
 
         public void See(Point p)
         {
+            if (At(p) == null) return;
             if (Seen[p.x, p.y]) return;
 
             Game.UI.UpdateAt(p);

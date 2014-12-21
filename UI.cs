@@ -43,6 +43,7 @@ namespace ODB
         }
         public void UpdateAt(int x, int y)
         {
+            if (World.Level.At(x, y) == null) return;
             _updateAt[x, y] = true;
         }
 

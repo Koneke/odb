@@ -86,7 +86,6 @@ namespace ODB
             {
                 //reset vision, incase the level we moved to is a different size
                 a.Vision = null;
-                a.ResetVision();
             }
 
             SetupBrains();

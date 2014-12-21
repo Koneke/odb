@@ -1051,31 +1051,48 @@ namespace ODB
 
         public bool HasMoved;
 
-        public void ResetVision()
+        public void UpdateVision()
         {
-            if (Vision == null)
-                Vision = new bool[World.Level.Size.x, World.Level.Size.y];
-            for (int x = 0; x < World.Level.Size.x; x++)
-            for (int y = 0; y < World.Level.Size.y; y++)
-                if (Vision[x, y])
-                {
-                    Vision[x, y] = false;
-                    if(this == Game.Player)
-                        Game.UI.UpdateAt(x, y);
-                }
-        }
-        public void AddRoomToVision(Room r)
-        {
-            foreach (Rect rr in r.Rects)
-            for (int x = 0; x < rr.wh.x; x++)
-                for (int y = 0; y < rr.wh.y; y++)
-                {
-                    Vision[rr.xy.x + x, rr.xy.y + y] = true;
+            if (this == Game.Player)
+            {
+                for (int x = 0; x < World.Level.Size.x; x++)
+                    for (int y = 0; y < World.Level.Size.y; y++)
+                        //make sure to update all we SAW as well,
+                        //so that's drawn as not visible
+                        if (Vision[x, y]) Game.UI.UpdateAt(x, y);
+            }
 
+            if (Vision == null)
+                Vision = new bool
+                    [World.Level.Size.x, World.Level.Size.y];
+            else
+                //nil all
+                Vision.Paint(
+                    new Rect(new Point(0, 0), World.Level.Size),
+                    false
+                );
+
+            //shadowcast
+            ShadowCaster.ShadowCast(
+                Game.Player.xy,
+                3,
+                (p) =>
+                    World.Level.At(p) == null ||
+                    World.Level.At(p).Solid ||
+                    World.Level.At(p).Door == Door.Closed,
+                (p) =>
+                {
                     if (this == Game.Player)
-                        World.Level.See(rr.xy + new Point(x, y));
-                        //World.Level.At(rr.xy + new Point(x, y)).Seen = true;
+                    {
+                        //for now, only player has the "seen"
+                        //and only the player updates the drawn map
+                        World.Level.See(p);
+                        Game.UI.UpdateAt(p);
+                    }
+                    if(World.Level.At(p) != null)
+                        Vision[p.x, p.y] = true;
                 }
+            );
         }
 
         public enum Tempus
