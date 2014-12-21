@@ -6,6 +6,14 @@ using Microsoft.Xna.Framework;
 
 namespace ODB
 {
+    public enum NoiseType
+    {
+        FootSteps,
+        Combat,
+        Door,
+        Burp
+    }
+
     public struct Point
     {
         public bool Equals(Point other)

@@ -523,14 +523,17 @@ namespace ODB
             if (Game.WizMode)
             {
                 string str = "W I Z A R D";
-                str += " (" + String.Format("{0:X2}", Wizard.WmCursor.x);
-                str += " ; ";
-                str += String.Format("{0:X2}", Wizard.WmCursor.y) + ")";
-                str += " (" + Wizard.WmCursor.x + " ; " +
-                    Wizard.WmCursor.y + ") ";
+                str += string.Format(
+                    "  {0:X2};{1:X2} / {0};{1} ",
+                    Wizard.WmCursor.x,
+                    Wizard.WmCursor.y
+                );
 
-                str += "D:" + World.Level.Depth + "0M";
-                str += " (" + World.Level.Name + ") ";
+                str += string.Format(
+                    "D:{0}0M ({1})",
+                    World.Level.Depth,
+                    World.Level.Name
+                );
 
                 TileInfo ti = World.Level.At(Wizard.WmCursor);
                 if(ti != null)
@@ -559,12 +562,19 @@ namespace ODB
                 Game.Player.GetArmor()
             );
 
-            if (Game.Player
-                .GetFoodStatus() != Actor.FoodStatus.Satisfied)
+            if (Game.Player.GetFoodStatus() != Actor.FoodStatus.Satisfied)
             {
                 namerow += " " +
                     Actor.FoodStatusString(
                         Game.Player.GetFoodStatus()
+                    );
+            }
+
+            if (Game.Player.GetBurdenStatus() != Actor.BurdenStatus.Unburdened)
+            {
+                namerow += " " +
+                    Actor.BurdenStatusString(
+                        Game.Player.GetBurdenStatus()
                     );
             }
 

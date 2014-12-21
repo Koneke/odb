@@ -76,7 +76,7 @@ namespace ODB
                 }
 
                 //todo: should apply to everyone?
-                Game.Player.RemoveFood(1);
+                Game.Player.Food--;
 
                 Game.GameTick++;
 

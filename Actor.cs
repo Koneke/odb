@@ -109,15 +109,22 @@ namespace ODB
         [DataMember] public int Xplevel;
         [DataMember] public int ExperiencePoints;
         [DataMember] public int Cooldown;
+
         [DataMember] private int _food;
+        public int Food {
+            get { return _food; }
+            set
+            {
+                FoodStatus fs = GetFoodStatus();
+                int before = _food;
+                _food = value;
+
+                if (fs != GetFoodStatus())
+                    UpdateFoodStatus(before < _food);
+            }
+        }
 
         [DataMember] private int? _quiver;
-        [DataMember] private Doll _doll;
-        [DataMember] private List<int> _inventory;
-
-        [DataMember] public List<LastingEffect> LastingEffects;
-        [DataMember] public List<Mod> Intrinsics;
-
         public Item Quiver {
             get { return _quiver == null
                 ? null
@@ -128,10 +135,17 @@ namespace ODB
                 else _quiver = value.ID;
             }
         }
-        public List<BodyPart> PaperDoll
-        {
-            get { return _doll.Get(); }
-        }
+
+        [DataMember] private Doll _doll;
+        public List<BodyPart> PaperDoll { get { return _doll.Get(); } }
+
+        [DataMember] private List<int> _inventory;
+
+        [DataMember] public List<LastingEffect> LastingEffects;
+        [DataMember] public List<Mod> Intrinsics;
+
+        private BurdenStatus _carried;
+
         public List<Item> Inventory
         {
             get
@@ -428,12 +442,28 @@ namespace ODB
             {
                 case Stat.Dexterity:
                     if (GetFoodStatus() == FoodStatus.Stuffed) modifier--;
+                    if (GetBurdenStatus() >= BurdenStatus.Burdened)
+                        modifier--;
                     break;
+
                 case Stat.Strength:
                     if (GetFoodStatus() == FoodStatus.Starving) modifier--;
                     break;
+
                 case Stat.Speed:
                     if (GetFoodStatus() == FoodStatus.Stuffed) modifier--;
+
+                    if (GetBurdenStatus() == BurdenStatus.Burdened)
+                        modifier--;
+                    if (GetBurdenStatus() == BurdenStatus.Stressed)
+                        modifier-=3;
+                    break;
+
+                case Stat.Quickness:
+                    if (GetBurdenStatus() == BurdenStatus.Burdened)
+                        modifier--;
+                    if (GetBurdenStatus() == BurdenStatus.Stressed)
+                        modifier-=3;
                     break;
             }
 
@@ -931,7 +961,7 @@ namespace ODB
 
             EdibleComponent ec = item.GetComponent<EdibleComponent>();
 
-            AddFood(ec.Nutrition);
+            Food += ec.Nutrition;
 
             if (item.Mods.Count <= 0) return;
             if (Util.Roll("1d5") != 5) return;
@@ -957,10 +987,11 @@ namespace ODB
             Intrinsics.Add(item.Mods[count - n]);
         }
 
-        //movement/standard action
-        //standard is e.g. attacking, manipulating inventory, etc.
         public void Pass(bool movement = false)
         {
+            //movement/standard action
+            //standard is e.g. attacking, manipulating inventory, etc.
+
             //switch this to +=? could mean setting cd to -10 = free action
             int sneakMod = 0;
             if(HasEffect(StatusType.Sneak) && movement)
@@ -988,8 +1019,6 @@ namespace ODB
                 .ToList()
             ;
         }
-        //will atm only be called by the player,
-        //but should, I guess, be called by monsters as well in the future
         public bool TryMove(Point offset)
         {
             if(Game.Player.Sees(xy))
@@ -1029,8 +1058,8 @@ namespace ODB
                     xy,
                     NoiseType.FootSteps,
                     HasEffect(StatusType.Sneak)
-                        ? -Get(Stat.Dexterity)
-                        : 0
+                        ? -Util.XperY(1, 2, Get(Stat.Dexterity))
+                        : -1
                 );
             }
             else
@@ -1048,7 +1077,6 @@ namespace ODB
             HasMoved = moved;
             return moved;
         }
-
         public bool HasMoved;
 
         public void UpdateVision()
@@ -1209,70 +1237,96 @@ namespace ODB
             if (_food <= 15000) return FoodStatus.Full;
             if (_food <= 20000) return FoodStatus.Stuffed;
 
-            Damage(new DamageSource(
-                "R.I.P. {0}, choked to death on their food.")
-                { Damage = HpCurrent, Target = this }
+            Damage(
+                new DamageSource(
+                    "R.I.P. {0}, choked to death on their food."
+                ) {
+                    Damage = HpCurrent, Target = this
+                }
             );
             return FoodStatus.Stuffed;
         }
-        public void AddFood(int amount)
-        {
-            FoodStatus pre = GetFoodStatus();
-            _food += amount;
-            FoodStatus neo = GetFoodStatus();
-            if (neo == pre) return;
 
-            string message = "";
-            switch (neo)
-            {
-                case FoodStatus.Hungry:
-                    message = "You still feel hungry.";
-                    break;
-                case FoodStatus.Satisfied:
-                    message = "Man, that hit the spot.";
-                    break;
-                case FoodStatus.Full:
-                    message = "You feel full.";
-                    break;
-                case FoodStatus.Stuffed:
-                    message = "Eugh, not even a mint'd go down now.";
-                    break;
-            }
-            Game.UI.Log(message);
-        }
-        public void RemoveFood(int amount)
+        public void UpdateFoodStatus(bool increased = false)
         {
-            FoodStatus pre = GetFoodStatus();
-            _food -= amount;
-            FoodStatus neo = GetFoodStatus();
-            if (neo == pre) return;
-
             string message = "";
-            switch (neo)
+            switch (GetFoodStatus())
             {
                 case FoodStatus.Starving:
-                    message =
-                        "#ff0000" +
-                        Util.Capitalize(Definition.Name) +
-                        " needs food, badly!";
+                    message = string.Format(
+                        "#ff0000{0} needs food, badly!",
+                        Util.Capitalize(Definition.Name)
+                    );
                     break;
                 case FoodStatus.Hungry:
-                    message = "You are starting to feel peckish.";
+                    message =
+                        increased
+                        ? "You still feel hungry."
+                        : "You are starting to feel peckish."
+                    ;
+                    break;
+                case FoodStatus.Satisfied:
+                    if(increased)
+                        message = "Man, that hit the spot.";
                     break;
                 case FoodStatus.Full:
-                    message = "Hm, a mint maybe isn't such a bad idea.";
+                    if (increased)
+                        message = "You feel full.";
+                    else
+                    {
+                        message = "You burp loudly.";
+                        World.Level.MakeNoise(xy, NoiseType.Burp, 1);
+                    }
                     break;
+                case FoodStatus.Stuffed:
+                    message = "Eugh, no thanks, no mint.";
+                    break;
+                default:
+                    throw new Exception();
             }
 
-            if(neo == FoodStatus.Hungry || neo == FoodStatus.Starving)
-                if (HasEffect(StatusType.Sleep))
-                {
-                    RemoveEffect(StatusType.Sleep);
-                    message += " You wake up due to hunger.";
-                }
-
-            if(message != "" && this == Game.Player)
+            if (this == Game.Player && message != "")
                 Game.UI.Log(message);
+        }
+
+        public enum BurdenStatus
+        {
+            Unburdened,
+            Burdened,
+            Stressed
+        }
+        public static string BurdenStatusString(BurdenStatus bs)
+        {
+            switch (bs)
+            {
+                case BurdenStatus.Unburdened: return "Unburdened";
+                case BurdenStatus.Burdened: return "Burdened";
+                case BurdenStatus.Stressed: return "Stressed";
+            }
+            throw new ArgumentException();
+        }
+        public BurdenStatus GetBurdenStatus()
+        {
+            int carried = GetCarriedWeight();
+            int capacity = GetCarryingCapacity();
+
+            BurdenStatus bs;
+            if (carried > 1.5f * capacity) bs = BurdenStatus.Stressed;
+            else if (carried > capacity) bs = BurdenStatus.Burdened;
+            else bs = BurdenStatus.Unburdened;
+
+            if (bs != _carried && this == Game.Player && IsAlive)
+            {
+                if (bs == BurdenStatus.Unburdened)
+                    Game.UI.Log("You're no longer burdened.");
+                else if (bs == BurdenStatus.Burdened)
+                    Game.UI.Log("You're burdened by your load.");
+                else if (bs == BurdenStatus.Stressed)
+                    Game.UI.Log("You feel stressed by your load.");
+            }
+
+            _carried = bs;
+            return bs;
         }
 
         public void Do()
@@ -1732,12 +1786,5 @@ namespace ODB
             if (bp.Type == DollSlot.Hand) Hands.Add((Hand)bp);
             else BodyParts.Add(bp);
         }
-    }
-
-    public enum NoiseType
-    {
-        FootSteps,
-        Combat,
-        Door
     }
 }
