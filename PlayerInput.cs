@@ -17,16 +17,11 @@ namespace ODB
 
             //should be replaced with a look command
             //which could be called here maybe
-            #region looking at our new tile
-            if(Game.Player.Vision == null)
-                Game.Player.Vision = new bool[80, 25];
-
             if (moved)
             {
                 IO.Target = Game.Player.xy;
                 PlayerResponses.Examine();
             }
-            #endregion
 
             if (KeyBindings.Pressed(Bind.Inventory) && !Game.WizMode)
                 IO.IOState = InputType.Inventory;

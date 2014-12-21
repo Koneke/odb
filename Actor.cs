@@ -142,7 +142,7 @@ namespace ODB
                     .ToList();
             }
         }
-        public bool[,] Vision;
+        private bool[,] _vision;
         public List<Spell> Spellbook {
             get
             {
@@ -1053,24 +1053,23 @@ namespace ODB
 
         public void UpdateVision()
         {
+            if (_vision == null)
+                _vision = new bool[World.Level.Size.x, World.Level.Size.y];
+
             if (this == Game.Player)
             {
                 for (int x = 0; x < World.Level.Size.x; x++)
                     for (int y = 0; y < World.Level.Size.y; y++)
                         //make sure to update all we SAW as well,
                         //so that's drawn as not visible
-                        if (Vision[x, y]) Game.UI.UpdateAt(x, y);
+                        if (_vision[x, y]) Game.UI.UpdateAt(x, y);
             }
 
-            if (Vision == null)
-                Vision = new bool
-                    [World.Level.Size.x, World.Level.Size.y];
-            else
-                //nil all
-                Vision.Paint(
-                    new Rect(new Point(0, 0), World.Level.Size),
-                    false
-                );
+            //nil all
+            _vision.Paint(
+                new Rect(new Point(0, 0), World.Level.Size),
+                false
+            );
 
             //shadowcast
             ShadowCaster.ShadowCast(
@@ -1080,7 +1079,7 @@ namespace ODB
                     World.Level.At(p) == null ||
                     World.Level.At(p).Solid ||
                     World.Level.At(p).Door == Door.Closed,
-                (p) =>
+                (p, d) =>
                 {
                     if (this == Game.Player)
                     {
@@ -1089,8 +1088,8 @@ namespace ODB
                         World.Level.See(p);
                         Game.UI.UpdateAt(p);
                     }
-                    if(World.Level.At(p) != null)
-                        Vision[p.x, p.y] = true;
+                    if (World.Level.At(p) != null)
+                        _vision[p.x, p.y] = true;
                 }
             );
         }
@@ -1163,8 +1162,8 @@ namespace ODB
 
         public bool Sees(Point other)
         {
-            if (Vision == null) return false;
-            return Vision[other.x, other.y];
+            if (_vision == null) return false;
+            return _vision[other.x, other.y];
         }
 
         public void Heal(int amount)

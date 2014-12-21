@@ -82,12 +82,6 @@ namespace ODB
             foreach (Item item in Player.Inventory)
                 item.MoveTo(newLevel);
 
-            foreach (Actor a in World.Level.Actors)
-            {
-                //reset vision, incase the level we moved to is a different size
-                a.Vision = null;
-            }
-
             SetupBrains();
 
             UI.FullRedraw();

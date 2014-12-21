@@ -12,7 +12,7 @@ namespace ODB
             Point origin,
             int radius,
             Func<Point, bool> isOpaque,
-            Action<Point> see
+            Action<Point, double> see //point, distance
         ) {
             for (int octant = 0; octant < 8; ++octant)
             {
@@ -29,7 +29,7 @@ namespace ODB
         private static void ComputeOctant(
             Point origin,
             Func<Point, bool> isOpaque,
-            Action<Point> see,
+            Action<Point, double> see,
             int octant,
             int radius
         ) {
@@ -69,7 +69,7 @@ namespace ODB
             Point topVector,
             Point bottomVector,
             Func<Point, bool> isOpaque,
-            Action<Point> see,
+            Action<Point, double> see,
             int octant,
             int radius,
             Queue<ColumnPortion> queue
@@ -109,9 +109,13 @@ namespace ODB
             bool? wasLastCellOpaque = null;
             for (int y = topY; y >= bottomY; --y)
             {
+                double pyth =
+                    (2 * x - 1) * (2 * x - 1) + (2 * y - 1) * (2 * y - 1);
                 bool inRadius =
-                    (2 * x - 1) * (2 * x - 1) +
-                    (2 * y - 1) * (2 * y - 1) <=
+                    /*(2 * x - 1) * (2 * x - 1) +
+                    (2 * y - 1) * (2 * y - 1)*/
+                    pyth
+                    <=
                     4 * radius * radius;
 
                 if (inRadius)
@@ -119,7 +123,8 @@ namespace ODB
                     see(
                         TranslateToOctant(
                             x, y, octant
-                        ) + origin
+                        ) + origin,
+                        (pyth / 4) / radius
                     );
                 }
 
