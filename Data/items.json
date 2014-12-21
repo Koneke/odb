@@ -115,10 +115,6 @@
         "AttackType": "Slash",
         "DamageType": "Physical",
         "Effects": []
-      },
-      {
-        "$type": "ODB.UsableComponent, ODB",
-        "UseEffect": 1
       }
     ],
     "GenerationLowBound": 0,
@@ -140,8 +136,7 @@
     "Tags": [],
     "Components": [
       {
-        "$type": "ODB.ContainerComponent, ODB",
-        "Contained": []
+        "$type": "ODB.ContainerComponent, ODB"
       }
     ],
     "GenerationLowBound": 0,
@@ -355,7 +350,7 @@
     "Components": [
       {
         "$type": "ODB.ReadableComponent, ODB",
-        "Effect": 1
+        "_effectID": "Forcebolt"
       }
     ],
     "GenerationLowBound": 0,
@@ -378,7 +373,7 @@
     "Components": [
       {
         "$type": "ODB.ReadableComponent, ODB",
-        "Effect": 2
+        "_effectID": "Identify"
       }
     ],
     "GenerationLowBound": 0,
@@ -401,7 +396,7 @@
     "Components": [
       {
         "$type": "ODB.LearnableComponent, ODB",
-        "Spell": 1
+        "_effectID": "Forcebolt"
       }
     ],
     "GenerationLowBound": 0,
@@ -424,7 +419,7 @@
     "Components": [
       {
         "$type": "ODB.LearnableComponent, ODB",
-        "Spell": 2
+        "_effectID": "Identify"
       }
     ],
     "GenerationLowBound": 0,
@@ -447,7 +442,7 @@
     "Components": [
       {
         "$type": "ODB.DrinkableComponent, ODB",
-        "Effect": 0
+        "_effectID": "PotionOfHealing"
       }
     ],
     "GenerationLowBound": 1,
@@ -470,7 +465,7 @@
     "Components": [
       {
         "$type": "ODB.EdibleComponent, ODB",
-        "Nutrition": 1500
+        "Nutrition": 2000
       }
     ],
     "GenerationLowBound": 1,
@@ -516,7 +511,7 @@
     "Components": [
       {
         "$type": "ODB.EdibleComponent, ODB",
-        "Nutrition": 700
+        "Nutrition": 1000
       }
     ],
     "GenerationLowBound": 0,
@@ -539,7 +534,7 @@
     "Components": [
       {
         "$type": "ODB.EdibleComponent, ODB",
-        "Nutrition": 700
+        "Nutrition": 1000
       }
     ],
     "GenerationLowBound": 0,
@@ -562,7 +557,7 @@
     "Components": [
       {
         "$type": "ODB.EdibleComponent, ODB",
-        "Nutrition": 700
+        "Nutrition": 1500
       }
     ],
     "GenerationLowBound": 0,
@@ -585,7 +580,7 @@
     "Components": [
       {
         "$type": "ODB.EdibleComponent, ODB",
-        "Nutrition": 1000
+        "Nutrition": 1200
       }
     ],
     "GenerationLowBound": 0,
