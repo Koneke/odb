@@ -90,17 +90,6 @@ namespace ODB
 
         public ItemDefinition() { }
 
-        //creating a NEW definition
-        public ItemDefinition(
-            Color? background, Color foreground,
-            string tile, string name,
-            bool stacking = false
-        ) : base(background, foreground, tile, name) {
-            Stacking = stacking;
-            Components = new List<Component>();
-            DefDict.Add(Type, this);
-        }
-
         public void AddComponent<T>(T component) where T : Component
         {
             //NOTE: IF YOU DON'T FIRST CHECK WHETHER OR NOT WE HAVE A

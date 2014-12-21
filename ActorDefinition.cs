@@ -86,40 +86,10 @@ namespace ODB
         [DataMember(Order=13)] public List<DollSlot> BodyParts;
         [DataMember(Order=14)] public int CorpseType;
         [DataMember(Order=15)] public List<int> Spellbook;
-        //intrinsics spawned with
         [DataMember(Order=16)] public List<Mod> SpawnIntrinsics;
         [DataMember(Order=17)] public AttackComponent NaturalAttack;
 
         public ActorDefinition() { }
-
-        public ActorDefinition(
-            Color? background, Color foreground,
-            string tile, string name,
-            string strength, string dexterity, string intelligence,
-            List<DollSlot> bodyParts,
-            List<int> spellbook,
-            bool named
-        ) : base(background, foreground, tile, name) {
-            Strength = strength;
-            Dexterity = dexterity;
-            Intelligence = intelligence;
-            BodyParts = bodyParts ?? new List<DollSlot>();
-
-            DefDict[Type] = this;
-
-            ItemDefinition corpse = new ItemDefinition(
-                null, Color.Red, "%", name + " corpse");
-            CorpseType = corpse.Type;
-
-            Spellbook = spellbook ?? new List<int>();
-            Named = named;
-            SpawnIntrinsics = new List<Mod>();
-            NaturalAttack = new AttackComponent
-            {
-                AttackType = AttackType.Bash,
-                Damage = "1d4"
-            };
-        }
 
         public void Set(Stat stat, string value)
         {

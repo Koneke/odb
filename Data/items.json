@@ -350,7 +350,7 @@
     "Components": [
       {
         "$type": "ODB.ReadableComponent, ODB",
-        "_effectID": "Forcebolt"
+        "Effect": "Forcebolt"
       }
     ],
     "GenerationLowBound": 0,
@@ -373,7 +373,7 @@
     "Components": [
       {
         "$type": "ODB.ReadableComponent, ODB",
-        "_effectID": "Identify"
+        "Effect": "Identify"
       }
     ],
     "GenerationLowBound": 0,
@@ -396,7 +396,7 @@
     "Components": [
       {
         "$type": "ODB.LearnableComponent, ODB",
-        "_effectID": "Forcebolt"
+        "Effect": "Forcebolt"
       }
     ],
     "GenerationLowBound": 0,
@@ -419,7 +419,7 @@
     "Components": [
       {
         "$type": "ODB.LearnableComponent, ODB",
-        "_effectID": "Identify"
+        "Effect": "Identify"
       }
     ],
     "GenerationLowBound": 0,
@@ -442,7 +442,7 @@
     "Components": [
       {
         "$type": "ODB.DrinkableComponent, ODB",
-        "_effectID": "PotionOfHealing"
+        "Effect": "PotionOfHealing"
       }
     ],
     "GenerationLowBound": 1,

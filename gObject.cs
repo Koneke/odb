@@ -40,53 +40,22 @@ namespace ODB
 
         public static int TypeCounter = 0;
 
-        [DataMember(Order=1)] public string Name;
-        [DataMember(Order=2)] public int Type;
-        [DataMember(Order=3)] public string Tile;
-        [DataMember(Order=4)] public Color Foreground;
-        [DataMember(Order=5)] public Color? Background;
+        [DataMember(Order = 1, Name = "Name")]
+        public string Name;
+
+        [DataMember(Order = 2, Name = "Type")]
+        public int Type;
+
+        [DataMember(Order = 3, Name = "Tile")]
+        public string Tile;
+
+        [DataMember(Order = 4, Name = "Foreground")]
+        public Color Foreground;
+
+        [DataMember(Order = 5, Name = "Background")]
+        public Color? Background;
 
         public gObjectDefinition() { }
-
-        public gObjectDefinition(
-            Color? background, Color foreground, string tile, string name
-        ) {
-            Name = name;
-            Type = TypeCounter++;
-            Tile = tile;
-            Foreground = foreground;
-            Background = background;
-
-            GObjectDefs.Add(Type, this);
-        }
-
-        public gObjectDefinition(string s)
-        {
-            ReadGObjectDefinition(s);
-        }
-
-        public Stream ReadGObjectDefinition(string s)
-        {
-            Stream stream = new Stream(s);
-            Type = stream.ReadHex(4);
-            Background = stream.ReadNullableColor();
-            Foreground = stream.ReadColor();
-            Tile = (char)stream.ReadHex(2) + "";
-            Name = stream.ReadString();
-
-            GObjectDefs.Add(Type, this);
-            return stream;
-        }
-        public Stream WriteGObjectDefinition()
-        {
-            Stream stream = new Stream();
-            stream.Write(Type, 4);
-            stream.Write(Background);
-            stream.Write(Foreground);
-            stream.Write(Tile[0], 2);
-            stream.Write(Name);
-            return stream;
-        }
     }
 
     //ReSharper disable once InconsistentNaming
@@ -114,9 +83,14 @@ namespace ODB
         }
 
         //ReSharper disable InconsistentNaming
-        [DataMember] public Point xy;
-        [DataMember] public int LevelID;
-        [DataMember] private int _type;
+        [DataMember(Name = "Position")]
+        public Point xy;
+
+        [DataMember(Name = "LevelID")]
+        public int LevelID;
+
+        [DataMember(Name = "Type")]
+        private int _type;
 
         public gObjectDefinition Definition {
             get { return gObjectDefinition.GObjectDefs[_type]; }

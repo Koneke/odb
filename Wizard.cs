@@ -122,7 +122,7 @@ namespace ODB
                     SaveIO.JsonWriteItemDefinitions(args[0]);
                     break;
                 case "saveactors":
-                    SaveIO.JsonWriteItemDefinitions(args[0]);
+                    SaveIO.JsonWriteActorDefinitions(args[0]);
                     break;
                 case "togglerolls":
                     Game.OpenRolls = !Game.OpenRolls;
@@ -324,9 +324,6 @@ namespace ODB
                 case "ad-fg":
                     adef.Foreground = IO.ReadColor(args[0]);
                     break;
-                case "ad-tile":
-                    adef.Tile = args[0];
-                    break;
                 case "ad-name":
                     adef.Name = args[0];
                     break;
@@ -413,9 +410,6 @@ namespace ODB
                     break;
                 case "id-fg":
                     idef.Foreground = IO.ReadColor(args[0]);
-                    break;
-                case "id-tile":
-                    idef.Tile = args[0];
                     break;
                 case "id-name":
                     idef.Name = args[0];

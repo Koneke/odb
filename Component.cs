@@ -37,22 +37,30 @@ namespace ODB
     {
         public override string GetComponentType() { return "cUsable"; }
 
-        [DataMember] private SpellID _effectID;
+        [DataMember(Name = "Effect")]
+        private SpellID _effectID;
 
-        public Spell Effect
-        {
-            get { return Spell.SpellDict[_effectID]; }
-        }
+        public Spell Effect { get { return Spell.SpellDict[_effectID]; } }
     }
 
+    [DataContract]
     public class AttackComponent : Component
     {
         public override string GetComponentType() { return "cAttack"; }
 
+        [DataMember(Name = "Damage")]
         public string Damage;
+
+        [DataMember(Name = "Modifier")]
         public int Modifier;
+
+        [DataMember(Name = "AttackType")]
         public AttackType AttackType;
+
+        [DataMember(Name = "DamageType")]
         public DamageType DamageType;
+
+        [DataMember(Name = "Effects")]
         public List<EffectComponent> Effects;
 
         public AttackComponent()
@@ -66,8 +74,11 @@ namespace ODB
     {
         public override string GetComponentType() { return "cWearable"; }
 
-        [DataMember] public List<DollSlot> EquipSlots;
-        [DataMember] public int ArmorClass;
+        [DataMember(Name = "EquipSlots")]
+        public List<DollSlot> EquipSlots;
+
+        [DataMember(Name = "ArmorClass")]
+        public int ArmorClass;
     }
 
     [DataContract]
@@ -75,7 +86,8 @@ namespace ODB
     {
         public override string GetComponentType() { return "cProjectile"; }
 
-        [DataMember] public string Damage;
+        [DataMember(Name = "Damage")]
+        public string Damage;
     }
 
     [DataContract]
@@ -83,8 +95,11 @@ namespace ODB
     {
         public override string GetComponentType() { return "cLauncher"; }
 
-        [DataMember] public List<int> AmmoTypes;
-        [DataMember] public string Damage;
+        [DataMember(Name = "AmmoTypes")]
+        public List<int> AmmoTypes;
+
+        [DataMember(Name = "Damage")]
+        public string Damage;
     }
 
     [DataContract]
@@ -92,13 +107,15 @@ namespace ODB
     {
         public override string GetComponentType() { return "cEdible"; }
 
-        [DataMember] public int Nutrition;
+        [DataMember(Name = "Nutrition")]
+        public int Nutrition;
     }
 
     //LH-211214: Currently does nothing but tag an item as a container.
     //           Saving here because we might want to limit container size
     //           in the future? Or what it can contain? Or how it scales weight?
     //           Could have a shortcut to InvMan.Containers[id] here as well.
+    [DataContract]
     public class ContainerComponent : Component
     {
         public override string GetComponentType() { return "cContainer"; }
@@ -109,9 +126,14 @@ namespace ODB
     {
         public override string GetComponentType() { return "cEffect"; }
 
-        [DataMember] public StatusType EffectType;
-        [DataMember] public int Chance;
-        [DataMember] public string Length;
+        [DataMember(Name = "EffectType")]
+        public StatusType EffectType;
+
+        [DataMember(Name = "Chance")]
+        public int Chance;
+
+        [DataMember(Name = "Length")]
+        public string Length;
 
         public void Apply(Actor target, bool noRoll = false)
         {
@@ -130,7 +152,8 @@ namespace ODB
     {
         public override string GetComponentType() { return "cReadable"; }
 
-        [DataMember] private SpellID _effectID;
+        [DataMember(Name = "Effect")]
+        private SpellID _effectID;
 
         public Spell Effect { get { return Spell.SpellDict[_effectID]; } }
     }
@@ -138,27 +161,21 @@ namespace ODB
     [DataContract]
     public class LearnableComponent : Component
     {
-        public const string Type = "cLearnable";
+        public override string GetComponentType() { return "cLearnable"; }
 
-        public override string GetComponentType() { return Type; }
+        [DataMember(Name = "Effect")]
+        private SpellID _effectID;
 
-        [DataMember] private SpellID _effectID;
-
-        public Spell TaughtSpell
-        {
-            get { return Spell.SpellDict[_effectID]; }
-        }
+        public Spell TaughtSpell { get { return Spell.SpellDict[_effectID]; } }
     }
 
     [DataContract]
     public class DrinkableComponent : Component
     {
-        public override string GetComponentType()
-        {
-            return "cDrinkable";
-        }
+        public override string GetComponentType() { return "cDrinkable"; }
 
-        [DataMember] private SpellID _effectID;
+        [DataMember(Name = "Effect")]
+        private SpellID _effectID;
 
         public Spell Effect { get { return Spell.SpellDict[_effectID]; } }
     }

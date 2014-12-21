@@ -107,6 +107,7 @@ namespace ODB
                 InventoryManager.ContainerIDs.Add(ID, new List<int>());
         }
 
+        //todo: create an actual clone function instead so we can phase this out
         //LOADING an OLD item
         public Item(string s) : base(s)
         {
