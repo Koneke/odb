@@ -92,7 +92,6 @@ namespace ODB
                             World.Level.Depth + 1
                         );
                         connector.Target = l.ID;
-                        //World.Instance.Levels.Add(l);
                     }
 
                 if (connector.Target == null) return false;
@@ -104,6 +103,8 @@ namespace ODB
                     ? "descend"
                     : "ascend"
                 );
+
+                Game.Player.UpdateVision();
             }
             #endregion
 

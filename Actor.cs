@@ -1074,7 +1074,7 @@ namespace ODB
             //shadowcast
             ShadowCaster.ShadowCast(
                 Game.Player.xy,
-                3,
+                5,
                 (p) =>
                     World.Level.At(p) == null ||
                     World.Level.At(p).Solid ||
