@@ -1,10 +1,9 @@
 {
   "$type": "System.Collections.Generic.Dictionary`2[[System.Int32, mscorlib],[ODB.ItemDefinition, ODB]], mscorlib",
   "32768": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "gold coin",
     "Type": 32768,
-    "Tile": "$",
+    "Tile": 36,
     "Foreground": "255, 255, 0, 255",
     "Background": null,
     "Stacking": true,
@@ -19,10 +18,9 @@
     "GenerationHighBound": 0
   },
   "32769": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "apron",
     "Type": 32769,
-    "Tile": "[",
+    "Tile": 91,
     "Foreground": "255, 192, 203, 255",
     "Background": null,
     "Stacking": false,
@@ -45,10 +43,9 @@
     "GenerationHighBound": 0
   },
   "32770": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "arrow",
     "Type": 32770,
-    "Tile": "\u0018",
+    "Tile": 24,
     "Foreground": "165, 42, 42, 255",
     "Background": null,
     "Stacking": true,
@@ -68,10 +65,9 @@
     "GenerationHighBound": 9
   },
   "32771": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "bow",
     "Type": 32771,
-    "Tile": "\\",
+    "Tile": 92,
     "Foreground": "165, 42, 42, 255",
     "Background": null,
     "Stacking": false,
@@ -94,10 +90,9 @@
     "GenerationHighBound": 0
   },
   "32772": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "longsword",
     "Type": 32772,
-    "Tile": ")",
+    "Tile": 41,
     "Foreground": "211, 211, 211, 255",
     "Background": null,
     "Stacking": false,
@@ -121,10 +116,9 @@
     "GenerationHighBound": 0
   },
   "32773": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "cloth bag",
     "Type": 32773,
-    "Tile": "(",
+    "Tile": 40,
     "Foreground": "165, 42, 42, 255",
     "Background": null,
     "Stacking": false,
@@ -143,10 +137,9 @@
     "GenerationHighBound": 0
   },
   "32774": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "zweihander",
     "Type": 32774,
-    "Tile": ")",
+    "Tile": 41,
     "Foreground": "165, 42, 42, 255",
     "Background": null,
     "Stacking": false,
@@ -170,10 +163,9 @@
     "GenerationHighBound": 0
   },
   "32775": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "chainmail",
     "Type": 32775,
-    "Tile": "[",
+    "Tile": 91,
     "Foreground": "165, 42, 42, 255",
     "Background": null,
     "Stacking": false,
@@ -196,10 +188,9 @@
     "GenerationHighBound": 0
   },
   "32776": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "club",
     "Type": 32776,
-    "Tile": ")",
+    "Tile": 41,
     "Foreground": "153, 102, 51, 255",
     "Background": null,
     "Stacking": false,
@@ -223,10 +214,9 @@
     "GenerationHighBound": 0
   },
   "32777": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "spear",
     "Type": 32777,
-    "Tile": ")",
+    "Tile": 41,
     "Foreground": "153, 102, 51, 255",
     "Background": null,
     "Stacking": false,
@@ -254,10 +244,9 @@
     "GenerationHighBound": 0
   },
   "32778": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "leather armor",
     "Type": 32778,
-    "Tile": "[",
+    "Tile": 91,
     "Foreground": "165, 42, 42, 255",
     "Background": null,
     "Stacking": false,
@@ -280,10 +269,9 @@
     "GenerationHighBound": 0
   },
   "32779": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "cloak",
     "Type": 32779,
-    "Tile": "[",
+    "Tile": 91,
     "Foreground": "165, 42, 42, 255",
     "Background": null,
     "Stacking": false,
@@ -306,10 +294,9 @@
     "GenerationHighBound": 0
   },
   "32780": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "wooden shield",
     "Type": 32780,
-    "Tile": "\u001f",
+    "Tile": 31,
     "Foreground": "153, 102, 51, 255",
     "Background": null,
     "Stacking": false,
@@ -334,10 +321,9 @@
     "GenerationHighBound": 0
   },
   "33024": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "scroll of forcebolt",
     "Type": 33024,
-    "Tile": "?",
+    "Tile": 63,
     "Foreground": "255, 255, 255, 255",
     "Background": null,
     "Stacking": false,
@@ -357,10 +343,9 @@
     "GenerationHighBound": 0
   },
   "33025": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "scroll of identify",
     "Type": 33025,
-    "Tile": "?",
+    "Tile": 63,
     "Foreground": "255, 255, 255, 255",
     "Background": null,
     "Stacking": false,
@@ -380,10 +365,9 @@
     "GenerationHighBound": 0
   },
   "33280": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "tome of forcebolt",
     "Type": 33280,
-    "Tile": "þ",
+    "Tile": 254,
     "Foreground": "255, 255, 0, 255",
     "Background": null,
     "Stacking": false,
@@ -403,10 +387,9 @@
     "GenerationHighBound": 0
   },
   "33281": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "tome of identify",
     "Type": 33281,
-    "Tile": "þ",
+    "Tile": 254,
     "Foreground": "255, 255, 0, 255",
     "Background": null,
     "Stacking": false,
@@ -426,10 +409,9 @@
     "GenerationHighBound": 0
   },
   "33536": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "potion of healing",
     "Type": 33536,
-    "Tile": "!",
+    "Tile": 33,
     "Foreground": "255, 0, 0, 255",
     "Background": null,
     "Stacking": true,
@@ -449,10 +431,9 @@
     "GenerationHighBound": 1
   },
   "34304": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "ration",
     "Type": 34304,
-    "Tile": "ö",
+    "Tile": 246,
     "Foreground": "255, 204, 153, 255",
     "Background": null,
     "Stacking": true,
@@ -472,10 +453,9 @@
     "GenerationHighBound": 3
   },
   "34816": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "moribund corpse",
     "Type": 34816,
-    "Tile": "%",
+    "Tile": 37,
     "Foreground": "255, 0, 0, 255",
     "Background": null,
     "Stacking": false,
@@ -495,10 +475,9 @@
     "GenerationHighBound": 0
   },
   "34817": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "rat corpse",
     "Type": 34817,
-    "Tile": "%",
+    "Tile": 37,
     "Foreground": "255, 0, 0, 255",
     "Background": null,
     "Stacking": false,
@@ -518,10 +497,9 @@
     "GenerationHighBound": 0
   },
   "34818": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "newt corpse",
     "Type": 34818,
-    "Tile": "%",
+    "Tile": 37,
     "Foreground": "255, 0, 0, 255",
     "Background": null,
     "Stacking": false,
@@ -541,10 +519,9 @@
     "GenerationHighBound": 0
   },
   "34819": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "kobold corpse",
     "Type": 34819,
-    "Tile": "%",
+    "Tile": 37,
     "Foreground": "255, 0, 0, 255",
     "Background": null,
     "Stacking": false,
@@ -564,10 +541,9 @@
     "GenerationHighBound": 0
   },
   "34820": {
-    "$type": "ODB.ItemDefinition, ODB",
     "Name": "kilik, ratking corpse",
     "Type": 34820,
-    "Tile": "%",
+    "Tile": 37,
     "Foreground": "255, 0, 0, 255",
     "Background": null,
     "Stacking": false,

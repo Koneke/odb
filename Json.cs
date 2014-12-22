@@ -20,12 +20,12 @@ namespace ODB
 
             w.WritePropertyName("Name"); w.WriteValue(def.Name);
             w.WritePropertyName("Type"); w.WriteValue(def.Type);
-            w.WritePropertyName("Tile"); w.WriteValue((byte)def.Tile[0]);
+            w.WritePropertyName("Tile"); w.WriteValue((byte)def.Tile);
             w.WritePropertyName("Foreground"); s.Serialize(w, def.Foreground);
             w.WritePropertyName("Background"); s.Serialize(w, def.Background);
 
             w.WritePropertyName("Named"); w.WriteValue(def.Named);
-            w.WritePropertyName("GenerationType"); w.WriteValue(def.GenerationType);
+            w.WritePropertyName("GenerationType"); s.Serialize(w, def.GenerationType);
             w.WritePropertyName("Strength"); w.WriteValue(def.Strength);
             w.WritePropertyName("Dexterity"); w.WriteValue(def.Dexterity);
             w.WritePropertyName("Intelligence"); w.WriteValue(def.Intelligence);
@@ -54,7 +54,7 @@ namespace ODB
 
             string name = jObj["Name"].ToObject<string>();
             int type = jObj["Type"].ToObject<int>();
-            string tile = jObj["Tile"].ToObject<string>();
+            char tile = jObj["Tile"].ToObject<char>();
             Color foreground = jObj["Foreground"].ToObject<Color>();
             Color? background = jObj["Background"].ToObject<Color?>();
 
@@ -62,7 +62,7 @@ namespace ODB
             Monster.GenerationType generationType = jObj["GenerationType"].ToObject<Monster.GenerationType>();
             string strength = jObj["Strength"].ToObject<string>();
             string dexterity = jObj["Dexterity"].ToObject<string>();
-            string intelligence = jObj["Strength"].ToObject<string>();
+            string intelligence = jObj["Intelligence"].ToObject<string>();
             int speed = jObj["Speed"].ToObject<int>();
             int quickness = jObj["Quickness"].ToObject<int>();
             string hitDie = jObj["HitDie"].ToObject<string>();
@@ -120,7 +120,7 @@ namespace ODB
 
             w.WritePropertyName("Name"); w.WriteValue(def.Name);
             w.WritePropertyName("Type"); w.WriteValue(def.Type);
-            w.WritePropertyName("Tile"); w.WriteValue((byte)def.Tile[0]);
+            w.WritePropertyName("Tile"); w.WriteValue((byte)def.Tile);
             w.WritePropertyName("Foreground"); s.Serialize(w, def.Foreground);
             w.WritePropertyName("Background"); s.Serialize(w, def.Background);
 
@@ -128,12 +128,14 @@ namespace ODB
             w.WritePropertyName("Category"); w.WriteValue(def.Category);
             w.WritePropertyName("Weight"); w.WriteValue(def.Weight);
             w.WritePropertyName("Value"); w.WriteValue(def.Value);
-            w.WritePropertyName("Material"); w.WriteValue(def.Material);
+            w.WritePropertyName("Material"); s.Serialize(w, def.Material);
             w.WritePropertyName("Health"); w.WriteValue(def.Health);
             w.WritePropertyName("Tags"); s.Serialize(w, def.Tags);
             w.WritePropertyName("Components"); s.Serialize(w, def.Components);
             w.WritePropertyName("GenerationLowBound"); w.WriteValue(def.GenerationLowBound);
             w.WritePropertyName("GenerationHighBound"); w.WriteValue(def.GenerationHighBound);
+
+            w.WriteEndObject();
         }
 
         public override object ReadJson(
@@ -146,7 +148,7 @@ namespace ODB
 
             string name = jObj["Name"].ToObject<string>();
             int type = jObj["Type"].ToObject<int>();
-            string tile = jObj["Tile"].ToObject<string>();
+            char tile = jObj["Tile"].ToObject<char>();
             Color foreground = jObj["Foreground"].ToObject<Color>();
             Color? background = jObj["Background"].ToObject<Color?>();
 

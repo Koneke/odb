@@ -47,7 +47,7 @@ namespace ODB
         public int Type;
 
         [DataMember(Order = 3, Name = "Tile")]
-        public string Tile;
+        public char Tile;
 
         [DataMember(Order = 4, Name = "Foreground")]
         public Color Foreground;

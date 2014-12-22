@@ -1,10 +1,9 @@
 {
   "$type": "System.Collections.Generic.Dictionary`2[[System.Int32, mscorlib],[ODB.ActorDefinition, ODB]], mscorlib",
   "0": {
-    "$type": "ODB.ActorDefinition, ODB",
     "Name": "Moribund",
     "Type": 0,
-    "Tile": "\u0001",
+    "Tile": 1,
     "Foreground": "0, 255, 255, 255",
     "Background": null,
     "Named": true,
@@ -40,10 +39,9 @@
     }
   },
   "1": {
-    "$type": "ODB.ActorDefinition, ODB",
     "Name": "rat",
     "Type": 1,
-    "Tile": "r",
+    "Tile": 114,
     "Foreground": "142, 85, 0, 255",
     "Background": null,
     "Named": false,
@@ -71,10 +69,9 @@
     }
   },
   "2": {
-    "$type": "ODB.ActorDefinition, ODB",
     "Name": "newt",
     "Type": 2,
-    "Tile": ":",
+    "Tile": 58,
     "Foreground": "255, 255, 85, 255",
     "Background": null,
     "Named": false,
@@ -102,10 +99,9 @@
     }
   },
   "3": {
-    "$type": "ODB.ActorDefinition, ODB",
     "Name": "kobold",
     "Type": 3,
-    "Tile": "k",
+    "Tile": 107,
     "Foreground": "142, 85, 0, 255",
     "Background": null,
     "Named": false,
@@ -141,10 +137,9 @@
     }
   },
   "4": {
-    "$type": "ODB.ActorDefinition, ODB",
     "Name": "Ratking Kilik",
     "Type": 4,
-    "Tile": "R",
+    "Tile": 82,
     "Foreground": "142, 85, 0, 255",
     "Background": null,
     "Named": true,

@@ -186,7 +186,7 @@ namespace ODB
                         new Point(x, y),
                         background * (inVision ? 1f : 0.6f),
                         foreground * (inVision ? 1f : 0.6f),
-                        ti.Tile.Render()
+                        ti.Tile.Render()[0]
                     );
                 }
         }
@@ -213,7 +213,7 @@ namespace ODB
                         i.Known ? i.Definition.Foreground : Color.Gray,
                         i.Definition.Tile
                     );
-                else DrawToScreen(i.xy, null, Color.White, "*");
+                else DrawToScreen(i.xy, null, Color.White, '*');
             }
         }
 
@@ -241,7 +241,7 @@ namespace ODB
                         a.Definition.Foreground, a.Definition.Tile
                     );
                     //draw a "pile" (shouldn't happen at all atm
-                else DrawToScreen(a.xy, null, Color.White, "*");
+                else DrawToScreen(a.xy, null, Color.White, '*');
             }
         }
 
@@ -730,7 +730,7 @@ namespace ODB
             }
         }
 
-        public void DrawToScreen(Point xy, Color? bg, Color fg, String tile)
+        public void DrawToScreen(Point xy, Color? bg, Color fg, char tile)
         {
             if (bg != null)
                 _dfc.CellData.SetBackground(
@@ -739,7 +739,7 @@ namespace ODB
 
             _dfc.CellData.SetForeground(xy.x, xy.y, fg);
 
-            _dfc.CellData.Print(xy.x, xy.y, tile);
+            _dfc.CellData.Print(xy.x, xy.y, tile + "");
         }
 
         void DrawBorder(Console c, Rect r, Color bg, Color fg)

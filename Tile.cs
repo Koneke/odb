@@ -5,6 +5,8 @@ using Microsoft.Xna.Framework;
 
 namespace ODB
 {
+    //todo: json and char us
+
     public class TileInfo
     {
         public Level Level;
