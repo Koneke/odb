@@ -330,12 +330,6 @@ namespace ODB
                 case "ad-named":
                     adef.Named = IO.ReadBool(args[0]);
                     break;
-                case "ad-stat":
-                    adef.Set(
-                        (Stat)IO.ReadHex(args[0]),
-                        args[0]
-                    );
-                    break;
                 case "ad-addbodypart":
                     adef.BodyParts.Add((DollSlot)IO.ReadHex(args[0]));
                     break;

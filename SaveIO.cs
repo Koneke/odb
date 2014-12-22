@@ -10,6 +10,11 @@ namespace ODB
 {
     static internal class SaveIO
     {
+        public static JsonSerializerSettings Sets = new JsonSerializerSettings
+        {
+            NullValueHandling = NullValueHandling.Include
+        };
+
         public static bool SaveExists
         {
             get

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
-using Microsoft.Xna.Framework;
+using Newtonsoft.Json;
 
 namespace ODB
 {
@@ -13,7 +13,7 @@ namespace ODB
         Book,
     }
 
-    [DataContract]
+    [JsonConverter(typeof(ItemConverter))]
     public class ItemDefinition : gObjectDefinition
     {
         protected bool Equals(ItemDefinition other)
@@ -88,8 +88,6 @@ namespace ODB
         [DataMember(Order=14)] public int GenerationLowBound;
         [DataMember(Order=15)] public int GenerationHighBound;
 
-        public ItemDefinition() { }
-
         public void AddComponent<T>(T component) where T : Component
         {
             //NOTE: IF YOU DON'T FIRST CHECK WHETHER OR NOT WE HAVE A
@@ -102,9 +100,6 @@ namespace ODB
         {
             return Components.Any(c => c is T);
         }
-        //reason this is here because calling a <T> where T : Component from
-        //another with the same sig-bit at the end made all T show up as
-        //Component, which meant that no item could have two components, ever...
         public bool HasComponent(Type t)
         {
             return Components.Any(t.IsInstanceOfType);

@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
-using Microsoft.Xna.Framework;
+using Newtonsoft.Json;
 
 namespace ODB
 {
-    [DataContract]
+    [JsonConverter(typeof(ActorConverter))]
     public class ActorDefinition : gObjectDefinition
     {
         //LH-01214: Note, the concept of equality here does not refer to
@@ -88,32 +88,5 @@ namespace ODB
         [DataMember(Order=15)] public List<int> Spellbook;
         [DataMember(Order=16)] public List<Mod> SpawnIntrinsics;
         [DataMember(Order=17)] public AttackComponent NaturalAttack;
-
-        public ActorDefinition() { }
-
-        public void Set(Stat stat, string value)
-        {
-            switch (stat)
-            {
-                case Stat.Strength:
-                    Strength = value;
-                    break;
-                case Stat.Dexterity:
-                    Dexterity = value;
-                    break;
-                case Stat.Intelligence:
-                    Intelligence = value;
-                    break;
-                case Stat.Speed:
-                    Speed = IO.ReadHex(value);
-                    break;
-                case Stat.Quickness:
-                    Quickness = IO.ReadHex(value);
-                    break;
-                default:
-                    Game.UI.Log("~ERROR~: Bad stat.");
-                    break;
-            }
-        }
     }
 }

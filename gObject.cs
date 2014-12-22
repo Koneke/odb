@@ -54,8 +54,6 @@ namespace ODB
 
         [DataMember(Order = 5, Name = "Background")]
         public Color? Background;
-
-        public gObjectDefinition() { }
     }
 
     //ReSharper disable once InconsistentNaming
