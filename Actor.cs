@@ -169,7 +169,7 @@ namespace ODB
             get
             {
                 return Definition.Spellbook.Select(
-                    spellId => Spell.Spells[spellId]
+                    spellId => Spell.SpellDict[spellId]
                 ).ToList();
             }
         }
@@ -945,7 +945,7 @@ namespace ODB
 
         public void LearnSpell(Spell spell)
         {
-            Definition.Spellbook.Add(spell.ID);
+            Definition.Spellbook.Add(spell.SpellID);
         }
 
         public bool Sees(Point other)

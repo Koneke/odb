@@ -333,12 +333,6 @@ namespace ODB
                 case "ad-rembodypart":
                     adef.BodyParts.Remove((DollSlot)IO.ReadHex(args[0]));
                     break;
-                case "ad-addspell":
-                    adef.Spellbook.Add(IO.ReadHex(args[0]));
-                    break;
-                case "ad-remspell":
-                    adef.Spellbook.Remove(IO.ReadHex(args[0]));
-                    break;
                 case "ad-addsi":
                     adef.SpawnIntrinsics.Add(
                         new Mod(

@@ -71,7 +71,7 @@ namespace ODB
             int difficulty = jObj["Difficulty"].ToObject<int>();
             List<DollSlot> bodyParts = jObj["BodyParts"].ToObject<List<DollSlot>>();
             ItemID corpseType = jObj["CorpseType"].ToObject<ItemID>();
-            List<int> spellbook = jObj["Spellbook"].ToObject<List<int>>();
+            List<SpellID> spellbook = jObj["Spellbook"].ToObject<List<SpellID>>();
             List<Mod> spawnIntrinsics = jObj["SpawnIntrinsics"].ToObject<List<Mod>>();
             AttackComponent naturalAttack = jObj["NaturalAttack"].ToObject<AttackComponent>();
 

@@ -335,7 +335,7 @@
     "Components": [
       {
         "ComponentName": "ReadableComponent",
-        "Effect": "Forcebolt"
+        "Effect": "Spell_Forcebolt"
       }
     ],
     "GenerationLowBound": 0,
@@ -357,7 +357,7 @@
     "Components": [
       {
         "ComponentName": "ReadableComponent",
-        "Effect": "Identify"
+        "Effect": "Spell_Identify"
       }
     ],
     "GenerationLowBound": 0,
@@ -379,7 +379,7 @@
     "Components": [
       {
         "ComponentName": "LearnableComponent",
-        "Effect": "Forcebolt"
+        "Effect": "Spell_Forcebolt"
       }
     ],
     "GenerationLowBound": 0,
@@ -401,7 +401,7 @@
     "Components": [
       {
         "ComponentName": "LearnableComponent",
-        "Effect": "Identify"
+        "Effect": "Spell_Identify"
       }
     ],
     "GenerationLowBound": 0,
@@ -423,7 +423,7 @@
     "Components": [
       {
         "ComponentName": "DrinkableComponent",
-        "Effect": "PotionOfHealing"
+        "Effect": "Spell_PotionOfHealing"
       }
     ],
     "GenerationLowBound": 1,

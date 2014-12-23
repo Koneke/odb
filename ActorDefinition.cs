@@ -97,7 +97,7 @@ namespace ODB
         [DataMember] public int Difficulty;
         [DataMember] public List<DollSlot> BodyParts;
         [DataMember] public ItemID CorpseType;
-        [DataMember] public List<int> Spellbook;
+        [DataMember] public List<SpellID> Spellbook;
         [DataMember] public List<Mod> SpawnIntrinsics;
         [DataMember] public AttackComponent NaturalAttack;
     }

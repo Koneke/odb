@@ -136,29 +136,26 @@ namespace ODB
 
         public static ItemDefinition ItemDefByName(string name)
         {
-            foreach(ItemID key in ItemDefinition.DefDict.Keys)
-                if (ItemDefinition.DefDict[key].Name.ToLower() ==
-                    name.ToLower())
-                    return ItemDefinition.DefDict[key];
-            return null;
+            return ItemDefinition.DefDict 
+                .FirstOrDefault(kvp =>
+                    kvp.Value.Name.ToLower() == name.ToLower())
+                .Value;
         }
 
         public static ActorDefinition ADefByName(string name)
         {
-            foreach(ActorID key in ActorDefinition.DefDict.Keys)
-                if (ActorDefinition.DefDict[key].Name.ToLower() ==
-                    name.ToLower())
-                    return ActorDefinition.DefDict[key];
-            return null;
+            return ActorDefinition.DefDict 
+                .FirstOrDefault(kvp =>
+                    kvp.Value.Name.ToLower() == name.ToLower())
+                .Value;
         }
 
         public static Spell SpellByName(string name)
         {
-            for (int i = 0; i < 0xFFFF; i++)
-                if (Spell.Spells[i] != null)
-                    if (Spell.Spells[i].Name == name)
-                        return Spell.Spells[i];
-            return null;
+            return Spell.SpellDict
+                .FirstOrDefault(kvp =>
+                    kvp.Value.Name.ToLower() == name.ToLower())
+                .Value;
         }
 
         public static TickingEffectDefinition

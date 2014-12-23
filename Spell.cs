@@ -6,9 +6,9 @@ namespace ODB
 {
     public enum SpellID
     {
-        PotionOfHealing,
-        Forcebolt,
-        Identify
+        Spell_PotionOfHealing,
+        Spell_Forcebolt,
+        Spell_Identify
     }
 
     public class Spell
@@ -16,12 +16,8 @@ namespace ODB
         public static Dictionary<SpellID, Spell> SpellDict =
             new Dictionary<SpellID, Spell>(); 
 
-        public static Spell[] Spells = new Spell[0xFFFF];
-        public static int IDCounter = 0;
-        public int ID;
-        public SpellID SpellID;
-
         public string Name;
+        public SpellID SpellID;
         //0 should mean self-cast..? (or just non-targetted)
         //projectile should explode without moving, so should be on self
         public int Range;
@@ -48,12 +44,10 @@ namespace ODB
         //           blocks. Using them simply because it is easier to skim
         //           quickly if you have both the value and what it actually is
         //           (i.e. castcost or what not).
-
         public Spell(SpellID id)
         {
+            SpellID = id;
             SpellDict.Add(id, this);
-            ID = IDCounter++;
-            Spells[ID] = this;
         }
         
         public void Cast(Actor caster, object target)
@@ -67,7 +61,7 @@ namespace ODB
         public static void SetupMagic()
         {
             //ReSharper disable once ObjectCreationAsStatement
-            new Spell(SpellID.PotionOfHealing)
+            new Spell(SpellID.Spell_PotionOfHealing)
             {
                 Name = "potion of healing",
                 CastType = InputType.None,
@@ -83,7 +77,7 @@ namespace ODB
             };
 
             //ReSharper disable once ObjectCreationAsStatement
-            new Spell(SpellID.Forcebolt)
+            new Spell(SpellID.Spell_Forcebolt)
             {
                 Name = "forcebolt",
                 CastType = InputType.Targeting,
@@ -115,7 +109,7 @@ namespace ODB
                 Range = 5
             };
 
-            new Spell(SpellID.Identify)
+            new Spell(SpellID.Spell_Identify)
             {
                 Name = "identify",
                 CastType = InputType.QuestionPromptSingle,
