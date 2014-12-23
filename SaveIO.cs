@@ -139,13 +139,7 @@ namespace ODB
 
         public static void JsonSave()
         {
-            WriteToFile(
-                "Save/game.sv", 
-                JsonConvert.SerializeObject(
-                    Game.Instance,
-                    Settings
-                )
-            );
+            JsonWriteGame("Save/game.sv");
             WriteToFile(
                 "Save/world.sv", 
                 JsonConvert.SerializeObject(
@@ -157,15 +151,22 @@ namespace ODB
 
         public static void JsonLoad()
         {
-            Game.Instance = JsonConvert.DeserializeObject<Game>(
-                ReadFromFile("Save/game.sv"),
-                Settings
-            );
-
+            JsonLoadGame("Save/game.sv");
             World.Load(JsonConvert.DeserializeObject<World>(
                 ReadFromFile("Save/world.sv"),
                 Settings
             ));
+        }
+
+        public static void JsonWriteGame(string path)
+        {
+            WriteToFile(
+                path,
+                JsonConvert.SerializeObject(
+                    Game.Instance,
+                    Settings
+                )
+            );
         }
 
         public static void JsonWriteItemDefinitions(string path)
@@ -190,6 +191,15 @@ namespace ODB
             );
         }
 
+        public static void JsonLoadGame(string path)
+        {
+            //no need to assign Game.Instance to this, we do it in the loader
+            JsonConvert.DeserializeObject<Game>(
+                ReadFromFile(path),
+                Settings
+            );
+        }
+
         public static void JsonLoadItemDefinitions(string path)
         {
             ItemDefinition.DefDict =
@@ -197,7 +207,7 @@ namespace ODB
                 <Dictionary<ItemID, ItemDefinition>>(
                     ReadFromFile(path),
                     Settings
-            );
+                );
         }
 
         public static void JsonLoadActorDefinitions(string path)
@@ -207,7 +217,7 @@ namespace ODB
                 <Dictionary<ActorID, ActorDefinition>>(
                     ReadFromFile(path),
                     Settings
-            );
+                );
 
             Monster.MonstersByDifficulty =
                 new Dictionary<int, List<ActorDefinition>>();

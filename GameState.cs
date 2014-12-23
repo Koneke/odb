@@ -21,7 +21,7 @@ namespace ODB
             ODBGame.GameState = this;
 
             World.Instance.WorldContainers = new InventoryManager();
-            Game.GeneratedUniques = new List<int>();
+            Game.GeneratedUniques = new List<ActorID>();
 
             Game.Player = new Actor(
                 new Point(0, 0),

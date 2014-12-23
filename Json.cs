@@ -220,4 +220,52 @@ namespace ODB
             throw new NotImplementedException();
         }
     }
+
+    public class GameConverter : JsonConverter
+    {
+        public override void WriteJson(
+            JsonWriter w,
+            object value,
+            JsonSerializer s
+        ) {
+            w.Formatting = Formatting.Indented;
+            w.WriteStartObject();
+
+            w.WritePropertyName("GeneratedUniques"); s.Serialize(w, Game.GeneratedUniques);
+            w.WritePropertyName("GameTick"); w.WriteValue(Game.GameTick);
+            w.WritePropertyName("Seed"); w.WriteValue(Game.Seed);
+            w.WritePropertyName("IDCounter"); w.WriteValue(Game.IDCounter);
+            w.WritePropertyName("Identified"); s.Serialize(w, Game.Identified);
+
+            w.WriteEndObject();
+        }
+
+        public override object ReadJson(
+            JsonReader reader,
+            Type objectType,
+            object existingValue,
+            JsonSerializer serializer
+        ) {
+            JObject jObj = JObject.Load(reader);
+
+            List<ActorID> genUniques = jObj["GeneratedUniques"].ToObject<List<ActorID>>();
+            int gameTick = jObj["GameTick"].ToObject<int>();
+            int seed = jObj["Seed"].ToObject<int>();
+            int idCounter = jObj["IDCounter"].ToObject<int>();
+            List<ItemID> identified = jObj["Identified"].ToObject<List<ItemID>>();
+
+            return Game.Instance = new Game(
+                genUniques,
+                gameTick,
+                seed,
+                idCounter,
+                identified
+            );
+        }
+
+        public override bool CanConvert(Type objectType)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }

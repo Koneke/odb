@@ -24,7 +24,7 @@ namespace ODB
         public DamageSource(string killMessage = null)
         {
             KillMessage = killMessage ??
-                "R.I.P. {0}, killed by {1} on dungeon level {2}.";
+                "R.I.P. {0}, killed by {1} on depth {2}.";
         }
 
         public Point Position;
@@ -33,6 +33,7 @@ namespace ODB
         public AttackType AttackType;
         public DamageType DamageType;
         public Actor Source, Target;
+        public Level Level;
 
         public string GenerateKillMessage()
         {
@@ -40,7 +41,7 @@ namespace ODB
                 KillMessage,
                 Target == null ? "" : Target.GetName("Name", true),
                 Source == null ? "" : Source.GetName("a"),
-                Position.z.HasValue ? (Position.z.Value + "") : "X"
+                Level.Depth + "0M"
             );
         }
     }

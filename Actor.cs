@@ -606,9 +606,10 @@ namespace ODB
 
                 totalDamage += damage;
                 Point position = xy;
-                position.z = World.Level.Depth;
                 damageSources.Add(new DamageSource
                 {
+                    //todo: switch to World.Levels[LevelID] when we dict that
+                    Level = World.Level,
                     Position =  position,
                     Damage = damage,
                     AttackType = ac.AttackType,
@@ -685,9 +686,10 @@ namespace ODB
                 int damageRoll = ammoDamage + launcherDamage + Xplevel;
 
                 Point position = xy;
-                position.z = World.Level.Depth;
                 ds = new DamageSource
                 {
+                    //todo: switch World.Levels[LevelID] when we dict that
+                    Level = World.Level,
                     Position = position,
                     Damage = damageRoll,
                     AttackType = AttackType.Pierce,

@@ -118,6 +118,12 @@ namespace ODB
         {
             switch (cmd)
             {
+                case "saveg":
+                    SaveIO.JsonWriteGame(args[0]);
+                    break;
+                case "loadg":
+                    SaveIO.JsonLoadGame(args[0]);
+                    break;
                 case "saveitems":
                     SaveIO.JsonWriteItemDefinitions(args[0]);
                     break;
@@ -127,15 +133,6 @@ namespace ODB
                 case "togglerolls":
                     Game.OpenRolls = !Game.OpenRolls;
                     Game.UI.Log("=> " + Game.OpenRolls);
-                    break;
-                //get item definition (id) (by name)
-                case "gid":
-                    Game.UI.Log(
-                        IO.WriteHex(Util.ItemDefByName(args[0]).Type, 4)
-                    );
-                    break;
-                case "gad":
-                    Game.UI.Log(IO.WriteHex(Util.ADefByName(args[0]).Type, 4));
                     break;
                 case "sa":
                 case "spawnactor":
@@ -391,7 +388,7 @@ namespace ODB
                     break;
                     #endregion
                 case "id-id":
-                    Game.Identify(idef.Type);
+                    Game.Identify(idef.ItemType);
                     break;
                 case "id-bg":
                     idef.Background = IO.ReadNullableColor(args[0]);

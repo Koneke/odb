@@ -19,8 +19,7 @@ namespace ODB
                 Background.Equals(other.Background) &&
                 Foreground.Equals(other.Foreground) &&
                 string.Equals(Tile, other.Tile) &&
-                string.Equals(Name, other.Name) &&
-                Type == other.Type;
+                string.Equals(Name, other.Name);
         }
         public override int GetHashCode()
         {
@@ -29,7 +28,6 @@ namespace ODB
                 int hashCode = Background.GetHashCode();
                 hashCode = (hashCode*397) ^ Foreground.GetHashCode();
                 hashCode = (hashCode*397) ^ (Name != null ? Name.GetHashCode() : 0);
-                hashCode = (hashCode*397) ^ Type;
                 return hashCode;
             }
         }
@@ -39,20 +37,16 @@ namespace ODB
 
         public static int TypeCounter = 0;
 
-        [DataMember(Order = 1, Name = "Name")]
+        [DataMember]
         public string Name;
 
-        //I'm just plain assuming this thing generates a whole lot of bugs now?
-        [DataMember(Order = 2, Name = "Type")]
-        public int Type;
-
-        [DataMember(Order = 3, Name = "Tile")]
+        [DataMember]
         public char Tile;
 
-        [DataMember(Order = 4, Name = "Foreground")]
+        [DataMember]
         public Color Foreground;
 
-        [DataMember(Order = 5, Name = "Background")]
+        [DataMember]
         public Color? Background;
     }
 

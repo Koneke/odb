@@ -91,7 +91,7 @@ namespace ODB
         [DataMember] private int _type;
         [DataMember] public List<Mod> Mods;
 
-        public new ItemDefinition Definition {
+        public ItemDefinition Definition {
             get { return ItemDefinition.DefDict[ItemType]; }
         }
 
@@ -107,7 +107,6 @@ namespace ODB
 
         //wraps
         public bool Stacking { get { return Definition.Stacking; } }
-        public int Type { get { return Definition.Type; } }
 
         public bool HasComponent<T>() where T : Component
             { return Definition.HasComponent<T>(); }
@@ -142,7 +141,7 @@ namespace ODB
             get
             {
                 return
-                    Game.IsIdentified(Definition.Type) ||
+                    Game.IsIdentified(Definition.ItemType) ||
                     Definition.Category == 0xff;
             }
         }
@@ -153,7 +152,7 @@ namespace ODB
                 return ItemDefinition.Appearances
                     [Definition.Category].Shuffle()
                     [
-                        (Definition.Type + Math.Abs(Game.Seed))
+                        ((int)Definition.ItemType + Math.Abs(Game.Seed))
                             % ItemDefinition.Appearances
                             [Definition.Category].Count
                     ];
@@ -236,7 +235,7 @@ namespace ODB
 
             string prename = GetName("the");
 
-            Game.Identify(Type);
+            Game.Identify(ItemType);
 
             if (!silent)
                 Game.UI.Log("You identified " +
@@ -314,7 +313,7 @@ namespace ODB
         {
             if (!Stacking) return false;
             return
-                Type == other.Type &&
+                ItemType == other.ItemType &&
                 Health == other.Health
             ;
         }

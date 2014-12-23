@@ -610,7 +610,7 @@ namespace ODB
             statrow += "$:";
             statrow +=
                 Game.Player.Inventory
-                    .Where(item => item.Type == 0x8000)
+                    .Where(item => item.ItemType == ItemID.Item_GoldCoin)
                     .Sum(item => item.Count);
 
             statrow += " ";

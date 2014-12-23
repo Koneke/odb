@@ -2,23 +2,40 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
+using Newtonsoft.Json;
 
 namespace ODB
 {
-    [DataContract]
+    [JsonConverter(typeof(GameConverter))]
     public class Game
     {
         public static Game Instance;
+
+        public Game(
+            List<ActorID> generatedUniques,
+            int gameTick,
+            int seed,
+            int idCounter,
+            List<ItemID> identified
+        ) {
+            Instance = this;
+
+            _generatedUniques = generatedUniques;
+            _gameTick = gameTick;
+            _seed = seed;
+            _idCounter = idCounter;
+            _identified = identified;
+        }
 
         public Game()
         {
             Instance = this;
 
-            _generatedUniques = new List<int>();
+            _generatedUniques = new List<ActorID>();
             _gameTick = 0;
             SetupSeed();
             _idCounter = 0;
-            _identified = new List<int>();
+            _identified = new List<ItemID>();
         }
 
         //we keep these purely static because we don't need to save/load them
@@ -30,13 +47,13 @@ namespace ODB
 
         public const int StandardActionLength = 10;
 
-        [DataMember] private List<int> _generatedUniques;
+        [DataMember] private List<ActorID> _generatedUniques;
         [DataMember] private int _gameTick;
         [DataMember] private int _seed;
         [DataMember] private int _idCounter;
-        [DataMember] private List<int> _identified;
+        [DataMember] private List<ItemID> _identified;
 
-        public static List<int> GeneratedUniques
+        public static List<ActorID> GeneratedUniques
         {
             get { return Instance._generatedUniques; }
             set { Instance._generatedUniques = value; }
@@ -60,12 +77,17 @@ namespace ODB
             set { Instance._idCounter = value; }
         }
 
-        public static void Identify(int type)
+        public static List<ItemID> Identified
+        {
+            get { return Instance._identified; }
+        }
+
+        public static void Identify(ItemID type)
         {
             Instance._identified.Add(type);
         }
 
-        public static bool IsIdentified(int type)
+        public static bool IsIdentified(ItemID type)
         {
             return Instance._identified.Contains(type);
         }

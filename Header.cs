@@ -38,21 +38,16 @@ namespace ODB
         public int x;
         //ReSharper disable once InconsistentNaming
         public int y;
-        //ReSharper disable once InconsistentNaming
-        public int? z;
         
-        public Point(int x, int y, int? z = null) {
+        public Point(int x, int y) {
             this.x = x;
             this.y = y;
-            this.z = z;
         }
 
         public void Nudge(int offsetX, int offsetY, int? offsetZ = null)
         {
             x += offsetX;
             y += offsetY;
-            if (z.HasValue && offsetZ.HasValue)
-                z += offsetZ;
         }
         public void Nudge(Point p)
         {
@@ -63,8 +58,7 @@ namespace ODB
         {
             return
                 a.x == b.x &&
-                a.y == b.y &&
-                a.z == b.z;
+                a.y == b.y;
         }
         public static bool operator !=(Point a, Point b)
         {
@@ -72,19 +66,19 @@ namespace ODB
         }
         public static Point operator +(Point a, Point b)
         {
-            return new Point(a.x + b.x, a.y + b.y, a.z + b.z);
+            return new Point(a.x + b.x, a.y + b.y);
         }
         public static Point operator -(Point a, Point b)
         {
-            return new Point(a.x - b.x, a.y - b.y, a.z - b.z);
+            return new Point(a.x - b.x, a.y - b.y);
         }
         public static Point operator /(Point a, int b)
         {
-            return new Point(a.x / b, a.y / b, a.z / b);
+            return new Point(a.x / b, a.y / b);
         }
         public static Point operator /(Point a, Point b)
         {
-            return new Point(a.x / b.x, a.y / b.y, a.z / b.z);
+            return new Point(a.x / b.x, a.y / b.y);
         }
     }
 

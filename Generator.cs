@@ -295,9 +295,7 @@ namespace ODB
         private static void GenerateMonsters(Level level)
         {
             float difficulty =
-                (Game.Player == null
-                    ? 1
-                    : Game.Player.Xplevel)
+                (Game.Player == null ? 1 : Game.Player.Xplevel)
                 + level.Depth + 1;
 
             List<ActorDefinition> possibleMonsters =
@@ -309,7 +307,7 @@ namespace ODB
                     .Where(ad => ad.ActorType != ActorID.Mon_Player)
                     .Where(ad =>
                         ad.GenerationType != Monster.GenerationType.Unique ||
-                        !Game.GeneratedUniques.Contains(ad.Type))
+                        !Game.GeneratedUniques.Contains(ad.ActorType))
                     .ToList();
 
             float monsterPool = (difficulty * 4.5f);
@@ -332,7 +330,7 @@ namespace ODB
 
                 if (monster.GenerationType == Monster.GenerationType.Unique)
                 {
-                    Game.GeneratedUniques.Add(monster.Type);
+                    Game.GeneratedUniques.Add(monster.ActorType);
                     possibleMonsters.Remove(monster);
                 }
 
