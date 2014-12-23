@@ -70,7 +70,7 @@ namespace ODB
             int experience = jObj["Experience"].ToObject<int>();
             int difficulty = jObj["Difficulty"].ToObject<int>();
             List<DollSlot> bodyParts = jObj["BodyParts"].ToObject<List<DollSlot>>();
-            int corpseType = jObj["CorpseType"].ToObject<int>();
+            ItemID corpseType = jObj["CorpseType"].ToObject<ItemID>();
             List<int> spellbook = jObj["Spellbook"].ToObject<List<int>>();
             List<Mod> spawnIntrinsics = jObj["SpawnIntrinsics"].ToObject<List<Mod>>();
             AttackComponent naturalAttack = jObj["NaturalAttack"].ToObject<AttackComponent>();
@@ -119,7 +119,7 @@ namespace ODB
             w.WriteStartObject();
 
             w.WritePropertyName("Name"); w.WriteValue(def.Name);
-            w.WritePropertyName("Type"); w.WriteValue(def.Type);
+            w.WritePropertyName("Type"); s.Serialize(w, def.ItemType);
             w.WritePropertyName("Tile"); w.WriteValue((byte)def.Tile);
             w.WritePropertyName("Foreground"); s.Serialize(w, def.Foreground);
             w.WritePropertyName("Background"); s.Serialize(w, def.Background);
@@ -147,7 +147,7 @@ namespace ODB
             JObject jObj = JObject.Load(reader);
 
             string name = jObj["Name"].ToObject<string>();
-            int type = jObj["Type"].ToObject<int>();
+            ItemID type = jObj["Type"].ToObject<ItemID>();
             char tile = jObj["Tile"].ToObject<char>();
             Color foreground = jObj["Foreground"].ToObject<Color>();
             Color? background = jObj["Background"].ToObject<Color?>();
@@ -159,7 +159,6 @@ namespace ODB
             Material material = jObj["Material"].ToObject<Material>();
             int health = jObj["Health"].ToObject<int>();
             List<ItemTag> tags = jObj["Tags"].ToObject<List<ItemTag>>();
-            //List<Component> components = jObj["Components"].ToObject<List<Component>>();
             int genLowBound = jObj["GenerationLowBound"].ToObject<int>();
             int genHighBound = jObj["GenerationHighBound"].ToObject<int>();
 
@@ -201,7 +200,7 @@ namespace ODB
             return new ItemDefinition
             {
                 Name = name,
-                Type = type,
+                ItemType = type,
                 Tile = tile,
                 Foreground = foreground,
                 Background = background,

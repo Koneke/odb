@@ -70,7 +70,6 @@ namespace ODB
                 hashCode = (hashCode*397) ^ Named.GetHashCode();
                 hashCode = (hashCode*397) ^ Speed;
                 hashCode = (hashCode*397) ^ Quickness;
-                hashCode = (hashCode*397) ^ CorpseType;
                 return hashCode;
             }
         }
@@ -97,7 +96,7 @@ namespace ODB
         [DataMember] public int Experience;
         [DataMember] public int Difficulty;
         [DataMember] public List<DollSlot> BodyParts;
-        [DataMember] public int CorpseType;
+        [DataMember] public ItemID CorpseType;
         [DataMember] public List<int> Spellbook;
         [DataMember] public List<Mod> SpawnIntrinsics;
         [DataMember] public AttackComponent NaturalAttack;

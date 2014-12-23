@@ -10,6 +10,34 @@ namespace ODB
         NonWeapon
     }
 
+    public enum ItemID
+    {
+        Item_GoldCoin,
+        Item_Apron,
+        Item_Arrow,
+        Item_Bow,
+        Item_Longsword,
+        Item_ClothBag,
+        Item_Zweihander,
+        Item_Chainmail,
+        Item_Club,
+        Item_Spear,
+        Item_LeatherArmor,
+        Item_Cloak,
+        Item_WoodenShield,
+        Item_ScrollOfForcebolt,
+        Item_ScrollOfIdentify,
+        Item_TomeOfForceBolt,
+        Item_TomeOfIdentify,
+        Item_PotionOfHealing,
+        Item_Ration,
+        Item_PlayerCorpse,
+        Item_RatCorpse,
+        Item_NewtCorpse,
+        Item_KoboldCorpse,
+        Item_KilikCorpse
+    }
+
     [DataContract]
     public class Item : gObject
     {
@@ -53,6 +81,7 @@ namespace ODB
         }
 
         [DataMember] public int ID;
+        public ItemID ItemType;
 
         [DataMember] public int Mod;
         //can be used as charges for non-stacking?
@@ -63,7 +92,7 @@ namespace ODB
         [DataMember] public List<Mod> Mods;
 
         public new ItemDefinition Definition {
-            get { return ItemDefinition.DefDict[_type]; }
+            get { return ItemDefinition.DefDict[ItemType]; }
         }
 
         /*
@@ -95,10 +124,10 @@ namespace ODB
             ItemDefinition definition,
             int count = 0,
             IEnumerable<Mod> mods = null
-        ) : base(xy, definition) {
+        ) : base(xy) {
             ID = Game.IDCounter++;
             Count = count;
-            _type = definition.Type;
+            ItemType = definition.ItemType;
             Health = definition.Health;
             Mods = new List<Mod>();
             if (mods != null) Mods.AddRange(mods);
@@ -379,7 +408,7 @@ namespace ODB
             return new Item
             {
                 xy = xy,
-                _type = _type,
+                ItemType = ItemType,
                 LevelID = LevelID,
                 ID = Game.IDCounter++,
                 Mod = Mod,

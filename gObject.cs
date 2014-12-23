@@ -61,9 +61,7 @@ namespace ODB
     {
         protected bool Equals(gObject other)
         {
-            return
-                xy.Equals(other.xy) &&
-                Definition.Equals(other.Definition);
+            return xy.Equals(other.xy);
         }
         public override bool Equals(object obj)
         {
@@ -75,7 +73,6 @@ namespace ODB
         public override int GetHashCode()
         {
             int hashCode = xy.GetHashCode();
-            hashCode = (hashCode*397) ^ Definition.GetHashCode();
             return hashCode;
         }
 
@@ -86,45 +83,7 @@ namespace ODB
         [DataMember(Name = "LevelID")]
         public int LevelID;
 
-        [DataMember(Name = "Type")]
-        private int _type;
-
-        public gObjectDefinition Definition {
-            get { return gObjectDefinition.GObjectDefs[_type]; }
-        }
-
         public gObject() { }
-
-        public gObject(
-            Point xy,
-            gObjectDefinition definition
-        ) {
-            this.xy = xy;
-            _type = definition.Type;
-        }
-
-        public gObject(string s)
-        {
-            ReadGObject(s);
-        }
-
-        public Stream WriteGObject()
-        {
-            Stream stream = new Stream();
-            stream.Write(Definition.Type, 4);
-            stream.Write(xy);
-            stream.Write(LevelID, 4);
-            return stream;
-        }
-
-        public Stream ReadGObject(string s)
-        {
-            Stream stream = new Stream(s);
-            _type = stream.ReadHex(4);
-
-            xy = stream.ReadPoint();
-            LevelID = stream.ReadHex(4);
-            return stream;
-        }
+        public gObject(Point xy) { this.xy = xy; }
     }
 }

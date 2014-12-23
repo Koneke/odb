@@ -1,8 +1,8 @@
 {
-  "$type": "System.Collections.Generic.Dictionary`2[[System.Int32, mscorlib],[ODB.ItemDefinition, ODB]], mscorlib",
-  "32768": {
+  "$type": "System.Collections.Generic.Dictionary`2[[ODB.ItemID, ODB],[ODB.ItemDefinition, ODB]], mscorlib",
+  "Item_GoldCoin": {
     "Name": "gold coin",
-    "Type": 32768,
+    "Type": "Item_GoldCoin",
     "Tile": 36,
     "Foreground": "255, 255, 0, 255",
     "Background": null,
@@ -17,9 +17,9 @@
     "GenerationLowBound": 0,
     "GenerationHighBound": 0
   },
-  "32769": {
+  "Item_Apron": {
     "Name": "apron",
-    "Type": 32769,
+    "Type": "Item_Apron",
     "Tile": 91,
     "Foreground": "255, 192, 203, 255",
     "Background": null,
@@ -42,9 +42,9 @@
     "GenerationLowBound": 0,
     "GenerationHighBound": 0
   },
-  "32770": {
+  "Item_Arrow": {
     "Name": "arrow",
-    "Type": 32770,
+    "Type": "Item_Arrow",
     "Tile": 24,
     "Foreground": "165, 42, 42, 255",
     "Background": null,
@@ -64,9 +64,9 @@
     "GenerationLowBound": 4,
     "GenerationHighBound": 9
   },
-  "32771": {
+  "Item_Bow": {
     "Name": "bow",
-    "Type": 32771,
+    "Type": "Item_Bow",
     "Tile": 92,
     "Foreground": "165, 42, 42, 255",
     "Background": null,
@@ -89,9 +89,9 @@
     "GenerationLowBound": 0,
     "GenerationHighBound": 0
   },
-  "32772": {
+  "Item_Longsword": {
     "Name": "longsword",
-    "Type": 32772,
+    "Type": "Item_Longsword",
     "Tile": 41,
     "Foreground": "211, 211, 211, 255",
     "Background": null,
@@ -115,9 +115,9 @@
     "GenerationLowBound": 0,
     "GenerationHighBound": 0
   },
-  "32773": {
+  "Item_ClothBag": {
     "Name": "cloth bag",
-    "Type": 32773,
+    "Type": "Item_ClothBag",
     "Tile": 40,
     "Foreground": "165, 42, 42, 255",
     "Background": null,
@@ -136,9 +136,9 @@
     "GenerationLowBound": 0,
     "GenerationHighBound": 0
   },
-  "32774": {
+  "Item_Zweihander": {
     "Name": "zweihander",
-    "Type": 32774,
+    "Type": "Item_Zweihander",
     "Tile": 41,
     "Foreground": "165, 42, 42, 255",
     "Background": null,
@@ -162,9 +162,9 @@
     "GenerationLowBound": 0,
     "GenerationHighBound": 0
   },
-  "32775": {
+  "Item_Chainmail": {
     "Name": "chainmail",
-    "Type": 32775,
+    "Type": "Item_Chainmail",
     "Tile": 91,
     "Foreground": "165, 42, 42, 255",
     "Background": null,
@@ -187,9 +187,9 @@
     "GenerationLowBound": 0,
     "GenerationHighBound": 0
   },
-  "32776": {
+  "Item_Club": {
     "Name": "club",
-    "Type": 32776,
+    "Type": "Item_Club",
     "Tile": 41,
     "Foreground": "153, 102, 51, 255",
     "Background": null,
@@ -213,9 +213,9 @@
     "GenerationLowBound": 0,
     "GenerationHighBound": 0
   },
-  "32777": {
+  "Item_Spear": {
     "Name": "spear",
-    "Type": 32777,
+    "Type": "Item_Spear",
     "Tile": 41,
     "Foreground": "153, 102, 51, 255",
     "Background": null,
@@ -243,9 +243,9 @@
     "GenerationLowBound": 0,
     "GenerationHighBound": 0
   },
-  "32778": {
+  "Item_LeatherArmor": {
     "Name": "leather armor",
-    "Type": 32778,
+    "Type": "Item_LeatherArmor",
     "Tile": 91,
     "Foreground": "165, 42, 42, 255",
     "Background": null,
@@ -268,9 +268,9 @@
     "GenerationLowBound": 0,
     "GenerationHighBound": 0
   },
-  "32779": {
+  "Item_Cloak": {
     "Name": "cloak",
-    "Type": 32779,
+    "Type": "Item_Cloak",
     "Tile": 91,
     "Foreground": "165, 42, 42, 255",
     "Background": null,
@@ -293,9 +293,9 @@
     "GenerationLowBound": 0,
     "GenerationHighBound": 0
   },
-  "32780": {
+  "Item_WoodenShield": {
     "Name": "wooden shield",
-    "Type": 32780,
+    "Type": "Item_WoodenShield",
     "Tile": 31,
     "Foreground": "153, 102, 51, 255",
     "Background": null,
@@ -320,9 +320,9 @@
     "GenerationLowBound": 0,
     "GenerationHighBound": 0
   },
-  "33024": {
+  "Item_ScrollOfForcebolt": {
     "Name": "scroll of forcebolt",
-    "Type": 33024,
+    "Type": "Item_ScrollOfForcebolt",
     "Tile": 63,
     "Foreground": "255, 255, 255, 255",
     "Background": null,
@@ -342,9 +342,9 @@
     "GenerationLowBound": 0,
     "GenerationHighBound": 0
   },
-  "33025": {
+  "Item_ScrollOfIdentify": {
     "Name": "scroll of identify",
-    "Type": 33025,
+    "Type": "Item_ScrollOfIdentify",
     "Tile": 63,
     "Foreground": "255, 255, 255, 255",
     "Background": null,
@@ -364,9 +364,9 @@
     "GenerationLowBound": 0,
     "GenerationHighBound": 0
   },
-  "33280": {
+  "Item_TomeOfForceBolt": {
     "Name": "tome of forcebolt",
-    "Type": 33280,
+    "Type": "Item_TomeOfForceBolt",
     "Tile": 254,
     "Foreground": "255, 255, 0, 255",
     "Background": null,
@@ -386,9 +386,9 @@
     "GenerationLowBound": 0,
     "GenerationHighBound": 0
   },
-  "33281": {
+  "Item_TomeOfIdentify": {
     "Name": "tome of identify",
-    "Type": 33281,
+    "Type": "Item_TomeOfIdentify",
     "Tile": 254,
     "Foreground": "255, 255, 0, 255",
     "Background": null,
@@ -408,9 +408,9 @@
     "GenerationLowBound": 0,
     "GenerationHighBound": 0
   },
-  "33536": {
+  "Item_PotionOfHealing": {
     "Name": "potion of healing",
-    "Type": 33536,
+    "Type": "Item_PotionOfHealing",
     "Tile": 33,
     "Foreground": "255, 0, 0, 255",
     "Background": null,
@@ -430,9 +430,9 @@
     "GenerationLowBound": 1,
     "GenerationHighBound": 1
   },
-  "34304": {
+  "Item_Ration": {
     "Name": "ration",
-    "Type": 34304,
+    "Type": "Item_Ration",
     "Tile": 246,
     "Foreground": "255, 204, 153, 255",
     "Background": null,
@@ -452,9 +452,9 @@
     "GenerationLowBound": 1,
     "GenerationHighBound": 3
   },
-  "34816": {
+  "Item_PlayerCorpse": {
     "Name": "moribund corpse",
-    "Type": 34816,
+    "Type": "Item_PlayerCorpse",
     "Tile": 37,
     "Foreground": "255, 0, 0, 255",
     "Background": null,
@@ -474,9 +474,9 @@
     "GenerationLowBound": 0,
     "GenerationHighBound": 0
   },
-  "34817": {
+  "Item_RatCorpse": {
     "Name": "rat corpse",
-    "Type": 34817,
+    "Type": "Item_RatCorpse",
     "Tile": 37,
     "Foreground": "255, 0, 0, 255",
     "Background": null,
@@ -496,9 +496,9 @@
     "GenerationLowBound": 0,
     "GenerationHighBound": 0
   },
-  "34818": {
+  "Item_NewtCorpse": {
     "Name": "newt corpse",
-    "Type": 34818,
+    "Type": "Item_NewtCorpse",
     "Tile": 37,
     "Foreground": "255, 0, 0, 255",
     "Background": null,
@@ -518,9 +518,9 @@
     "GenerationLowBound": 0,
     "GenerationHighBound": 0
   },
-  "34819": {
+  "Item_KoboldCorpse": {
     "Name": "kobold corpse",
-    "Type": 34819,
+    "Type": "Item_KoboldCorpse",
     "Tile": 37,
     "Foreground": "255, 0, 0, 255",
     "Background": null,
@@ -540,9 +540,9 @@
     "GenerationLowBound": 0,
     "GenerationHighBound": 0
   },
-  "34820": {
+  "Item_KilikCorpse": {
     "Name": "kilik, ratking corpse",
-    "Type": 34820,
+    "Type": "Item_KilikCorpse",
     "Tile": 37,
     "Foreground": "255, 0, 0, 255",
     "Background": null,

@@ -336,12 +336,6 @@ namespace ODB
                 case "ad-rembodypart":
                     adef.BodyParts.Remove((DollSlot)IO.ReadHex(args[0]));
                     break;
-                case "ad-corpsetype":
-                    //should probably be useful about never,
-                    //but for completeness sake
-                    //LH-011214: Hah, turns out it was useful afterall...
-                    adef.CorpseType = IO.ReadHex(args[0]);
-                    break;
                 case "ad-addspell":
                     adef.Spellbook.Add(IO.ReadHex(args[0]));
                     break;

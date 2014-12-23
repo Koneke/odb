@@ -373,15 +373,16 @@ namespace ODB
 
             while (loot > 0)
             {
-                //Notice: gold should always be at the first item spot, i.e.
-                //0x8000.
-                ItemDefinition gold = ItemDefinition.DefDict[0x8000];
+                ItemDefinition gold = ItemDefinition.DefDict
+                    [ItemID.Item_GoldCoin];
+
                 int amount = Util.Random.Next(1, loot + 1);
                 Item item = new Item(
                     level.RandomOpenPoint(),
                     gold,
                     amount * 3 + Util.Random.Next(0, 3)
                 );
+
                 level.Spawn(item);
                 loot -= amount;
             }

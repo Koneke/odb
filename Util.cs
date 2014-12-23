@@ -136,7 +136,7 @@ namespace ODB
 
         public static ItemDefinition ItemDefByName(string name)
         {
-            foreach(int key in ItemDefinition.DefDict.Keys)
+            foreach(ItemID key in ItemDefinition.DefDict.Keys)
                 if (ItemDefinition.DefDict[key].Name.ToLower() ==
                     name.ToLower())
                     return ItemDefinition.DefDict[key];

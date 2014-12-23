@@ -53,8 +53,8 @@ namespace ODB
             return Equals((ItemDefinition)obj);
         }
 
-        public static Dictionary<int, ItemDefinition> DefDict =
-            new Dictionary<int, ItemDefinition>();
+        public static Dictionary<ItemID, ItemDefinition> DefDict =
+            new Dictionary<ItemID, ItemDefinition>();
 
         public static Dictionary<int, List<string>> Appearances =
         #region appearances
@@ -77,16 +77,19 @@ namespace ODB
             };
         #endregion
 
-        [DataMember(Order= 6)] public bool Stacking;
-        [DataMember(Order= 7)] public int Category;
-        [DataMember(Order= 8)] public int Weight;
-        [DataMember(Order= 9)] public int Value;
-        [DataMember(Order=10)] public Material Material;
-        [DataMember(Order=11)] public int Health;
-        [DataMember(Order=12)] public List<ItemTag> Tags; 
-        [DataMember(Order=13)] public List<Component> Components;
-        [DataMember(Order=14)] public int GenerationLowBound;
-        [DataMember(Order=15)] public int GenerationHighBound;
+        //attributes only for show/reminding, ItemConverter handles what is
+        //actually written.
+        [DataMember] public ItemID ItemType;
+        [DataMember] public bool Stacking;
+        [DataMember] public int Category;
+        [DataMember] public int Weight;
+        [DataMember] public int Value;
+        [DataMember] public Material Material;
+        [DataMember] public int Health;
+        [DataMember] public List<ItemTag> Tags; 
+        [DataMember] public List<Component> Components;
+        [DataMember] public int GenerationLowBound;
+        [DataMember] public int GenerationHighBound;
 
         public void AddComponent<T>(T component) where T : Component
         {

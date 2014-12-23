@@ -193,16 +193,12 @@ namespace ODB
 
         public static void JsonLoadItemDefinitions(string path)
         {
-            ItemDefinition.DefDict = JsonConvert.DeserializeObject
-                <Dictionary<int, ItemDefinition>>(
+            ItemDefinition.DefDict =
+                JsonConvert.DeserializeObject
+                <Dictionary<ItemID, ItemDefinition>>(
                     ReadFromFile(path),
                     Settings
             );
-
-            foreach (int key in ItemDefinition.DefDict.Keys)
-                gObjectDefinition.GObjectDefs.Add(
-                    key, ItemDefinition.DefDict[key]
-                );
         }
 
         public static void JsonLoadActorDefinitions(string path)

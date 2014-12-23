@@ -26,7 +26,7 @@
       "Legs",
       "Feet"
     ],
-    "CorpseType": 34816,
+    "CorpseType": "Item_PlayerCorpse",
     "Spellbook": [],
     "SpawnIntrinsics": [],
     "NaturalAttack": {
@@ -56,7 +56,7 @@
     "Experience": 4,
     "Difficulty": 2,
     "BodyParts": [],
-    "CorpseType": 34817,
+    "CorpseType": "Item_RatCorpse",
     "Spellbook": [],
     "SpawnIntrinsics": [],
     "NaturalAttack": {
@@ -86,7 +86,7 @@
     "Experience": 1,
     "Difficulty": 1,
     "BodyParts": [],
-    "CorpseType": 34818,
+    "CorpseType": "Item_NewtCorpse",
     "Spellbook": [],
     "SpawnIntrinsics": [],
     "NaturalAttack": {
@@ -124,7 +124,7 @@
       "Legs",
       "Feet"
     ],
-    "CorpseType": 34819,
+    "CorpseType": "Item_KoboldCorpse",
     "Spellbook": [],
     "SpawnIntrinsics": [],
     "NaturalAttack": {
@@ -154,7 +154,7 @@
     "Experience": 21,
     "Difficulty": 10,
     "BodyParts": [],
-    "CorpseType": 34820,
+    "CorpseType": "Item_KilikCorpse",
     "Spellbook": [],
     "SpawnIntrinsics": [],
     "NaturalAttack": {

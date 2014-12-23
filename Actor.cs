@@ -95,7 +95,6 @@ namespace ODB
             get { return ActorDefinition.DefDict[ActorType]; }
         }
 
-        [DataMember] private int _type;
         [DataMember] public int ID;
 
         [DataMember] private int _strength, _dexterity, _intelligence;
@@ -177,7 +176,6 @@ namespace ODB
             int xplevel
         ) : base(xy, definition) {
             ID = Game.IDCounter++;
-            _type = definition.Type;
             ActorType = definition.ActorType;
 
             _strength = Util.Roll(definition.Strength);
