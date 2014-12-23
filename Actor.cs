@@ -174,7 +174,7 @@ namespace ODB
             Point xy,
             ActorDefinition definition,
             int xplevel
-        ) : base(xy, definition) {
+        ) : base(xy) {
             ID = Game.IDCounter++;
             ActorType = definition.ActorType;
 

@@ -36,7 +36,7 @@ namespace ODB
             w.WritePropertyName("Experience"); w.WriteValue(def.Experience);
             w.WritePropertyName("Difficulty"); w.WriteValue(def.Difficulty);
             w.WritePropertyName("BodyParts"); s.Serialize(w, def.BodyParts);
-            w.WritePropertyName("CorpseType"); w.WriteValue(def.CorpseType);
+            w.WritePropertyName("CorpseType"); s.Serialize(w, def.CorpseType);
             w.WritePropertyName("Spellbook"); s.Serialize(w, def.Spellbook);
             w.WritePropertyName("SpawnIntrinsics"); s.Serialize(w, def.SpawnIntrinsics);
             w.WritePropertyName("NaturalAttack"); s.Serialize(w, def.NaturalAttack);
@@ -167,9 +167,7 @@ namespace ODB
             var a = jObj["Components"].ToList();
             foreach (JToken j in a)
             {
-                string componentType = j["$type"].Value<string>();
-                componentType = componentType
-                    .Substring(4, componentType.Length - 9);
+                string componentType = j["ComponentName"].Value<string>();
 
                 if (componentType == AttackComponent.ComponentName)
                     components.Add(j.ToObject<AttackComponent>());

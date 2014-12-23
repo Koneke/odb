@@ -1,5 +1,4 @@
 {
-  "$type": "System.Collections.Generic.Dictionary`2[[ODB.ActorID, ODB],[ODB.ActorDefinition, ODB]], mscorlib",
   "Mon_Player": {
     "Name": "Moribund",
     "Type": "Mon_Player",
@@ -30,7 +29,7 @@
     "Spellbook": [],
     "SpawnIntrinsics": [],
     "NaturalAttack": {
-      "$type": "ODB.AttackComponent, ODB",
+      "ComponentName": "AttackComponent",
       "Damage": "1d4",
       "Modifier": 0,
       "AttackType": "Bash",
@@ -60,7 +59,7 @@
     "Spellbook": [],
     "SpawnIntrinsics": [],
     "NaturalAttack": {
-      "$type": "ODB.AttackComponent, ODB",
+      "ComponentName": "AttackComponent",
       "Damage": "1d2",
       "Modifier": -1,
       "AttackType": "Bite",
@@ -90,7 +89,7 @@
     "Spellbook": [],
     "SpawnIntrinsics": [],
     "NaturalAttack": {
-      "$type": "ODB.AttackComponent, ODB",
+      "ComponentName": "AttackComponent",
       "Damage": "1d2",
       "Modifier": 0,
       "AttackType": "Bite",
@@ -128,7 +127,7 @@
     "Spellbook": [],
     "SpawnIntrinsics": [],
     "NaturalAttack": {
-      "$type": "ODB.AttackComponent, ODB",
+      "ComponentName": "AttackComponent",
       "Damage": "1d2+1",
       "Modifier": -2,
       "AttackType": "Bash",
@@ -158,14 +157,14 @@
     "Spellbook": [],
     "SpawnIntrinsics": [],
     "NaturalAttack": {
-      "$type": "ODB.AttackComponent, ODB",
+      "ComponentName": "AttackComponent",
       "Damage": "1d4",
       "Modifier": 0,
       "AttackType": "Bite",
       "DamageType": "Ratking",
       "Effects": [
         {
-          "$type": "ODB.EffectComponent, ODB",
+          "ComponentName": "EffectComponent",
           "EffectType": "Poison",
           "Chance": 100,
           "Length": "200d3"

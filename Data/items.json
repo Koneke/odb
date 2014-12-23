@@ -1,5 +1,4 @@
 {
-  "$type": "System.Collections.Generic.Dictionary`2[[ODB.ItemID, ODB],[ODB.ItemDefinition, ODB]], mscorlib",
   "Item_GoldCoin": {
     "Name": "gold coin",
     "Type": "Item_GoldCoin",
@@ -32,7 +31,7 @@
     "Tags": [],
     "Components": [
       {
-        "$type": "ODB.WearableComponent, ODB",
+        "ComponentName": "WearableComponent",
         "EquipSlots": [
           "Torso"
         ],
@@ -57,7 +56,7 @@
     "Tags": [],
     "Components": [
       {
-        "$type": "ODB.ProjectileComponent, ODB",
+        "ComponentName": "ProjectileComponent",
         "Damage": "1d3+1"
       }
     ],
@@ -79,7 +78,7 @@
     "Tags": [],
     "Components": [
       {
-        "$type": "ODB.LauncherComponent, ODB",
+        "ComponentName": "LauncherComponent",
         "AmmoTypes": [
           32770
         ],
@@ -104,7 +103,7 @@
     "Tags": [],
     "Components": [
       {
-        "$type": "ODB.AttackComponent, ODB",
+        "ComponentName": "AttackComponent",
         "Damage": "1d8+1",
         "Modifier": 0,
         "AttackType": "Slash",
@@ -130,7 +129,7 @@
     "Tags": [],
     "Components": [
       {
-        "$type": "ODB.ContainerComponent, ODB"
+        "ComponentName": "ContainerComponent"
       }
     ],
     "GenerationLowBound": 0,
@@ -151,7 +150,7 @@
     "Tags": [],
     "Components": [
       {
-        "$type": "ODB.AttackComponent, ODB",
+        "ComponentName": "AttackComponent",
         "Damage": "2d6+1",
         "Modifier": 0,
         "AttackType": "Slash",
@@ -177,7 +176,7 @@
     "Tags": [],
     "Components": [
       {
-        "$type": "ODB.WearableComponent, ODB",
+        "ComponentName": "WearableComponent",
         "EquipSlots": [
           "Torso"
         ],
@@ -202,7 +201,7 @@
     "Tags": [],
     "Components": [
       {
-        "$type": "ODB.AttackComponent, ODB",
+        "ComponentName": "AttackComponent",
         "Damage": "1d6",
         "Modifier": 0,
         "AttackType": "Bash",
@@ -228,7 +227,7 @@
     "Tags": [],
     "Components": [
       {
-        "$type": "ODB.AttackComponent, ODB",
+        "ComponentName": "AttackComponent",
         "Damage": "1d6",
         "Modifier": 0,
         "AttackType": "Pierce",
@@ -236,7 +235,7 @@
         "Effects": []
       },
       {
-        "$type": "ODB.ProjectileComponent, ODB",
+        "ComponentName": "ProjectileComponent",
         "Damage": "1d4"
       }
     ],
@@ -258,7 +257,7 @@
     "Tags": [],
     "Components": [
       {
-        "$type": "ODB.WearableComponent, ODB",
+        "ComponentName": "WearableComponent",
         "EquipSlots": [
           "Torso"
         ],
@@ -283,7 +282,7 @@
     "Tags": [],
     "Components": [
       {
-        "$type": "ODB.WearableComponent, ODB",
+        "ComponentName": "WearableComponent",
         "EquipSlots": [
           "Back"
         ],
@@ -310,7 +309,7 @@
     ],
     "Components": [
       {
-        "$type": "ODB.WearableComponent, ODB",
+        "ComponentName": "WearableComponent",
         "EquipSlots": [
           "Hand"
         ],
@@ -335,7 +334,7 @@
     "Tags": [],
     "Components": [
       {
-        "$type": "ODB.ReadableComponent, ODB",
+        "ComponentName": "ReadableComponent",
         "Effect": "Forcebolt"
       }
     ],
@@ -357,7 +356,7 @@
     "Tags": [],
     "Components": [
       {
-        "$type": "ODB.ReadableComponent, ODB",
+        "ComponentName": "ReadableComponent",
         "Effect": "Identify"
       }
     ],
@@ -379,7 +378,7 @@
     "Tags": [],
     "Components": [
       {
-        "$type": "ODB.LearnableComponent, ODB",
+        "ComponentName": "LearnableComponent",
         "Effect": "Forcebolt"
       }
     ],
@@ -401,7 +400,7 @@
     "Tags": [],
     "Components": [
       {
-        "$type": "ODB.LearnableComponent, ODB",
+        "ComponentName": "LearnableComponent",
         "Effect": "Identify"
       }
     ],
@@ -423,7 +422,7 @@
     "Tags": [],
     "Components": [
       {
-        "$type": "ODB.DrinkableComponent, ODB",
+        "ComponentName": "DrinkableComponent",
         "Effect": "PotionOfHealing"
       }
     ],
@@ -445,7 +444,7 @@
     "Tags": [],
     "Components": [
       {
-        "$type": "ODB.EdibleComponent, ODB",
+        "ComponentName": "EdibleComponent",
         "Nutrition": 2000
       }
     ],
@@ -467,7 +466,7 @@
     "Tags": [],
     "Components": [
       {
-        "$type": "ODB.EdibleComponent, ODB",
+        "ComponentName": "EdibleComponent",
         "Nutrition": 2500
       }
     ],
@@ -489,7 +488,7 @@
     "Tags": [],
     "Components": [
       {
-        "$type": "ODB.EdibleComponent, ODB",
+        "ComponentName": "EdibleComponent",
         "Nutrition": 1000
       }
     ],
@@ -511,7 +510,7 @@
     "Tags": [],
     "Components": [
       {
-        "$type": "ODB.EdibleComponent, ODB",
+        "ComponentName": "EdibleComponent",
         "Nutrition": 1000
       }
     ],
@@ -533,7 +532,7 @@
     "Tags": [],
     "Components": [
       {
-        "$type": "ODB.EdibleComponent, ODB",
+        "ComponentName": "EdibleComponent",
         "Nutrition": 1500
       }
     ],
@@ -555,7 +554,7 @@
     "Tags": [],
     "Components": [
       {
-        "$type": "ODB.EdibleComponent, ODB",
+        "ComponentName": "EdibleComponent",
         "Nutrition": 1200
       }
     ],

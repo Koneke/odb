@@ -133,7 +133,6 @@ namespace ODB
         private static readonly JsonSerializerSettings Settings =
             new JsonSerializerSettings
             {
-                TypeNameHandling = TypeNameHandling.Objects,
                 Converters = { new StringEnumConverter() },
                 Formatting = Formatting.Indented
             };
