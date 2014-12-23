@@ -258,6 +258,7 @@ namespace ODB
                     if (IO.AcceptedInput.Count <= 0)
                     {
                         Game.UI.Log("You have nothing to cast that on.");
+                        Game.Player.Pass();
                         return;
                     }
 
@@ -278,7 +279,7 @@ namespace ODB
                         question,
                         effect.CastType,
                         Game.Player.Do
-                        );
+                    );
 
                     Util.QuickTarget();
                 }

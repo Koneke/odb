@@ -764,19 +764,10 @@ namespace ODB
             World.Level.MakeNoise(target.xy, NoiseType.Combat, -2);
             Pass();
         }
-        public void Damage(DamageSource ds)
+
+        public void SplatterBlood()
         {
-            if(this == Game.Player && IO.IOState == InputType.Inventory)
-                //make sure that the player doesn't killed while invmanaging
-                IO.IOState = InputType.PlayerInput;
-
-            if (ds.Damage <= 0) return;
-            if (HpCurrent <= 0) return;
-
             TileInfo tileInfo = World.Level.At(xy);
-
-            if(Game.Player.Sees(xy))
-                Game.UI.UpdateAt(xy);
 
             tileInfo.Blood = true;
             tileInfo.Neighbours
@@ -789,9 +780,26 @@ namespace ODB
                             Game.UI.UpdateAt(n.Position);
                     }
                 );
+        }
+
+        public void Damage(DamageSource ds)
+        {
+            if(this == Game.Player && IO.IOState == InputType.Inventory)
+                //make sure that the player doesn't killed while invmanaging
+                IO.IOState = InputType.PlayerInput;
+
+            //todo: maybe not return on 0 damage?
+            if (ds.Damage <= 0) return;
+            if (HpCurrent <= 0) return;
+
+            if(Game.Player.Sees(xy))
+                Game.UI.UpdateAt(xy);
 
             switch (ds.DamageType)
             {
+                case DamageType.Physical:
+                    SplatterBlood();
+                    break;
                 case DamageType.Ratking:
                     Debug.Assert(ds.Source != null, "ds.Source != null");
                     List<TileInfo> neighbours =
