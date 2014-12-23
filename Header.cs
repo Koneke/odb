@@ -616,26 +616,24 @@ namespace ODB
 
     public class DiceRoll
     {
-        public Dice Dice;
+        public List<Dice> Die;
         public Dictionary<string, int> Bonus; 
-        public Dictionary<string, int> Malus; 
 
         public DiceRoll()
         {
+            Die = new List<Dice>();
             Bonus = new Dictionary<string, int>();
-            Malus = new Dictionary<string, int>();
         }
 
         public RollInfo Roll(bool max = false)
         {
             int bonus = Bonus.Sum(kvp => kvp.Value);
-            int malus = Malus.Sum(kvp => kvp.Value);
-            int roll = Dice.Roll(max);
+            int roll = Die.Sum(d => d.Roll(max));
 
             return new RollInfo
             {
                 Roll = roll,
-                Result = roll + bonus - malus,
+                Result = roll + bonus,
                 DiceRoll = this
             };
         }
@@ -651,37 +649,21 @@ namespace ODB
         {
             if (log == null) log = Game.UI.Log;
 
-            string message =
-                String.Format("{0}", DiceRoll.Dice
-            );
+            string message = DiceRoll.Die.Aggregate("", (c, n) => c + "+" + n);
+            message = message.Substring(0, message.Length - 1);
 
             foreach (KeyValuePair<string, int> kvp in DiceRoll.Bonus)
             {
                 if (kvp.Value == 0) continue;
 
                 string format = verbose
-                    ? "+({1}:{2:+#;-#;+0})"
-                    : "{2:+#;-#;+0}";
+                    ? "{1}({2}:{3:+#;-#;+0})"
+                    : "{3:+#;-#;+0}";
 
                 message += string.Format(
                     format,
-                    "",
-                    kvp.Key,
-                    kvp.Value
-                );
-            }
-
-            foreach (KeyValuePair<string, int> kvp in DiceRoll.Malus)
-            {
-                if (kvp.Value == 0) continue;
-
-                string format = verbose
-                    ? "-({1}:{2:+#;-#;+0})"
-                    : "{2:+#;-#;+0}";
-
-                message += string.Format(
-                    format,
-                    "", //because UI.Log starts at 1
+                    "", //UI.Log starts at 1, because dumb
+                    kvp.Value >= 0 ? "+" : "-",
                     kvp.Key,
                     kvp.Value
                 );
