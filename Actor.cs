@@ -88,14 +88,14 @@ namespace ODB
             return Equals((Actor)obj);
         }
 
-        private ActorID ActorType;
 
-        public new ActorDefinition Definition
+        public ActorDefinition Definition
         {
             get { return ActorDefinition.DefDict[ActorType]; }
         }
 
         [DataMember] public int ID;
+        [DataMember] private ActorID ActorType;
 
         [DataMember] private int _strength, _dexterity, _intelligence;
 
@@ -790,6 +790,32 @@ namespace ODB
                     }
                 );
 
+            switch (ds.DamageType)
+            {
+                case DamageType.Ratking:
+                    Debug.Assert(ds.Source != null, "ds.Source != null");
+                    List<TileInfo> neighbours =
+                        World.Level.At(ds.Source.xy).Neighbours
+                        .Where(ti => ti.Actor == null)
+                        .Where(ti => !ti.Solid)
+                        .Where(ti => ti.Door != Door.Closed)
+                        .ToList();
+
+                    if (neighbours.Any(ti => ti.Actor == null))
+                    {
+                        Point p = neighbours
+                            .SelectRandom()
+                            .Position;
+                        Actor rat = new Actor(
+                            p,
+                            Util.ADefByName("rat"),
+                            ds.Source.Xplevel
+                        );
+                        World.Level.Spawn(rat);
+                    }
+                    break;
+            }
+
             HpCurrent -= ds.Damage;
 
             if (HasEffect(StatusType.Sleep) && HpCurrent > 0)
@@ -827,32 +853,6 @@ namespace ODB
 
             if(ds.Source != null)
                 ds.Source.GiveExperience(Definition.Experience * Xplevel);
-
-            switch (ds.DamageType)
-            {
-                case DamageType.Ratking:
-                    Debug.Assert(ds.Source != null, "ds.Source != null");
-                    List<TileInfo> neighbours =
-                        World.Level.At(ds.Source.xy).Neighbours
-                        .Where(ti => ti.Actor == null)
-                        .Where(ti => !ti.Solid)
-                        .Where(ti => ti.Door != Door.Closed)
-                        .ToList();
-
-                    if (neighbours.Any(ti => ti.Actor == null))
-                    {
-                        Point p = neighbours
-                            .SelectRandom()
-                            .Position;
-                        Actor rat = new Actor(
-                            p,
-                            Util.ADefByName("rat"),
-                            ds.Source.Xplevel
-                        );
-                        World.Level.Spawn(rat);
-                    }
-                    break;
-            }
         }
 
         public void GiveExperience(int amount)

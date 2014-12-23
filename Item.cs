@@ -81,7 +81,7 @@ namespace ODB
         }
 
         [DataMember] public int ID;
-        public ItemID ItemType;
+        [DataMember] public ItemID ItemType;
 
         [DataMember] public int Mod;
         //can be used as charges for non-stacking?
