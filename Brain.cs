@@ -92,7 +92,7 @@ namespace ODB
             {
                 MeatPuppet.Do(
                     new Command("open").Add("door", World.Level.At(moveTo))
-                    );
+                );
             }
             else
                 MeatPuppet.Do(

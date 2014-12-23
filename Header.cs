@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
+using System.Security.Cryptography;
 using Microsoft.Xna.Framework;
 
 namespace ODB
@@ -128,7 +129,7 @@ namespace ODB
                     {
                         case -1: return Direction.West;
                         case 0: throw new ArgumentException();
-                        case 1: return Direction.NorthEast;
+                        case 1: return Direction.East;
                         default: throw new ArgumentException();
                     }
                 case 1:
@@ -555,6 +556,115 @@ namespace ODB
         public bool Has(string key)
         {
             return _data.ContainsKey(key.ToLower());
+        }
+    }
+
+    public class Dice
+    {
+        public int Number;
+        public int Faces;
+        public int Modifier;
+
+        public Dice(int number, int faces, int mod = 0)
+        {
+            Number = number;
+            Faces = faces;
+            Modifier = mod;
+        }
+
+        public int Roll(bool max = false)
+        {
+            return Util.Roll(Number, Faces, Modifier, max);
+        }
+
+        public override string ToString()
+        {
+            string format =
+                "{0}d{1}" +
+                (Modifier == 0
+                    ? ""
+                    : "{2:+#;-#;+0}"
+                );
+
+            return string.Format(
+                format,
+                Number > 1 ? Number + "" : "",
+                Faces,
+                Modifier
+            );
+        }
+    }
+
+    public class DiceRoll
+    {
+        public Dice Dice;
+        public Dictionary<string, int> Bonus; 
+        public Dictionary<string, int> Malus; 
+
+        public DiceRoll()
+        {
+            Bonus = new Dictionary<string, int>();
+            Malus = new Dictionary<string, int>();
+        }
+
+        public RollInfo Roll(bool max = false)
+        {
+            int bonus = Bonus.Sum(kvp => kvp.Value);
+            int malus = Malus.Sum(kvp => kvp.Value);
+            int roll = Dice.Roll(max);
+
+            return new RollInfo
+            {
+                Result = roll + bonus - malus,
+                DiceRoll = this
+            };
+        }
+    }
+
+    public class RollInfo
+    {
+        public int Result;
+        public DiceRoll DiceRoll;
+
+        public void Log(bool verbose = false)
+        {
+            string message =
+                String.Format("{0}", DiceRoll.Dice.ToString()
+            );
+
+            foreach (KeyValuePair<string, int> kvp in DiceRoll.Bonus)
+            {
+                if (kvp.Value == 0) continue;
+
+                string format = verbose
+                    ? "+({0}: {1:+#;-#;+0})"
+                    : "{1:+#;-#;+0}";
+
+                message += string.Format(
+                    format,
+                    kvp.Key,
+                    kvp.Value
+                );
+            }
+
+            foreach (KeyValuePair<string, int> kvp in DiceRoll.Malus)
+            {
+                if (kvp.Value == 0) continue;
+
+                string format = verbose
+                    ? "-({0}: {1:+#;-#;+0})"
+                    : "{1:+#;-#;+0}";
+
+                message += string.Format(
+                    format,
+                    kvp.Key,
+                    kvp.Value
+                );
+            }
+
+            message += string.Format(" = {0}", Result);
+
+            Game.UI.Log(message);
         }
     }
 }

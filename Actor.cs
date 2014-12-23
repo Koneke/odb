@@ -488,6 +488,36 @@ namespace ODB
             return 1200 + Xplevel * 100 + Get(Stat.Strength) * 400;
         }
 
+        private DiceRoll GenerateHitRoll()
+        {
+            DiceRoll dr = new DiceRoll();
+
+            dr.Dice = new Dice(1, 20);
+
+            int dexBonus;
+            dr.Bonus.Add(
+                "Dexterity Bonus",
+                dexBonus = Util.XperY(1, 3, Get(Stat.Dexterity))
+            );
+            dr.Bonus.Add(
+                "Strength Bonus",
+                Util.XperY(1, 2, Get(Stat.Strength))
+            );
+            dr.Bonus.Add(
+                "Level Bonus",
+                Xplevel
+            );
+
+            int multiWeaponPenalty = 3 * (GetWieldedItems().Count - 1);
+            multiWeaponPenalty = Math.Max(0, multiWeaponPenalty - dexBonus);
+
+            dr.Malus.Add(
+                "Multi-Weapon Penalty",
+                multiWeaponPenalty
+            );
+
+            return dr;
+        }
         public void Attack(Actor target)
         {
             int dexBonus = Util.XperY(1, 3, Get(Stat.Dexterity));
@@ -529,19 +559,14 @@ namespace ODB
                 Item weapon = attack.Item1;
 
                 int roll = Util.Roll("1d20");
-                bool crit =
-                    roll >= 20 ||
-                    target.HasEffect(StatusType.Sleep)
-                ;
-                int mod = weapon == null ? 0 : weapon.Mod;
+                bool crit = roll >= 20 || target.HasEffect(StatusType.Sleep);
 
-                int totalModifier =
-                    strBonus + dexBonus + Xplevel +
-                    mod - multiWeaponPenalty;
+                DiceRoll dr = GenerateHitRoll();
+                dr.Bonus.Add("Weapon Mod", weapon == null ? 0 : weapon.Mod);
 
-                int hitRoll = roll + totalModifier;
+                RollInfo info = dr.Roll(crit);
 
-                if (hitRoll < targetDefense)
+                if (info.Result < targetDefense)
                 {
                     message += String.Format(
                         "{0} {1} {2}in the air. ",
@@ -552,17 +577,7 @@ namespace ODB
                             : (Genitive() + " "+ weapon.GetName("name") + " ")
                     );
 
-                    if (Game.OpenRolls)
-                        message += String.Format(
-                            "d20+{0} ({1}+{2}+{3}+{4}-{5}{9:+#;-#;+0}), " +
-                            "{6}+{0}, {7} vs. {8}. ",
-                            totalModifier,
-                            strBonus, dexBonus, Xplevel, mod, multiWeaponPenalty,
-                            roll,
-                            hitRoll,
-                            targetDefense,
-                            attack.Item2.Modifier
-                        );
+                    if (Game.OpenRolls) info.Log();
 
                     continue;
                 }
@@ -588,16 +603,7 @@ namespace ODB
 
                 if (Game.OpenRolls)
                 {
-                    message += String.Format(
-                        "d20+{0} ({1}+{2}+{3}+{4}-{5}{9:+#;-#;+0}), " +
-                        "{6}+{0}, {7} vs. {8}. ",
-                        totalModifier,
-                        strBonus, dexBonus, Xplevel, mod, multiWeaponPenalty,
-                        roll,
-                        hitRoll,
-                        targetDefense,
-                        attack.Item2.Modifier
-                    );
+                    info.Log();
 
                     message += String.Format(
                         "{0}+{2}+{4}, {1}+{2}+{4}, {3} hit points damage. ",
@@ -1026,7 +1032,7 @@ namespace ODB
                 .ToList()
             ;
         }
-        private bool TryMove(Point offset)
+        private void TryMove(Point offset)
         {
             if(Game.Player.Sees(xy))
                 Game.UI.UpdateAt(xy);
@@ -1047,7 +1053,7 @@ namespace ODB
             {
                 if(this == Game.Player) Game.UI.Log("Bump!");
                 //else "... bumps into a wall..?"
-                return false;
+                return;
             }
 
             bool moved = false;
@@ -1082,7 +1088,6 @@ namespace ODB
                 Game.UI.UpdateAt(xy);
 
             HasMoved = moved;
-            return moved;
         }
         public bool HasMoved;
 
