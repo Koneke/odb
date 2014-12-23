@@ -88,13 +88,17 @@ namespace ODB
 
             if (!xy && !x && !y) return;
 
-            if(World.Level.At(moveTo).Door == Door.Closed)
+            if (World.Level.At(moveTo).Door == Door.Closed)
             {
                 MeatPuppet.Do(
                     new Command("open").Add("door", World.Level.At(moveTo))
-                );
+                    );
             }
-            else MeatPuppet.TryMove(offset);
+            else
+                MeatPuppet.Do(
+                    new Command("Move")
+                    .Add("Direction", Point.ToCardinal(offset))
+                );
         }
 
         public void Tick()

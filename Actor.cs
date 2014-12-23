@@ -1026,7 +1026,7 @@ namespace ODB
                 .ToList()
             ;
         }
-        public bool TryMove(Point offset)
+        private bool TryMove(Point offset)
         {
             if(Game.Player.Sees(xy))
                 Game.UI.UpdateAt(xy);
@@ -1349,6 +1349,78 @@ namespace ODB
         public void Do()
         {
             Do(IO.CurrentCommand);
+        }
+
+        private void HandleMove(Command cmd)
+        {
+            Direction direction = (Direction)cmd.Get("Direction");
+            if (direction != Direction.Up && direction != Direction.Down)
+            {
+                Point offset = Point.FromCardinal(direction);
+                TryMove(offset);
+
+                if (this == Game.Player)
+                {
+                    IO.Target = Game.Player.xy;
+                    PlayerResponses.Examine();
+                }
+            }
+            else
+            {
+                LevelConnector connector = World.Level.Connectors
+                    .FirstOrDefault(lc => lc.Position == xy);
+
+                bool descending = direction == Direction.Down;
+
+                if (connector == null)
+                {
+                    if (this == Game.Player)
+                        Game.UI.Log(
+                            "You can't go {1} here.",
+                            descending ? "down" : "up"
+                        );
+                    return;
+                }
+
+                //this should only ever happen when going downwards, at least at
+                //the moment. If this happens when we're going upwards,
+                //something is weird.
+                if (connector.Target == null)
+                {
+                    Generator g = new Generator();
+                    Level l = g.Generate(
+                        World.Level,
+                        World.Level.Depth + 1
+                    );
+                    connector.Target = l.ID;
+                }
+
+                if (World.Level.At(xy).Stairs ==
+                    (descending ? Stairs.Down : Stairs.Up)
+                ) {
+                    Game.SwitchLevel(
+                        World.LevelByID(connector.Target.Value), true
+                    );
+
+                    if(this == Game.Player)
+                        Game.UI.Log(
+                            "You {1} the stairs...",
+                            descending
+                                ? "descend"
+                                : "ascend"
+                            );
+
+                    UpdateVision();
+                }
+                else
+                {
+                    if (this == Game.Player)
+                        Game.UI.Log(
+                            "You can't go {1} here.",
+                            descending ? "down" : "up"
+                        );
+                }
+            }
         }
 
         private void HandleCast(Command cmd)
@@ -1700,6 +1772,7 @@ namespace ODB
                 case "engrave": HandleEngrave(cmd); break;
                 case "get": HandleGet(cmd); break;
                 case "learn": HandleLearn(cmd); break;
+                case "move": HandleMove(cmd); break;
                 case "open": HandleOpen(cmd); break;
                 case "quaff": HandleQuaff(cmd); break;
                 case "quiver": HandleQuiver(cmd); break;

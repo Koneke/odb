@@ -14,6 +14,20 @@ namespace ODB
         Burp
     }
 
+    public enum Direction
+    {
+        North,
+        NorthEast,
+        East,
+        SouthEast,
+        South,
+        SouthWest,
+        West,
+        NorthWest,
+        Down,
+        Up
+    }
+
     public struct Point
     {
         public bool Equals(Point other)
@@ -79,6 +93,54 @@ namespace ODB
         public static Point operator /(Point a, Point b)
         {
             return new Point(a.x / b.x, a.y / b.y);
+        }
+
+        public static Point FromCardinal(Direction cardinal)
+        {
+            switch (cardinal)
+            {
+                case Direction.North: return new Point(0, -1);
+                case Direction.NorthEast: return new Point(1, -1);
+                case Direction.East: return new Point(1, 0);
+                case Direction.SouthEast: return new Point(1, 1);
+                case Direction.South: return new Point(0, 1);
+                case Direction.SouthWest: return new Point(-1, 1);
+                case Direction.West: return new Point(-1, 0);
+                case Direction.NorthWest: return new Point(-1, -1);
+                default: throw new ArgumentException();
+            }
+        }
+        //todo: temporary hacky implementation, assuming a normalized p
+        public static Direction ToCardinal(Point p)
+        {
+            switch(p.y)
+            {
+                case -1:
+                    switch (p.x)
+                    {
+                        case -1: return Direction.NorthWest;
+                        case 0: return Direction.North;
+                        case 1: return Direction.NorthEast;
+                        default: throw new ArgumentException();
+                    }
+                case 0:
+                    switch (p.x)
+                    {
+                        case -1: return Direction.West;
+                        case 0: throw new ArgumentException();
+                        case 1: return Direction.NorthEast;
+                        default: throw new ArgumentException();
+                    }
+                case 1:
+                    switch (p.x)
+                    {
+                        case -1: return Direction.SouthWest;
+                        case 0: return Direction.South;
+                        case 1: return Direction.SouthEast;
+                        default: throw new ArgumentException();
+                    }
+                default: throw new ArgumentException();
+            }
         }
     }
 

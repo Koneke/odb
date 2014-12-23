@@ -12,16 +12,7 @@ namespace ODB
 
         public static void HandlePlayerInput()
         {
-            //should probably be remade to commands
-            bool moved = MovementInput();
-
-            //should be replaced with a look command
-            //which could be called here maybe
-            if (moved)
-            {
-                IO.Target = Game.Player.xy;
-                PlayerResponses.Examine();
-            }
+            MovementInput();
 
             if (KeyBindings.Pressed(Bind.Inventory) && !Game.WizMode)
                 IO.IOState = InputType.Inventory;
@@ -64,69 +55,36 @@ namespace ODB
             }
         }
 
-        //return whether we moved or not
-        private static bool MovementInput()
+        private static void MovementInput()
         {
-            #region stairs
+            Direction? direction = null;
+            if (KeyBindings.Pressed(Bind.North))
+                direction = Direction.North;
+            else if (KeyBindings.Pressed(Bind.NorthEast))
+                direction = Direction.NorthEast;
+            else if (KeyBindings.Pressed(Bind.East))
+                direction = Direction.East;
+            else if (KeyBindings.Pressed(Bind.SouthEast))
+                direction = Direction.SouthEast;
+            else if (KeyBindings.Pressed(Bind.South))
+                direction = Direction.South;
+            else if (KeyBindings.Pressed(Bind.SouthWest))
+                direction = Direction.SouthWest;
+            else if (KeyBindings.Pressed(Bind.West))
+                direction = Direction.West;
+            else if (KeyBindings.Pressed(Bind.NorthWest))
+                direction = Direction.NorthWest;
+            else if (KeyBindings.Pressed(Bind.Up))
+                direction = Direction.Up;
+            else if (KeyBindings.Pressed(Bind.Down))
+                direction = Direction.Down;
 
-            bool descending =
-                (KeyBindings.Pressed(Bind.Down) &&
-                    World.Level.At(Game.Player.xy).Stairs == Stairs.Down);
-            bool ascending = 
-                (KeyBindings.Pressed(Bind.Up) &&
-                World.Level.At(Game.Player.xy).Stairs == Stairs.Up);
-
-            if (descending || ascending)
-            {
-                //there should always be a connector at the stairs,
-                //so we assume there is one.
-                LevelConnector connector = World.Level.Connectors
-                    .First(lc => lc.Position == Game.Player.xy);
-                
-                if(descending)
-                    if (connector.Target == null)
-                    {
-                        Generator g = new Generator();
-                        Level l = g.Generate(
-                            World.Level,
-                            World.Level.Depth + 1
-                        );
-                        connector.Target = l.ID;
-                    }
-
-                if (connector.Target == null) return false;
-
-                Game.SwitchLevel(World.LevelByID(connector.Target.Value), true);
-                Game.UI.Log(
-                    "You {1} the stairs...",
-                    descending
-                    ? "descend"
-                    : "ascend"
-                );
-
-                Game.Player.UpdateVision();
-            }
-            #endregion
-
-            Point offset = new Point(0, 0);
-
-                 if (KeyBindings.Pressed(Bind.North)) offset.Nudge(0, -1);
-            else if (KeyBindings.Pressed(Bind.NorthEast)) offset.Nudge(1, -1);
-            else if (KeyBindings.Pressed(Bind.East)) offset.Nudge(1, 0);
-            else if (KeyBindings.Pressed(Bind.SouthEast)) offset.Nudge(1, 1);
-            else if (KeyBindings.Pressed(Bind.South)) offset.Nudge(0, 1);
-            else if (KeyBindings.Pressed(Bind.SouthWest)) offset.Nudge(-1, 1);
-            else if (KeyBindings.Pressed(Bind.West)) offset.Nudge(-1, 0);
-            else if (KeyBindings.Pressed(Bind.NorthWest)) offset.Nudge(-1, -1);
-
-            //pass a STANDARD action
             if (KeyBindings.Pressed(Bind.Wait))
                 //even if we're slowed, just pass a standard?
                 Game.Player.Pass(Game.StandardActionLength);
 
-            if (offset.x == 0 && offset.y == 0) return false;
-
-            return Game.Player.TryMove(offset);
+            if(direction != null)
+                Game.Player.Do(new Command("Move").Add("Direction", direction));
         }
 
         private static void CheckApply()
