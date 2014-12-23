@@ -73,6 +73,7 @@ namespace ODB
          */
 
         //not to file
+        //prop this?
         public bool Charged;
 
         //wraps
@@ -105,14 +106,6 @@ namespace ODB
             Charged = !Definition.Stacking && count > 0;
             if (Definition.HasComponent<ContainerComponent>())
                 InventoryManager.ContainerIDs.Add(ID, new List<int>());
-        }
-
-        //todo: create an actual clone function instead so we can phase this out
-        //LOADING an OLD item
-        public Item(string s) : base(s)
-        {
-            ReadItem(s);
-            Charged = !Definition.Stacking && Count > 0;
         }
 
         public bool Known
@@ -325,13 +318,9 @@ namespace ODB
             {
                 //spawn a stack of every item in the stack that wasn't the
                 //wielded one
-                Item stack = new Item(WriteItem().ToString())
-                {
-                    ID = Game.IDCounter++,
-                    Count = Count - 1,
-                    xy = xy,
-                    LevelID = World.Level.ID
-                };
+                Item stack = Clone();
+                stack.Count = Count - 1;
+                stack.xy = xy;
                 Count = 1;
 
                 //if the wielded falls apart, or we have more than enough
@@ -402,54 +391,19 @@ namespace ODB
             return Definition.Tags.Contains(nonWeapon);
         }
 
-        public Stream WriteItem()
+        public Item Clone()
         {
-            Stream stream = WriteGObject();
-
-            stream.Write(Definition.Type, 4);
-            stream.Write(ID, 4);
-            stream.Write(Mod, 2);
-            stream.Write(Count, 2);
-            stream.Write(Health);
-
-            foreach (Mod m in Mods)
+            return new Item
             {
-                stream.Write((int)m.Type, 2);
-                stream.Write(":", false);
-                stream.Write(m.RawValue, 2);
-                stream.Write(",", false);
-            }
-            stream.Write(";", false);
-
-            return stream;
-        }
-        public Stream ReadItem(string s)
-        {
-            Stream stream = ReadGObject(s);
-            //_type = ItemDefinition.ItemDefinitions[stream.ReadHex(4)];
-            _type = stream.ReadHex(4);
-
-            ID = stream.ReadHex(4);
-            Mod = stream.ReadHex(2);
-            Count = stream.ReadHex(2);
-            Health = stream.ReadInt();
-
-            Mods = new List<Mod>();
-            List<string> mods = stream.ReadString().Split(
-                new[] {','},
-                StringSplitOptions.RemoveEmptyEntries
-            ).ToList();
-
-            foreach (string[] ss in mods.Select(mod => mod.Split(':')))
-            {
-                Mods.Add(new Mod(
-                    (ModType)
-                    IO.ReadHex(ss[0]),
-                    IO.ReadHex(ss[1])
-                ));
-            }
-
-            return stream;
+                xy = xy,
+                _type = _type,
+                LevelID = LevelID,
+                ID = Game.IDCounter++,
+                Mod = Mod,
+                Count = Count,
+                Health = Health,
+                Mods =  Mods,
+            };
         }
     }
 }

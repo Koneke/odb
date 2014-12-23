@@ -28,7 +28,6 @@ namespace ODB
             {
                 int hashCode = Background.GetHashCode();
                 hashCode = (hashCode*397) ^ Foreground.GetHashCode();
-                hashCode = (hashCode*397) ^ (Tile != null ? Tile.GetHashCode() : 0);
                 hashCode = (hashCode*397) ^ (Name != null ? Name.GetHashCode() : 0);
                 hashCode = (hashCode*397) ^ Type;
                 return hashCode;

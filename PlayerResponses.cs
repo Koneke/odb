@@ -323,9 +323,8 @@ namespace ODB
             }
 
             item.Count -= count;
-            Item stack = new Item(item.WriteItem().ToString()) {
-                Count = count, ID = Game.IDCounter++
-            };
+            Item stack = item.Clone();
+            stack.Count = count;
             World.Instance.AllItems.Add(stack);
 
             if (container == -1)

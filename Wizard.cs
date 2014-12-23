@@ -516,15 +516,6 @@ namespace ODB
                     foreach (Item it in items)
                         it.Mod = IO.ReadHex(args[0]);
                     break;
-                case "ii-p":
-                case "ii-print":
-                    #region pi
-                    foreach(Item it in World.Level.ItemsOnTile(WmCursor))
-                        Game.UI.Log(
-                            it.WriteItem().ToString()
-                        );
-                    break;
-                    #endregion
                 case "ii-id":
                     #region id
                     foreach (Item iditem in World.Level.ItemsOnTile(WmCursor))

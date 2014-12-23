@@ -663,14 +663,10 @@ namespace ODB
 
             string message = "";
 
-            //could probably be made into a generic "split" function
-            Item projectile = new Item(ammo.WriteItem().ToString())
-            {
-                ID = Game.IDCounter++,
-                Count = ammo.Stacking ? 1 : 0,
-                xy = target.xy,
-                LevelID = World.Level.ID
-            };
+            Item projectile = ammo.Clone();
+            projectile.Count = ammo.Stacking ? 1 : 0;
+            projectile.xy = target.xy;
+
             ammo.Count--;
             if(ammo.Count <= 0) World.Level.Despawn(ammo);
 
@@ -1250,16 +1246,26 @@ namespace ODB
         public void UpdateFoodStatus(bool increased = false)
         {
             string message = "";
+
+            if (!increased && GetFoodStatus() < FoodStatus.Satisfied)
+            {
+                if (HasEffect(StatusType.Sleep))
+                {
+                    RemoveEffect(StatusType.Sleep);
+                    message = "You can wake up from hunger. ";
+                }
+            }
+
             switch (GetFoodStatus())
             {
                 case FoodStatus.Starving:
-                    message = string.Format(
+                    message += string.Format(
                         "#ff0000{0} needs food, badly!",
                         Util.Capitalize(Definition.Name)
                     );
                     break;
                 case FoodStatus.Hungry:
-                    message =
+                    message +=
                         increased
                         ? "You still feel hungry."
                         : "You are starting to feel peckish."
@@ -1267,19 +1273,19 @@ namespace ODB
                     break;
                 case FoodStatus.Satisfied:
                     if(increased)
-                        message = "Man, that hit the spot.";
+                        message += "Man, that hit the spot.";
                     break;
                 case FoodStatus.Full:
                     if (increased)
-                        message = "You feel full.";
+                        message += "You feel full.";
                     else
                     {
-                        message = "You burp loudly.";
+                        message += "You burp loudly.";
                         World.Level.MakeNoise(xy, NoiseType.Burp, 1);
                     }
                     break;
                 case FoodStatus.Stuffed:
-                    message = "Eugh, no thanks, no mint.";
+                    message += "Eugh, no thanks, no mint.";
                     break;
                 default:
                     throw new Exception();
@@ -1411,10 +1417,8 @@ namespace ODB
 
             if (count != item.Count)
             {
-                Item clone = new Item(item.WriteItem().ToString()) {
-                    ID = Game.IDCounter++,
-                    Count = count
-                };
+                Item clone = item.Clone();
+                clone.Count = count;
                 item.Count -= count;
 
                 item = clone;
