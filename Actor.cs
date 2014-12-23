@@ -1375,6 +1375,10 @@ namespace ODB
         private void HandleOpen(Command cmd)
         {
             TileInfo targetTile = (TileInfo)cmd.Get("door");
+            targetTile.Door = Door.Open;
+            foreach (Actor a in World.LevelByID(LevelID).Actors)
+                a.UpdateVision();
+
             if(Game.Player.Sees(targetTile.Position))
                 Game.UI.Log(
                     "{1} {2} {3} door.",
@@ -1382,7 +1386,6 @@ namespace ODB
                     Verb("open"),
                     this == Game.Player ? "the" : "a"
                 );
-            targetTile.Door = Door.Open;
 
             if(Game.Player.Sees(targetTile.Position))
                 Game.UI.UpdateAt(targetTile.Position);

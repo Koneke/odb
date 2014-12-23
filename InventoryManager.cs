@@ -101,6 +101,7 @@ namespace ODB
                     Game.UI.Log("Nevermind.");
                 }
                 IO.IOState = InputType.PlayerInput;
+                CurrentContainer = -1;
             }
 
             SelectionInput();
@@ -149,7 +150,6 @@ namespace ODB
                         }
 
                         PutInto(_selected, SelectedItem.ID);
-                        Selection--;
                     }
                     break;
 
@@ -180,7 +180,13 @@ namespace ODB
             {
                 if (CurrentContainer == -1)
                     IO.IOState = InputType.PlayerInput;
-                else CurrentContainer = GetParentContainer(CurrentContainer);
+                else
+                {
+                    int cc = CurrentContainer;
+                    CurrentContainer = GetParentContainer(CurrentContainer);
+                    Selection =
+                        CurrentContents.IndexOf(Util.GetItemByID(cc));
+                }
             }
 
             if (SelectedItem == null) return;
@@ -392,7 +398,7 @@ namespace ODB
 
         }
 
-        private static void PutInto(Item item, int container)
+        private void PutInto(Item item, int container)
         {
             Game.UI.Log(
                 "Put {1} into {2}.",
@@ -409,6 +415,9 @@ namespace ODB
             State = InventoryState.Browsing;
             //not sure if nulling is necessary
             _selected = null;
+
+            Selection =
+                CurrentContents.IndexOf(Util.GetItemByID(container));
 
             Game.Player.Pass();
         }
