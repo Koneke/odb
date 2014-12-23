@@ -42,6 +42,7 @@ namespace ODB
         [DataMember(Order = 1, Name = "Name")]
         public string Name;
 
+        //I'm just plain assuming this thing generates a whole lot of bugs now?
         [DataMember(Order = 2, Name = "Type")]
         public int Type;
 

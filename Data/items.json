@@ -80,7 +80,7 @@
       {
         "ComponentName": "LauncherComponent",
         "AmmoTypes": [
-          32770
+          "Item_Arrow"
         ],
         "Damage": "1d6"
       }

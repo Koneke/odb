@@ -3,9 +3,7 @@ using System.Runtime.Serialization;
 
 namespace ODB
 {
-    public abstract class Component
-    {
-    }
+    public abstract class Component { }
 
     [DataContract]
     public class UsableComponent : Component
@@ -76,7 +74,7 @@ namespace ODB
         public static string ComponentName = "LauncherComponent";
 
         [DataMember(Name = "AmmoTypes", Order = 2)]
-        public List<int> AmmoTypes;
+        public List<ItemID> AmmoTypes;
 
         [DataMember(Name = "Damage", Order = 2)]
         public string Damage;

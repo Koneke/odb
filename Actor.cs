@@ -641,7 +641,7 @@ namespace ODB
             ProjectileComponent pc =
                 ammo.GetComponent<ProjectileComponent>();
 
-            if(lc != null) if(!lc.AmmoTypes.Contains(ammo.Type)) lc = null;
+            if(lc != null) if(!lc.AmmoTypes.Contains(ammo.ItemType)) lc = null;
 
             int roll = Util.Roll("1d20");
             bool crit = roll == 20 || target.HasEffect(StatusType.Sleep);

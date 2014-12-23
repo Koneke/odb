@@ -315,7 +315,7 @@ namespace ODB
             //      check if any one of them has a matching ammo type to
             //      quiver. that one is then our weapon used to fire.
             if (weapon != null && lc != null)
-                throwing = !lc.AmmoTypes.Contains(ammo.Type);
+                throwing = !lc.AmmoTypes.Contains(ammo.ItemType);
                 //just some sort of ammo
             else throwing = true;
 
