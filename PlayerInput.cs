@@ -84,7 +84,10 @@ namespace ODB
                 Game.Player.Pass(Game.StandardActionLength);
 
             if(direction != null)
-                Game.Player.Do(new Command("Move").Add("Direction", direction));
+                Game.Player.Do(
+                    new Command("Move")
+                    .Add("Direction", direction)
+                );
         }
 
         private static void CheckApply()

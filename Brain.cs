@@ -58,7 +58,16 @@ namespace ODB
                     MeatPuppet.Get(Stat.Intelligence) &&
                     spell.Range >= 1);
 
-            if (touchAttack == null) MeatPuppet.Attack(target);
+            if (touchAttack == null)
+            {
+                MeatPuppet.Do(
+                    new Command("Bump")
+                    .Add(
+                        "Direction",
+                        Point.ToCardinal(Game.Player.xy - MeatPuppet.xy)
+                    )
+                );
+            }
             else
             {
                 throw new NotImplementedException();
@@ -108,16 +117,8 @@ namespace ODB
 
             if (!Game.Player.IsAlive) return;
 
-            if(CanAttack(Game.Player))
-            {
-                Attack(Game.Player);
-                MeatPuppet.Pass();
-            }
-            else
-            {
-                Chase();
-                MeatPuppet.Pass(true);
-            }
+            if(CanAttack(Game.Player)) Attack(Game.Player);
+            else Chase();
         }
     }
 }

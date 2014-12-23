@@ -36,60 +36,57 @@ namespace ODB
             Game.Player.HasMoved = true;
         }
 
+        private void Tick()
+        {
+            foreach (Actor a in World.Instance.WorldActors)
+            {
+                a.HpRegCooldown--;
+                a.MpRegCooldown--;
+                if (a.HpRegCooldown == 0)
+                {
+                    a.HpCurrent = Math.Min(a.HpMax, a.HpCurrent + 1);
+                    a.HpRegCooldown = 100;
+                }
+                if (a.MpRegCooldown == 0)
+                {
+                    a.MpCurrent = Math.Min(a.MpMax, a.MpCurrent + 1);
+                    a.MpRegCooldown = 300 - a.Get(Stat.Intelligence) * 10;
+                }
+            }
+
+            foreach (Actor a in World.Instance.WorldActors
+                .Where(a => a.LevelID == World.Level.ID))
+                a.Cooldown = Math.Max(0, a.Cooldown - 1);
+
+            //todo: should apply to everyone?
+            Game.Player.Food--;
+
+            Game.GameTick++;
+
+            foreach (Actor a in World.Instance.WorldActors)
+            {
+                if (!a.IsAlive) continue;
+                foreach (LastingEffect effect in a.LastingEffects)
+                    effect.Tick();
+                a.LastingEffects.RemoveAll(
+                    x => x.Life > x.LifeLength && x.LifeLength != -1
+                );
+            }
+            World.Instance.WorldActors.RemoveAll(a => !a.IsAlive);
+        }
+
         //ReSharper disable once InconsistentNaming
         private void ProcessNPCs()
         {
-            while(!Game.Player.CanMove())
+            List<Brain> clone = new List<Brain>(Game.Brains);
+            foreach (Brain b in clone)
             {
-                if (!Game.Player.IsAlive) break;
-
-                List<Brain> clone = new List<Brain>(Game.Brains);
-                //foreach (Brain b in clone.Where(b => b.MeatPuppet.CanMove()))
-                foreach (Brain b in clone)
-                {
-                    if(b.MeatPuppet.CanMove())
-                        b.Tick();
-                    //if we could move, only if we weren't sleeping or whatev,
-                    //pass.
-                    else if (b.MeatPuppet.CanMove(true))
-                        b.MeatPuppet.Pass();
-                }
-
-                foreach (Actor a in World.Instance.WorldActors
-                    .Where(a => a.LevelID == World.Level.ID))
-                    a.Cooldown = Math.Max(0, a.Cooldown - 1);
-
-                foreach (Actor a in World.Instance.WorldActors)
-                {
-                    a.HpRegCooldown--;
-                    a.MpRegCooldown--;
-                    if (a.HpRegCooldown == 0)
-                    {
-                        a.HpCurrent = Math.Min(a.HpMax, a.HpCurrent + 1);
-                        a.HpRegCooldown = 100;
-                    }
-                    if (a.MpRegCooldown == 0)
-                    {
-                        a.MpCurrent = Math.Min(a.MpMax, a.MpCurrent + 1);
-                        a.MpRegCooldown = 300 - a.Get(Stat.Intelligence) * 10;
-                    }
-                }
-
-                //todo: should apply to everyone?
-                Game.Player.Food--;
-
-                Game.GameTick++;
-
-                foreach (Actor a in World.Instance.WorldActors)
-                {
-                    if (!a.IsAlive) continue;
-                    foreach (LastingEffect effect in a.LastingEffects)
-                        effect.Tick();
-                    a.LastingEffects.RemoveAll(
-                        x => x.Life > x.LifeLength && x.LifeLength != -1
-                    );
-                }
-                World.Instance.WorldActors.RemoveAll(a => !a.IsAlive);
+                if(b.MeatPuppet.CanMove())
+                    b.Tick();
+                //if we could move, only if we weren't sleeping or whatev,
+                //pass.
+                else if (b.MeatPuppet.CanMove(true))
+                    b.MeatPuppet.Pass();
             }
         }
 
@@ -170,7 +167,11 @@ namespace ODB
                         //pass when sleeping etc.
                         else Game.Player.Pass();
 
-                        ProcessNPCs(); //mind: also ticks gameclock
+                        while (!Game.Player.CanMove() && Game.Player.IsAlive)
+                        {
+                            ProcessNPCs();
+                            Tick();
+                        }
                         break;
 
                     case InputType.Inventory:
