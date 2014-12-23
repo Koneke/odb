@@ -125,6 +125,7 @@
     <Compile Include="Binds.cs" />
     <Compile Include="BlackMagic.cs" />
     <Compile Include="Brain.cs" />
+    <Compile Include="Combat.cs" />
     <Compile Include="Component.cs" />
     <Compile Include="DamageSource.cs" />
     <Compile Include="FOV.cs" />

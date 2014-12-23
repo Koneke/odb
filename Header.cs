@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
-using System.Security.Cryptography;
 using Microsoft.Xna.Framework;
 
 namespace ODB
@@ -572,6 +571,26 @@ namespace ODB
             Modifier = mod;
         }
 
+        public Dice(string s)
+        {
+            s = s.ToLower();
+            int number = int.Parse(s.Split('d')[0]);
+            int sides = int.Parse(s.Split('d')[1]
+                .Split(new[]{'-', '+'})[0]
+            );
+
+            int mod = 0;
+            if(s.Contains("+") || s.Contains("-"))
+                mod = s.Contains("+") ?
+                    int.Parse(s.Split('+')[1]) :
+                    -int.Parse(s.Split('-')[1])
+                ;
+
+            Number = number;
+            Faces = sides;
+            Modifier = mod;
+        }
+
         public int Roll(bool max = false)
         {
             return Util.Roll(Number, Faces, Modifier, max);
@@ -615,6 +634,7 @@ namespace ODB
 
             return new RollInfo
             {
+                Roll = roll,
                 Result = roll + bonus - malus,
                 DiceRoll = this
             };
@@ -623,13 +643,16 @@ namespace ODB
 
     public class RollInfo
     {
+        public int Roll;
         public int Result;
         public DiceRoll DiceRoll;
 
-        public void Log(bool verbose = false)
+        public void Log(bool verbose = false, Action<string> log = null)
         {
+            if (log == null) log = Game.UI.Log;
+
             string message =
-                String.Format("{0}", DiceRoll.Dice.ToString()
+                String.Format("{0}", DiceRoll.Dice
             );
 
             foreach (KeyValuePair<string, int> kvp in DiceRoll.Bonus)
@@ -637,11 +660,12 @@ namespace ODB
                 if (kvp.Value == 0) continue;
 
                 string format = verbose
-                    ? "+({0}: {1:+#;-#;+0})"
-                    : "{1:+#;-#;+0}";
+                    ? "+({1}:{2:+#;-#;+0})"
+                    : "{2:+#;-#;+0}";
 
                 message += string.Format(
                     format,
+                    "",
                     kvp.Key,
                     kvp.Value
                 );
@@ -652,19 +676,20 @@ namespace ODB
                 if (kvp.Value == 0) continue;
 
                 string format = verbose
-                    ? "-({0}: {1:+#;-#;+0})"
-                    : "{1:+#;-#;+0}";
+                    ? "-({1}:{2:+#;-#;+0})"
+                    : "{2:+#;-#;+0}";
 
                 message += string.Format(
                     format,
+                    "", //because UI.Log starts at 1
                     kvp.Key,
                     kvp.Value
                 );
             }
 
-            message += string.Format(" = {0}", Result);
+            message += string.Format(" = {0}. ", Result);
 
-            Game.UI.Log(message);
+            log(message);
         }
     }
 }
