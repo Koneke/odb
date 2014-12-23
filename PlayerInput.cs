@@ -540,6 +540,12 @@ namespace ODB
         {
             if (!KeyBindings.Pressed(Bind.Sleep)) return;
 
+            if (Game.Player.GetFoodStatus() == Actor.FoodStatus.Starving)
+            {
+                Game.UI.Log("You are too hungry to sleep!");
+                return;
+            }
+
             IO.CurrentCommand = new Command("sleep");
 
             IO.SetInput(IO.Numbers);

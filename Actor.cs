@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Collections.Generic;
@@ -39,10 +40,10 @@ namespace ODB
                 return false;
 
             bool lastingEffectsEqual =
-                LastingEffects.Count == other.LastingEffects.Count;
+                _lastingEffects.Count == other._lastingEffects.Count;
             if (!lastingEffectsEqual) return false;
-            if (LastingEffects.Where(
-                (t, i) => !t.Equals(other.LastingEffects[i])).Any())
+            if (_lastingEffects.Where(
+                (t, i) => !t.Equals(other._lastingEffects[i])).Any())
                 return false;
 
             bool intrinsicsEqual =
@@ -141,22 +142,28 @@ namespace ODB
         public List<BodyPart> PaperDoll { get { return _doll.Get(); } }
 
         [DataMember] private List<int> _inventory;
-
-        [DataMember] public List<LastingEffect> LastingEffects;
-        [DataMember] public List<Mod> Intrinsics;
-
-        private BurdenStatus _carried;
-
-        public List<Item> Inventory
+        public ReadOnlyCollection<Item> Inventory
         {
             get
             {
                 return _inventory
                     .Select(Util.GetItemByID)
                     .Where(item => item != null)
-                    .ToList();
+                    .ToList()
+                    .AsReadOnly();
             }
         }
+
+        [DataMember] private List<LastingEffect> _lastingEffects;
+        public List<LastingEffect> LastingEffects
+        {
+            get { return _lastingEffects; }
+        }
+
+        [DataMember] public List<Mod> Intrinsics;
+
+        private BurdenStatus _carried;
+
         private bool[,] _vision;
         public List<Spell> Spellbook {
             get
@@ -215,7 +222,7 @@ namespace ODB
                 );
             _inventory = new List<int>();
             Intrinsics = new List<Mod>(Definition.SpawnIntrinsics);
-            LastingEffects = new List<LastingEffect>();
+            _lastingEffects = new List<LastingEffect>();
 
             HpRegCooldown = 10;
             MpRegCooldown = 30 - _intelligence;
@@ -654,9 +661,9 @@ namespace ODB
             TickingEffectDefinition ticker = null
         ) {
             if (ticker == null)
-                return LastingEffects.Any(
+                return _lastingEffects.Any(
                     le => le.Type == type);
-            return LastingEffects.Any(
+            return _lastingEffects.Any(
                 le => le.Type == type &&
                 le.Ticker == ticker
             );
@@ -664,20 +671,41 @@ namespace ODB
         public void AddEffect(LastingEffect le)
         {
             if(!HasEffect(le.Type))
-                LastingEffects.Add(le);
+                _lastingEffects.Add(le);
         }
         public void AddEffect(
             StatusType type,
             int duration,
             TickingEffectDefinition ticker = null
         ) {
-            LastingEffects.Add(new LastingEffect(ID, type, duration, ticker));
+            _lastingEffects.Add(new LastingEffect(ID, type, duration, ticker));
         }
         public void RemoveEffect(StatusType type)
         {
-            LastingEffects.Remove(
-                LastingEffects.Find(effect => effect.Type == type)
+            _lastingEffects.Remove(
+                _lastingEffects.Find(effect => effect.Type == type)
             );
+
+            if (this != Game.Player) return;
+
+            switch (type)
+            {
+                case StatusType.Bleed:
+                    Game.UI.Log("You stop bleeding.");
+                    break;
+                case StatusType.Confusion:
+                    Game.UI.Log("You feel clear of mind again.");
+                    break;
+                case StatusType.Poison:
+                    Game.UI.Log("You feel better.");
+                    break;
+                case StatusType.Sleep:
+                    Game.UI.Log("You wake up.");
+                    break;
+                case StatusType.Stun:
+                    Game.UI.Log("You're able to move again.");
+                    break;
+            }
         }
 
         public void Eat(Item item)
@@ -1079,14 +1107,36 @@ namespace ODB
         private void HandleBump(Command cmd)
         {
             Direction direction = (Direction)cmd.Get("Direction");
+            Point targetPoint = xy + Point.FromCardinal(direction);
             Actor target =
                 World.LevelByID(LevelID)
-                .At(xy + Point.FromCardinal(direction))
+                .At(targetPoint)
                 .Actor;
 
             Debug.Assert(target != null, "target != null");
 
             Combat.Attack(this, target);
+
+            foreach (Item weapon in GetWieldedItems())
+            {
+                if (weapon.ItemType == ItemID.Item_Spear)
+                {
+                    //todo: only roll this if the first strike hit.
+                    //pierce through to the actor behind the first.
+                    //reuse same direction, just walk one more step.
+                    Actor secondaryTarget =
+                        World.LevelByID(LevelID)
+                        .At(targetPoint + Point.FromCardinal(direction))
+                        .Actor;
+
+                    if (secondaryTarget != null)
+                    {
+                        //todo: makes this attack weaker/less accurate?
+                        Combat.Attack(this, secondaryTarget);
+                    }
+                }
+            }
+
             Pass();
         }
         private void HandleCast(Command cmd)
@@ -1448,6 +1498,9 @@ namespace ODB
         }
         private void HandleSleep(Command cmd)
         {
+            if (this == Game.Player)
+                Game.UI.Log("You lie down on the dungeon floor.");
+
             AddEffect(
                 new LastingEffect(
                     ID,
@@ -1581,6 +1634,20 @@ namespace ODB
         public void RemoveItem(Item item)
         {
             _inventory.Remove(item.ID);
+        }
+
+        public void TickEffects()
+        {
+            foreach (LastingEffect effect in _lastingEffects)
+                effect.Tick();
+
+            List<LastingEffect> deadEffects =
+                _lastingEffects
+                .Where(x => x.Life > x.LifeLength && x.LifeLength != -1)
+                .ToList();
+
+            foreach (LastingEffect effect in deadEffects)
+                RemoveEffect(effect.Type);
         }
     }
 

@@ -57,7 +57,7 @@
     "Components": [
       {
         "ComponentName": "ProjectileComponent",
-        "Damage": "1d3+1"
+        "Damage": "1d3"
       }
     ],
     "GenerationLowBound": 4,
@@ -220,7 +220,7 @@
     "Background": null,
     "Stacking": false,
     "Category": 255,
-    "Weight": 300,
+    "Weight": 200,
     "Value": 15,
     "Material": "Wood",
     "Health": 3,
@@ -228,7 +228,7 @@
     "Components": [
       {
         "ComponentName": "AttackComponent",
-        "Damage": "1d6",
+        "Damage": "1d5",
         "Modifier": 0,
         "AttackType": "Pierce",
         "DamageType": "Physical",
@@ -236,7 +236,7 @@
       },
       {
         "ComponentName": "ProjectileComponent",
-        "Damage": "1d4"
+        "Damage": "1d4+1"
       }
     ],
     "GenerationLowBound": 0,

@@ -56,22 +56,16 @@ namespace ODB
 
             foreach (Actor a in World.Instance.WorldActors
                 .Where(a => a.LevelID == World.Level.ID))
+            {
                 a.Cooldown = Math.Max(0, a.Cooldown - 1);
+                a.TickEffects();
+            }
 
             //todo: should apply to everyone?
             Game.Player.Food--;
 
             Game.GameTick++;
 
-            foreach (Actor a in World.Instance.WorldActors)
-            {
-                if (!a.IsAlive) continue;
-                foreach (LastingEffect effect in a.LastingEffects)
-                    effect.Tick();
-                a.LastingEffects.RemoveAll(
-                    x => x.Life > x.LifeLength && x.LifeLength != -1
-                );
-            }
             World.Instance.WorldActors.RemoveAll(a => !a.IsAlive);
         }
 

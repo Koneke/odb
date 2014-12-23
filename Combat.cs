@@ -170,6 +170,11 @@ namespace ODB
             );
         }
 
+        //todo: make this use an Attack-instance instead.
+        //negative(?): more iteration of weapons and stuff outside of this
+        //positive: handle different wielded weapons differently,
+        //          return results of the different strikes separately.
+        //todo: return whether or not attack hit (after above)
         public static void Attack(
             Actor attacker,
             Actor target
@@ -300,10 +305,21 @@ namespace ODB
 
             DamageSource damage = null;
 
-            Item projectile = ammo.Clone();
-            projectile.Count = 1;
-            projectile.xy = target.xy;
-            ammo.Count--;
+            Item projectile;
+            if (ammo.Stacking)
+            {
+                projectile = ammo.Clone();
+                projectile.Count = 1;
+                projectile.xy = target.xy;
+                //ammo.Count--;
+                ammo.SpendCharge();
+            }
+            else
+            {
+                projectile = ammo;
+                attacker.RemoveItem(ammo);
+                ammo.xy = target.xy;
+            }
 
             if (Game.OpenRolls)
                 roll.Log();

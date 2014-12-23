@@ -41,7 +41,7 @@ namespace ODB
                 KillMessage,
                 Target == null ? "" : Target.GetName("Name", true),
                 Source == null ? "" : Source.GetName("a"),
-                Level.Depth + "0M"
+                Level == null ? "" : Level.Depth + "0M"
             );
         }
     }

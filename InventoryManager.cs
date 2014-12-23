@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.Serialization;
 using Microsoft.Xna.Framework.Input;
@@ -19,7 +20,7 @@ namespace ODB
         }
 
         [DataMember] public static Dictionary<int, List<int>> ContainerIDs;
-        public static Dictionary<int, List<Item>> Containers {
+        public static Dictionary<int, ReadOnlyCollection<Item>> Containers {
             get
             {
                 return
@@ -28,11 +29,12 @@ namespace ODB
                         e => ContainerIDs[e.Key]
                             .Select(Util.GetItemByID)
                             .ToList()
+                            .AsReadOnly()
                     );
             }
         }
         public static int CurrentContainer;
-        public List<Item> CurrentContents {
+        public ReadOnlyCollection<Item> CurrentContents {
             get
             {
                 return CurrentContainer == -1
@@ -163,7 +165,8 @@ namespace ODB
                         if (_selected.CanStack(SelectedItem))
                         {
                             SelectedItem.Stack(_selected);
-                            CurrentContents.Remove(_selected);
+                            ContainerIDs[CurrentContainer]
+                                .Remove(_selected.ID);
                             State = InventoryState.Browsing;
                         }
                     }
