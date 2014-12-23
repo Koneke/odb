@@ -306,7 +306,7 @@ namespace ODB
                     .Where(kvp => kvp.Key * 4 >= difficulty)
                     .SelectMany(kvp => kvp.Value)
                     //no playermonsters, please, thanks.
-                    .Where(ad => ad.Type != 0)
+                    .Where(ad => ad.ActorType != ActorID.Mon_Player)
                     .Where(ad =>
                         ad.GenerationType != Monster.GenerationType.Unique ||
                         !Game.GeneratedUniques.Contains(ad.Type))

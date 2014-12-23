@@ -5,37 +5,12 @@ namespace ODB
 {
     public abstract class Component
     {
-        public abstract string GetComponentType();
-
-        /*public static Component CreateComponent(
-            string component,
-            string conten
-        ) {
-            Stream stream = new Stream(component);
-
-            //Component type
-            switch (stream.ReadString())
-            {
-                case "cUsable": return UsableComponent.Create(content);
-                case "cAttack": return AttackComponent.Create(content);
-                case "cWearable": return WearableComponent.Create(content);
-                case "cProjectile": return ProjectileComponent.Create(content);
-                case "cLauncher": return LauncherComponent.Create(content);
-                case "cEdible": return EdibleComponent.Create(content);
-                case "cContainer": return ContainerComponent.Create(content);
-                case "cEffect": return EffectComponent.Create(content);
-                case "cReadable": return ReadableComponent.Create(content);
-                case "cLearnable": return LearnableComponent.Create(content);
-                case "cDrinkable": return DrinkableComponent.Create(content);
-                default: throw new ArgumentException();
-            }
-        }*/
     }
 
     [DataContract]
     public class UsableComponent : Component
     {
-        public override string GetComponentType() { return "cUsable"; }
+        public static string ComponentName = "UsableComponent";
 
         [DataMember(Name = "Effect")]
         private SpellID _effectID;
@@ -46,7 +21,7 @@ namespace ODB
     [DataContract]
     public class AttackComponent : Component
     {
-        public override string GetComponentType() { return "cAttack"; }
+        public static string ComponentName = "AttackComponent";
 
         [DataMember(Name = "Damage")]
         public string Damage;
@@ -72,7 +47,7 @@ namespace ODB
     [DataContract]
     public class WearableComponent : Component
     {
-        public override string GetComponentType() { return "cWearable"; }
+        public static string ComponentName = "WearableComponent";
 
         [DataMember(Name = "EquipSlots")]
         public List<DollSlot> EquipSlots;
@@ -84,7 +59,7 @@ namespace ODB
     [DataContract]
     public class ProjectileComponent : Component
     {
-        public override string GetComponentType() { return "cProjectile"; }
+        public static string ComponentName = "ProjectileComponent";
 
         [DataMember(Name = "Damage")]
         public string Damage;
@@ -93,7 +68,7 @@ namespace ODB
     [DataContract]
     public class LauncherComponent : Component
     {
-        public override string GetComponentType() { return "cLauncher"; }
+        public static string ComponentName = "LauncherComponent";
 
         [DataMember(Name = "AmmoTypes")]
         public List<int> AmmoTypes;
@@ -105,7 +80,7 @@ namespace ODB
     [DataContract]
     public class EdibleComponent : Component
     {
-        public override string GetComponentType() { return "cEdible"; }
+        public static string ComponentName = "EdibleComponent";
 
         [DataMember(Name = "Nutrition")]
         public int Nutrition;
@@ -118,13 +93,13 @@ namespace ODB
     [DataContract]
     public class ContainerComponent : Component
     {
-        public override string GetComponentType() { return "cContainer"; }
+        public static string ComponentName = "ContainerComponent";
     }
 
     [DataContract]
     public class EffectComponent : Component
     {
-        public override string GetComponentType() { return "cEffect"; }
+        public static string ComponentName = "EffectComponent";
 
         [DataMember(Name = "EffectType")]
         public StatusType EffectType;
@@ -150,7 +125,7 @@ namespace ODB
     [DataContract]
     public class ReadableComponent : Component
     {
-        public override string GetComponentType() { return "cReadable"; }
+        public static string ComponentName = "ReadableComponent";
 
         [DataMember(Name = "Effect")]
         private SpellID _effectID;
@@ -161,7 +136,7 @@ namespace ODB
     [DataContract]
     public class LearnableComponent : Component
     {
-        public override string GetComponentType() { return "cLearnable"; }
+        public static string ComponentName = "LearnableComponent";
 
         [DataMember(Name = "Effect")]
         private SpellID _effectID;
@@ -172,7 +147,7 @@ namespace ODB
     [DataContract]
     public class DrinkableComponent : Component
     {
-        public override string GetComponentType() { return "cDrinkable"; }
+        public static string ComponentName = "DrinkableComponent";
 
         [DataMember(Name = "Effect")]
         private SpellID _effectID;

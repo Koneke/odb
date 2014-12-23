@@ -217,6 +217,7 @@ namespace ODB
         //LH-031214: We want to switch this to depend on the actor strength
         //           as well later, since a strong dude could probably one-hand
         //           an orc corpse or whatever.
+        //           (LH-231214: ^ this bit is down, below is not)
         //           We probably also want to check if the item gives strength
         //           (or removes strength) via mods, since if you can one-hand
         //           a two-hander with the strength that two-hander gives, you
@@ -366,24 +367,6 @@ namespace ODB
 
             foreach (Item it in InventoryManager.Containers[ID])
                 it.MoveTo(newLevel);
-        }
-
-        public static ItemTag ReadItemTag(string s)
-        {
-            switch (s.ToLower())
-            {
-                case "nonweapon": return ItemTag.NonWeapon;
-                default: throw new ArgumentException();
-            }
-        }
-
-        public static string WriteItemTag(ItemTag it)
-        {
-            switch (it)
-            {
-                case ItemTag.NonWeapon: return "nonweapon";
-                default: throw new ArgumentException();
-            }
         }
 
         public bool HasTag(ItemTag nonWeapon)

@@ -207,8 +207,9 @@ namespace ODB
 
         public static void JsonLoadActorDefinitions(string path)
         {
-            ActorDefinition.DefDict = JsonConvert.DeserializeObject
-                <Dictionary<int, ActorDefinition>>(
+            ActorDefinition.DefDict =
+                JsonConvert.DeserializeObject
+                <Dictionary<ActorID, ActorDefinition>>(
                     ReadFromFile(path),
                     Settings
             );
@@ -216,12 +217,8 @@ namespace ODB
             Monster.MonstersByDifficulty =
                 new Dictionary<int, List<ActorDefinition>>();
 
-            foreach (int key in ActorDefinition.DefDict.Keys)
+            foreach (ActorID key in ActorDefinition.DefDict.Keys)
             {
-                gObjectDefinition.GObjectDefs.Add(
-                    key, ActorDefinition.DefDict[key]
-                );
-
                 int difficulty = ActorDefinition.DefDict[key].Difficulty;
 
                 if (!Monster.MonstersByDifficulty.ContainsKey(difficulty))

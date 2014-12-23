@@ -1,8 +1,8 @@
 {
-  "$type": "System.Collections.Generic.Dictionary`2[[System.Int32, mscorlib],[ODB.ActorDefinition, ODB]], mscorlib",
-  "0": {
+  "$type": "System.Collections.Generic.Dictionary`2[[ODB.ActorID, ODB],[ODB.ActorDefinition, ODB]], mscorlib",
+  "Mon_Player": {
     "Name": "Moribund",
-    "Type": 0,
+    "Type": "Mon_Player",
     "Tile": 1,
     "Foreground": "0, 255, 255, 255",
     "Background": null,
@@ -38,9 +38,9 @@
       "Effects": []
     }
   },
-  "1": {
+  "Mon_Rat": {
     "Name": "rat",
-    "Type": 1,
+    "Type": "Mon_Rat",
     "Tile": 114,
     "Foreground": "142, 85, 0, 255",
     "Background": null,
@@ -68,9 +68,9 @@
       "Effects": []
     }
   },
-  "2": {
+  "Mon_Newt": {
     "Name": "newt",
-    "Type": 2,
+    "Type": "Mon_Newt",
     "Tile": 58,
     "Foreground": "255, 255, 85, 255",
     "Background": null,
@@ -98,9 +98,9 @@
       "Effects": []
     }
   },
-  "3": {
+  "Mon_Kobold": {
     "Name": "kobold",
-    "Type": 3,
+    "Type": "Mon_Kobold",
     "Tile": 107,
     "Foreground": "142, 85, 0, 255",
     "Background": null,
@@ -136,9 +136,9 @@
       "Effects": []
     }
   },
-  "4": {
+  "Mon_Kilik": {
     "Name": "Ratking Kilik",
-    "Type": 4,
+    "Type": "Mon_Kilik",
     "Tile": 82,
     "Foreground": "142, 85, 0, 255",
     "Background": null,

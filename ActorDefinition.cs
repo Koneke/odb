@@ -5,6 +5,15 @@ using Newtonsoft.Json;
 
 namespace ODB
 {
+    public enum ActorID
+    {
+        Mon_Player,
+        Mon_Rat,
+        Mon_Newt,
+        Mon_Kobold,
+        Mon_Kilik
+    }
+
     [JsonConverter(typeof(ActorConverter))]
     public class ActorDefinition : gObjectDefinition
     {
@@ -73,20 +82,24 @@ namespace ODB
             return Equals((ActorDefinition)obj);
         }
 
-        public static Dictionary<int, ActorDefinition> DefDict =
-            new Dictionary<int, ActorDefinition>();
+        public static Dictionary<ActorID, ActorDefinition> DefDict =
+            new Dictionary<ActorID, ActorDefinition>();
 
-        [DataMember(Order= 6)] public bool Named; //for uniques and what not
-        [DataMember(Order= 7)] public Monster.GenerationType GenerationType;
-        [DataMember(Order= 8)] public string Strength, Dexterity, Intelligence;
-        [DataMember(Order= 9)] public int Speed, Quickness;
-        [DataMember(Order=10)] public string HitDie, ManaDie;
-        [DataMember(Order=11)] public int Experience;
-        [DataMember(Order=12)] public int Difficulty;
-        [DataMember(Order=13)] public List<DollSlot> BodyParts;
-        [DataMember(Order=14)] public int CorpseType;
-        [DataMember(Order=15)] public List<int> Spellbook;
-        [DataMember(Order=16)] public List<Mod> SpawnIntrinsics;
-        [DataMember(Order=17)] public AttackComponent NaturalAttack;
+        //LH-231214: We don't actually NEED to tag these as datamembers,
+        //           since we handle what to write/read in our custom
+        //           serializer, it is just so we can get a quick overview here.
+        [DataMember] public ActorID ActorType;
+        [DataMember] public bool Named; //for uniques and what not
+        [DataMember] public Monster.GenerationType GenerationType;
+        [DataMember] public string Strength, Dexterity, Intelligence;
+        [DataMember] public int Speed, Quickness;
+        [DataMember] public string HitDie, ManaDie;
+        [DataMember] public int Experience;
+        [DataMember] public int Difficulty;
+        [DataMember] public List<DollSlot> BodyParts;
+        [DataMember] public int CorpseType;
+        [DataMember] public List<int> Spellbook;
+        [DataMember] public List<Mod> SpawnIntrinsics;
+        [DataMember] public AttackComponent NaturalAttack;
     }
 }

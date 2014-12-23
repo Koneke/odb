@@ -19,7 +19,7 @@ namespace ODB
             w.WriteStartObject();
 
             w.WritePropertyName("Name"); w.WriteValue(def.Name);
-            w.WritePropertyName("Type"); w.WriteValue(def.Type);
+            w.WritePropertyName("Type"); s.Serialize(w, def.ActorType);
             w.WritePropertyName("Tile"); w.WriteValue((byte)def.Tile);
             w.WritePropertyName("Foreground"); s.Serialize(w, def.Foreground);
             w.WritePropertyName("Background"); s.Serialize(w, def.Background);
@@ -53,7 +53,7 @@ namespace ODB
             JObject jObj = JObject.Load(reader);
 
             string name = jObj["Name"].ToObject<string>();
-            int type = jObj["Type"].ToObject<int>();
+            ActorID aid = jObj["Type"].ToObject<ActorID>();
             char tile = jObj["Tile"].ToObject<char>();
             Color foreground = jObj["Foreground"].ToObject<Color>();
             Color? background = jObj["Background"].ToObject<Color?>();
@@ -78,7 +78,7 @@ namespace ODB
             return new ActorDefinition
             {
                 Name = name,
-                Type = type,
+                ActorType = aid,
                 Tile = tile,
                 Foreground = foreground,
                 Background = background,
@@ -168,27 +168,31 @@ namespace ODB
             var a = jObj["Components"].ToList();
             foreach (JToken j in a)
             {
-                if (j["$type"].Value<string>() == "ODB.AttackComponent, ODB")
+                string componentType = j["$type"].Value<string>();
+                componentType = componentType
+                    .Substring(4, componentType.Length - 9);
+
+                if (componentType == AttackComponent.ComponentName)
                     components.Add(j.ToObject<AttackComponent>());
-                else if (j["$type"].Value<string>() == "ODB.ContainerComponent, ODB")
+                else if (componentType == ContainerComponent.ComponentName)
                     components.Add(j.ToObject<ContainerComponent>());
-                else if (j["$type"].Value<string>() == "ODB.DrinkableComponent, ODB")
+                else if (componentType == DrinkableComponent.ComponentName)
                     components.Add(j.ToObject<DrinkableComponent>());
-                else if (j["$type"].Value<string>() == "ODB.EdibleComponent, ODB")
+                else if (componentType == EdibleComponent.ComponentName)
                     components.Add(j.ToObject<EdibleComponent>());
-                else if (j["$type"].Value<string>() == "ODB.EffectComponent, ODB")
+                else if (componentType == EffectComponent.ComponentName)
                     components.Add(j.ToObject<EffectComponent>());
-                else if (j["$type"].Value<string>() == "ODB.LauncherComponent, ODB")
+                else if (componentType == LauncherComponent.ComponentName)
                     components.Add(j.ToObject<LauncherComponent>());
-                else if (j["$type"].Value<string>() == "ODB.LearnableComponent, ODB")
+                else if (componentType == LearnableComponent.ComponentName)
                     components.Add(j.ToObject<LearnableComponent>());
-                else if (j["$type"].Value<string>() == "ODB.ProjectileComponent, ODB")
+                else if (componentType == ProjectileComponent.ComponentName)
                     components.Add(j.ToObject<ProjectileComponent>());
-                else if (j["$type"].Value<string>() == "ODB.ReadableComponent, ODB")
+                else if (componentType == ReadableComponent.ComponentName)
                     components.Add(j.ToObject<ReadableComponent>());
-                else if (j["$type"].Value<string>() == "ODB.UsableComponent, ODB")
+                else if (componentType == UsableComponent.ComponentName)
                     components.Add(j.ToObject<UsableComponent>());
-                else if (j["$type"].Value<string>() == "ODB.WearableComponent, ODB")
+                else if (componentType == WearableComponent.ComponentName)
                     components.Add(j.ToObject<WearableComponent>());
                 else
                     throw new Exception();

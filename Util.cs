@@ -145,7 +145,7 @@ namespace ODB
 
         public static ActorDefinition ADefByName(string name)
         {
-            foreach(int key in ActorDefinition.DefDict.Keys)
+            foreach(ActorID key in ActorDefinition.DefDict.Keys)
                 if (ActorDefinition.DefDict[key].Name.ToLower() ==
                     name.ToLower())
                     return ActorDefinition.DefDict[key];

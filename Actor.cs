@@ -88,9 +88,11 @@ namespace ODB
             return Equals((Actor)obj);
         }
 
+        private ActorID ActorType;
+
         public new ActorDefinition Definition
         {
-            get { return ActorDefinition.DefDict[_type]; }
+            get { return ActorDefinition.DefDict[ActorType]; }
         }
 
         [DataMember] private int _type;
@@ -176,6 +178,7 @@ namespace ODB
         ) : base(xy, definition) {
             ID = Game.IDCounter++;
             _type = definition.Type;
+            ActorType = definition.ActorType;
 
             _strength = Util.Roll(definition.Strength);
             _dexterity = Util.Roll(definition.Dexterity);
