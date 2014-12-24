@@ -64,7 +64,7 @@ namespace ODB
                     new Command("Bump")
                     .Add(
                         "Direction",
-                        Point.ToCardinal(Game.Player.xy - MeatPuppet.xy)
+                        Point.ToCardinal(target.xy - MeatPuppet.xy)
                     )
                 );
             }

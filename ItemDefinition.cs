@@ -14,7 +14,7 @@ namespace ODB
     }
 
     [JsonConverter(typeof(ItemConverter))]
-    public class ItemDefinition : gObjectDefinition
+    public class ItemDefinition : GameObjectDefinition
     {
         protected bool Equals(ItemDefinition other)
         {

@@ -18,77 +18,13 @@ namespace ODB
     }
 
     [DataContract]
-    public class Actor : gObject
+    public class Actor
     {
         //LH-011214: Likewise here as in the definition, equality means that
         //           all the values contained are the same, not necessarily
         //           that it is the same reference.
         //           This might seem dumb, but, two actors should never have
         //           the same ID anyways, so they should test non-equal.
-        protected bool Equals(Actor other)
-        {
-            bool paperDollEqual = PaperDoll.Count == other.PaperDoll.Count;
-            if (!paperDollEqual) return false;
-            if (PaperDoll.Where(
-                (t, i) => !t.Equals(other.PaperDoll[i])).Any())
-                return false;
-
-            bool inventoryEqual = Inventory.Count == other.Inventory.Count;
-            if (!inventoryEqual) return false;
-            if (Inventory.Where(
-                (t, i) => !t.Equals(other.Inventory[i])).Any())
-                return false;
-
-            bool lastingEffectsEqual =
-                _lastingEffects.Count == other._lastingEffects.Count;
-            if (!lastingEffectsEqual) return false;
-            if (_lastingEffects.Where(
-                (t, i) => !t.Equals(other._lastingEffects[i])).Any())
-                return false;
-
-            bool intrinsicsEqual =
-                Intrinsics.Count == other.Intrinsics.Count;
-            if (!intrinsicsEqual) return false;
-            if (Intrinsics.Where(
-                (t, i) => !t.Equals(other.Intrinsics[i])).Any())
-                return false;
-
-            return
-                base.Equals(other) &&
-                ID == other.ID &&
-                Equals(Definition, other.Definition) &&
-                HpCurrent == other.HpCurrent &&
-                MpCurrent == other.MpCurrent &&
-                Cooldown == other.Cooldown &&
-                //Awake.Equals(other.Awake) &&
-                Equals(Quiver, other.Quiver)
-            ;
-        }
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                int hashCode = base.GetHashCode();
-                hashCode = (hashCode*397) ^ ID;
-                hashCode = (hashCode*397) ^
-                           (Definition != null ? Definition.GetHashCode() : 0);
-                hashCode = (hashCode*397) ^ HpCurrent;
-                hashCode = (hashCode*397) ^ MpCurrent;
-                hashCode = (hashCode*397) ^ Cooldown;
-                //hashCode = (hashCode*397) ^ Awake.GetHashCode();
-                hashCode = (hashCode*397) ^
-                           (Quiver != null ? Quiver.GetHashCode() : 0);
-                return hashCode;
-            }
-        }
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != GetType()) return false;
-            return Equals((Actor)obj);
-        }
-
 
         public ActorDefinition Definition
         {
@@ -97,15 +33,19 @@ namespace ODB
 
         [DataMember] public int ID;
         [DataMember] private ActorID ActorType;
+        [DataMember] public Point xy;
+        [DataMember] public int LevelID;
 
-        [DataMember] private int _strength, _dexterity, _intelligence;
-
-        [DataMember] public int HpCurrent;
-        [DataMember] public int MpCurrent;
-        [DataMember] public int HpRegCooldown;
+        [DataMember] private int _strength;
+        [DataMember] private int _dexterity;
+        [DataMember] private int _intelligence;
 
         [DataMember] public int HpMax;
+        [DataMember] public int HpCurrent;
+        [DataMember] public int HpRegCooldown;
+
         [DataMember] public int MpMax;
+        [DataMember] public int MpCurrent;
         [DataMember] public int MpRegCooldown;
 
         [DataMember] public int Xplevel;
@@ -181,9 +121,10 @@ namespace ODB
             Point xy,
             ActorDefinition definition,
             int xplevel
-        ) : base(xy) {
+        ) {
             ID = Game.IDCounter++;
             ActorType = definition.ActorType;
+            this.xy = xy;
 
             _strength = Util.Roll(definition.Strength);
             _dexterity = Util.Roll(definition.Dexterity);
@@ -1359,8 +1300,6 @@ namespace ODB
                                 ? "descend"
                                 : "ascend"
                         );
-
-                    UpdateVision();
                 }
                 else
                 {
@@ -1371,6 +1310,8 @@ namespace ODB
                         );
                 }
             }
+
+            UpdateVision();
         }
         private void HandleOpen(Command cmd)
         {
@@ -1415,6 +1356,8 @@ namespace ODB
             dc.Effect.Cast(this, null);
 
             item.SpendCharge();
+            if (this == Game.Player)
+                item.Identify();
 
             Pass();
         }

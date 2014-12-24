@@ -39,49 +39,12 @@ namespace ODB
     }
 
     [DataContract]
-    public class Item : gObject
+    public class Item
     {
-        protected bool Equals(Item other)
-        {
-            bool modsEqual = Mods.Count == other.Count;
-            if (!modsEqual) return false;
-            if (Mods.Where((t, i) => t != other.Mods[i]).Any())
-            {
-                return false;
-            }
-
-            return
-                base.Equals(other) &&
-                ID == other.ID &&
-                Mod == other.Mod &&
-                Count == other.Count &&
-                Equals(Definition, other.Definition);
-        }
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                int hashCode = base.GetHashCode();
-                hashCode = (hashCode*397) ^ ID;
-                hashCode = (hashCode*397) ^ Mod;
-                hashCode = (hashCode*397) ^ Count;
-                hashCode = (hashCode*397) ^
-                           (Definition != null ? Definition.GetHashCode() : 0);
-                hashCode = (hashCode*397) ^
-                           (Mods != null ? Mods.GetHashCode() : 0);
-                return hashCode;
-            }
-        }
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != GetType()) return false;
-            return Equals((Item)obj);
-        }
-
         [DataMember] public int ID;
         [DataMember] public ItemID ItemType;
+        [DataMember] public Point xy;
+        [DataMember] public int LevelID;
 
         [DataMember] public int Mod;
         //can be used as charges for non-stacking?
@@ -91,7 +54,8 @@ namespace ODB
         [DataMember] private int _type;
         [DataMember] public List<Mod> Mods;
 
-        public ItemDefinition Definition {
+        public ItemDefinition Definition
+        {
             get { return ItemDefinition.DefDict[ItemType]; }
         }
 
@@ -123,7 +87,8 @@ namespace ODB
             ItemDefinition definition,
             int count = 0,
             IEnumerable<Mod> mods = null
-        ) : base(xy) {
+        ) {
+            this.xy = xy;
             ID = Game.IDCounter++;
             Count = count;
             ItemType = definition.ItemType;

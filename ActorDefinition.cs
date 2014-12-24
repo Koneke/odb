@@ -15,7 +15,7 @@ namespace ODB
     }
 
     [JsonConverter(typeof(ActorConverter))]
-    public class ActorDefinition : gObjectDefinition
+    public class ActorDefinition : GameObjectDefinition
     {
         //LH-01214: Note, the concept of equality here does not refer to
         //          reference, but rather, actual values.

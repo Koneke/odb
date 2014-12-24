@@ -179,11 +179,6 @@ namespace ODB
             return World.Level.Rooms.Where(r => r.ContainsPoint(xy)).ToList();
         }
 
-        public static List<Room> GetRooms(gObject go)
-        {
-            return GetRooms(go.xy);
-        }
-
         public static int Roll(string s, bool max = false)
         {
             if (s == "") return 0;
