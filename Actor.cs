@@ -1045,6 +1045,49 @@ namespace ODB
             Do(IO.CurrentCommand);
         }
 
+        private void Swing(Direction direction, Item weapon)
+        {
+            Actor target =
+                World.LevelByID(LevelID)
+                .At(xy + Point.FromCardinal(direction))
+                .Actor;
+
+            Actor secondary;
+
+            switch (weapon.ItemType)
+            {
+                case ItemID.Item_Spear:
+                    secondary =
+                        World.LevelByID(LevelID)
+                        .At(xy + Point.FromCardinal(direction) * 2)
+                        .Actor;
+
+                    bool hit = Combat.Attack(
+                        new MeleeAttack(this, target, weapon),
+                        s => Game.UI.Log(s)
+                    );
+
+                    if (hit && secondary != null)
+                    {
+                        Combat.Attack(
+                            new MeleeAttack(
+                                this,
+                                secondary,
+                                weapon
+                            ),
+                            s => Game.UI.Log(s)
+                        );
+                    }
+                    break;
+                default:
+                    Combat.Attack(
+                        new MeleeAttack(this, target, weapon),
+                        s => Game.UI.Log(s)
+                    );
+                    break;
+            }
+        }
+
         private void HandleBump(Command cmd)
         {
             Direction direction = (Direction)cmd.Get("Direction");
@@ -1056,26 +1099,15 @@ namespace ODB
 
             Debug.Assert(target != null, "target != null");
 
-            Combat.Attack(this, target);
+            if (GetWieldedItems().Count == 0)
+                Combat.Attack(
+                    new MeleeAttack(this, target, null),
+                    s => Game.UI.Log(s)
+                );
 
             foreach (Item weapon in GetWieldedItems())
             {
-                if (weapon.ItemType == ItemID.Item_Spear)
-                {
-                    //todo: only roll this if the first strike hit.
-                    //pierce through to the actor behind the first.
-                    //reuse same direction, just walk one more step.
-                    Actor secondaryTarget =
-                        World.LevelByID(LevelID)
-                        .At(targetPoint + Point.FromCardinal(direction))
-                        .Actor;
-
-                    if (secondaryTarget != null)
-                    {
-                        //todo: makes this attack weaker/less accurate?
-                        Combat.Attack(this, secondaryTarget);
-                    }
-                }
+                Swing(direction, weapon);
             }
 
             Pass();
@@ -1580,6 +1612,9 @@ namespace ODB
         public void RemoveItem(Item item)
         {
             _inventory.Remove(item.ID);
+            foreach (BodyPart bp in PaperDoll)
+                if (bp.Item == item) bp.Item = null;
+            if (_quiver == item.ID) _quiver = null;
         }
 
         public void TickEffects()

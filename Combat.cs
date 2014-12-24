@@ -10,12 +10,25 @@ namespace ODB
         public Actor Target;
         public Item Weapon;
         public bool Crit;
+
+        public Attack(Actor a, Actor t, Item w)
+        {
+            Attacker = a;
+            Target = t;
+            Weapon = w;
+        }
     }
 
     internal class MeleeAttack : Attack
     {
         public AttackComponent AttackComponent;
-        public Dice Dice { get { return new Dice(AttackComponent.Damage); } }
+
+        public MeleeAttack(Actor a, Actor t, Item w) : base(a, t, w)
+        {
+            if (w != null)
+                AttackComponent = Combat.GetAttackComponent(w);
+            else AttackComponent = a.Definition.NaturalAttack;
+        }
     }
 
     internal class RangedAttack : Attack
@@ -23,6 +36,19 @@ namespace ODB
         public Item Launcher;
         public ProjectileComponent ProjectileComponent;
         public LauncherComponent LauncherComponent;
+
+        public RangedAttack(Actor a, Actor t, Item w, Item l) : base(a, t, w)
+        {
+            Launcher = l;
+            ProjectileComponent = Combat.GetProjectileComponent(w);
+
+            if (l != null)
+            {
+                LauncherComponent = l.GetComponent<LauncherComponent>();
+                if (!LauncherComponent.AmmoTypes.Contains(w.ItemType))
+                    LauncherComponent = null;
+            }
+        }
     }
 
     static class Combat
@@ -42,14 +68,14 @@ namespace ODB
             Damage = "1d4"
         };
 
-        private static AttackComponent GetAttackComponent(Item item)
+        internal static AttackComponent GetAttackComponent(Item item)
         {
             return item.HasComponent<AttackComponent>()
                 ? item.GetComponent<AttackComponent>()
                 : Bash;
         }
 
-        private static ProjectileComponent GetProjectileComponent(Item item)
+        internal static ProjectileComponent GetProjectileComponent(Item item)
         {
             return item.HasComponent<ProjectileComponent>()
                 ? item.GetComponent<ProjectileComponent>()
@@ -170,98 +196,68 @@ namespace ODB
             );
         }
 
-        //todo: make this use an Attack-instance instead.
-        //negative(?): more iteration of weapons and stuff outside of this
-        //positive: handle different wielded weapons differently,
-        //          return results of the different strikes separately.
-        //todo: return whether or not attack hit (after above)
-        public static void Attack(
-            Actor attacker,
-            Actor target
-        ) {
-            List<MeleeAttack> attacks = new List<MeleeAttack>();
+        public static bool Attack(MeleeAttack attack, Action<string> log)
+        {
+            DiceRoll hitRoll = GenerateMeleeHitRoll(attack);
+            RollInfo roll = hitRoll.Roll();
+            attack.Crit =
+                roll.Result == 20 ||
+                attack.Target.HasEffect(StatusType.Sleep);
 
-            foreach (Item item in attacker.GetWieldedItems())
-                attacks.Add(new MeleeAttack
-                {
-                    Attacker = attacker,
-                    Target = target,
-                    Weapon = item,
-                    AttackComponent = GetAttackComponent(item)
-                });
-
-            if (attacks.Count == 0)
-            {
-                attacks.Add(new MeleeAttack
-                {
-                    Attacker = attacker,
-                    Target = target,
-                    Weapon = null,
-                    AttackComponent = attacker.Definition.NaturalAttack
-                });
-            }
-
-            List<DamageSource> damageSources = new List<DamageSource>();
             string message = "";
+            DamageSource ds = null;
 
-            foreach (MeleeAttack attack in attacks)
+            if(Game.OpenRolls)
+                roll.Log(true, s => message += s);
+
+            if (roll.Result >= attack.Target.GetArmor())
             {
-                DiceRoll hitRoll = GenerateMeleeHitRoll(attack);
-                RollInfo roll = hitRoll.Roll();
+                message +=
+                    AttackMessage.AttackMessages
+                    [attack.AttackComponent.AttackType]
+                    .SelectRandom()
+                    .Instantiate(
+                        attack.Attacker,
+                        attack.Target,
+                        attack.Weapon
+                    );
 
-                bool crit = roll.Roll == 20;
-                crit = crit || target.HasEffect(StatusType.Sleep);
+                message += (attack.Crit ? "!" : ".") + " ";
 
-                attack.Crit = crit;
+                attack.AttackComponent.Effects
+                    .ForEach(ec => ec.Apply(attack.Target));
 
-                if (roll.Result > target.GetArmor())
+                DiceRoll damageRoll = GenerateMeleeDamageRoll(attack);
+                RollInfo damageInfo = damageRoll.Roll(attack.Crit);
+
+                ds = new DamageSource
                 {
-                    message +=
-                        AttackMessage.AttackMessages
-                            [attack.AttackComponent.AttackType]
-                        .SelectRandom()
-                        .Instantiate(attacker, target, attack.Weapon);
-                    message += (crit ? "!" : ".") + " ";
+                    Level = World.LevelByID(attack.Attacker.LevelID),
+                    Position = attack.Attacker.xy,
+                    Damage = damageInfo.Result,
+                    AttackType = attack.AttackComponent.AttackType,
+                    DamageType = attack.AttackComponent.DamageType,
+                    Source = attack.Attacker,
+                    Target = attack.Target
+                };
 
-                    attack.AttackComponent.Effects
-                        .ForEach(ec => ec.Apply(target));
+                if (attack.Weapon != null)
+                    attack.Weapon.Damage(0, s => message += s);
 
-                    DiceRoll damageRoll = GenerateMeleeDamageRoll(attack);
-                    RollInfo damageInfo = damageRoll.Roll(attack.Crit);
-
-                    damageSources.Add(new DamageSource
-                    {
-                        Level = World.LevelByID(attacker.LevelID),
-                        Position = attacker.xy,
-                        Damage = damageInfo.Result,
-                        AttackType = attack.AttackComponent.AttackType,
-                        DamageType = attack.AttackComponent.DamageType,
-                        Source = attacker,
-                        Target = target
-                    });
-
-                    if (attack.Weapon != null)
-                        attack.Weapon.Damage(0, s => message += s);
-
-                    if (Game.OpenRolls)
-                    {
-                        roll.Log(true, s => message += s);
-                        damageInfo.Log(true, s => message += s);
-                    }
-                }
-                else
-                {
-                    message += SwingMessage(attack);
-                    if (Game.OpenRolls) roll.Log(true, s => message += s);
-                }
-
-                if (damageSources.Sum(ds => ds.Damage) > target.HpCurrent)
-                    break;
+                if (Game.OpenRolls) damageInfo.Log(true, s => message += s);
+            }
+            else
+            {
+                message += SwingMessage(attack);
             }
 
-            Game.UI.Log(message);
-            World.Level.MakeNoise(attacker.xy, NoiseType.Combat, +2);
-            damageSources.ForEach(target.Damage);
+            log(message);
+            if (ds != null)
+            {
+                attack.Target.Damage(ds);
+                return true;
+            }
+            return false;
         }
 
         //send in atk instead so we cna mod it beforehand?
@@ -269,32 +265,17 @@ namespace ODB
             Actor attacker,
             Actor target
         ) {
-            LauncherComponent launcherComponent = null;
             Item weapon = attacker.GetWieldedItems()
                 .FirstOrDefault(it => it.HasComponent<LauncherComponent>());
-            if (weapon != null)
-                launcherComponent = weapon.GetComponent<LauncherComponent>();
 
             Item ammo = attacker.Quiver;
-            ProjectileComponent projectileComponent =
-                //returns ranged bash if none is found
-                GetProjectileComponent(ammo);
 
-            //even if the weapon is a launcher, if we can't use it to launc this
-            //kind of ammo, don't use it.
-            if(launcherComponent != null)
-                if (!launcherComponent.AmmoTypes.Contains(ammo.ItemType))
-                    launcherComponent = null;
-
-            RangedAttack attack = new RangedAttack
-            {
-                Attacker = attacker,
-                Target = target,
-                Launcher = weapon,
-                Weapon = ammo,
-                LauncherComponent = launcherComponent,
-                ProjectileComponent = projectileComponent
-            };
+            RangedAttack attack = new RangedAttack(
+                attacker,
+                target,
+                ammo,
+                weapon
+            );
 
             DiceRoll hitRoll = GenerateRangedHitRoll(attack);
             RollInfo roll = hitRoll.Roll();

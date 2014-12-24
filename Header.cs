@@ -94,6 +94,10 @@ namespace ODB
         {
             return new Point(a.x / b.x, a.y / b.y);
         }
+        public static Point operator *(Point a, int b)
+        {
+            return new Point(a.x * b, a.y * b);
+        }
 
         public static Point FromCardinal(Direction cardinal)
         {

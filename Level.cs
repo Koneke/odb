@@ -396,8 +396,7 @@ namespace ODB
                 .Where(bp => bp.Item != null)
                 .Where(bp => bp.Item.ID == item.ID))
                 bp.Item = null;
-            foreach (Actor a in
-                Actors.Where(a => a.Inventory.Contains(item)))
+            foreach (Actor a in Actors.Where(a => a.Inventory.Contains(item)))
                 a.RemoveItem(item);
             foreach (Actor a in Actors.Where(a => a.Quiver != null))
                 if (a.Quiver == item) a.Quiver = null;
