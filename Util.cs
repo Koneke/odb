@@ -38,6 +38,11 @@ namespace ODB
             return l[Util.Random.Next(0, l.Count)];
         }
 
+        public static T SelectRandom<T>(this IEnumerable<T> l)
+        {
+            return l.ElementAt(Util.Random.Next(0, l.Count()));
+        }
+
         public static IEnumerable<T> TakeLast<T>(
             this List<T> coll,
             int n

@@ -957,7 +957,7 @@ namespace ODB
                 if (HasEffect(StatusType.Sleep))
                 {
                     RemoveEffect(StatusType.Sleep);
-                    message = "You can wake up from hunger. ";
+                    message = "You wake up from hunger. ";
                 }
             }
 
@@ -1057,15 +1057,15 @@ namespace ODB
             switch (weapon.ItemType)
             {
                 case ItemID.Item_Spear:
-                    secondary =
-                        World.LevelByID(LevelID)
-                        .At(xy + Point.FromCardinal(direction) * 2)
-                        .Actor;
-
                     bool hit = Combat.Attack(
                         new MeleeAttack(this, target, weapon),
                         s => Game.UI.Log(s)
                     );
+
+                    secondary =
+                        World.LevelByID(LevelID)
+                        .At(xy + Point.FromCardinal(direction) * 2)
+                        .Actor;
 
                     if (hit && secondary != null)
                     {
@@ -1078,6 +1078,29 @@ namespace ODB
                             s => Game.UI.Log(s)
                         );
                     }
+                    break;
+                case ItemID.Item_Longsword:
+                    Combat.Attack(
+                        new MeleeAttack(this, target, weapon),
+                        s => Game.UI.Log(s)
+                    );
+
+                    secondary =
+                        World.Level.At(xy)
+                        .Neighbours
+                        .Select(ti => ti.Actor)
+                        .Intersect(
+                            World.Level
+                            .At(xy + Point.FromCardinal(direction))
+                            .Neighbours
+                            .Select(ti2 => ti2.Actor)
+                        )
+                        .SelectRandom();
+
+                    Combat.Attack(
+                        new MeleeAttack(this, secondary, weapon),
+                        s => Game.UI.Log(s)
+                    );
                     break;
                 default:
                     Combat.Attack(
