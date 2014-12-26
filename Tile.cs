@@ -6,9 +6,34 @@ using Microsoft.Xna.Framework;
 namespace ODB
 {
     //todo: json and char us
-
     public class TileInfo
     {
+        //Note! Current comparison only cares for WHAT TILE, ON WHAT LEVEL.
+        //This makes using this for comparisons using tiles before and after
+        //doing something in the world unreliable, if we need to check for
+        //differences in item stacks on tiles, or which Actor is on them, or
+        //similar. Keep this in mind.
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return (
+                    (Level != null ? Level.GetHashCode() : 0) * 397) ^
+                    Position.GetHashCode();
+            }
+        }
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((TileInfo)obj);
+        }
+        protected bool Equals(TileInfo ti)
+        {
+            return Equals(Level, ti.Level) && Position.Equals(ti.Position);
+        }
+
         public Level Level;
 
         public Point Position;

@@ -1079,6 +1079,50 @@ namespace ODB
                         );
                     }
                     break;
+
+                case ItemID.Item_Zweihander:
+                    List<TileInfo> sweep =
+                        World.Level.At(xy)
+                        .Neighbours
+                        .Intersect(
+                            World.Level
+                            .At(xy + Point.FromCardinal(direction))
+                            .Neighbours
+                        )
+                        .Where(ti => !ti.Solid)
+                        .ToList();
+
+                    List<Actor> targets =
+                        sweep
+                        .Where(ti => ti.Actor != null)
+                        .Select(ti => ti.Actor)
+                        .Where(a => a != this)
+                        .ToList();
+
+                    //clumpsy/lack of space
+                    //2 spots are us and the target
+                    //2 other are the neighbours
+                    if (sweep.Count < 4)
+                    {
+                        //todo: penalized swing
+                        targets.ForEach(
+                            a => Combat.Attack(
+                                new MeleeAttack(this, a, weapon),
+                                s => Game.UI.Log(s)
+                            )
+                        );
+                    }
+                    else
+                    {
+                        targets.ForEach(
+                            a => Combat.Attack(
+                                new MeleeAttack(this, a, weapon),
+                                s => Game.UI.Log(s)
+                            )
+                        );
+                    }
+                    break;
+
                 case ItemID.Item_Longsword:
                     Combat.Attack(
                         new MeleeAttack(this, target, weapon),
