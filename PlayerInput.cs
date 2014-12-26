@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework.Input;
 using Bind = ODB.KeyBindings.Bind;
@@ -8,8 +7,6 @@ namespace ODB
 {
     public class PlayerInput
     {
-        //public static ODBGame Game;
-
         public static void HandlePlayerInput()
         {
             MovementInput();

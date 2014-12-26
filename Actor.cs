@@ -1055,6 +1055,8 @@ namespace ODB
                 .At(xy + Point.FromCardinal(direction))
                 .Actor;
 
+            if (target == null) return;
+
             bool hit = Combat.Attack(
                 new MeleeAttack(this, target, weapon),
                 s => Game.UI.Log(s)
@@ -1126,6 +1128,8 @@ namespace ODB
                 World.LevelByID(LevelID)
                 .At(xy + Point.FromCardinal(direction))
                 .Actor;
+
+            if (target == null) return;
 
             Combat.Attack(
                 new MeleeAttack(this, target, weapon),
