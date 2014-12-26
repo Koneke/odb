@@ -66,6 +66,7 @@ namespace ODB
             Read,
             Remove,
             Sheath,
+            Throw,
             Wear,
             Wield,
             Zap,

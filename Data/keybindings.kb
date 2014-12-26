@@ -48,6 +48,7 @@ remove				=	s:r;
 sheath				=	s:s;
 sleep				=	s:z;
 sneak				=	:x;
+throw				=	:t;
 wear				=	s:w;
 wield				=	:w;
 zap					=	:z;

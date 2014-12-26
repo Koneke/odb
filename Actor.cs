@@ -436,8 +436,10 @@ namespace ODB
             return 1200 + Xplevel * 100 + Get(Stat.Strength) * 400;
         }
 
-        public void Shoot(Actor target)
-        {
+        public void Shoot(
+            Actor target,
+            Item ammo
+        ) {
             Combat.Shoot(this, target);
             Pass();
         }
@@ -1045,6 +1047,116 @@ namespace ODB
             Do(IO.CurrentCommand);
         }
 
+        //mig to Combat.cs
+        private void SwingSpear(Direction direction, Item weapon)
+        {
+            Actor target =
+                World.LevelByID(LevelID)
+                .At(xy + Point.FromCardinal(direction))
+                .Actor;
+
+            bool hit = Combat.Attack(
+                new MeleeAttack(this, target, weapon),
+                s => Game.UI.Log(s)
+            );
+
+            Actor secondary =
+                World.LevelByID(LevelID)
+                .At(xy + Point.FromCardinal(direction) * 2)
+                .Actor;
+
+            if (hit && secondary != null)
+            {
+                Combat.Attack(
+                    new MeleeAttack(
+                        this,
+                        secondary,
+                        weapon
+                    ),
+                    s => Game.UI.Log(s)
+                );
+            }
+        }
+        private void SwingTwoHander(Direction direction, Item weapon)
+        {
+            List<TileInfo> sweep =
+                World.Level.At(xy)
+                .Neighbours
+                .Intersect(
+                    World.Level
+                    .At(xy + Point.FromCardinal(direction))
+                    .Neighbours
+                )
+                .Where(ti => !ti.Solid)
+                .ToList();
+
+            List<Actor> targets =
+                sweep
+                .Where(ti => ti.Actor != null)
+                .Select(ti => ti.Actor)
+                .Where(a => a != this)
+                .ToList();
+
+            //clumpsy/lack of space
+            //2 spots are us and the target
+            //2 other are the neighbours
+            if (sweep.Count < 4)
+            {
+                //todo: penalized swing
+                targets.ForEach(
+                    a => Combat.Attack(
+                        new MeleeAttack(this, a, weapon),
+                        s => Game.UI.Log(s)
+                    )
+                );
+            }
+            else
+            {
+                targets.ForEach(
+                    a => Combat.Attack(
+                        new MeleeAttack(this, a, weapon),
+                        s => Game.UI.Log(s)
+                    )
+                );
+            }
+        }
+        private void SwingLongsword(Direction direction, Item weapon)
+        {
+            Actor target =
+                World.LevelByID(LevelID)
+                .At(xy + Point.FromCardinal(direction))
+                .Actor;
+
+            Combat.Attack(
+                new MeleeAttack(this, target, weapon),
+                s => Game.UI.Log(s)
+            );
+
+            List<Actor> sweep =
+                World.Level.At(xy)
+                .Neighbours
+                .Where(ti => ti.Actor != null)
+                .Where(ti => ti.Actor != Game.Player) //no self-harm
+                .Where(ti => ti.Actor != target) //no double-swing
+                .Select(ti => ti.Actor)
+                .Intersect(
+                    World.Level
+                    .At(xy + Point.FromCardinal(direction))
+                    .Neighbours
+                    .Select(ti2 => ti2.Actor)
+                )
+                .ToList();
+
+            if (sweep.Count > 0)
+            {
+                Actor secondary = sweep.SelectRandom();
+                Combat.Attack(
+                    new MeleeAttack(this, secondary, weapon),
+                    s => Game.UI.Log(s)
+                );
+            }
+        }
+
         private void Swing(Direction direction, Item weapon)
         {
             Actor target =
@@ -1052,100 +1164,20 @@ namespace ODB
                 .At(xy + Point.FromCardinal(direction))
                 .Actor;
 
-            Actor secondary;
-
             switch (weapon.ItemType)
             {
                 case ItemID.Item_Spear:
-                    bool hit = Combat.Attack(
-                        new MeleeAttack(this, target, weapon),
-                        s => Game.UI.Log(s)
-                    );
-
-                    secondary =
-                        World.LevelByID(LevelID)
-                        .At(xy + Point.FromCardinal(direction) * 2)
-                        .Actor;
-
-                    if (hit && secondary != null)
-                    {
-                        Combat.Attack(
-                            new MeleeAttack(
-                                this,
-                                secondary,
-                                weapon
-                            ),
-                            s => Game.UI.Log(s)
-                        );
-                    }
+                    SwingSpear(direction, weapon);
                     break;
 
                 case ItemID.Item_Zweihander:
-                    List<TileInfo> sweep =
-                        World.Level.At(xy)
-                        .Neighbours
-                        .Intersect(
-                            World.Level
-                            .At(xy + Point.FromCardinal(direction))
-                            .Neighbours
-                        )
-                        .Where(ti => !ti.Solid)
-                        .ToList();
-
-                    List<Actor> targets =
-                        sweep
-                        .Where(ti => ti.Actor != null)
-                        .Select(ti => ti.Actor)
-                        .Where(a => a != this)
-                        .ToList();
-
-                    //clumpsy/lack of space
-                    //2 spots are us and the target
-                    //2 other are the neighbours
-                    if (sweep.Count < 4)
-                    {
-                        //todo: penalized swing
-                        targets.ForEach(
-                            a => Combat.Attack(
-                                new MeleeAttack(this, a, weapon),
-                                s => Game.UI.Log(s)
-                            )
-                        );
-                    }
-                    else
-                    {
-                        targets.ForEach(
-                            a => Combat.Attack(
-                                new MeleeAttack(this, a, weapon),
-                                s => Game.UI.Log(s)
-                            )
-                        );
-                    }
+                    SwingTwoHander(direction, weapon);
                     break;
 
                 case ItemID.Item_Longsword:
-                    Combat.Attack(
-                        new MeleeAttack(this, target, weapon),
-                        s => Game.UI.Log(s)
-                    );
-
-                    secondary =
-                        World.Level.At(xy)
-                        .Neighbours
-                        .Select(ti => ti.Actor)
-                        .Intersect(
-                            World.Level
-                            .At(xy + Point.FromCardinal(direction))
-                            .Neighbours
-                            .Select(ti2 => ti2.Actor)
-                        )
-                        .SelectRandom();
-
-                    Combat.Attack(
-                        new MeleeAttack(this, secondary, weapon),
-                        s => Game.UI.Log(s)
-                    );
+                    SwingLongsword(direction, weapon);
                     break;
+
                 default:
                     Combat.Attack(
                         new MeleeAttack(this, target, weapon),
@@ -1539,7 +1571,19 @@ namespace ODB
         private void HandleShoot(Command cmd)
         {
             Actor target = (Actor)cmd.Get("actor");
-            Shoot(target);
+            Item ammo = (Item)cmd.Get("ammo");
+
+            Combat.Throw(
+                new RangedAttack(
+                    this,
+                    target,
+                    ammo,
+                    Inventory.FirstOrDefault(it => it.CanFire(ammo))
+                ),
+                s => Game.UI.Log(s)
+            );
+
+            Pass();
         }
         private void HandleSleep(Command cmd)
         {
@@ -1696,6 +1740,13 @@ namespace ODB
 
             foreach (LastingEffect effect in deadEffects)
                 RemoveEffect(effect.Type);
+        }
+
+        public bool FreeCrit()
+        {
+            return
+                HasEffect(StatusType.Sleep) ||
+                HasEffect(StatusType.Stun);
         }
     }
 

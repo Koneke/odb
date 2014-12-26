@@ -5,7 +5,6 @@ using Microsoft.Xna.Framework;
 
 namespace ODB
 {
-    //todo: json and char us
     public class TileInfo
     {
         //Note! Current comparison only cares for WHAT TILE, ON WHAT LEVEL.
@@ -26,7 +25,7 @@ namespace ODB
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
+            if (obj.GetType() != GetType()) return false;
             return Equals((TileInfo)obj);
         }
         protected bool Equals(TileInfo ti)
@@ -101,6 +100,7 @@ namespace ODB
         Down
     }
 
+    //todo: json and char us
     public class TileDefinition
     {
         public static TileDefinition[] Definitions =

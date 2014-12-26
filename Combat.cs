@@ -259,6 +259,28 @@ namespace ODB
             return false;
         }
 
+        public static Item SpawnProjectile(RangedAttack attack)
+        {
+            Item ammo = attack.Weapon;
+
+            Item projectile;
+            if (ammo.Stacking)
+            {
+                projectile = ammo.Clone();
+                projectile.Count = 1;
+                projectile.xy = attack.Target.xy;
+                ammo.SpendCharge();
+            }
+            else
+            {
+                projectile = ammo;
+                attack.Attacker.RemoveItem(ammo);
+                ammo.xy = attack.Target.xy;
+            }
+
+            return projectile;
+        }
+
         //send in atk instead so we cna mod it beforehand?
         public static void Shoot(
             Actor attacker,
@@ -291,7 +313,6 @@ namespace ODB
                 projectile = ammo.Clone();
                 projectile.Count = 1;
                 projectile.xy = target.xy;
-                //ammo.Count--;
                 ammo.SpendCharge();
             }
             else
@@ -350,6 +371,73 @@ namespace ODB
             World.LevelByID(attacker.LevelID).MakeNoise(
                 target.xy, NoiseType.Combat, -2
             );
+        }
+
+        public static bool Throw(
+            RangedAttack attack,
+            Action<string> log
+        ) {
+            DiceRoll hitRoll = GenerateRangedHitRoll(attack);
+            RollInfo roll = hitRoll.Roll();
+
+            attack.Crit = roll.Roll == 20 || attack.Target.FreeCrit();
+            DamageSource ds = null;
+            Item projectile = SpawnProjectile(attack);
+
+            if (Game.OpenRolls) roll.Log();
+
+            if (roll.Result >= attack.Target.GetArmor())
+            {
+                DiceRoll damageRoll = GenerateRangedDamageRoll(attack);
+                RollInfo damageInfo = damageRoll.Roll(attack.Crit);
+
+                ds = new DamageSource
+                {
+                    Level = World.LevelByID(attack.Attacker.LevelID),
+                    Position = attack.Target.xy,
+                    Damage = damageInfo.Result,
+                    AttackType = AttackType.Pierce,
+                    DamageType = DamageType.Physical,
+                    Source = attack.Attacker,
+                    Target = attack.Target
+                };
+
+                log(
+                    string.Format(
+                        "{0} is hit by {1}{2} ",
+                        attack.Target.GetName("Name"),
+                        projectile.GetName("the"),
+                        attack.Crit ? "!" : "."
+                    )
+                );
+
+                if (Game.OpenRolls) damageInfo.Log();
+            }
+            else
+            {
+                log(
+                    string.Format(
+                        "{0} {1}. ",
+                        attack.Attacker.GetName("Name"),
+                        attack.Attacker.Verb("miss")
+                    )
+                );
+            }
+
+            projectile.Damage(4, log);
+            if (projectile.Health > 0)
+                World.LevelByID(attack.Attacker.LevelID).Spawn(projectile);
+
+            World.LevelByID(attack.Attacker.LevelID)
+                .MakeNoise(attack.Target.xy, NoiseType.Combat, -2);
+
+            if (ds != null)
+            {
+                attack.Target.Damage(ds);
+                return true;
+            }
+
+            return false;
         }
     }
 }

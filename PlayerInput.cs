@@ -34,6 +34,7 @@ namespace ODB
             CheckSheathe();
             CheckSleep();
             CheckSneak();
+            CheckThrow();
             CheckWield();
             CheckWear();
             CheckZap();
@@ -235,12 +236,55 @@ namespace ODB
             );
         }
 
+        private static void CheckThrow()
+        {
+            if (!KeyBindings.Pressed(Bind.Throw)) return;
+
+            IO.CurrentCommand = new Command("shoot");
+            IO.AcceptedInput.Clear();
+
+            List<Item> throwables = Game.Player.GetWieldedItems();
+            if(Game.Player.Quiver != null) throwables.Add(Game.Player.Quiver);
+
+            throwables
+                .Select(it => Game.Player.Inventory.IndexOf(it))
+                .ToList()
+                .ForEach(i => IO.AcceptedInput.Add(IO.Indexes[i]));
+            IO.AcceptedInput.Sort();
+
+            if (IO.AcceptedInput.Count == 0)
+            {
+                Game.UI.Log("You have nothing to throw.");
+                return;
+            }
+
+            string question =
+                "Throw what? [" +
+                IO.AcceptedInput.Aggregate("", (c, n) => c + n) +
+                "]";
+
+            IO.AskPlayer(
+                question,
+                InputType.QuestionPromptSingle,
+                ThrowItem
+            );
+        }
+
+        private static void ThrowItem()
+        {
+            Item item =
+                Game.Player.Inventory
+                [IO.Indexes.IndexOf(IO.CurrentCommand.Answer[0])];
+
+            IO.CurrentCommand.Add("ammo", item);
+
+            Aim();
+        }
+
         private static void CheckFire()
         {
             if (!KeyBindings.Pressed(Bind.Fire)) return;
 
-            //todo: throwing
-            //      if we pressed T instead, allow items in hands as ammo
             Item ammo = Game.Player.Quiver;
 
             if (ammo == null)
@@ -249,44 +293,25 @@ namespace ODB
                 return;
             }
 
-            //todo: notice! this only finds the FIRST weapon
-            //      with this type of ammo! theoretically, you CAN have
-            //      e.g. two bows wielded at once, if you have enough hands
-            //      (and considering the genre of game, "2" is not an obvious
-            //      answer to that question).
-            //      for now, just get first one, if it becomes an issue the
-            //      player will have to work around it.
+            IO.CurrentCommand = new Command("shoot")
+                .Add("ammo", ammo);
 
-            Item weapon = null;
-            LauncherComponent lc = null;
+            Aim();
+        }
 
-            if (Game.Player.GetEquippedItems().Any(
-                x => x.HasComponent<LauncherComponent>()))
-            {
-                weapon = Game.Player.GetEquippedItems()
-                    .Where(x => x.HasComponent<LauncherComponent>())
-                    .ToList()[0];
-                lc = weapon.GetComponent<LauncherComponent>();
-            }
+        private static void Aim()
+        {
+            Item item = (Item)IO.CurrentCommand.Get("ammo");
 
-            bool throwing;
+            bool hasLauncher = Game.Player.Inventory
+                .Any(it => it.CanFire(item));
 
-            //weapon and appropriate ammo?
-            //todo: get all items in hands
-            //      check if any one of them has a matching ammo type to
-            //      quiver. that one is then our weapon used to fire.
-            if (weapon != null && lc != null)
-                throwing = !lc.AmmoTypes.Contains(ammo.ItemType);
-                //just some sort of ammo
-            else throwing = true;
-
-            string question = String.Format(
-                "{0} your {1}",
-                throwing ? "Throwing" : "Firing",
-                throwing ? ammo.Definition.Name : weapon.Definition.Name
-            );
-
-            IO.CurrentCommand = new Command("shoot");
+            string question =
+                string.Format(
+                    "{0} {1}.",
+                    (hasLauncher ? "Firing " : "Throwing"),
+                    item.GetName("name")
+                );
 
             IO.AskPlayer(
                 question,

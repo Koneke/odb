@@ -381,5 +381,14 @@ namespace ODB
                 Mods =  Mods,
             };
         }
+
+        public bool CanFire(Item ammo)
+        {
+            if (!HasComponent<LauncherComponent>()) return false;
+
+            return GetComponent<LauncherComponent>()
+                .AmmoTypes
+                .Contains(ammo.ItemType);
+        }
     }
 }
