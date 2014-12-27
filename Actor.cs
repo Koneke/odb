@@ -436,14 +436,6 @@ namespace ODB
             return 1200 + Xplevel * 100 + Get(Stat.Strength) * 400;
         }
 
-        public void Shoot(
-            Actor target,
-            Item ammo
-        ) {
-            Combat.Shoot(this, target);
-            Pass();
-        }
-
         public void SplatterBlood()
         {
             TileInfo tileInfo = World.Level.At(xy);
