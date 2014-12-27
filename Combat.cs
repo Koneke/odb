@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 
 namespace ODB
 {
@@ -279,98 +278,6 @@ namespace ODB
             }
 
             return projectile;
-        }
-
-        //send in atk instead so we cna mod it beforehand?
-        public static void Shoot(
-            Actor attacker,
-            Actor target
-        ) {
-            Item weapon = attacker.GetWieldedItems()
-                .FirstOrDefault(it => it.HasComponent<LauncherComponent>());
-
-            Item ammo = attacker.Quiver;
-
-            RangedAttack attack = new RangedAttack(
-                attacker,
-                target,
-                ammo,
-                weapon
-            );
-
-            DiceRoll hitRoll = GenerateRangedHitRoll(attack);
-            RollInfo roll = hitRoll.Roll();
-
-            attack.Crit = roll.Roll == 20 || target.HasEffect(StatusType.Sleep);
-
-            string message = "";
-
-            DamageSource damage = null;
-
-            Item projectile;
-            if (ammo.Stacking)
-            {
-                projectile = ammo.Clone();
-                projectile.Count = 1;
-                projectile.xy = target.xy;
-                ammo.SpendCharge();
-            }
-            else
-            {
-                projectile = ammo;
-                attacker.RemoveItem(ammo);
-                ammo.xy = target.xy;
-            }
-
-            if (Game.OpenRolls)
-                roll.Log();
-
-            if (roll.Result > target.GetArmor())
-            {
-                DiceRoll damageRoll = GenerateRangedDamageRoll(attack);
-                RollInfo damageInfo = damageRoll.Roll(attack.Crit);
-
-                damage = new DamageSource
-                {
-                    Level = World.LevelByID(attacker.LevelID),
-                    Position = target.xy,
-                    Damage = damageInfo.Result,
-                    //todo: should be un-hardcoded
-                    AttackType = AttackType.Pierce,
-                    DamageType = DamageType.Physical,
-                    Source = attacker,
-                    Target = target
-                };
-
-                message += string.Format(
-                    "{0} is hit by {1}{2} ",
-                    target.GetName("Name"),
-                    projectile.GetName("the"),
-                    attack.Crit ? "!" : "."
-                );
-
-                if (Game.OpenRolls)
-                    damageInfo.Log();
-            }
-            else
-            {
-                message += string.Format(
-                    "{0} {1}. ",
-                    attacker.GetName("Name"),
-                    attacker.Verb("miss")
-                );
-            }
-
-            projectile.Damage(4, s => message += s);
-            if (projectile.Health > 0)
-                World.LevelByID(attacker.LevelID).Spawn(projectile);
-
-            Game.UI.Log(message);
-            if (damage != null) target.Damage(damage);
-
-            World.LevelByID(attacker.LevelID).MakeNoise(
-                target.xy, NoiseType.Combat, -2
-            );
         }
 
         public static bool Throw(
