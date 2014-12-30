@@ -55,7 +55,7 @@ namespace ODB
             Spell touchAttack = MeatPuppet.Spellbook.Find(
                 spell =>
                     spell.CastDifficulty <=
-                    MeatPuppet.Get(Stat.Intelligence) &&
+                    MeatPuppet.Stats.Get(Stat.Intelligence) &&
                     spell.Range >= 1);
 
             if (touchAttack == null)

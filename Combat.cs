@@ -89,12 +89,12 @@ namespace ODB
             int dexBonus;
             dr.Bonus.Add(
                 "Dexterity",
-                dexBonus = Util.XperY(1, 3, attacker.Get(Stat.Dexterity))
+                dexBonus = Util.XperY(1, 3, attacker.Stats.Get(Stat.Dexterity))
             );
 
             dr.Bonus.Add(
                 "Strength",
-                Util.XperY(1, 2, attacker.Get(Stat.Strength))
+                Util.XperY(1, 2, attacker.Stats.Get(Stat.Strength))
             );
 
             dr.Bonus.Add("Level", attacker.Xplevel);
@@ -121,7 +121,7 @@ namespace ODB
 
             dr.Bonus.Add(
                 "Strength",
-                Util.XperY(1, 2, attack.Attacker.Get(Stat.Strength))
+                Util.XperY(1, 2, attack.Attacker.Stats.Get(Stat.Strength))
             );
             dr.Bonus.Add(
                 "Level",
@@ -137,7 +137,7 @@ namespace ODB
             Actor attacker = attack.Attacker;
             dr.Die.Add(new Dice(1, 20));
 
-            dr.Bonus.Add("Dexterity", attacker.Get(Stat.Dexterity));
+            dr.Bonus.Add("Dexterity", attacker.Stats.Get(Stat.Dexterity));
             dr.Bonus.Add("Level", attacker.Xplevel);
 
             int distance = Util.Distance(attack.Attacker.xy, attack.Target.xy);

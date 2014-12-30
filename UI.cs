@@ -542,8 +542,8 @@ namespace ODB
                             "{0}, lvl {1}, {2}/{3}",
                             ti.Actor.GetName("Name"),
                             ti.Actor.Xplevel,
-                            ti.Actor.HpCurrent,
-                            ti.Actor.HpMax
+                            ti.Actor.Stats.HpCurrent,
+                            ti.Actor.Stats.HpMax
                         );
 
                 _statRowConsole.CellData.Print(0, 0, str);
@@ -555,10 +555,10 @@ namespace ODB
             string namerow = Game.Player.GetName("name", true);
             namerow += "  ";
             namerow += string.Format(
-                "STR {0}  DEX {1}  INT {2} AC {3}",
-                Game.Player.Get(Stat.Strength),
-                Game.Player.Get(Stat.Dexterity),
-                Game.Player.Get(Stat.Intelligence),
+                "STR {0}  DEX {1}  INT {2}  AC {3}",
+                Game.Player.Stats.Get(Stat.Strength),
+                Game.Player.Stats.Get(Stat.Dexterity),
+                Game.Player.Stats.Get(Stat.Intelligence),
                 Game.Player.GetArmor()
             );
 
@@ -589,20 +589,14 @@ namespace ODB
             );
 
             string statrow = "";
-            statrow += "[";
-            statrow += ("" + Game.Player.HpCurrent).PadLeft(3, ' ');
-            statrow += "/";
-            statrow += ("" + Game.Player.HpMax).PadLeft(3, ' ');
-            statrow += "]";
+            statrow += String.Format(
+                "[{0}/{1}] [{2}/{3}] ",
+                ("" + Game.Player.Stats.HpCurrent).PadLeft(3, ' '),
+                ("" + Game.Player.Stats.HpMax).PadLeft(3, ' '),
+                ("" + Game.Player.Stats.MpCurrent).PadLeft(3, ' '),
+                ("" + Game.Player.Stats.MpMax).PadLeft(3, ' ')
+            );
 
-            statrow += " ";
-            statrow += "[";
-            statrow += ("" + Game.Player.MpCurrent).PadLeft(3, ' ');
-            statrow += "/";
-            statrow += ("" + Game.Player.MpMax).PadLeft(3, ' ');
-            statrow += "]";
-
-            statrow += " ";
             statrow += "XP:";
             statrow += Game.Player.Xplevel + "";
 
@@ -626,12 +620,12 @@ namespace ODB
             statrow += " (" + World.Level.Name + ")";
 
             float playerHealthPcnt =
-                Game.Player.HpCurrent /
-                (float)Game.Player.HpMax;
+                Game.Player.Stats.HpCurrent /
+                (float)Game.Player.Stats.HpMax;
 
             float playerManaPcnt =
-                Game.Player.MpCurrent /
-                (float)Game.Player.MpMax;
+                Game.Player.Stats.MpCurrent /
+                (float)Game.Player.Stats.MpMax;
 
             float colorStrength = 0.6f + 0.4f - (0.4f * playerHealthPcnt);
             float manaColorStrength = 0.6f + 0.4f - (0.4f * playerManaPcnt);

@@ -40,17 +40,25 @@ namespace ODB
         {
             foreach (Actor a in World.Instance.WorldActors)
             {
-                a.HpRegCooldown--;
-                a.MpRegCooldown--;
-                if (a.HpRegCooldown == 0)
+                a.Stats.HpRegCooldown--;
+                a.Stats.MpRegCooldown--;
+                if (a.Stats.HpRegCooldown == 0)
                 {
-                    a.HpCurrent = Math.Min(a.HpMax, a.HpCurrent + 1);
-                    a.HpRegCooldown = 100;
+                    a.Stats.HpCurrent =
+                        Math.Min(
+                            a.Stats.HpMax,
+                            a.Stats.HpCurrent + 1
+                        );
+                    a.Stats.HpRegCooldown = 100;
                 }
-                if (a.MpRegCooldown == 0)
+                if (a.Stats.MpRegCooldown == 0)
                 {
-                    a.MpCurrent = Math.Min(a.MpMax, a.MpCurrent + 1);
-                    a.MpRegCooldown = 300 - a.Get(Stat.Intelligence) * 10;
+                    a.Stats.MpCurrent = Math.Min(
+                        a.Stats.MpMax,
+                        a.Stats.MpCurrent + 1
+                    );
+                    a.Stats.MpRegCooldown =
+                        300 - a.Stats.Get(Stat.Intelligence) * 10;
                 }
             }
 

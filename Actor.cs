@@ -7,25 +7,9 @@ using System.Runtime.Serialization;
 
 namespace ODB
 {
-    public enum Stat
-    {
-        Strength,
-        Dexterity,
-        Intelligence,
-        Speed,
-        Quickness,
-        PoisonRes
-    }
-
     [DataContract]
     public class Actor
     {
-        //LH-011214: Likewise here as in the definition, equality means that
-        //           all the values contained are the same, not necessarily
-        //           that it is the same reference.
-        //           This might seem dumb, but, two actors should never have
-        //           the same ID anyways, so they should test non-equal.
-
         public ActorDefinition Definition
         {
             get { return ActorDefinition.DefDict[ActorType]; }
@@ -36,17 +20,7 @@ namespace ODB
         [DataMember] public Point xy;
         [DataMember] public int LevelID;
 
-        [DataMember] private int _strength;
-        [DataMember] private int _dexterity;
-        [DataMember] private int _intelligence;
-
-        [DataMember] public int HpMax;
-        [DataMember] public int HpCurrent;
-        [DataMember] public int HpRegCooldown;
-
-        [DataMember] public int MpMax;
-        [DataMember] public int MpCurrent;
-        [DataMember] public int MpRegCooldown;
+        [DataMember] public ActorStats Stats;
 
         [DataMember] public int Xplevel;
         [DataMember] public int ExperiencePoints;
@@ -113,7 +87,7 @@ namespace ODB
                 ).ToList();
             }
         }
-        public bool IsAlive { get { return HpCurrent > 0; } }
+        public bool IsAlive { get { return Stats.HpCurrent > 0; } }
 
         public Actor() { }
 
@@ -126,26 +100,28 @@ namespace ODB
             ActorType = definition.ActorType;
             this.xy = xy;
 
-            _strength = Util.Roll(definition.Strength);
-            _dexterity = Util.Roll(definition.Dexterity);
-            _intelligence = Util.Roll(definition.Intelligence);
+            Stats = new ActorStats(this);
 
-            HpMax = Util.Roll(definition.HitDie, true);
+            Stats.Strength = Util.Roll(definition.Strength);
+            Stats.Dexterity = Util.Roll(definition.Dexterity);
+            Stats.Intelligence = Util.Roll(definition.Intelligence);
+
+            Stats.HpMax = Util.Roll(definition.HitDie, true);
             for (int i = 0; i < xplevel - 1; i++)
-                HpMax += Math.Max(
+                Stats.HpMax += Math.Max(
                     Util.Roll(definition.HitDie),
-                    _strength
+                    Stats.Strength
                 );
 
-            MpMax = Util.Roll(definition.ManaDie, true);
+            Stats.MpMax = Util.Roll(definition.ManaDie, true);
             for (int i = 0; i < xplevel - 1; i++)
-                MpMax += Math.Max(
+                Stats.MpMax += Math.Max(
                     Util.Roll(definition.ManaDie),
-                    _intelligence
+                    Stats.Intelligence
                 );
 
-            HpCurrent = HpMax;
-            MpCurrent = MpMax;
+            Stats.HpCurrent = Stats.HpMax;
+            Stats.MpCurrent = Stats.MpMax;
 
             Xplevel = xplevel;
             ExperiencePoints = RequiredExperienceForLevel(xplevel);
@@ -165,8 +141,8 @@ namespace ODB
             Intrinsics = new List<Mod>(Definition.SpawnIntrinsics);
             _lastingEffects = new List<LastingEffect>();
 
-            HpRegCooldown = 10;
-            MpRegCooldown = 30 - _intelligence;
+            Stats.HpRegCooldown = 10;
+            Stats.MpRegCooldown = 30 - Stats.Intelligence;
         }
 
         public string GetName(string format, bool realname = false)
@@ -332,99 +308,13 @@ namespace ODB
                 Quiver = null;
         }
 
-        public int Get(Stat stat, bool modded = true)
-        {
-            switch (stat)
-            {
-                case Stat.Strength:
-                    return _strength +
-                        (modded ? GetMod(stat) : 0);
-                case Stat.Dexterity:
-                    return _dexterity +
-                        (modded ? GetMod(stat) : 0);
-                case Stat.Intelligence:
-                    return _intelligence +
-                        (modded ? GetMod(stat) : 0);
-                case Stat.Speed:
-                    return Definition.Speed +
-                        (modded ? GetMod(stat) : 0);
-                case Stat.Quickness:
-                    return Definition.Quickness +
-                        (modded ? GetMod(stat) : 0);
-                case Stat.PoisonRes: return GetMod(stat);
-                default:
-                    return -1;
-            }
-        }
-        public int GetMod(Stat stat)
-        {
-            int modifier = 0;
-
-            ModType mt;
-            switch (stat)
-            {
-                case Stat.Strength:
-                    mt = ModType.Strength; break;
-                case Stat.Dexterity:
-                    mt = ModType.Dexterity; break;
-                case Stat.Intelligence:
-                    mt = ModType.Intelligence; break;
-                case Stat.Speed:
-                    mt = ModType.Speed; break;
-                case Stat.Quickness:
-                    mt = ModType.Quickness; break;
-                case Stat.PoisonRes:
-                    mt = ModType.PoisonRes; break;
-                default:
-                    throw new ArgumentException();
-            }
-
-            List<Item> worn = Util.GetWornItems(this);
-
-            //itembonuses
-            modifier += Util.GetModsOfType(mt, worn).Sum(m => m.GetValue());
-
-            //intrinsics
-            modifier += Util.GetModsOfType(mt, this).Sum(m => m.GetValue());
-
-            switch (stat)
-            {
-                case Stat.Dexterity:
-                    if (GetFoodStatus() == FoodStatus.Stuffed) modifier--;
-                    if (GetBurdenStatus() >= BurdenStatus.Burdened)
-                        modifier--;
-                    break;
-
-                case Stat.Strength:
-                    if (GetFoodStatus() == FoodStatus.Starving) modifier--;
-                    break;
-
-                case Stat.Speed:
-                    if (GetFoodStatus() == FoodStatus.Stuffed) modifier--;
-
-                    if (GetBurdenStatus() == BurdenStatus.Burdened)
-                        modifier--;
-                    if (GetBurdenStatus() == BurdenStatus.Stressed)
-                        modifier-=3;
-                    break;
-
-                case Stat.Quickness:
-                    if (GetBurdenStatus() == BurdenStatus.Burdened)
-                        modifier--;
-                    if (GetBurdenStatus() == BurdenStatus.Stressed)
-                        modifier-=3;
-                    break;
-            }
-
-            return modifier;
-        }
         public int GetArmor()
         {
             return 8 +
                 GetWornItems()
                 .Select(item => item.GetComponent<WearableComponent>())
                 .Select(c => c.ArmorClass).Sum() +
-                Get(Stat.Dexterity);
+                Stats.Get(Stat.Dexterity);
         }
 
         public int GetCarriedWeight()
@@ -433,7 +323,7 @@ namespace ODB
         }
         public int GetCarryingCapacity()
         {
-            return 1200 + Xplevel * 100 + Get(Stat.Strength) * 400;
+            return 1200 + Xplevel * 100 + Stats.Get(Stat.Strength) * 400;
         }
 
         public void SplatterBlood()
@@ -461,7 +351,7 @@ namespace ODB
 
             //todo: maybe not return on 0 damage?
             if (ds.Damage <= 0) return;
-            if (HpCurrent <= 0) return;
+            if (Stats.HpCurrent <= 0) return;
 
             if(Game.Player.Sees(xy))
                 Game.UI.UpdateAt(xy);
@@ -495,9 +385,9 @@ namespace ODB
                     break;
             }
 
-            HpCurrent -= ds.Damage;
+            Stats.HpCurrent -= ds.Damage;
 
-            if (HasEffect(StatusType.Sleep) && HpCurrent > 0)
+            if (HasEffect(StatusType.Sleep) && Stats.HpCurrent > 0)
             {
                 RemoveEffect(StatusType.Sleep);
 
@@ -511,7 +401,7 @@ namespace ODB
                 Pass();
             }
 
-            if (HpCurrent > 0) return;
+            if (Stats.HpCurrent > 0) return;
 
             Game.UI.Log(GetName("Name") + " " + Verb("die") + "!");
             if (this == Game.Player)
@@ -553,15 +443,15 @@ namespace ODB
                     ? "You feel" :
                     GetName("Name") + " looks"
             );
-            HpMax +=
+            Stats.HpMax +=
                 Math.Max(
                     Util.Roll(Definition.HitDie),
-                    _strength
+                    Stats.Strength
                 );
-            MpMax +=
+            Stats.MpMax +=
                 Math.Max(
                     Util.Roll(Definition.ManaDie),
-                    _intelligence
+                    Stats.Intelligence
                 );
         }
         public int RequiredExperienceForLevel(int target)
@@ -696,10 +586,7 @@ namespace ODB
             if(HasEffect(StatusType.Sneak) && movement)
                 sneakMod += 5;
 
-            Cooldown =
-                Game.StandardActionLength -
-                (movement ? Get(Stat.Speed) : Get(Stat.Quickness)) +
-                sneakMod;
+            Cooldown = Game.StandardActionLength + sneakMod;
         }
         public void Pass(int length)
         {
@@ -755,7 +642,7 @@ namespace ODB
                     xy,
                     NoiseType.FootSteps,
                     HasEffect(StatusType.Sneak)
-                        ? -Util.XperY(1, 2, Get(Stat.Dexterity))
+                        ? -Util.XperY(1, 2, Stats.Get(Stat.Dexterity))
                         : -1
                 );
             }
@@ -891,8 +778,7 @@ namespace ODB
 
         public void Heal(int amount)
         {
-            HpCurrent += amount;
-            HpCurrent = Math.Min(HpCurrent, HpMax);
+            Stats.HpCurrent = Math.Min(Stats.HpCurrent + amount, Stats.HpMax);
         }
 
         public enum FoodStatus
@@ -921,7 +807,7 @@ namespace ODB
             {
                 Damage(new DamageSource(
                     "R.I.P. {0}, starved to death.")
-                    { Damage = HpCurrent, Target = this }
+                    { Damage = Stats.HpCurrent, Target = this }
                 );
                 return FoodStatus.Starving;
             }
@@ -936,7 +822,7 @@ namespace ODB
                 new DamageSource(
                     "R.I.P. {0}, choked to death on their food."
                 ) {
-                    Damage = HpCurrent, Target = this
+                    Damage = Stats.HpCurrent, Target = this
                 }
             );
             return FoodStatus.Stuffed;
@@ -1215,9 +1101,9 @@ namespace ODB
             Spell spell = (Spell)cmd.Get("spell");
 
             //always spend energy, no matter if we succeed or not
-            MpCurrent -= spell.Cost;
+            Stats.MpCurrent -= spell.Cost;
 
-            if (Util.Roll("1d20") + Get(Stat.Intelligence) >=
+            if (Util.Roll("1d20") + Stats.Get(Stat.Intelligence) >=
                 spell.CastDifficulty)
             {
                 if(spell.CastType == InputType.Targeting)

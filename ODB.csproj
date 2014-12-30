@@ -122,6 +122,7 @@
   <ItemGroup>
     <Compile Include="Actor.cs" />
     <Compile Include="ActorDefinition.cs" />
+    <Compile Include="ActorStats.cs" />
     <Compile Include="Binds.cs" />
     <Compile Include="BlackMagic.cs" />
     <Compile Include="Brain.cs" />

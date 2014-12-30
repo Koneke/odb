@@ -439,7 +439,7 @@ namespace ODB
 
             Spell spell = Game.Player.Spellbook[index];
 
-            if (Game.Player.MpCurrent < spell.Cost)
+            if (Game.Player.Stats.MpCurrent < spell.Cost)
             {
                 Game.UI.Log("You need more energy to do that.");
                 return;

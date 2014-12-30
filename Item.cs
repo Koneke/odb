@@ -226,7 +226,7 @@ namespace ODB
             {
                 hands = Util.XperY(
                     1,
-                    80 + 40 * a.Get(Stat.Strength), //240, 280, 320
+                    80 + 40 * a.Stats.Get(Stat.Strength), //240, 280, 320
                     Definition.Weight
                 ) + 1;
             }
