@@ -25,6 +25,8 @@ namespace ODB
             _seed = seed;
             _idCounter = idCounter;
             _identified = identified;
+
+            SetupRelations();
         }
 
         public Game()
@@ -36,6 +38,13 @@ namespace ODB
             SetupSeed();
             _idCounter = 0;
             _identified = new List<ItemID>();
+
+            SetupRelations();
+        }
+
+        private void SetupRelations()
+        {
+            Relations.ModRelation(Faction.Player, Faction.Animals, -100);
         }
 
         //we keep these purely static because we don't need to save/load them

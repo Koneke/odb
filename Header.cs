@@ -678,4 +678,53 @@ namespace ODB
             log(message);
         }
     }
+
+    public enum Faction
+    {
+        Player,
+        Animals
+    }
+
+    public struct FactionPair
+    {
+        private Faction _a;
+        private Faction _b;
+
+        public FactionPair(Faction a, Faction b)
+        {
+            if ((int)a < (int)b)
+            {
+                _a = a;
+                _b = b;
+            }
+            else
+            {
+                _a = b;
+                _b = a;
+            }
+        }
+    }
+
+    public class Relations
+    {
+        private static readonly
+        Dictionary<FactionPair, int> Relation =
+            new Dictionary<FactionPair, int>();
+
+        public static int GetRelation(Faction a, Faction b)
+        {
+            FactionPair pair = new FactionPair(a, b);
+            return Relation.ContainsKey(pair)
+                ? Relation[pair]
+                : 0;
+        }
+
+        public static void ModRelation(Faction a, Faction b, int value)
+        {
+            FactionPair pair = new FactionPair(a, b);
+            if (!Relation.ContainsKey(pair))
+                Relation.Add(pair, 0);
+            Relation[pair] += value;
+        }
+    }
 }
