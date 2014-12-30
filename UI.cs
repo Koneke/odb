@@ -609,10 +609,7 @@ namespace ODB
 
             statrow += " ";
             statrow += "T:";
-            statrow += string.Format(
-                "{0:F1}",
-                Game.GameTick / 10f
-            );
+            statrow += string.Format("{0}", Game.GameTick);
 
             statrow += " ";
             statrow += "D:" + World.Level.Depth + "0M";

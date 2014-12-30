@@ -45,7 +45,7 @@ namespace ODB
         public static bool WizMode;
         public static List<Brain> Brains;
 
-        public const int StandardActionLength = 10;
+        public const int StandardActionLength = 1;
 
         [DataMember] private List<ActorID> _generatedUniques;
         [DataMember] private int _gameTick;

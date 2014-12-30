@@ -49,8 +49,6 @@ namespace ODB
                     Strength == other.Strength &&
                     Dexterity == other.Dexterity &&
                     Intelligence == other.Intelligence &&
-                    Speed == other.Speed &&
-                    Quickness == other.Quickness &&
                     CorpseType == other.CorpseType
                 ;
         }
@@ -68,8 +66,6 @@ namespace ODB
                 //      as separate keys in a dict for some reason...
                 int hashCode = base.GetHashCode();
                 hashCode = (hashCode*397) ^ Named.GetHashCode();
-                hashCode = (hashCode*397) ^ Speed;
-                hashCode = (hashCode*397) ^ Quickness;
                 return hashCode;
             }
         }
@@ -91,7 +87,6 @@ namespace ODB
         [DataMember] public bool Named; //for uniques and what not
         [DataMember] public Monster.GenerationType GenerationType;
         [DataMember] public string Strength, Dexterity, Intelligence;
-        [DataMember] public int Speed, Quickness;
         [DataMember] public string HitDie, ManaDie;
         [DataMember] public int Experience;
         [DataMember] public int Difficulty;

@@ -29,8 +29,6 @@ namespace ODB
             w.WritePropertyName("Strength"); w.WriteValue(def.Strength);
             w.WritePropertyName("Dexterity"); w.WriteValue(def.Dexterity);
             w.WritePropertyName("Intelligence"); w.WriteValue(def.Intelligence);
-            w.WritePropertyName("Speed"); w.WriteValue(def.Speed);
-            w.WritePropertyName("Quickness"); w.WriteValue(def.Quickness);
             w.WritePropertyName("HitDie"); w.WriteValue(def.HitDie);
             w.WritePropertyName("ManaDie"); w.WriteValue(def.ManaDie);
             w.WritePropertyName("Experience"); w.WriteValue(def.Experience);
@@ -63,8 +61,6 @@ namespace ODB
             string strength = jObj["Strength"].ToObject<string>();
             string dexterity = jObj["Dexterity"].ToObject<string>();
             string intelligence = jObj["Intelligence"].ToObject<string>();
-            int speed = jObj["Speed"].ToObject<int>();
-            int quickness = jObj["Quickness"].ToObject<int>();
             string hitDie = jObj["HitDie"].ToObject<string>();
             string manaDie = jObj["ManaDie"].ToObject<string>();
             int experience = jObj["Experience"].ToObject<int>();
@@ -87,8 +83,6 @@ namespace ODB
                 Strength = strength,
                 Dexterity = dexterity,
                 Intelligence = intelligence,
-                Speed = speed,
-                Quickness = quickness,
                 HitDie = hitDie,
                 ManaDie = manaDie,
                 Experience = experience,
